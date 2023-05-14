@@ -1,5 +1,5 @@
 module Bmad
 
-include("types.jl")
+include("struct_def.jl")
 
 end
