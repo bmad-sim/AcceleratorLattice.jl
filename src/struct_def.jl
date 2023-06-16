@@ -8,11 +8,11 @@ macro insert_standard_LatEle_fields()
 end
   ## @insert_standard_LatEle_fields
 
-
-abstract type BeamLineComponent end
+"Abstract Item in a beam line."
+abstract type BeamLineItem end
 
 "Abstract Lat element from which all elements inherit"
-abstract type LatEle <: BeamLineComponent end
+abstract type LatEle <: BeamLineItem end
 
 "General thick multipole that is inherited by quadrupoles, sextupoles, etc."
 abstract type ThickMultipole <: LatEle end
@@ -106,13 +106,12 @@ end
 
 
 #-------------------------------------------------------------------------------------
-
-BeamLineItem = Union{BeamLineComponent, Vector{BeamLineComponent}}
+"beam line"
 
 "A simple beam line."
-mutable struct BeamLine <: BeamLineComponent
-  name::String
+mutable struct BeamLine <: BeamLineItem
   line::Vector{BeamLineItem}
+  name::String
   multipass::Bool
   orientation::Int
 end
@@ -127,8 +126,8 @@ function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
   return type(name, Dict{String,Any}(string(k)=>v for (k,v) in kwargs))
 end
 
-function beamline(name::String, line_in::Vector{T}; multipass::Bool = false, orientation = +1) where T <: BeamLineItem
-  return BeamLine(name, line_in, multipass, orientation)
+function beamline(line_in::Vector{T}; name::String = "", multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
+  return BeamLine(line_in, name, multipass, orientation)
 end
 
 function latele_to_branch!(branch, latele)
@@ -147,6 +146,8 @@ function beamline_item_to_branch!(branch::LatBranch, item::BeamLineItem)
     add_to_latbranch!(branch, item)
   elseif isa(item, Vector{BeamLine})
     for subitem in item; add_to_latbranch!(branch, subitem); end
+  else
+    print(f"BeamLine item not recognized: {item}")
   end
   return nothing
 end
@@ -157,23 +158,32 @@ function add_to_latbranch!(branch::LatBranch, beamline::BeamLine)
 end
 
 function new_latbranch!(lat::Lat, beamline::BeamLine)
-  push!(lat.branch, LatBranch(beamline.name, Vector{LatEle}(), 
-                                              Dict{String,Any}("lat" => lat, "ix_branch" => length(lat.branch)+1)))
+  push!(lat.branch, LatBranch(beamline.name, Vector{LatEle}(),
+                      Dict{String,Any}("lat" => lat, "ix_branch" => length(lat.branch)+1)))
   branch = lat.branch[end]
+  if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
+
   latele_to_branch!(branch, beginning_Latele)
   add_to_latbranch!(branch, beamline)
   latele_to_branch!(branch, end_Latele)
   return nothing
 end
 
-function make_lat(root_line::Union{BeamLine,Vector{BeamLine},Nothing} = nothing, name::String = "")
+function make_lat(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
   lat = Lat(name, Vector{LatBranch}())
   if root_line == nothing; root_line = root_beamline end
+  
   if isa(root_line, BeamLine)
     new_latbranch!(lat, root_line)
   else
-    for rline in root_line; new_latbranch!(lat, rline); end
+    for subline in root_line
+      new_latbranch!(lat, subline)
+    end
   end
+  
   if lat.name == ""; lat.name = lat.branch[1].name; end
+  if lat.name == "branch1"; lat.name = "lat"; end
   return lat
 end
+
+
