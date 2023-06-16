@@ -88,7 +88,7 @@ function show_branch(branch::LatBranch)
   print(f"{get(branch.param, \"ix_branch\", \"\")} Branch: {branch.name}")
   n = maximum([6, maximum([length(e.name) for e in branch.ele])])
   for (ix, ele) in enumerate(branch.ele)
-    print(f"\n  {ix:5i}  {rpad(ele.name, n)}")
+    print(f"\n  {ix:5i}  {rpad(ele.name, n)}  {rpad(string(typeof(ele)), 16)}")
   end
   return nothing
 end
@@ -110,10 +110,26 @@ end
 
 "A simple beam line."
 mutable struct BeamLine <: BeamLineItem
-  line::Vector{BeamLineItem}
   name::String
+  line::Vector{BeamLineItem}
   multipass::Bool
   orientation::Int
+end
+
+Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.name * "_mult" * string(n), 
+                          [beamline for i in 1:n], beamline.multipass, beamline.orientation)
+                          
+Base.:*(n::Int, ele::LatEle) = BeamLine(ele.name * "_mult" * string(n), 
+                          [ele for i in 1:n], false, +1)
+
+
+function show_beamline(beamline::BeamLine)
+  print(f"Beamline:  {beamline.name}, multipass: {beamline.multipass}, orientation: {beamline.orientation}")
+  n = maximum([6, maximum([length(e.name) for e in beamline.line])])
+  for (ix, item) in enumerate(beamline.line)
+    print(f"\n{ix:5i}  {rpad(item.name, n)}  {rpad(string(typeof(item)), 12)}")
+  end
+  return nothing
 end
 
 #Base.show(io::IO, lb::BeamLine) = print(io, "Hi!")
@@ -126,8 +142,8 @@ function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
   return type(name, Dict{String,Any}(string(k)=>v for (k,v) in kwargs))
 end
 
-function beamline(line_in::Vector{T}; name::String = "", multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
-  return BeamLine(line_in, name, multipass, orientation)
+function beamline(name::String, line_in::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
+  return BeamLine(name, line_in, multipass, orientation)
 end
 
 function latele_to_branch!(branch, latele)
@@ -182,7 +198,6 @@ function make_lat(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = ""
   end
   
   if lat.name == ""; lat.name = lat.branch[1].name; end
-  if lat.name == "branch1"; lat.name = "lat"; end
   return lat
 end
 
