@@ -39,11 +39,15 @@ end
 #-------------------------------------------------------------------------------------
 "beam line"
 
+reflect(beamline::BeamLine) = BeamLine(beamline.name * "_mult-1", reverse(beamline.line), beamline.multipass, beamline.orientation)
+
+Base.:-(beamline::BeamLine) = reflect(beamline)
+
 Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.name * "_mult" * string(n), 
-                          [beamline for i in 1:n], beamline.multipass, beamline.orientation)
+                          [(n > 0 ? beamline : reflect(beamline)) for i in 1:abs(n)], beamline.multipass, beamline.orientation)
                           
-Base.:*(n::Int, ele::LatEle) = BeamLine(ele.name * "_mult" * string(n), 
-                          [ele for i in 1:n], false, +1)
+Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier does not make sense.")); end,
+        BeamLine(ele.name * "_mult" * string(n), [ele for i in 1:n], false, +1))
 
 
 function show_beamline(beamline::BeamLine)
@@ -109,7 +113,8 @@ function new_latbranch!(lat::Lat, beamline::BeamLine)
 end
 
 function make_lat(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
-  lat = Lat(name, Vector{LatBranch}(), Vector{LatEle}(), LatParam())
+  lat = Lat(name, Vector{LatBranch}(), 
+              LatBranch("lord", Vector{LatEle}(), Dict{String,Any}()), LatParam())
   if root_line == nothing; root_line = root_beamline end
   
   if isa(root_line, BeamLine)

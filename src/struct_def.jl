@@ -79,7 +79,7 @@ end
 mutable struct Lat <: AbstractLat
   name::String
   branch::Vector{LatBranch}
-  lord::Vector{LatEle}
+  lord::LatBranch
   param::LatParam
 end
 
