@@ -64,7 +64,9 @@ end
 "Lattice"
 
 abstract type AbstractLat end
-abstract type AbstractBranch end
+
+mutable struct LatParam
+end
 
 mutable struct LatBranch
   name::String
@@ -75,6 +77,8 @@ end
 mutable struct Lat <: AbstractLat
   name::String
   branch::Vector{LatBranch}
+  lord::Vector{LatEle}
+  param::LatParam
 end
 
 #-------------------------------------------------------------------------------------

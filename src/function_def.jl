@@ -1,14 +1,23 @@
 #-------------------------------------------------------------------------------------
+"To print memory location of object"
+
+function memloc(@nospecialize(x))
+   y = ccall(:jl_value_ptr, Ptr{Cvoid}, (Any,), x)
+   return repr(UInt64(y))
+end
+
+#-------------------------------------------------------------------------------------
 "Lattice"
 
-LatEle(ele::LatEle, branch::AbstractBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
+LatEle(ele::LatEle, branch::LatBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
 
 function show_branch(branch::LatBranch)
   print(f"{get(branch.param, \"ix_branch\", \"\")} Branch: {branch.name}")
-  n = maximum([6, maximum([length(e.name) for e in branch.ele])])
+  n = maximum([6; [length(e.name) for e in branch.ele]])
   for (ix, ele) in enumerate(branch.ele)
     print(f"\n  {ix:5i}  {rpad(ele.name, n)}  {rpad(string(typeof(ele)), 16)}")
   end
+  
   return nothing
 end
 
@@ -18,6 +27,10 @@ function show_lat(lat::Lat)
     print("\n")
     show_branch(branch)
   end
+
+  print("\n")
+  show_branch(lat.lord)
+
   return nothing
 end
 
@@ -96,7 +109,7 @@ function new_latbranch!(lat::Lat, beamline::BeamLine)
 end
 
 function make_lat(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
-  lat = Lat(name, Vector{LatBranch}())
+  lat = Lat(name, Vector{LatBranch}(), Vector{LatEle}(), LatParam())
   if root_line == nothing; root_line = root_beamline end
   
   if isa(root_line, BeamLine)
