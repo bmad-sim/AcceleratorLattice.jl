@@ -4,10 +4,10 @@ using PyFormattedStrings
 #-------------------------------------------------------------------------------------
 
 "Abstract Item in a beam line."
-abstract type BeamLineItem end
+abstract type LatBranchEleItem end
 
 "Abstract Lat element from which all elements inherit"
-abstract type LatEle <: BeamLineItem end
+abstract type LatEle <: LatBranchEleItem end
 
 "General thick multipole that is inherited by quadrupoles, sextupoles, etc."
 abstract type ThickMultipole <: LatEle end
@@ -70,28 +70,17 @@ abstract type AbstractLat end
 mutable struct LatParam
 end
 
-mutable struct LatBranch
+mutable struct LatBranch <: LatBranchEleItem
   name::String
-  ele::Vector{LatEle}
+  ele::Vector{LatBranchEleItem}
   param::Dict{String,Any}
 end
 
 mutable struct Lat <: AbstractLat
   name::String
   branch::Vector{LatBranch}
-  lord::LatBranch
+  lord::LatBranch 
   param::LatParam
-end
-
-#-------------------------------------------------------------------------------------
-"beam line"
-
-"A simple beam line."
-mutable struct BeamLine <: BeamLineItem
-  name::String
-  line::Vector{BeamLineItem}
-  multipass::Bool
-  orientation::Int
 end
 
 

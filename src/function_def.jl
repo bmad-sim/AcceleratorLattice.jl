@@ -39,27 +39,27 @@ end
 #-------------------------------------------------------------------------------------
 "beam line"
 
-reflect(beamline::BeamLine) = BeamLine(beamline.name * "_mult-1", reverse(beamline.line), beamline.multipass, beamline.orientation)
+reflect(beamline::LatBranch) = LatBranch(beamline.name * "_mult-1", reverse(beamline.ele), beamline.param)
 
-Base.:-(beamline::BeamLine) = reflect(beamline)
+Base.:-(beamline::LatBranch) = reflect(beamline)
 
-Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.name * "_mult" * string(n), 
-                          [(n > 0 ? beamline : reflect(beamline)) for i in 1:abs(n)], beamline.multipass, beamline.orientation)
+Base.:*(n::Int, beamline::LatBranch) = LatBranch(beamline.name * "_mult" * string(n), 
+                          [(n > 0 ? beamline : reflect(beamline)) for i in 1:abs(n)], beamline.param)
                           
 Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier does not make sense.")); end,
-        BeamLine(ele.name * "_mult" * string(n), [ele for i in 1:n], false, +1))
+        LatBranch(ele.name * "_mult" * string(n), [ele for i in 1:n], false, +1))
 
 
-function show_beamline(beamline::BeamLine)
-  print(f"Beamline:  {beamline.name}, multipass: {beamline.multipass}, orientation: {beamline.orientation}")
-  n = maximum([6, maximum([length(e.name) for e in beamline.line])])
-  for (ix, item) in enumerate(beamline.line)
+function show_beamline(beamline::LatBranch)
+  print(f"Beamline:  {beamline.name}, multipass: {beamline.param[\"multipass\"]}, orientation: {beamline.param[\"orientation\"]}")
+  n = maximum([6, maximum([length(e.name) for e in beamline.ele])])
+  for (ix, item) in enumerate(beamline.ele)
     print(f"\n{ix:5i}  {rpad(item.name, n)}  {rpad(string(typeof(item)), 12)}")
   end
   return nothing
 end
 
-#Base.show(io::IO, lb::BeamLine) = print(io, "Hi!")
+#Base.show(io::IO, lb::LatBranch) = print(io, "Hi!")
 
 #-------------------------------------------------------------------------------------
 "Functions to construct a lat."
@@ -69,38 +69,38 @@ function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
   return type(name, Dict{String,Any}(string(k)=>v for (k,v) in kwargs))
 end
 
-function beamline(name::String, line_in::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
-  return BeamLine(name, line_in, multipass, orientation)
+function beamline(name::String, line_in::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: LatBranchEleItem
+  return LatBranch(name, line_in, Dict{String,Any}("multipass" => multipass, "orientation" => orientation))
 end
 
-function latele_to_branch!(branch, latele)
+function latele_to_branch!(branch::LatBranch, latele::LatEle)
   push!(branch.ele, deepcopy(latele))
   ele = branch.ele[end]
   ele.param["ix_ele"] = length(branch.ele)
   return nothing
 end
 
-function beamline_item_to_branch!(branch::LatBranch, item::BeamLineItem)
+function beamline_item_to_branch!(branch::LatBranch, item::LatBranchEleItem)
   if isa(item, LatEle)
     latele_to_branch!(branch, item)
   elseif isa(item, Vector{LatEle})
     for subitem in item; latele_to_branch!(branch, subitem); end
-  elseif isa(item, BeamLine) 
+  elseif isa(item, LatBranch) 
     add_to_latbranch!(branch, item)
-  elseif isa(item, Vector{BeamLine})
+  elseif isa(item, Vector{LatBranch})
     for subitem in item; add_to_latbranch!(branch, subitem); end
   else
-    print(f"BeamLine item not recognized: {item}")
+    print(f"LatBranch item not recognized: {item}")
   end
   return nothing
 end
 
-function add_to_latbranch!(branch::LatBranch, beamline::BeamLine)
-  for item in beamline.line; beamline_item_to_branch!(branch, item); end
+function add_to_latbranch!(branch::LatBranch, beamline::LatBranch)
+  for item in beamline.ele; beamline_item_to_branch!(branch, item); end
   return nothing
 end
 
-function new_latbranch!(lat::Lat, beamline::BeamLine)
+function new_latbranch!(lat::Lat, beamline::LatBranch)
   push!(lat.branch, LatBranch(beamline.name, Vector{LatEle}(),
                       Dict{String,Any}("lat" => lat, "ix_branch" => length(lat.branch)+1)))
   branch = lat.branch[end]
@@ -112,12 +112,12 @@ function new_latbranch!(lat::Lat, beamline::BeamLine)
   return nothing
 end
 
-function make_lat(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
+function make_lat(root_line::Union{LatBranch,Vector{LatBranch}}, name::String = "")
   lat = Lat(name, Vector{LatBranch}(), 
               LatBranch("lord", Vector{LatEle}(), Dict{String,Any}()), LatParam())
   if root_line == nothing; root_line = root_beamline end
   
-  if isa(root_line, BeamLine)
+  if isa(root_line, LatBranch)
     new_latbranch!(lat, root_line)
   else
     for subline in root_line
