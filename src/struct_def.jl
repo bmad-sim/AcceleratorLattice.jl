@@ -65,6 +65,8 @@ end
 
 abstract type AbstractLat end
 
+@enum Geometry open = 1 closed = 2
+
 mutable struct LatParam
 end
 
