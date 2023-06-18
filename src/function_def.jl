@@ -11,11 +11,16 @@ end
 
 LatEle(ele::LatEle, branch::LatBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
 
+function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
+  # kwargs is a named tuple with Symbol keys. Want keys to be Strings.
+  return type(name, Dict{String,Any}(string(k)=>v for (k,v) in kwargs))
+end
+
 function show_branch(branch::LatBranch)
   print(f"{get(branch.param, \"ix_branch\", \"\")} Branch: {branch.name}")
   n = maximum([6; [length(e.name) for e in branch.ele]])
   for (ix, ele) in enumerate(branch.ele)
-    print(f"\n  {ix:5i}  {rpad(ele.name, n)}  {rpad(string(typeof(ele)), 16)}")
+    print(f"\n  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}  {lpad(get(ele.param, \"orientation\", 1), 2)}")
   end
   
   return nothing
@@ -37,8 +42,16 @@ end
 #Base.show(io::IO, lb::LatBranch) = print(io, "Hi!")
 
 #-------------------------------------------------------------------------------------
-"beam line"
+"Define a beamline"
 
+function beamline(name::String, line_in::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: LatBranchEleItem
+  return LatBranch(name, line_in, Dict{String,Any}("multipass" => multipass, "orientation" => orientation))
+end
+
+#-------------------------------------------------------------------------------------
+"beamline reflection"
+
+"reverse() here is the Julia intrinsic."
 reflect(beamline::LatBranch) = LatBranch(beamline.name * "_mult-1", reverse(beamline.ele), beamline.param)
 
 Base.:-(beamline::LatBranch) = reflect(beamline)
@@ -50,11 +63,30 @@ Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier
         LatBranch(ele.name * "_mult" * string(n), [ele for i in 1:n], false, +1))
 
 
+#-------------------------------------------------------------------------------------
+"beamline orientation reversal"
+
+function reverse(latele::LatEle) = 
+  ele = deepcopy(latele)
+  ele.param["orientation"] = -get(ele.param, "orientation", +1)
+  return ele
+end
+
+function reverse(beamline::LatBranch)
+  line = deepcopy(beamline)
+  line.param["orientation"] = -get(line.param, "orientation", +1)
+  line.ele = reverse(line.ele)
+  return line
+end
+
+#-------------------------------------------------------------------------------------
+"beamline show"
+
 function show_beamline(beamline::LatBranch)
   print(f"Beamline:  {beamline.name}, multipass: {beamline.param[\"multipass\"]}, orientation: {beamline.param[\"orientation\"]}")
   n = maximum([6, maximum([length(e.name) for e in beamline.ele])])
   for (ix, item) in enumerate(beamline.ele)
-    print(f"\n{ix:5i}  {rpad(item.name, n)}  {rpad(string(typeof(item)), 12)}")
+    print(f"\n{ix:5i}  {rpad(item.name, n)}  {rpad(typeof(item), 12)}  {lpad(get(item.param[\"orientation\"], 1), 2)}")
   end
   return nothing
 end
@@ -62,16 +94,7 @@ end
 #Base.show(io::IO, lb::LatBranch) = print(io, "Hi!")
 
 #-------------------------------------------------------------------------------------
-"Functions to construct a lat."
-
-function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
-  # kwargs is a named tuple with Symbol keys. Want keys to be Strings.
-  return type(name, Dict{String,Any}(string(k)=>v for (k,v) in kwargs))
-end
-
-function beamline(name::String, line_in::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: LatBranchEleItem
-  return LatBranch(name, line_in, Dict{String,Any}("multipass" => multipass, "orientation" => orientation))
-end
+"lat construction."
 
 function latele_to_branch!(branch::LatBranch, latele::LatEle)
   push!(branch.ele, deepcopy(latele))
