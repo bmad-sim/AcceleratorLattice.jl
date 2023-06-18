@@ -2,11 +2,14 @@ using OffsetArrays
 using PyFormattedStrings
 
 #-------------------------------------------------------------------------------------
+# A "lattice branch" is a branch in a lattice.
+# A "beamline" is a line defined in a lattice file.
+# Both of these are represented by a LatBranch struct.
 
-"Abstract Item in a beam line."
+"Define abstract type that represents an item in a beamline or lattice branch."
 abstract type LatBranchEleItem end
 
-"Abstract Lat element from which all elements inherit"
+"Define abstract Lat element from which all elements inherit"
 abstract type LatEle <: LatBranchEleItem end
 
 "General thick multipole that is inherited by quadrupoles, sextupoles, etc."

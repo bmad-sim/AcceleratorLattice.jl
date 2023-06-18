@@ -16,12 +16,11 @@ function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
 end
 
 function show_branch(branch::LatBranch)
-  print(f"{get(branch.param, :ix_branch, \"\")} Branch: {branch.name}")
+  print(f"{get(branch.param, :ix_branch, \"-\")} Branch: {branch.name}")
   n = maximum([6; [length(e.name) for e in branch.ele]])
   for (ix, ele) in enumerate(branch.ele)
     print(f"\n  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}  {lpad(get(ele.param, :orientation, 1), 2)}")
-  end
-  
+  end  
   return nothing
 end
 
@@ -34,7 +33,6 @@ function show_lat(lat::Lat)
 
   print("\n")
   show_branch(lat.lord)
-
   return nothing
 end
 
@@ -45,6 +43,25 @@ end
 
 function beamline(name::String, line_in::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: LatBranchEleItem
   return LatBranch(name, line_in, Dict{Symbol,Any}(:multipass => multipass, :orientation => orientation))
+end
+
+#-------------------------------------------------------------------------------------
+"beamline orientation reversal"
+
+function Base.reverse(latele::LatEle)
+  ele = deepcopy(latele)
+  ele.param[:orientation] = -get(ele.param, :orientation, +1)
+  return ele
+end
+
+"""
+Rule: Reversal marks a beamline as reversed but not the line elements.
+Line element reversal takes place during lattice expansion.
+"""
+function Base.reverse(beamline::LatBranch)
+  line = deepcopy(beamline)
+  line.param[:orientation] = -get(line.param, :orientation, +1)
+  return line
 end
 
 #-------------------------------------------------------------------------------------
@@ -60,22 +77,6 @@ Base.:*(n::Int, beamline::LatBranch) = LatBranch(beamline.name * "_mult" * strin
                           
 Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier does not make sense.")); end,
         LatBranch(ele.name * "_mult" * string(n), [ele for i in 1:n], false, +1))
-
-#-------------------------------------------------------------------------------------
-"beamline orientation reversal"
-
-function reverse(latele::LatEle)
-  ele = deepcopy(latele)
-  ele.param[:orientation] = -get(ele.param, :orientation, +1)
-  return ele
-end
-
-function reverse(beamline::LatBranch)
-  line = deepcopy(beamline)
-  line.param[:orientation] = -get(line.param, :orientation, +1)
-  line.ele = reverse(line.ele)
-  return line
-end
 
 #-------------------------------------------------------------------------------------
 "beamline show"
@@ -94,42 +95,43 @@ end
 #-------------------------------------------------------------------------------------
 "lat construction."
 
-function latele_to_branch!(branch::LatBranch, latele::LatEle)
+function add_latele_to_latbranch!(branch::LatBranch, latele::LatEle, orientation::Int)
   push!(branch.ele, deepcopy(latele))
   ele = branch.ele[end]
   ele.param[:ix_ele] = length(branch.ele)
+  ele.param[:orientation] = get(ele.param, :orientation, 1) * orientation
   return nothing
 end
 
-function beamline_item_to_branch!(branch::LatBranch, item::LatBranchEleItem)
+function add_beamline_item_to_branch!(branch::LatBranch, item::LatBranchEleItem, orientation::Int)
   if isa(item, LatEle)
-    latele_to_branch!(branch, item)
-  elseif isa(item, Vector{LatEle})
-    for subitem in item; latele_to_branch!(branch, subitem); end
+    add_latele_to_latbranch!(branch, item, orientation)
   elseif isa(item, LatBranch) 
-    add_to_latbranch!(branch, item)
-  elseif isa(item, Vector{LatBranch})
-    for subitem in item; add_to_latbranch!(branch, subitem); end
+    add_beamline_to_latbranch!(branch, item, orientation)
   else
-    print(f"LatBranch item not recognized: {item}")
+    throw(ArgumentError(f"LatBranch item not recognized: {item}"))
   end
   return nothing
 end
 
-function add_to_latbranch!(branch::LatBranch, beamline::LatBranch)
-  for item in beamline.ele; beamline_item_to_branch!(branch, item); end
+function add_beamline_to_latbranch!(branch::LatBranch, beamline::LatBranch, orientation::Int)
+  orientation = orientation * beamline.param[:orientation]
+  orientation == 1 ? ele = beamline.ele : ele = reverse(beamline.ele)
+  for item in ele; add_beamline_item_to_branch!(branch, item, orientation); end
   return nothing
 end
 
 function new_latbranch!(lat::Lat, beamline::LatBranch)
-  push!(lat.branch, LatBranch(beamline.name, Vector{LatEle}(),
-                      Dict{Symbol,Any}(:lat => lat, :ix_branch => length(lat.branch)+1)))
+  push!(lat.branch, LatBranch(beamline.name, Vector{LatEle}(), beamline.param))
   branch = lat.branch[end]
+  branch.param[:lat] = lat
+  branch.param[:ix_branch] = length(lat.branch)
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
 
-  latele_to_branch!(branch, beginning_Latele)
-  add_to_latbranch!(branch, beamline)
-  latele_to_branch!(branch, end_Latele)
+  orientation = branch.param[:orientation]
+  add_latele_to_latbranch!(branch, beginning_Latele, orientation)
+  add_beamline_to_latbranch!(branch, beamline, orientation)
+  add_latele_to_latbranch!(branch, end_Latele, orientation)
   return nothing
 end
 
