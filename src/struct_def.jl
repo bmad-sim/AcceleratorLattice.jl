@@ -15,29 +15,29 @@ abstract type ThickMultipole <: LatEle end
 "Bend lat element. Equivalent to SBend in Bmad."
 mutable struct Bend <: LatEle
   name::String
-  param::Dict{String,Any}
+  param::Dict{Symbol,Any}
 end
 
 "Drift lat element"
 mutable struct Drift <: LatEle
   name::String
-  param::Dict{String,Any}
+  param::Dict{Symbol,Any}
 end
 
 "Quadrupole lat element"
 mutable struct Quadrupole <: ThickMultipole
   name::String
-  param::Dict{String,Any}
+  param::Dict{Symbol,Any}
 end
 
 "Marker lat element"
 mutable struct Marker <: LatEle
   name::String
-  param::Dict{String,Any}
+  param::Dict{Symbol,Any}
 end
 
-beginning_Latele = Marker("beginning", Dict{String,Any}())
-end_Latele       = Marker("end", Dict{String,Any}())
+beginning_Latele = Marker("beginning", Dict{Symbol,Any}())
+end_Latele       = Marker("end", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
 "LatEle parameters"
@@ -73,7 +73,7 @@ end
 mutable struct LatBranch <: LatBranchEleItem
   name::String
   ele::Vector{LatBranchEleItem}
-  param::Dict{String,Any}
+  param::Dict{Symbol,Any}
 end
 
 mutable struct Lat <: AbstractLat

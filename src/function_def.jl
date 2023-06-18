@@ -12,15 +12,14 @@ end
 LatEle(ele::LatEle, branch::LatBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
 
 function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
-  # kwargs is a named tuple with Symbol keys. Want keys to be Strings.
-  return type(name, Dict{String,Any}(string(k)=>v for (k,v) in kwargs))
+  return type(name, Dict{Symbol,Any}(kwargs))
 end
 
 function show_branch(branch::LatBranch)
-  print(f"{get(branch.param, \"ix_branch\", \"\")} Branch: {branch.name}")
+  print(f"{get(branch.param, :ix_branch, \"\")} Branch: {branch.name}")
   n = maximum([6; [length(e.name) for e in branch.ele]])
   for (ix, ele) in enumerate(branch.ele)
-    print(f"\n  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}  {lpad(get(ele.param, \"orientation\", 1), 2)}")
+    print(f"\n  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}  {lpad(get(ele.param, :orientation, 1), 2)}")
   end
   
   return nothing
@@ -45,7 +44,7 @@ end
 "Define a beamline"
 
 function beamline(name::String, line_in::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: LatBranchEleItem
-  return LatBranch(name, line_in, Dict{String,Any}("multipass" => multipass, "orientation" => orientation))
+  return LatBranch(name, line_in, Dict{Symbol,Any}(:multipass => multipass, :orientation => orientation))
 end
 
 #-------------------------------------------------------------------------------------
@@ -62,19 +61,18 @@ Base.:*(n::Int, beamline::LatBranch) = LatBranch(beamline.name * "_mult" * strin
 Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier does not make sense.")); end,
         LatBranch(ele.name * "_mult" * string(n), [ele for i in 1:n], false, +1))
 
-
 #-------------------------------------------------------------------------------------
 "beamline orientation reversal"
 
-function reverse(latele::LatEle) = 
+function reverse(latele::LatEle)
   ele = deepcopy(latele)
-  ele.param["orientation"] = -get(ele.param, "orientation", +1)
+  ele.param[:orientation] = -get(ele.param, :orientation, +1)
   return ele
 end
 
 function reverse(beamline::LatBranch)
   line = deepcopy(beamline)
-  line.param["orientation"] = -get(line.param, "orientation", +1)
+  line.param[:orientation] = -get(line.param, :orientation, +1)
   line.ele = reverse(line.ele)
   return line
 end
@@ -83,10 +81,10 @@ end
 "beamline show"
 
 function show_beamline(beamline::LatBranch)
-  print(f"Beamline:  {beamline.name}, multipass: {beamline.param[\"multipass\"]}, orientation: {beamline.param[\"orientation\"]}")
+  print(f"Beamline:  {beamline.name}, multipass: {beamline.param[:multipass]}, orientation: {beamline.param[:orientation]}")
   n = maximum([6, maximum([length(e.name) for e in beamline.ele])])
   for (ix, item) in enumerate(beamline.ele)
-    print(f"\n{ix:5i}  {rpad(item.name, n)}  {rpad(typeof(item), 12)}  {lpad(get(item.param[\"orientation\"], 1), 2)}")
+    print(f"\n{ix:5i}  {rpad(item.name, n)}  {rpad(typeof(item), 12)}  {lpad(get(item.param[:orientation], 1), 2)}")
   end
   return nothing
 end
@@ -99,7 +97,7 @@ end
 function latele_to_branch!(branch::LatBranch, latele::LatEle)
   push!(branch.ele, deepcopy(latele))
   ele = branch.ele[end]
-  ele.param["ix_ele"] = length(branch.ele)
+  ele.param[:ix_ele] = length(branch.ele)
   return nothing
 end
 
@@ -125,7 +123,7 @@ end
 
 function new_latbranch!(lat::Lat, beamline::LatBranch)
   push!(lat.branch, LatBranch(beamline.name, Vector{LatEle}(),
-                      Dict{String,Any}("lat" => lat, "ix_branch" => length(lat.branch)+1)))
+                      Dict{Symbol,Any}(:lat => lat, :ix_branch => length(lat.branch)+1)))
   branch = lat.branch[end]
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
 
@@ -137,7 +135,7 @@ end
 
 function make_lat(root_line::Union{LatBranch,Vector{LatBranch}}, name::String = "")
   lat = Lat(name, Vector{LatBranch}(), 
-              LatBranch("lord", Vector{LatEle}(), Dict{String,Any}()), LatParam())
+              LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}()), LatParam())
   if root_line == nothing; root_line = root_beamline end
   
   if isa(root_line, LatBranch)
