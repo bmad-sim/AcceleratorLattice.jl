@@ -2,15 +2,27 @@ using OffsetArrays
 using PyFormattedStrings
 
 #-------------------------------------------------------------------------------------
+# Misc
+
+struct InfiniteLoop <: Exception
+  description::String
+end
+
+
 # A "lattice branch" is a branch in a lattice.
 # A "beamline" is a line defined in a lattice file.
-# Both of these are represented by a LatBranch struct.
 
-"Define abstract type that represents an item in a beamline or lattice branch."
-abstract type LatBranchEleItem end
+#-------------------------------------------------------------------------------------
+# LatEle
 
-"Define abstract Lat element from which all elements inherit"
-abstract type LatEle <: LatBranchEleItem end
+"Define abstract type that represents a LatEle or sub BeamLine contained in a beamline."
+abstract type ExtendedBeamLineItem end
+
+"Extended type includes LatEle."
+abstract type BeamLineItem <: ExtendedBeamLineItem end 
+
+"Define abstract Lat element from which all lattice elements inherit"
+abstract type LatEle <: ExtendedBeamLineItem end
 
 "General thick multipole that is inherited by quadrupoles, sextupoles, etc."
 abstract type ThickMultipole <: LatEle end
@@ -43,7 +55,7 @@ beginning_Latele = Marker("beginning", Dict{Symbol,Any}())
 end_Latele       = Marker("end", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
-"LatEle parameters"
+# LatEle parameters
 
 mutable struct FloorPosition
   r::Vector{Float64}       # (x,y,z) in Global coords
@@ -64,7 +76,7 @@ mutable struct LordSlave
 end
 
 #-------------------------------------------------------------------------------------
-"Lattice"
+# Lattice
 
 abstract type AbstractLat end
 
@@ -73,9 +85,9 @@ abstract type AbstractLat end
 mutable struct LatParam
 end
 
-mutable struct LatBranch <: LatBranchEleItem
+mutable struct LatBranch <: BeamLineItem
   name::String
-  ele::Vector{LatBranchEleItem}
+  ele::Vector{LatEle}
   param::Dict{Symbol,Any}
 end
 
@@ -86,4 +98,23 @@ mutable struct Lat <: AbstractLat
   param::LatParam
 end
 
+#-------------------------------------------------------------------------------------
+# BeamLine
+# Rule: param Dict of BeamLineEle and BeamLine always define :orientation and :multipass keys.
+# Rule: All instances a given LatEle in beamlines are identical so that the User can easily 
+# make a Change to all. At lattice expansion, deepcopyies of LatEles will be done.
+
+# Why wrap a LatEle within a BeamLineEle? This allows multiple instances in a beamline of the same 
+# identical LatEle with some having orientation reversed or within multipass regions and some not.
+
+mutable struct BeamLineEle <: BeamLineItem
+  ele::LatEle
+  param::Dict{Symbol,Any}
+end
+
+mutable struct BeamLine <: BeamLineItem
+  name::String
+  line::Vector{BeamLineItem}
+  param::Dict{Symbol,Any}
+end
 
