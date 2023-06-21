@@ -16,13 +16,10 @@ end
 # LatEle
 
 "Define abstract type that represents a LatEle or sub BeamLine contained in a beamline."
-abstract type ExtendedBeamLineItem end
-
-"Extended type includes LatEle."
-abstract type BeamLineItem <: ExtendedBeamLineItem end 
+abstract type BeamLineItem end
 
 "Define abstract Lat element from which all lattice elements inherit"
-abstract type LatEle <: ExtendedBeamLineItem end
+abstract type LatEle <: BeamLineItem end
 
 "General thick multipole that is inherited by quadrupoles, sextupoles, etc."
 abstract type ThickMultipole <: LatEle end
@@ -117,4 +114,12 @@ mutable struct BeamLine <: BeamLineItem
   line::Vector{BeamLineItem}
   param::Dict{Symbol,Any}
 end
+
+"Used when doing lattice expansion."
+mutable struct LatConstructionInfo
+  multipass_id::Vector{String}
+  orientation_here::Int
+  n_loop::Int
+end
+
 
