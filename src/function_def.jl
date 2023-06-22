@@ -6,6 +6,31 @@ function memloc(@nospecialize(x))
    return repr(UInt64(y))
 end
 
+function latele_name(ele::LatEle, template::String = "")
+  if template == ""; template = "@N (!#)"; end
+  ix_ele = ele.param[:ix_ele]
+  branch = ele.param[:branch]
+  lat = branch.param[:lat]
+  str = replace(template, "@N" => ele.name)
+  str = replace(str, "%#" => (branch === lat.branch[1] ? ix_ele : branch.name * ">>" * string(ix_ele)))
+  str = replace(str, "&#" => (lat.branch == 1 ? string(ix_ele) : branch.name * ">>" * string(ix_ele)))
+  str = replace(str, "!#" => branch.name * ">>" * string(ix_ele))
+end
+
+
+function show_name(param, key, template::String = "")
+  who = get(param, key, nothing)
+  if who == nothing
+    return ""
+  elseif isa(who, LatEle)
+    return latele_name(who, template)
+  elseif isa(who, Vector)
+    return "[" * join([latele_name(ele, template) for ele in who], ", ") * "]"
+  else
+    return "???"
+  end
+end
+
 #-------------------------------------------------------------------------------------
 "Lattice"
 
@@ -31,7 +56,8 @@ function show_branch(branch::LatBranch)
   else
     n = maximum([6, maximum([length(e.name) for e in branch.ele])])
     for (ix, ele) in enumerate(branch.ele)
-      println(f"  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}  {lpad(ele.param[:orientation], 2)}  [{join(ele.param[:multipass_id], ',')}]")
+      println(f"  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}" *
+        f"  {lpad(ele.param[:orientation], 2)}  {show_name(ele.param, :multipass_lord)}{show_name(ele.param, :slave)}")
     end
   end
   return nothing
@@ -128,6 +154,7 @@ function add_beamlineele_to_latbranch!(branch::LatBranch, bele::BeamLineEle, inf
   push!(branch.ele, deepcopy(bele.ele))
   ele = branch.ele[end]
   ele.param[:ix_ele] = length(branch.ele)
+  ele.param[:branch] = branch
   if isa(info, LatConstructionInfo)
     ele.param[:orientation] = bele.param[:orientation] * info.orientation_here
     ele.param[:multipass_id] = copy(info.multipass_id)
@@ -198,6 +225,7 @@ end
 "Lattice expansion"
 function make_lat(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
   lat = Lat(name, Vector{LatBranch}(), LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}()), LatParam())
+  lat.lord.param[:lat] = lat
   if root_line == nothing; root_line = root_beamline end
   
   if isa(root_line, BeamLine)
@@ -210,8 +238,34 @@ function make_lat(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = ""
   
   if lat.name == ""; lat.name = lat.branch[1].name; end
 
-  # Multipass calc.
+  # Multipass: Sort slaves
+  mdict = Dict()
+  for branch in lat.branch
+    for ele in branch.ele
+      id = ele.param[:multipass_id]
+      delete!(ele.param, [:multipass_id])
+      if length(id) == 0; continue; end
+      if haskey(mdict, id)
+        push!(mdict[id], ele)
+      else
+        mdict[id] = [ele]
+      end
+    end
+  end
 
+  # Multipass: Create multipass lords
+  for (key, val) in mdict
+    push!(lat.lord.ele, deepcopy(val[1]))
+    lord = lat.lord.ele[end]
+    lord.param[:branch] = lat.lord
+    lord.param[:ix_ele] = length(lat.lord.ele)
+    lord.param[:slave] = Vector{LatEle}()
+    for (ix, ele) in enumerate(val)
+      ele.name = ele.name * "_m" * string(ix)
+      ele.param[:multipass_lord] = lord
+      push!(lord.param[:slave], ele)
+    end
+  end
   return lat
 end
 
