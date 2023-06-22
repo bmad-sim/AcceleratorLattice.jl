@@ -63,7 +63,9 @@ function show_branch(branch::LatBranch)
   return nothing
 end
 
-#Base.show(io::IO, lb::LatBranch) = print(io, "Hi!")
+# Base.show(io::IO, ele::LatEle) = ...)
+Base.show(io::IO, lb::LatBranch) = show_branch(lb)
+Base.show(io::IO, lat::Lat) = show_lat(lat)
 
 #-------------------------------------------------------------------------------------
 "Define a beamline"
@@ -80,6 +82,8 @@ function beamline(name::String, line::Vector{T}; multipass::Bool = false, orient
   end
   return bline
 end
+
+# Base.show(io::IO, bl::BeamLine) = ...)
 
 #-------------------------------------------------------------------------------------
 "beamline orientation reversal"
