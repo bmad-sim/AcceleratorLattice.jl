@@ -1,6 +1,7 @@
 module Bmad
 
 include("struct_def.jl")
-include("function_def.jl")
+include("show.jl")
+include("lat_expansion.jl")
 
 end
