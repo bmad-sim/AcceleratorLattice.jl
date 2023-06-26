@@ -12,6 +12,7 @@ concurrency:
 jobs:
   create-pull-request:
     steps:
-      run: gh pr create -B main -H ${{ github.ref_name }} -t ${{ github.ref_name }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+      - run: gh pr create -B main -H ${{ github.ref_name }} -t ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
