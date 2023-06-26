@@ -1,4 +1,16 @@
 #-------------------------------------------------------------------------------------
+# LatBranch
+
+latbranch(lat::Lat, ix::Int) = lat.branch[ix]
+
+function latbranch(lat::Lat, who) 
+  for branch in lat.branch
+    if branch.name == who; return branch; end
+  end
+  return nothing
+end
+
+#-------------------------------------------------------------------------------------
 "Define a beamline"
 
 BeamLineItem(x::LatEle) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :orientation => +1))
@@ -121,7 +133,7 @@ function new_latbranch!(lat::Lat, beamline::BeamLine)
   push!(lat.branch, LatBranch(beamline.name, Vector{LatEle}(), Dict{Symbol,Any}()))
   branch = lat.branch[end]
   branch.param[:lat] = lat
-  branch.param[:ix_branch] = length(lat.branch)
+  branch.param[:ix_branch] = length(lat.branch) - 1
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
   info = LatConstructionInfo([], beamline.param[:orientation], 0)
 
@@ -138,8 +150,10 @@ end
 #--------------------
 "Lattice expansion"
 function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
-  lat = Lat(name, Vector{LatBranch}(), LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}()), LatParam())
-  lat.lord.param[:lat] = lat
+  lat = Lat(name, OffsetVector{LatBranch}([LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}())], 0:0), Dict{Symbol,Any}())
+  lat.branch[0].param[:lat] = lat
+  lat.branch[0].param[:ix_branch] = 0
+
   if root_line == nothing; root_line = root_beamline end
   
   if root_line isa BeamLine
@@ -157,7 +171,7 @@ function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::String
   for branch in lat.branch
     for ele in branch.ele
       id = ele.param[:multipass_id]
-      delete!(ele.param, [:multipass_id])
+      delete!(ele.param, :multipass_id)
       if length(id) == 0; continue; end
       if haskey(mdict, id)
         push!(mdict[id], ele)
@@ -169,10 +183,11 @@ function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::String
 
   # Multipass: Create multipass lords
   for (key, val) in mdict
-    push!(lat.lord.ele, deepcopy(val[1]))
-    lord = lat.lord.ele[end]
-    lord.param[:branch] = lat.lord
-    lord.param[:ix_ele] = length(lat.lord.ele)
+    push!(lat.branch[0].ele, deepcopy(val[1]))
+    lord = lat.branch[0].ele[end]
+    delete!(lord.param, :multipass_id)
+    lord.param[:branch] = lat.branch[0]
+    lord.param[:ix_ele] = length(lat.branch[0].ele)
     lord.param[:slave] = Vector{LatEle}()
     for (ix, ele) in enumerate(val)
       ele.name = ele.name * "_m" * string(ix)
