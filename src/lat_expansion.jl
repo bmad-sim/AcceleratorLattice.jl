@@ -1,73 +1,4 @@
 #-------------------------------------------------------------------------------------
-"To print memory location of object"
-
-function memloc(@nospecialize(x))
-   y = ccall(:jl_value_ptr, Ptr{Cvoid}, (Any,), x)
-   return repr(UInt64(y))
-end
-
-function latele_name(ele::LatEle, template::String = "")
-  if template == ""; template = "@N (!#)"; end
-  ix_ele = ele.param[:ix_ele]
-  branch = ele.param[:branch]
-  lat = branch.param[:lat]
-  str = replace(template, "@N" => ele.name)
-  str = replace(str, "%#" => (branch === lat.branch[1] ? ix_ele : branch.name * ">>" * string(ix_ele)))
-  str = replace(str, "&#" => (lat.branch == 1 ? string(ix_ele) : branch.name * ">>" * string(ix_ele)))
-  str = replace(str, "!#" => branch.name * ">>" * string(ix_ele))
-end
-
-
-function show_name(param, key, template::String = "")
-  who = get(param, key, nothing)
-  if who == nothing
-    return ""
-  elseif isa(who, LatEle)
-    return latele_name(who, template)
-  elseif isa(who, Vector)
-    return "[" * join([latele_name(ele, template) for ele in who], ", ") * "]"
-  else
-    return "???"
-  end
-end
-
-#-------------------------------------------------------------------------------------
-"Lattice"
-
-LatEle(ele::LatEle, branch::LatBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
-
-function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
-  return type(name, Dict{Symbol,Any}(kwargs))
-end
-
-function show_lat(lat::Lat)
-  println(f"Lat: {lat.name}")
-  for branch in lat.branch
-    show_branch(branch)
-  end
-  show_branch(lat.lord)
-  return nothing
-end
-
-function show_branch(branch::LatBranch)
-  println(f"{get(branch.param, :ix_branch, \"-\")} Branch: {branch.name}")
-  if length(branch.ele) == 0 
-    println("     --- No Elements ---")
-  else
-    n = maximum([6, maximum([length(e.name) for e in branch.ele])])
-    for (ix, ele) in enumerate(branch.ele)
-      println(f"  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}" *
-        f"  {lpad(ele.param[:orientation], 2)}  {show_name(ele.param, :multipass_lord)}{show_name(ele.param, :slave)}")
-    end
-  end
-  return nothing
-end
-
-# Base.show(io::IO, ele::LatEle) = ...)
-Base.show(io::IO, lb::LatBranch) = show_branch(lb)
-Base.show(io::IO, lat::Lat) = show_lat(lat)
-
-#-------------------------------------------------------------------------------------
 "Define a beamline"
 
 BeamLineItem(x::LatEle) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :orientation => +1))
@@ -82,8 +13,6 @@ function beamline(name::String, line::Vector{T}; multipass::Bool = false, orient
   end
   return bline
 end
-
-# Base.show(io::IO, bl::BeamLine) = ...)
 
 #-------------------------------------------------------------------------------------
 "beamline orientation reversal"
@@ -125,33 +54,14 @@ Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier
         BeamLine(ele.name * "_mult" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1))
 
 #-------------------------------------------------------------------------------------
-"beamline show"
-
-function show_beamline(beamline::BeamLine)
-  println(f"Beamline:  {beamline.name}, multipass: {beamline.param[:multipass]}, orientation: {beamline.param[:orientation]}")
-  n = 6
-  for item in beamline.line
-    if isa(item, BeamLineEle)
-      n = maximum([n, length(item.ele.name)])
-    else  # BeamLine
-      n = maximum([n, length(item.name)])
-    end
-  end
-
-  for (ix, item) in enumerate(beamline.line)
-    if isa(item, BeamLineEle)
-      println(f"{ix:5i}  {rpad(item.ele.name, n)}  {rpad(typeof(item.ele), 12)}  {lpad(item.param[:orientation], 2)}")
-    else  # BeamLine
-      println(f"{ix:5i}  {rpad(item.name, n)}  {rpad(typeof(item), 12)}  {lpad(item.param[:orientation], 2)}")
-    end
-  end
-  return nothing
-end
-
-#Base.show(io::IO, lb::BeamLine) = print(io, "Hi!")
-
-#-------------------------------------------------------------------------------------
 "lat construction."
+
+"LatEle constructor"
+LatEle(ele::LatEle, branch::LatBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
+
+function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
+  return type(name, Dict{Symbol,Any}(kwargs))
+end
 
 "Adds a BeamLineEle to a LatBranch under construction."
 function add_beamlineele_to_latbranch!(branch::LatBranch, bele::BeamLineEle, info = nothing)
@@ -159,7 +69,7 @@ function add_beamlineele_to_latbranch!(branch::LatBranch, bele::BeamLineEle, inf
   ele = branch.ele[end]
   ele.param[:ix_ele] = length(branch.ele)
   ele.param[:branch] = branch
-  if isa(info, LatConstructionInfo)
+  if info isa LatConstructionInfo
     ele.param[:orientation] = bele.param[:orientation] * info.orientation_here
     ele.param[:multipass_id] = copy(info.multipass_id)
     if length(ele.param[:multipass_id]) > 0; push!(ele.param[:multipass_id], ele.name * ":" * string(bele.param[:ix_beamline])); end
@@ -173,9 +83,9 @@ end
 #--------------------
 "Adds a single item of a BeamLine line to the LatBranch under construction."
 function add_beamline_item_to_latbranch!(branch::LatBranch, item::BeamLineItem, info::LatConstructionInfo)
-  if isa(item, BeamLineEle)
+  if item isa BeamLineEle
     add_beamlineele_to_latbranch!(branch, item, info)
-  elseif isa(item, BeamLine) 
+  elseif item isa BeamLine 
     add_beamline_to_latbranch!(branch, item, info)
   else
     throw(ArgumentError(f"Beamline item not recognized: {item}"))
@@ -227,12 +137,12 @@ end
 
 #--------------------
 "Lattice expansion"
-function make_lat(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
+function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
   lat = Lat(name, Vector{LatBranch}(), LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}()), LatParam())
   lat.lord.param[:lat] = lat
   if root_line == nothing; root_line = root_beamline end
   
-  if isa(root_line, BeamLine)
+  if root_line isa BeamLine
     new_latbranch!(lat, root_line)
   else
     for subline in root_line
