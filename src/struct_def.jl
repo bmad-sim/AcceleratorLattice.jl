@@ -61,15 +61,9 @@ mutable struct FloorPosition
 end
 
 mutable struct MultipoleArray
-  k::OffsetVector{Float64, Vector{Float64}}
-  ks::OffsetVector{Float64, Vector{Float64}}
-  tilt::OffsetVector{Float64, Vector{Float64}}
-end
-
-mutable struct LordSlave
-  lord::Union{LatEle,Nothing}
-  slave::Union{Vector{LatEle},Nothing}
-  control_lord::Union{Vector{LatEle},Nothing}
+  k::OffsetVector{Float64}
+  ks::OffsetVector{Float64}
+  tilt::OffsetVector{Float64}
 end
 
 #-------------------------------------------------------------------------------------
@@ -79,9 +73,6 @@ abstract type AbstractLat end
 
 @enum Geometry open = 1 closed = 2
 
-mutable struct LatParam
-end
-
 mutable struct LatBranch <: BeamLineItem
   name::String
   ele::Vector{LatEle}
@@ -90,9 +81,8 @@ end
 
 mutable struct Lat <: AbstractLat
   name::String
-  branch::Vector{LatBranch}
-  lord::LatBranch 
-  param::LatParam
+  branch::OffsetVector{LatBranch}
+  param::Dict{Symbol,Any}
 end
 
 #-------------------------------------------------------------------------------------

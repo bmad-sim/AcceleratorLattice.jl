@@ -65,7 +65,6 @@ function show_lat(lat::Lat)
   for branch in lat.branch
     show_branch(branch)
   end
-  show_branch(lat.lord)
   return nothing
 end
 
@@ -74,7 +73,7 @@ function show_branch(branch::LatBranch)
   if length(branch.ele) == 0 
     println("     --- No Elements ---")
   else
-    n = maximum([6, maximum([length(e.name) for e in branch.ele])])
+    n = maximum([12, maximum([length(e.name) for e in branch.ele])])
     for (ix, ele) in enumerate(branch.ele)
       println(f"  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}" *
         f"  {lpad(ele.param[:orientation], 2)}  {show_name(ele.param, :multipass_lord)}{show_name(ele.param, :slave)}")
