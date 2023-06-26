@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   create-pull-request:
+    runs-on: Ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: gh pr create -B main -H ${{ github.ref_name }} -t ${{ github.ref_name }}
