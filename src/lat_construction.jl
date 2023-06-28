@@ -1,4 +1,10 @@
 #-------------------------------------------------------------------------------------
+# LatEle
+
+beginning_Latele = Marker("beginning", Dict{Symbol,Any}(:s => 0, :len => 0))
+end_Latele       = Marker("end", Dict{Symbol,Any}())
+
+#-------------------------------------------------------------------------------------
 # LatBranch
 
 latbranch(lat::Lat, ix::Int) = lat.branch[ix]
@@ -195,6 +201,8 @@ function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::String
       push!(lord.param[:slave], ele)
     end
   end
+
+  lat_bookkeeper!(lat)
   return lat
 end
 

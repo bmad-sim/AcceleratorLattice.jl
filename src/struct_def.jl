@@ -8,7 +8,6 @@ struct InfiniteLoop <: Exception
   description::String
 end
 
-
 # A "lattice branch" is a branch in a lattice.
 # A "beamline" is a line defined in a lattice file.
 
@@ -47,9 +46,6 @@ mutable struct Marker <: LatEle
   name::String
   param::Dict{Symbol,Any}
 end
-
-beginning_Latele = Marker("beginning", Dict{Symbol,Any}())
-end_Latele       = Marker("end", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
 # LatEle parameters
