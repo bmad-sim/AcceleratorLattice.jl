@@ -77,7 +77,7 @@ Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier
 "LatEle constructor"
 LatEle(ele::LatEle, branch::LatBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
 
-function latele(type::Type{T}, name::String; kwargs...) where T <: LatEle
+function ele(type::Type{T}, name::String; kwargs...) where T <: LatEle
   return type(name, Dict{Symbol,Any}(kwargs))
 end
 
@@ -156,7 +156,7 @@ end
 #--------------------
 "Lattice expansion"
 function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
-  lat = Lat(name, OffsetVector{LatBranch}([LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}())], 0:0), Dict{Symbol,Any}())
+  lat = Lat(name, OffsetVector{LatBranch}([LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}())], 0:0), Dict{Symbol,Any}(), BmadGlobal())
   lat.branch[0].param[:lat] = lat
   lat.branch[0].param[:ix_branch] = 0
 

@@ -5,7 +5,11 @@ using PyFormattedStrings
 # Misc
 
 struct InfiniteLoop <: Exception
-  description::String
+  msg::String
+end
+
+struct RangeError <: Exception
+  msg::String
 end
 
 # A "lattice branch" is a branch in a lattice.
@@ -65,9 +69,14 @@ end
 #-------------------------------------------------------------------------------------
 # Lattice
 
-abstract type AbstractLat end
+mutable struct BmadGlobal
+  significant_length::Float64
+  other::Dict{Any,Any}                      # For user defined stuff.
+end
 
-@enum Geometry open = 1 closed = 2
+BmadGlobal() = BmadGlobal(1.0e-10, Dict())
+
+abstract type AbstractLat end
 
 mutable struct LatBranch <: BeamLineItem
   name::String
@@ -79,6 +88,7 @@ mutable struct Lat <: AbstractLat
   name::String
   branch::OffsetVector{LatBranch}
   param::Dict{Symbol,Any}
+  bmadglobal::BmadGlobal
 end
 
 #-------------------------------------------------------------------------------------
