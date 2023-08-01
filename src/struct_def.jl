@@ -2,52 +2,60 @@ using OffsetArrays
 using PyFormattedStrings
 
 #-------------------------------------------------------------------------------------
-# Misc
+# Exceptions
 
-struct InfiniteLoop <: Exception
-  msg::String
-end
-
-struct RangeError <: Exception
-  msg::String
-end
+struct InfiniteLoop <: Exception;   msg::AbstractString; end
+struct RangeError <: Exception;     msg::AbstractString; end
+struct BmadParseError <: Exception; msg::AbstractString; end
 
 # A "lattice branch" is a branch in a lattice.
 # A "beamline" is a line defined in a lattice file.
 
 #-------------------------------------------------------------------------------------
-# LatEle
 
-"Define abstract type that represents a LatEle or sub BeamLine contained in a beamline."
+"Abstract type that represents a LatEle or sub BeamLine contained in a beamline."
 abstract type BeamLineItem end
 
-"Define abstract Lat element from which all lattice elements inherit"
+"Abstract lattice element from which all lattice elements inherit"
 abstract type LatEle <: BeamLineItem end
+
+"Abstract lattice from which Lat inherits"
+abstract type AbstractLat end
+
+
+#-------------------------------------------------------------------------------------
+# LatEle
 
 "General thick multipole that is inherited by quadrupoles, sextupoles, etc."
 abstract type ThickMultipole <: LatEle end
 
-"Bend lat element. Equivalent to SBend in Bmad."
+"Bend lat element."
 mutable struct Bend <: LatEle
-  name::String
+  name::AbstractString
   param::Dict{Symbol,Any}
 end
 
 "Drift lat element"
 mutable struct Drift <: LatEle
-  name::String
+  name::AbstractString
   param::Dict{Symbol,Any}
 end
 
 "Quadrupole lat element"
 mutable struct Quadrupole <: ThickMultipole
-  name::String
+  name::AbstractString
   param::Dict{Symbol,Any}
 end
 
 "Marker lat element"
 mutable struct Marker <: LatEle
-  name::String
+  name::AbstractString
+  param::Dict{Symbol,Any}
+end
+
+"NullLatEle lat element"
+mutable struct NullLatEle <: LatEle
+  name::AbstractString
   param::Dict{Symbol,Any}
 end
 
@@ -67,7 +75,16 @@ mutable struct MultipoleArray
 end
 
 #-------------------------------------------------------------------------------------
-# Lattice
+# LatBranch
+
+mutable struct LatBranch <: BeamLineItem
+  name::AbstractString
+  ele::Vector{LatEle}
+  param::Dict{Symbol,Any}
+end
+
+#-------------------------------------------------------------------------------------
+# Lat
 
 mutable struct BmadGlobal
   significant_length::Float64
@@ -76,16 +93,8 @@ end
 
 BmadGlobal() = BmadGlobal(1.0e-10, Dict())
 
-abstract type AbstractLat end
-
-mutable struct LatBranch <: BeamLineItem
-  name::String
-  ele::Vector{LatEle}
-  param::Dict{Symbol,Any}
-end
-
 mutable struct Lat <: AbstractLat
-  name::String
+  name::AbstractString
   branch::OffsetVector{LatBranch}
   param::Dict{Symbol,Any}
   bmadglobal::BmadGlobal
@@ -106,7 +115,7 @@ mutable struct BeamLineEle <: BeamLineItem
 end
 
 mutable struct BeamLine <: BeamLineItem
-  name::String
+  name::AbstractString
   line::Vector{BeamLineItem}
   param::Dict{Symbol,Any}
 end

@@ -7,9 +7,16 @@ function memloc(@nospecialize(x))
 end
 
 #-------------------------------------------------------------------------------------
-"LatEle"
+# Show LatEle Vector
 
-function latele_name(ele::LatEle, template::String = "")
+function Base.show(io::IO, vec::Vector{LatEle}) 
+  print(f"[{join([v.name for v in vec], ',')}]")
+end
+
+#-------------------------------------------------------------------------------------
+"Show LatEle"
+
+function latele_name(ele::LatEle, template::AbstractString = "")
   if !haskey(ele.param, :ix_ele); return ele.name; end
   if template == ""; template = "@N (!#)"; end
 
@@ -24,7 +31,7 @@ function latele_name(ele::LatEle, template::String = "")
 end
 
 
-function show_name(param, key, template::String = "")
+function show_name(param, key, template::AbstractString = "")
   who = get(param, key, nothing)
   if who == nothing
     return ""
@@ -58,7 +65,7 @@ end
 Base.show(io::IO, ele::LatEle) = show_latele(ele)
 
 #-------------------------------------------------------------------------------------
-"Lattice"
+"Show Lattice"
 
 function show_lat(lat::Lat)
   println(f"Lat: {lat.name}")
@@ -86,7 +93,7 @@ Base.show(io::IO, lb::LatBranch) = show_branch(lb)
 Base.show(io::IO, lat::Lat) = show_lat(lat)
 
 #-------------------------------------------------------------------------------------
-"beamline show"
+"Show beamline"
 
 function show_beamline(beamline::BeamLine)
   println(f"Beamline:  {beamline.name}, multipass: {beamline.param[:multipass]}, orientation: {beamline.param[:orientation]}")

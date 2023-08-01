@@ -3,6 +3,7 @@
 
 beginning_Latele = Marker("beginning", Dict{Symbol,Any}(:s => 0, :len => 0))
 end_Latele       = Marker("end", Dict{Symbol,Any}())
+null_latele      = NullLatEle("null", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
 # LatBranch
@@ -24,7 +25,7 @@ BeamLineItem(x::BeamLine) = BeamLine(x.name, x.line, deepcopy(x.param))
 BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.param))
 
 
-function beamline(name::String, line::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
+function beamline(name::AbstractString, line::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(:multipass => multipass, :orientation => orientation))
   for (ix, item) in enumerate(bline.line)
     item.param[:ix_beamline] = ix
@@ -77,7 +78,7 @@ Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier
 "LatEle constructor"
 LatEle(ele::LatEle, branch::LatBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
 
-function ele(type::Type{T}, name::String; kwargs...) where T <: LatEle
+function latele(type::Type{T}, name::AbstractString; kwargs...) where T <: LatEle
   return type(name, Dict{Symbol,Any}(kwargs))
 end
 
@@ -155,7 +156,7 @@ end
 
 #--------------------
 "Lattice expansion"
-function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::String = "")
+function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::AbstractString = "")
   lat = Lat(name, OffsetVector{LatBranch}([LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}())], 0:0), Dict{Symbol,Any}(), BmadGlobal())
   lat.branch[0].param[:lat] = lat
   lat.branch[0].param[:ix_branch] = 0
@@ -196,7 +197,7 @@ function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::String
     lord.param[:ix_ele] = length(lat.branch[0].ele)
     lord.param[:slave] = Vector{LatEle}()
     for (ix, ele) in enumerate(val)
-      ele.name = ele.name * "_m" * string(ix)
+      ele.name = ele.name * "!mp" * string(ix)
       ele.param[:multipass_lord] = lord
       push!(lord.param[:slave], ele)
     end
