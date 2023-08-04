@@ -1,12 +1,11 @@
 #-------------------------------------------------------------------------------------
-# LatEle
+# Ele
 
-beginning_Latele = Marker("beginning", Dict{Symbol,Any}(:s => 0, :len => 0))
-end_Latele       = Marker("end", Dict{Symbol,Any}())
-null_latele      = NullLatEle("null", Dict{Symbol,Any}())
+beginning_ele = Marker("beginning", Dict{Symbol,Any}(:s => 0, :len => 0))
+end_ele       = Marker("end", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
-# LatBranch
+# Branch
 
 latbranch(lat::Lat, ix::Int) = lat.branch[ix]
 
@@ -20,7 +19,7 @@ end
 #-------------------------------------------------------------------------------------
 "Define a beamline"
 
-BeamLineItem(x::LatEle) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :orientation => +1))
+BeamLineItem(x::Ele) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :orientation => +1))
 BeamLineItem(x::BeamLine) = BeamLine(x.name, x.line, deepcopy(x.param))
 BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.param))
 
@@ -36,14 +35,14 @@ end
 #-------------------------------------------------------------------------------------
 "beamline orientation reversal"
 
-function Base.reverse(latele::LatEle)
-  item = BeamLineItem(latele)
+function Base.reverse(ele::Ele)
+  item = BeamLineItem(ele)
   item.param[:orientation] = +1
   return item
 end
 
 function Base.reverse(x::BeamLineEle)
-  y = BeamLineEle(x.LatEle, deepcopy(x.param))
+  y = BeamLineEle(x.Ele, deepcopy(x.param))
   y.param[:orientation] = -y.param[:orientation]
   return y
 end
@@ -69,21 +68,14 @@ Base.:-(beamline::BeamLine) = reflect(beamline)
 Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.name * "_mult" * string(n), 
                           [(n > 0 ? beamline : reflect(beamline)) for i in 1:abs(n)], beamline.param)
                           
-Base.:*(n::Int, ele::LatEle) = (if n < 0; throw(BoundsError("Negative multiplier does not make sense.")); end,
+Base.:*(n::Int, ele::Ele) = (if n < 0; throw(BoundsError("Negative multiplier does not make sense.")); end,
         BeamLine(ele.name * "_mult" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1))
 
 #-------------------------------------------------------------------------------------
 "lat construction."
 
-"LatEle constructor"
-LatEle(ele::LatEle, branch::LatBranch, ix_ele::Int) = LatEle(ele.name, ele, branch, ix_ele, nothing)
-
-function latele(type::Type{T}, name::AbstractString; kwargs...) where T <: LatEle
-  return type(name, Dict{Symbol,Any}(kwargs))
-end
-
-"Adds a BeamLineEle to a LatBranch under construction."
-function add_beamlineele_to_latbranch!(branch::LatBranch, bele::BeamLineEle, info = nothing)
+"Adds a BeamLineEle to a Branch under construction."
+function add_beamlineele_to_latbranch!(branch::Branch, bele::BeamLineEle, info = nothing)
   push!(branch.ele, deepcopy(bele.ele))
   ele = branch.ele[end]
   ele.param[:ix_ele] = length(branch.ele)
@@ -100,8 +92,8 @@ function add_beamlineele_to_latbranch!(branch::LatBranch, bele::BeamLineEle, inf
 end
 
 #--------------------
-"Adds a single item of a BeamLine line to the LatBranch under construction."
-function add_beamline_item_to_latbranch!(branch::LatBranch, item::BeamLineItem, info::LatConstructionInfo)
+"Adds a single item of a BeamLine line to the Branch under construction."
+function add_beamline_item_to_latbranch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
   if item isa BeamLineEle
     add_beamlineele_to_latbranch!(branch, item, info)
   elseif item isa BeamLine 
@@ -113,8 +105,8 @@ function add_beamline_item_to_latbranch!(branch::LatBranch, item::BeamLineItem, 
 end
 
 #--------------------
-"Adds a beamline to a LatBranch under construction."
-function add_beamline_to_latbranch!(branch::LatBranch, beamline::BeamLine, info::LatConstructionInfo)
+"Adds a beamline to a Branch under construction."
+function add_beamline_to_latbranch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
   info.n_loop += 1
   if info.n_loop > 100; throw(InfiniteLoop("Infinite loop of beam lines calling beam lines detected.")); end
 
@@ -135,18 +127,18 @@ function add_beamline_to_latbranch!(branch::LatBranch, beamline::BeamLine, info:
 end
 
 #--------------------
-"Adds a BeamLine to the lattice creating a new LatBranch."
+"Adds a BeamLine to the lattice creating a new Branch."
 function new_latbranch!(lat::Lat, beamline::BeamLine)
-  push!(lat.branch, LatBranch(beamline.name, Vector{LatEle}(), Dict{Symbol,Any}()))
+  push!(lat.branch, Branch(beamline.name, Vector{Ele}(), Dict{Symbol,Any}()))
   branch = lat.branch[end]
   branch.param[:lat] = lat
   branch.param[:ix_branch] = length(lat.branch) - 1
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
   info = LatConstructionInfo([], beamline.param[:orientation], 0)
 
-  add_beamlineele_to_latbranch!(branch, BeamLineItem(beginning_Latele))
+  add_beamlineele_to_latbranch!(branch, BeamLineItem(beginning_ele))
   add_beamline_to_latbranch!(branch, beamline, info)
-  add_beamlineele_to_latbranch!(branch, BeamLineItem(end_Latele))
+  add_beamlineele_to_latbranch!(branch, BeamLineItem(end_ele))
 
   # Beginning and end elements inherit orientation from neighbor elements.
   branch.ele[1].param[:orientation] = branch.ele[2].param[:orientation]
@@ -156,8 +148,8 @@ end
 
 #--------------------
 "Lattice expansion"
-function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::AbstractString = "")
-  lat = Lat(name, OffsetVector{LatBranch}([LatBranch("lord", Vector{LatEle}(), Dict{Symbol,Any}())], 0:0), Dict{Symbol,Any}(), BmadGlobal())
+function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
+  lat = Lat(name, OffsetVector{Branch}([Branch("lord", Vector{Ele}(), Dict{Symbol,Any}())], 0:0), Dict{Symbol,Any}(), BmadGlobal())
   lat.branch[0].param[:lat] = lat
   lat.branch[0].param[:ix_branch] = 0
 
@@ -195,7 +187,7 @@ function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::Abstra
     delete!(lord.param, :multipass_id)
     lord.param[:branch] = lat.branch[0]
     lord.param[:ix_ele] = length(lat.branch[0].ele)
-    lord.param[:slave] = Vector{LatEle}()
+    lord.param[:slave] = Vector{Ele}()
     for (ix, ele) in enumerate(val)
       ele.name = ele.name * "!mp" * string(ix)
       ele.param[:multipass_lord] = lord
@@ -207,3 +199,4 @@ function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}, name::Abstra
   return lat
 end
 
+lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}) = lat_expansion("Lattice", root_line)

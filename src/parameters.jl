@@ -9,7 +9,7 @@ A Switch is a variable that has only a finite number of values.
 Generally, a Switch will either be an enum or something that has a finite number of integer states.
 
 A Pointer is something that points to other variables.
-For example, a LatEle may have a vector pointing to its lords. In this case the vector
+For example, a Ele may have a vector pointing to its lords. In this case the vector
 itself is considered to be a Pointer as well as its components.
 
 A Struct is a struct. For example, the :floor parameter holds a FloorPosition struct
@@ -33,9 +33,9 @@ ParamInfo(kind, description, units) = ParamInfo(kind, description, units, nothin
 @enum geometry open! closed!
 
 """
-Dictionary of parameters in the LatEle.param dict.
+Dictionary of parameters in the Ele.param dict.
 """
-global latele_param = Dict(
+global ele_param = Dict(
   :type         => ParamInfo(String, "Type of element. Set by User and ignored by Bmad."),
   :alias        => ParamInfo(String, "Alias name. Set by User and ignored by Bmad."),
   :description  => ParamInfo(String, "Descriptive info. Set by User and ignored by Bmad."),
@@ -51,7 +51,7 @@ global latele_param = Dict(
 )
 
 """
-Dictionary of parameters in the LatBranch.param dict.
+Dictionary of parameters in the Branch.param dict.
 """
 global latbranch_param = Dict(
   :ix_branch => ParamInfo(Int, "Index of branch in containing lat .branch() array"),
@@ -72,7 +72,7 @@ global lat_param = Dict(
 """
 Table of what parameters are associated with what elements
 """
-global latele_param_by_type = Dict(  
+global ele_param_by_type = Dict(  
   Dict(
     Bend           => Dict(),
     Drift          => Dict(),

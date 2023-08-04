@@ -17,7 +17,7 @@ Lattice element selection:
 *** Element Name ***
 
 An element "name" (which can match to multiple elements) can be of the form:
-  {branch_id>>}ele_id{##N}{+/-offset}
+  {branch_id>>}ele_id{#N}{+/-offset}
 or
   {branch_id>>}attribute->match_str{+/-offset}
 
@@ -30,7 +30,7 @@ Where
                 Standard string attributes are "type", "alias", "descrip".
   match_str -- Match string. Needs to be in quotes if there is a blank space or
                 match string has a "+" or "-" in it.
-  ##N       -- N = integer. N^th instance of element in the branch.
+  #N        -- N = integer. N^th instance of element matching ele_id in branch.
   +/-offset -- Element offset. For example, "Q1+1" is the element after "Q1" and 
                 "Q1-2" is the second element before "Q1".
 

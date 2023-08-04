@@ -1,8 +1,8 @@
 module Bmad
 
-export memloc, beamline, latele, lat_expansion, latele_name, show_name, show_latele, show_lat, show_branch, show_beamline
-export InfiniteLoop, Bend, Drift, Quadrupole, Marker, FloorPosition, MultipoleArray, LatBranch, Lat, BeamLineEle, BeamLineItem, BeamLine
-export branch_split!, branch_insert_latele!, branch_bookkeeper!, lat_bookkeeper!
+export memloc, beamline, ele, lat_expansion, ele_name, show_name, show_ele, show_lat, show_branch, show_beamline
+export InfiniteLoop, Bend, Drift, Quadrupole, Marker, FloorPosition, MultipoleArray, Branch, Lat, BeamLineEle, BeamLineItem, BeamLine
+export branch_split!, branch_insert_ele!, branch_bookkeeper!, lat_bookkeeper!
 
 include("enums.jl")
 include("string.jl")

@@ -7,16 +7,16 @@ function memloc(@nospecialize(x))
 end
 
 #-------------------------------------------------------------------------------------
-# Show LatEle Vector
+# Show Ele Vector
 
-function Base.show(io::IO, vec::Vector{LatEle}) 
+function Base.show(io::IO, vec::Vector{Ele}) 
   print(f"[{join([v.name for v in vec], ',')}]")
 end
 
 #-------------------------------------------------------------------------------------
-"Show LatEle"
+"Show Ele"
 
-function latele_name(ele::LatEle, template::AbstractString = "")
+function ele_name(ele::Ele, template::AbstractString = "")
   if !haskey(ele.param, :ix_ele); return ele.name; end
   if template == ""; template = "@N (!#)"; end
 
@@ -35,26 +35,26 @@ function show_name(param, key, template::AbstractString = "")
   who = get(param, key, nothing)
   if who == nothing
     return ""
-  elseif who isa LatEle
-    return latele_name(who, template)
+  elseif who isa Ele
+    return ele_name(who, template)
   elseif who isa Vector
-    return "[" * join([latele_name(ele, template) for ele in who], ", ") * "]"
+    return "[" * join([ele_name(ele, template) for ele in who], ", ") * "]"
   else
     return "???"
   end
 end
 
 
-function show_latele(ele::LatEle)
-  println(f"{latele_name(ele)}:   {typeof(ele)}")
+function show_ele(ele::Ele)
+  println(f"{ele_name(ele)}:   {typeof(ele)}")
   for (key, val) in ele.param
     kstr = rpad(repr(key), 16)
-    if val isa LatEle
-      println(f"  {kstr} {latele_name(val)}")
-    elseif val isa LatBranch
+    if val isa Ele
+      println(f"  {kstr} {ele_name(val)}")
+    elseif val isa Branch
       println(f"  {kstr} {val.name}")
-    elseif val isa Vector{LatEle}
-      println(f"  {kstr} [{join([latele_name(ele) for ele in val], \", \")}]")
+    elseif val isa Vector{Ele}
+      println(f"  {kstr} [{join([ele_name(ele) for ele in val], \", \")}]")
     else
       println(f"  {kstr} {val}")
     end
@@ -62,7 +62,7 @@ function show_latele(ele::LatEle)
   return nothing
 end
 
-Base.show(io::IO, ele::LatEle) = show_latele(ele)
+Base.show(io::IO, ele::Ele) = show_ele(ele)
 
 #-------------------------------------------------------------------------------------
 "Show Lattice"
@@ -75,21 +75,21 @@ function show_lat(lat::Lat)
   return nothing
 end
 
-function show_branch(branch::LatBranch)
+function show_branch(branch::Branch)
   println(f"{get(branch.param, :ix_branch, \"-\")} Branch: {branch.name}")
   if length(branch.ele) == 0 
     println("     --- No Elements ---")
   else
-    n = maximum([12, maximum([length(e.name) for e in branch.ele])])
+    n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
     for (ix, ele) in enumerate(branch.ele)
-      println(f"  {ix:5i}  {rpad(ele.name, n)} {rpad(typeof(ele), 16)}" *
+      println(f"  {ix:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" *
         f"  {lpad(ele.param[:orientation], 2)}  {show_name(ele.param, :multipass_lord)}{show_name(ele.param, :slave)}")
     end
   end
   return nothing
 end
 
-Base.show(io::IO, lb::LatBranch) = show_branch(lb)
+Base.show(io::IO, lb::Branch) = show_branch(lb)
 Base.show(io::IO, lat::Lat) = show_lat(lat)
 
 #-------------------------------------------------------------------------------------
