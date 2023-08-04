@@ -1,12 +1,37 @@
 #-----------------------------------------------------------------------------------------
-# LatEle[] get and set
+# define_external_ele_vars
 
-function Base.getindex(ele::LatEle, key)
+"""
+Creates Ele variables external to a lattice with the same name as the eles in the lattice.
+
+In the case where multiple lattice elements have the same name, the corresponding variable 
+will be a vector.
+"""
+
+function define_external_ele_vars(lat::Lat)
+
+end
+
+#-----------------------------------------------------------------------------------------
+# create_unique_ele_names!
+
+"""
+Modified a lattice so that all elements have a unique name.
+
+"""
+function create_unique_ele_names!(lat::Lat, pattern::AbstractString)
+
+end
+
+#-----------------------------------------------------------------------------------------
+# Ele[] get and set
+
+function Base.getindex(ele::Ele, key)
   if key == :name; return ele.name; end
   return ele.param[key]
 end
 
-function Base.setindex!(ele::LatEle, val, key)
+function Base.setindex!(ele::Ele, val, key)
   if key == :name
     ele.name = val
   else
@@ -21,20 +46,20 @@ end
 bmad_regex(str::AbstractString) = occursin("%", str) || occursin("*", str)
 
 #-----------------------------------------------------------------------------------------
-# offset_latele
+# offset_ele
 
 """
 Returns the lattice element that is a distance `offset` from the input `ele`.
 Will wrap around the ends of the branch if necessary and wrap = true.
 """
-function latele_offset(ele::LatEle, offset::Int, wrap::Bool = true)
-  return latele(ele.param[branch], offset + ele.param[:ix_ele], wrap)
+function ele_offset(ele::Ele, offset::Int, wrap::Bool = true)
+  return ele(ele.param[branch], offset + ele.param[:ix_ele], wrap)
 end
 
 
 """
 """
-function latele(branch::LatBranch, ix_ele::Int; wrap::Bool = true)
+function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
   n = size(branch.ele,1)
 
   if wrap
@@ -55,7 +80,7 @@ A match can match branch.name or the branch index.
 A blank name matches all branches.
 Bmad standard wildcard characters "*" and "%" can be used.
 """
-function matches_branch(name::AbstractString, branch::LatBranch)
+function matches_branch(name::AbstractString, branch::Branch)
   if name == "": return true; end
 
   try
@@ -67,7 +92,7 @@ function matches_branch(name::AbstractString, branch::LatBranch)
 end
 
 #-----------------------------------------------------------------------------------------
-# lateles_finder_base
+# eles_finder_base
 
 """
 Returns a vector of all lattice elements that match element `name` which is in the form:
@@ -75,11 +100,11 @@ Returns a vector of all lattice elements that match element `name` which is in t
 or
   {branch_id>>}attribute->match_str{+/-offset}
 
-To match to element lists, use the `lateles` function.
+To match to element lists, use the `eles` function.
 """
-function lateles_finder_base(Lat::Lat, name::AbstractString)
+function eles_finder_base(Lat::Lat, name::AbstractString, julia_regex::Bool=false)
 
-  eles = LatEle[]
+  eles = Ele[]
   name = replace(name, "'" => "\"")
   branch_id = ""; offset = 0
   nth_match = 1
@@ -100,7 +125,7 @@ function lateles_finder_base(Lat::Lat, name::AbstractString)
       if !matches_branch(branch, branch_id); continue; end
       for ele in branch.ele
         if !haskey(ele.param, attrib); continue; end
-        if str_match(pattern, ele.param[attrib]) push!(eles, latele_offset(ele, offset)); end
+        if str_match(pattern, ele.param[attrib]) push!(eles, ele_offset(ele, offset)); end
       end
     end
 
@@ -126,7 +151,7 @@ function lateles_finder_base(Lat::Lat, name::AbstractString)
     for branch in lat.branch
       if !matches_branch(branch_id, branch); continue; end
       if ix_ele != -1
-        push!(eles, latele(branch, ix_ele, wrap = false))
+        push!(eles, ele(branch, ix_ele, wrap = false))
         continue
       end
 
@@ -144,40 +169,43 @@ function lateles_finder_base(Lat::Lat, name::AbstractString)
 end
 
 #-----------------------------------------------------------------------------------------
-# latele_finder
+# ele_finder
 
-function latele_finder(Lat::Lat, name::AbstractString)
-    eles = lateles_finder_base(lat, name)
-    if size(eles,1) == 0; return null_latele; end
+function ele_finder(Lat::Lat, name::AbstractString; julia_regex::Bool = false)
+    eles = eles_finder_base(lat, name, julia_regx)
+    if size(eles,1) == 0; return NULL_ELE; end
     return eles[1]
 end
 
 #-----------------------------------------------------------------------------------------
-# lateles_finder
+# eles_finder
 
 """
 Returns a vector of all lattice elements that match `who`.
-This is an extension of `latele(lat, name)` to include 
+This is an extension of `ele(lat, name)` to include 
   key selection EG: "Quadrupole::<list>"
   ranges        EG: "<ele1>:<ele2>"
   negation      EG: "<list1> ~<list2>"
   intersection  EG: "<list1> & <list2>"
 Note: negation and intersection evaluated left to right
 
-latele vector will be ordered by s-position for each branch.
-Use the lateles_order_by_index function to reorder by index is desired.
+ele vector will be ordered by s-position for each branch.
+Use the eles_order_by_index function to reorder by index is desired.
 """
-function lateles_finder(lat::Lat, who::AbstractString)
+function eles_finder(lat::Lat, who::AbstractString, julia_regex::Bool=false)
+  # Julia regex is simple
+  if julia_regex; return eles_finder_base(lat, who, julia_regex); end
+
   # Intersection
   list = str_split("~&", who, limit = 3)
   if size(list,1) == 2 || list[1] == "~" || list[1] == "&" || list[3] == "~" || list[3] == "&"
     throw(BmadParseError("Cannot parse: " * who))
   end
 
-  eles1 = lateles_finder_base(lat, list[1])
+  eles1 = eles_finder_base(lat, list[1])
   if size(list,1) == 1; return eles1; end
 
-  eles2 = lateles_finder(lat, list[3])
+  eles2 = eles_finder(lat, list[3])
   eles = []
 
   if list[2] == "&"
@@ -203,26 +231,26 @@ function lateles_finder(lat::Lat, who::AbstractString)
 end
 
 #-----------------------------------------------------------------------------------------
-# lateles_order_by_index
+# eles_order_by_index
 
 """
-Rearranges a latele vector in order by element index.
+Rearranges a ele vector in order by element index.
 """
-function lateles_order_by_index(eles)
+function eles_order_by_index(eles)
   return eles
 end
 
 #-----------------------------------------------------------------------------------------
-# latele_at_s
+# ele_at_s
 
 """
-latele_at_s(branch::LatBranch, s::Real; choose_max::Bool = False, ele_near = nothing)
+ele_at_s(branch::Branch, s::Real; choose_max::Bool = False, ele_near = nothing)
 
 Returns lattice element that overlaps a given longitudinal s-position. Also returned
 is the location (upstream, downstream, or inside) of the s-position with respect to the returned 
 
 """
-function latele_at_s(branch::LatBranch, s::Real; choose_max::Bool = False, ele_near = nothing)
+function ele_at_s(branch::Branch, s::Real; choose_max::Bool = False, ele_near = nothing)
   check_if_s_in_branch_range(branch, s)
 
   # If ele_near is not set
@@ -246,7 +274,7 @@ function latele_at_s(branch::LatBranch, s::Real; choose_max::Bool = False, ele_n
 
   if ele.param[:s] < s || choose_max && s == ele.param[:s]
     while true
-      ele2 = next_latele(ele)
+      ele2 = next_ele(ele)
       if ele2.param[:s] > s && choose_max && ele.param[:s] == s; return ele; end
       if ele2.param[:s] > s || (!choose_max && ele2.param[:s] == s); return ele2; end
       ele = ele2
@@ -254,7 +282,7 @@ function latele_at_s(branch::LatBranch, s::Real; choose_max::Bool = False, ele_n
 
   else
     while true
-      ele2 = next_latele(ele, -1)
+      ele2 = next_ele(ele, -1)
       if ele2.param[:s] < s && !choose_max && ele.param[:s] == s; return ele; end
       if ele2.param[:s] < s || (choose_max && ele2.param[:s] == s); return ele2; end
       ele = ele2
@@ -263,9 +291,9 @@ function latele_at_s(branch::LatBranch, s::Real; choose_max::Bool = False, ele_n
 end
 
 #-----------------------------------------------------------------------------------------
-# next_latele
+# next_ele
 
-function next_latele(ele, offset::Integer=1)
+function next_ele(ele, offset::Integer=1)
   branch = ele.param[:branch]
   ix_ele = mod(ele.param[:ix_ele] + offset-1, size(branch.ele,1)-1) + 1
   return branch.ele[ix_ele]
@@ -282,7 +310,7 @@ than 5*bmad_com%significant_length.
 branch_split! will redo the appropriate bookkeeping for lords and slaves.
 A super_lord element will be created if needed. 
 """
-function branch_split!(branch::LatBranch, s_split::Real; choose_max::Bool = False, ix_insert::Int = -1)
+function branch_split!(branch::Branch, s_split::Real; choose_max::Bool = False, ix_insert::Int = -1)
   check_if_s_in_branch_range(branch, s_split)
   # return ix_split, split_done
 end
@@ -295,22 +323,22 @@ Returns the equivalent inbounds s-position in the range [branch.ele[1].param(:s)
 if the branch has a closed geometry. Otherwise returns s.
 This is useful since in closed geometries 
 """
-function s_inbounds(branch::LatBranch, s::Real)
+function s_inbounds(branch::Branch, s::Real)
 end
 
 #-----------------------------------------------------------------------------------------
 # check_if_s_in_branch_range
 
-function check_if_s_in_branch_range(branch::LatBranch, s::Real)
+function check_if_s_in_branch_range(branch::Branch, s::Real)
   if s_split < branch.ele[1].param[:s] || s_split > branch.ele[end].param[:s]
     throw(RangeError(f"s_split ({string(s_split)}) position out of range [{branch.ele[1].param[:s]}], for branch ({branch.name})"))
   end
 end
 
 #-----------------------------------------------------------------------------------------
-# branch_insert_latele!
+# branch_insert_ele!
 
-function branch_insert_latele!(branch::LatBranch, ix_ele::Int, ele::LatEle)
+function branch_insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
   insert!(branch, ix_ele, ele)
   branch_bookkeeper!(branch)
 end
@@ -318,7 +346,7 @@ end
 #-----------------------------------------------------------------------------------------
 # branch_bookkeeper!
 
-function branch_bookkeeper!(branch::LatBranch)
+function branch_bookkeeper!(branch::Branch)
   if branch.name == "lord"; return; end
   for (ix_ele, ele) in enumerate(branch.ele)
     ele.param[:ix_ele] = ix_ele

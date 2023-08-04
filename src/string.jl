@@ -120,6 +120,14 @@ function str_unquote(str::AbstractString)
 end
 
 #-----------------------------------------------------------------------------------------
+# str_quote
+
+"""
+Returns string with end double-quote characters added
+"""
+str_quote(str::AbstractString) = '"' * str * '"'
+
+#-----------------------------------------------------------------------------------------
 # str_to_int
 
 """
