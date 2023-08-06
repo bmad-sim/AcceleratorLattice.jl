@@ -103,6 +103,8 @@ mutable struct FloorPosition
   theta::Float64;  phi::Float64;  psi::Float64  # Angular orientation consistant with q
 end
 
+FloorPosition() = FloorPosition([0,0,0], [1,0,0,0], 0, 0, 0)
+
 mutable struct MultipoleArray
   k::OffsetVector{Float64}
   ks::OffsetVector{Float64}
@@ -119,8 +121,11 @@ mutable struct Branch <: BeamLineItem
 end
 
 #-------------------------------------------------------------------------------------
-# Lat
+# BmadGlobal
 
+"""
+Global parameters used for tracking
+"""
 mutable struct BmadGlobal
   significant_length::Float64
   other::Dict{Any,Any}                      # For user defined stuff.
@@ -128,11 +133,14 @@ end
 
 BmadGlobal() = BmadGlobal(1.0e-10, Dict())
 
+#-------------------------------------------------------------------------------------
+# Lat
+
 mutable struct Lat <: AbstractLat
   name::AbstractString
-  branch::OffsetVector{Branch}
+  branch::Vector{Branch}
   param::Dict{Symbol,Any}
-  bmadglobal::BmadGlobal
+  bmad_global::BmadGlobal
 end
 
 #-------------------------------------------------------------------------------------

@@ -5,11 +5,11 @@ beginning_ele = Marker("beginning", Dict{Symbol,Any}(:s => 0, :len => 0))
 end_ele       = Marker("end", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
-# Branch
+# branch
 
-latbranch(lat::Lat, ix::Int) = lat.branch[ix]
+branch(lat::Lat, ix::Int) = lat.branch[ix]
 
-function latbranch(lat::Lat, who) 
+function branch(lat::Lat, who) 
   for branch in lat.branch
     if branch.name == who; return branch; end
   end
@@ -17,15 +17,19 @@ function latbranch(lat::Lat, who)
 end
 
 #-------------------------------------------------------------------------------------
-"Define a beamline"
+# BeamLineItem
 
 BeamLineItem(x::Ele) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :orientation => +1))
 BeamLineItem(x::BeamLine) = BeamLine(x.name, x.line, deepcopy(x.param))
 BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.param))
 
+#-------------------------------------------------------------------------------------
+# beamline
 
-function beamline(name::AbstractString, line::Vector{T}; multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
-  bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(:multipass => multipass, :orientation => orientation))
+function beamline(name::AbstractString, line::Vector{T}; geometry::Geometry = open_geom, 
+                                    multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
+  bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(:geometry => geometry, 
+                                                   :multipass => multipass, :orientation => orientation))
   for (ix, item) in enumerate(bline.line)
     item.param[:ix_beamline] = ix
   end
@@ -33,7 +37,7 @@ function beamline(name::AbstractString, line::Vector{T}; multipass::Bool = false
 end
 
 #-------------------------------------------------------------------------------------
-"beamline orientation reversal"
+# Base.reverse
 
 function Base.reverse(ele::Ele)
   item = BeamLineItem(ele)
@@ -58,7 +62,7 @@ function Base.reverse(beamline::BeamLine)
 end
 
 #-------------------------------------------------------------------------------------
-"beamline reflection"
+# beamline reflection
 
 "reverse() here is the Julia intrinsic."
 reflect(beamline::BeamLine) = BeamLine(beamline.name * "_mult-1", reverse(beamline.line), beamline.param)
@@ -72,10 +76,10 @@ Base.:*(n::Int, ele::Ele) = (if n < 0; throw(BoundsError("Negative multiplier do
         BeamLine(ele.name * "_mult" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1))
 
 #-------------------------------------------------------------------------------------
-"lat construction."
+# add_beamlineele_to_branch!
 
 "Adds a BeamLineEle to a Branch under construction."
-function add_beamlineele_to_latbranch!(branch::Branch, bele::BeamLineEle, info = nothing)
+function add_beamlineele_to_branch!(branch::Branch, bele::BeamLineEle, info = nothing)
   push!(branch.ele, deepcopy(bele.ele))
   ele = branch.ele[end]
   ele.param[:ix_ele] = length(branch.ele)
@@ -91,22 +95,26 @@ function add_beamlineele_to_latbranch!(branch::Branch, bele::BeamLineEle, info =
   return nothing
 end
 
-#--------------------
+#-------------------------------------------------------------------------------------#--------------------
+# add_beamline_item_to_branch!
+
 "Adds a single item of a BeamLine line to the Branch under construction."
-function add_beamline_item_to_latbranch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
+function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
   if item isa BeamLineEle
-    add_beamlineele_to_latbranch!(branch, item, info)
+    add_beamlineele_to_branch!(branch, item, info)
   elseif item isa BeamLine 
-    add_beamline_to_latbranch!(branch, item, info)
+    add_beamline_to_branch!(branch, item, info)
   else
     throw(ArgumentError(f"Beamline item not recognized: {item}"))
   end
   return nothing
 end
 
-#--------------------
+#-------------------------------------------------------------------------------------
+# add_beamline_to_branch!
+
 "Adds a beamline to a Branch under construction."
-function add_beamline_to_latbranch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
+function add_beamline_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
   info.n_loop += 1
   if info.n_loop > 100; throw(InfiniteLoop("Infinite loop of beam lines calling beam lines detected.")); end
 
@@ -121,24 +129,27 @@ function add_beamline_to_latbranch!(branch::Branch, beamline::BeamLine, info::La
     push!(info.multipass_id, beamline.name * ":" * string(beamline.param[:ix_beamline]))
   end
 
-  for item in line; add_beamline_item_to_latbranch!(branch, item, info); end
+  for item in line; add_beamline_item_to_branch!(branch, item, info); end
 
   return nothing
 end
 
-#--------------------
+#-------------------------------------------------------------------------------------
+# new_tracking_branch!
+
 "Adds a BeamLine to the lattice creating a new Branch."
-function new_latbranch!(lat::Lat, beamline::BeamLine)
-  push!(lat.branch, Branch(beamline.name, Vector{Ele}(), Dict{Symbol,Any}()))
+function new_tracking_branch!(lat::Lat, beamline::BeamLine)
+  push!(lat.branch, Branch(beamline.name, Vector{Ele}(), Dict{Symbol,Any}(:geometry => beamline.param[:geometry])))
   branch = lat.branch[end]
   branch.param[:lat] = lat
-  branch.param[:ix_branch] = length(lat.branch) - 1
+  branch.param[:ix_branch] = length(lat.branch)
+  branch.param[:type] = tracking_type
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
   info = LatConstructionInfo([], beamline.param[:orientation], 0)
 
-  add_beamlineele_to_latbranch!(branch, BeamLineItem(beginning_ele))
-  add_beamline_to_latbranch!(branch, beamline, info)
-  add_beamlineele_to_latbranch!(branch, BeamLineItem(end_ele))
+  add_beamlineele_to_branch!(branch, BeamLineItem(beginning_ele))
+  add_beamline_to_branch!(branch, beamline, info)
+  add_beamlineele_to_branch!(branch, BeamLineItem(end_ele))
 
   # Beginning and end elements inherit orientation from neighbor elements.
   branch.ele[1].param[:orientation] = branch.ele[2].param[:orientation]
@@ -146,24 +157,38 @@ function new_latbranch!(lat::Lat, beamline::BeamLine)
   return nothing
 end
 
-#--------------------
-"Lattice expansion"
+function new_lord_branch(lat::Lat, name::AbstractString)
+  push!(lat.branch, Branch(name, Vector{Ele}(), Dict{Symbol,Any}()))
+  branch = lat.branch[end]
+  branch.param[:lat] = lat
+  branch.param[:ix_branch] = length(lat.branch)
+  branch.param[:type] = lord_type
+  return branch
+end
+
+#-------------------------------------------------------------------------------------
+# lat_expansion
+
 function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
-  lat = Lat(name, OffsetVector{Branch}([Branch("lord", Vector{Ele}(), Dict{Symbol,Any}())], 0:0), Dict{Symbol,Any}(), BmadGlobal())
-  lat.branch[0].param[:lat] = lat
-  lat.branch[0].param[:ix_branch] = 0
+  lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(), BmadGlobal())
 
   if root_line == nothing; root_line = root_beamline end
   
   if root_line isa BeamLine
-    new_latbranch!(lat, root_line)
+    new_tracking_branch!(lat, root_line)
   else
     for subline in root_line
-      new_latbranch!(lat, subline)
+      new_tracking_branch!(lat, subline)
     end
   end
   
   if lat.name == ""; lat.name = lat.branch[1].name; end
+
+  # Lord branches
+
+  new_lord_branch(lat, "super_lord")
+  new_lord_branch(lat, "controller_lord")
+  mp_lord_branch = new_lord_branch(lat, "multipass_lord")
 
   # Multipass: Sort slaves
   mdict = Dict()
@@ -182,11 +207,11 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
 
   # Multipass: Create multipass lords
   for (key, val) in mdict
-    push!(lat.branch[0].ele, deepcopy(val[1]))
-    lord = lat.branch[0].ele[end]
+    push!(mp_lord_branch.ele, deepcopy(val[1]))
+    lord = mp_lord_branch.ele[end]
     delete!(lord.param, :multipass_id)
-    lord.param[:branch] = lat.branch[0]
-    lord.param[:ix_ele] = length(lat.branch[0].ele)
+    lord.param[:branch] = mp_lord_branch
+    lord.param[:ix_ele] = length(mp_lord_branch.ele)
     lord.param[:slave] = Vector{Ele}()
     for (ix, ele) in enumerate(val)
       ele.name = ele.name * "!mp" * string(ix)

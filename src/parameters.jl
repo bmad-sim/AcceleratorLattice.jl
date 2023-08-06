@@ -53,10 +53,11 @@ global ele_param = Dict(
 """
 Dictionary of parameters in the Branch.param dict.
 """
-global latbranch_param = Dict(
+global branch_param = Dict(
   :ix_branch => ParamInfo(Int, "Index of branch in containing lat .branch() array"),
-  :geometry  => ParamInfo(Switch, "open_geom or closed_geom"),
+  :geometry  => ParamInfo(Switch, "open_geom or closed_geom Geometry enums"),
   :lat       => ParamInfo(Pointer, "Pointer to lattice containing the branch."),
+  :type      => ParamInfo(Switch, "Either lord_type or tracking_type BranchType enums."),
 
 )
 
@@ -69,10 +70,12 @@ global lat_param = Dict(
 
 
 #-----------------------------------------------------------------------------------------
+# ele_param_by_ele_struct
+
 """
-Table of what parameters are associated with what elements
+Table of what parameters are associated with what element types
 """
-global ele_param_by_type = Dict(  
+global ele_param_by_ele_struct = Dict(  
   Dict(
     Bend           => Dict(),
     Drift          => Dict(),
@@ -82,14 +85,22 @@ global ele_param_by_type = Dict(
   )
 )
 
-
-
 #-----------------------------------------------------------------------------------------
+# ele_param_defaults
 
 """
 Real parameters have default 0.0 if not specified.
 """
+global ele_param_defaults = Dict(
+)
 
-global param_defaults = Dict(
-  :geometry => open_geom,
+#-----------------------------------------------------------------------------------------
+# branch_param_defaults
+
+"""
+Real parameters have default 0.0 if not specified.
+Note: :geometry is not set for lord branches.
+"""
+global branch_param_defaults = Dict(
+  :ix_branch  => "-",
 )

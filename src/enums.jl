@@ -1,5 +1,6 @@
 """ Branch geometry."""
 @enum Geometry open_geom closed_geom 
+@enum BranchType tracking_type lord_type
 
 """Position with respect to a lattice element in a branch."""
 @enum Position upstream_loc inside_loc downstream_loc

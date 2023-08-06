@@ -1,26 +1,100 @@
 #-----------------------------------------------------------------------------------------
-# define_external_ele_vars
+# lat_ele_dict
+
+"""
+    lat_ele_dict(lat::Lat)
+
+Return a dictionary of `ele_name => Vector{Ele}` mapping of lattice element names to arrays of
+elements with that name.
+"""
+function lat_ele_dict(lat::Lat)
+  eled = Dict{AbstractString,Vector{Ele}}()
+  for branch in lat.branch
+    for ele in branch.ele
+      if haskey(eled, ele.name)
+        eled[ele.name]
+        push!(eled[ele.name], ele)
+      else
+        eled[ele.name] = Vector{Ele}([ele])
+      end
+    end
+  end
+  return eled
+end
+
+#-----------------------------------------------------------------------------------------
+# destroy_external_ele_vars
+
+"""
+Set vars to nothing. (Currently there is no way to undefine the variables).
+
+The prefix arg is needed if a prefix was given in create_external_ele_vars.
+
+The this_module arg is needed if the variables are not in the Main module. 
+Use @__MODULE__ for the module in which the destroy_extern_ele_vars function is called.
+"""
+function destroy_external_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
+  for branch in lat.branch
+    for ele in branch.ele
+      nam = prefix * ele.name
+      if !isdefined(this_module, Symbol(nam)); continue; end
+      eval( :($(Symbol(nam)) = nothing) )
+    end
+  end
+  return nothing
+end
+
+#-----------------------------------------------------------------------------------------
+# create_external_ele_vars
 
 """
 Creates Ele variables external to a lattice with the same name as the eles in the lattice.
 
+The prefix arg can be used to distinguish between elements of the same name in different lattices.
+
 In the case where multiple lattice elements have the same name, the corresponding variable 
 will be a vector.
+
+The this_module arg is needed if the variables are not to be in the Main module. 
+Use @__MODULE__ for the module in which the create_extern_ele_vars function is called.
 """
+function create_external_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
+  eled = lat_ele_dict(lat)
 
-function define_external_ele_vars(lat::Lat)
-
+  for (name, evec) in eled
+    if size(evec,1) == 1
+      eval( :($(Symbol(this_module)).$(Symbol(name)) = $(evec[1])) )
+    else
+      eval( :($(Symbol(this_module)).$(Symbol(name))= $(evec)) )
+    end
+  end
+  return nothing
 end
 
 #-----------------------------------------------------------------------------------------
 # create_unique_ele_names!
 
 """
-Modified a lattice so that all elements have a unique name.
+function create_unique_ele_names!(lat::Lat; suffix::AbstractString = "!#")
 
+Modifies a lattice so that all elements have a unique name.
+
+For elements whose names are not unique, the suffix arg is appended to the element name
+and an integer is substituted for  the "#" character in the suffix arg. If no "#" 
+character exists, a "#" character is appended to the suffix arg.
 """
-function create_unique_ele_names!(lat::Lat, pattern::AbstractString)
+function create_unique_ele_names!(lat::Lat; suffix::AbstractString = "!#")
+  if !occursin("#", suffix); suffix = suffix * "#"; end
+  eled = lat_ele_dict(lat)
 
+  for (name, evec) in eled
+    if size(evec,1) == 1; continue; end
+    for (ix, ele) in enumerate(evec)
+      ele.name = ele.name * replace(suffix, "#" => string(ix))
+    end
+  end
+
+  return nothing
 end
 
 #-----------------------------------------------------------------------------------------
@@ -36,6 +110,29 @@ function Base.setindex!(ele::Ele, val, key)
     ele.name = val
   else
     ele.param[key] = val
+  end
+  return ele
+end
+
+#-----------------------------------------------------------------------------------------
+# Branch[] get and set
+
+function Base.getindex(branch::Branch, key)
+  if key == :name; return branch.name; end
+  if haskey(branch.param, key)
+    return branch.param[key]
+  elseif haskey(branch_param_defaults, key)
+    return branch_param_defaults[key]
+  else
+    return "branch.param key not found: " * key
+  end
+end
+
+function Base.setindex!(branch::Branch, val, key)
+  if key == :name
+    branch.name = val
+  else
+    branch.param[key] = val
   end
   return ele
 end
@@ -66,7 +163,7 @@ function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
     ix_ele = mod(ix_ele-1, n-1) + 1
     return branch.ele[ix_ele]
   else
-    if ix_ele < 0 || ix_ele > n; throw(BoundsError(f"Element index out of range {ix_ele} in branch {branch.name}")); end
+    if ix_ele < 1 || ix_ele > n; throw(BoundsError(f"element index out of range {ix_ele} in branch {branch.name}")); end
     return branch.ele[ix_ele]
   end
 end
@@ -81,11 +178,11 @@ A blank name matches all branches.
 Bmad standard wildcard characters "*" and "%" can be used.
 """
 function matches_branch(name::AbstractString, branch::Branch)
-  if name == "": return true; end
+  if name == ""; return true; end
 
   try
     ix = parse(Int, name)
-    return branch.param[ix_branch] == ix
+    return branch.param[:ix_branch] == ix
   catch
     str_match(name, branch.name)
   end
@@ -105,7 +202,7 @@ To match to element lists, use the `eles` function.
 function eles_finder_base(Lat::Lat, name::AbstractString, julia_regex::Bool=false)
 
   eles = Ele[]
-  name = replace(name, "'" => "\"")
+  if !julia_regex; name = replace(name, "'" => "\""); end
   branch_id = ""; offset = 0
   nth_match = 1
 
@@ -125,28 +222,35 @@ function eles_finder_base(Lat::Lat, name::AbstractString, julia_regex::Bool=fals
       if !matches_branch(branch, branch_id); continue; end
       for ele in branch.ele
         if !haskey(ele.param, attrib); continue; end
-        if str_match(pattern, ele.param[attrib]) push!(eles, ele_offset(ele, offset)); end
+        if julia_regex
+          if occursin(pattern, ele.param[attrib]); push!(eles, ele_offset(ele, offset)); end
+        else
+          if str_match(pattern, ele.param[attrib]); push!(eles, ele_offset(ele, offset)); end
+        end
       end
     end
 
   # ele_id construct
   else
-    words = str_split(name, "+-#", doubleup = true)
+    ix_ele = -1
+    if !julia_regex
+      words = str_split(name, "+-#", doubleup = true);
 
-    if size(words,1) > 2 && occursin(words[end-1], "+-")
-      offset = parse(Int, words[end-1]*words[end])
-      words = words[:end-2]
+      if size(words,1) > 2 && occursin(words[end-1], "+-")
+        offset = parse(Int, words[end-1]*words[end])
+        words = words[:end-2]
+      end
+
+      if size(words,1) > 2 && words[end-1] == "#"
+        nth_match = parse(Int, words[end])
+        words = words[:end-2]
+      end
+
+      if size(words,1) != 1; throw(BmadParseError("Bad lattice element name: " * name)); end
+      ele_id = words[1]
+      ix_ele = str_to_int(ele_id, -1)
+      if ix_ele != NaN && nth_match != 1; return eles; end
     end
-
-    if size(words,1) > 2 && words[end-1] == "#"
-      nth_match = parse(Int, words[end])
-      words = words[:end-2]
-    end
-
-    if size(words,1) != 1; throw(BmadParseError("Bad lattice element name: " * name)); end
-    ele_id = words[1]
-    ix_ele = str_to_int(ele_id, -1)
-    if ix_ele != NaN && nth_match != 1; return eles; end
 
     for branch in lat.branch
       if !matches_branch(branch_id, branch); continue; end
@@ -157,10 +261,14 @@ function eles_finder_base(Lat::Lat, name::AbstractString, julia_regex::Bool=fals
 
       ix_match = 0
       for ele in branch.ele
-        if !str_match(ele_id, ele.name); continue; end
-        ix_match += 1
-        if ix_match == nth_match; push!(eles, ele); end
-        if ix_match > nth_match; continue; end
+        if julia_regex
+          if match(ele_id, ele.name); push!(eles, ele); end
+        else
+          if !str_match(ele_id, ele.name); continue; end
+          ix_match += 1
+          if ix_match == nth_match; push!(eles, ele); end
+          if ix_match > nth_match; continue; end
+        end
       end
     end   # branch loop
 
@@ -172,7 +280,7 @@ end
 # ele_finder
 
 function ele_finder(Lat::Lat, name::AbstractString; julia_regex::Bool = false)
-    eles = eles_finder_base(lat, name, julia_regx)
+    eles = eles_finder_base(lat, name, julia_regex)
     if size(eles,1) == 0; return NULL_ELE; end
     return eles[1]
 end
@@ -191,6 +299,16 @@ Note: negation and intersection evaluated left to right
 
 ele vector will be ordered by s-position for each branch.
 Use the eles_order_by_index function to reorder by index is desired.
+
+
+Note: For something like loc_str = "quad::*", if order_by_index = True, the eles(:) array will
+be ordered by element index. If order_by_index = False, the eles(:) array will be ordered by
+s-position. This is the same as order by index except in the case where where there are super_lord
+elements. Since super_lord elements always have a greater index (at least in branch 0), order by index will place any super_lord elements at the end of the list.
+
+Note: When there are multiple element names in loc_str (which will be separated by a comma or blank), 
+the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
+with who = "quad::*,sbend::*", all the quadrupoles will appear in eles(:) before all of the sbends.
 """
 function eles_finder(lat::Lat, who::AbstractString, julia_regex::Bool=false)
   # Julia regex is simple
@@ -347,19 +465,38 @@ end
 # branch_bookkeeper!
 
 function branch_bookkeeper!(branch::Branch)
-  if branch.name == "lord"; return; end
-  for (ix_ele, ele) in enumerate(branch.ele)
-    ele.param[:ix_ele] = ix_ele
-    if ix_ele > 1; ele.param[:s] = branch.ele[ix_ele-1].param[:s] + get(branch.ele[ix_ele-1].param, :len, 0); end
+  if branch.param[:type] == lord_type
+    for (ix_ele, ele) in enumerate(branch.ele)
+      ele[:ix_ele] = ix_ele
+      ele[:branch] = branch
+    end
+    return
+  end
+
+  ele = branch.ele[1]
+  ele.param[:ix_ele] = 1
+  ele.param[:branch] = branch
+  if !haskey(ele.param, :s); ele.param[:s] = 0; end
+  if !haskey(ele.param, :floor_position); ele.param[:floor_position] = FloorPosition(); end
+  old_ele = ele
+
+  for (ix, ele) in enumerate(branch.ele[2:end])
+    ele.param[:ix_ele] = old_ele.param[:ix_ele] + 1 
+    ele.param[:s] = old_ele.param[:s] + get(old_ele.param, :len, 0)
+    ele.param[:branch] = branch
+    # Floor position
+    # Reference energy and time
+    old_ele = ele
   end
 end
 
 #-----------------------------------------------------------------------------------------
 # lat_bookkeeper!
 
-
 function lat_bookkeeper!(lat::Lat)
   for branch in lat.branch
     branch_bookkeeper!(branch)
   end
+  # Put stuff like ref energy in lords
+  # Put branch index in branch.param
 end
