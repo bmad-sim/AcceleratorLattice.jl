@@ -7,16 +7,16 @@ Superimpose:
   <name1>!<name2>
   <name>!s<N>
 
-Selection of Nth element of like name:
-  <name>#<N>
 
 
 ------------------------------------------------------------------------------------
 Lattice element selection:
 
-*** Element Name ***
+The following is for Bmad standard element matching. See below for Julia regex matching.
 
-An element "name" (which can match to multiple elements) can be of the form:
+*** Bmad Standard Element Matching Strings ***
+
+An element match string (which can match to multiple elements) can be of the form:
   {branch_id>>}ele_id{#N}{+/-offset}
 or
   {branch_id>>}attribute->match_str{+/-offset}
@@ -35,6 +35,7 @@ Where
                 "Q1-2" is the second element before "Q1".
 
 Examples:
+  Marker::a*#2         2^nd marker element in each branch whose name begins with "a".
   "x_br>>q*"           All quadrupoles of branch "x_br" whose name begins with "q"
   "type->'^bpm'"       All elements whose :type attribute starts with bpm. 
   "alias->'my duck'"   Match to all elements whose :alias attribute has"my duck" in the string.
@@ -44,28 +45,16 @@ Note: Single-quotes can be used. Double-quotes must be excaped with a backslash
 as shown above.
 
 
-*** Element lists ***
+*** Bmad Standard Element lists ***
 
-Element lists are formed using a space or a comma
+Element lists are an array of element matching strings as discussed above with a comma
+between elements.
 
-Examples:
-  Quadrupole::x_br>>q* All quadrupoles of branch "x_br" whose name begins with "q"
-  3,15:17              Elements with index 3, 15, 16, and 17 in branch 0.
-  2>>45:51             Elements 45 through 51 of branch 2.
-  q1:q5                Elements between "q1" and "q5".
-  Sbend::q1:q5         All sbend elements between "q1" and "q5".
-  Marker::a*#2         2^nd marker element in each branch whose name begins with "a".
+Example:
+  q1*, q2+1, lords>>m3, type->outer
 
 
-
-
-A space or a comma delimits the elements.
-An ampersand "&" can be used to form the intersection of two groups.
-
-
-
-
-
+*** Bmad Standard Element Ranges ***
 
 An element range is of the form:
   {key::}ele1:ele2
@@ -83,18 +72,14 @@ If Q1 is a super_lord, the eles list will be the super_slaves of Q1.
 It is an error if ele1 or ele2 is a multipass_lord. Also it is is an error for ele1 or ele2
 to be an overlay, group, or girder if the number of slaves is not one. 
 
-Note: Use quotation marks for matching to type, alias, or descrip strings that have a blank.
-Note: matching is always case insensitive.
-
 Examples:
   Quadrupole::x_br>>q* All quadrupoles of branch "x_br" whose name begins with "q"
   3,15:17              Elements with index 3, 15, 16, and 17 in branch 0.
   2>>45:51             Elements 45 through 51 of branch 2.
   q1:q5                Elements between "q1" and "q5".
   Sbend::q1:q5         All sbend elements between "q1" and "q5".
-  Marker::a*#2         2^nd marker element in each branch whose name begins with "a".
-  type->"^bpm"         All elements whose :type field starts with bpm. 
-  alias->"my duck"     Match to all elements whose :alias field has"my duck" in the string.
+
+*** Bmad Standard Negation and Intersection ***
 
 The negation character "~" signifies that elements are to be removed from the list. For example:
   "quadrupole::*, ~q3"
@@ -108,18 +93,12 @@ An ampersand "&" can be used to form the intersection of two groups.
 Example:
   1:10 & BPM*   All element with index in range [1,10] and with name starting with "BPM".
 
-Note: For something like loc_str = "quad::*", if order_by_index = True, the eles(:) array will
-be ordered by element index. If order_by_index = False, the eles(:) array will be ordered by
-s-position. This is the same as order by index except in the case where where there are super_lord
-elements. Since super_lord elements always have a greater index (at least in branch 0), order by index
-will place any super_lord elements at the end of the list.
-!
-Note: When there are multiple element names in loc_str (which will be separated by a comma or blank), 
-the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
-with loc_str = "quad::*,sbend::*", all the quadrupoles will appear in eles(:) before all of the sbends.
-This is independent of the setting of order_by_index but the setting of order_by_index can affect
-the ordering of the quads among themselves and the ordering of the sbends among themselves.
+*** Julia Regex ***
 
+Julia regex is
+  {branch_id>>}regex
+or
+  {branch_id>>}attribute->regex
 
 ------------------------------------------------------------------------------------
 Programming Conventions
@@ -130,4 +109,31 @@ Generally Follow Julia standard conventions (see Julia manual) except:
 Other conventions:
 * Specify AbstractString instead of String for function arguments to avoid incompatibility
 with the SubString type.
+
+------------------------------------------------------------------------------------
+Makie for Plotting
+
+GLMakie uses GLFW.jl backend.
+CairoMakie uses Cairo.jl backend.
+
+For interactive plotting use GLMakie (CairoMakie is not interactive)
+For (2D) Axis plots:
+  Zoom to rectangle: Select rectangle using left button click-and-hold, move mouse, release button.
+  Zoom in/out: Middle button scroll.
+  Zoom to original size: Control and left button double click at same time.
+  Pan: right button click-and-hold, move mouse.
+
+CarioMakie (but not GLMakie) can export vector graphics via pdf (which is nicer than bitmapped):
+  save("this_fig.pdf", f)  # Save to file.
+
+Switch between GLMakie and CairoMakie via using statements:
+  using GLMakie
+  f = Figure()
+  ... make graph ...
+  f                        # Plot with GL
+  using CairoMakie         # Switch to CairoMakie
+  save("this_fig.pdf", f)  # Save to file.
+
+Also consider Plots.jl. See:
+  https://www.juliabloggers.com/summary-of-julia-plotting-packages/
 
