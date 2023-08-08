@@ -6,6 +6,9 @@
 
 Return a dictionary of `ele_name => Vector{Ele}` mapping of lattice element names to arrays of
 elements with that name.
+
+### Input
+
 """
 function lat_ele_dict(lat::Lat)
   eled = Dict{AbstractString,Vector{Ele}}()
@@ -26,12 +29,13 @@ end
 # destroy_external_ele_vars
 
 """
-Set vars to nothing. (Currently there is no way to undefine the variables).
+Set variables created with create_external_ele_vars to `nothing`. 
+(Currently there is no way to undefine the variables).
 
-The prefix arg is needed if a prefix was given in create_external_ele_vars.
+The `prefix` argument is needed if a prefix was given in `create_external_ele_vars`.
 
-The this_module arg is needed if the variables are not in the Main module. 
-Use @__MODULE__ for the module in which the destroy_extern_ele_vars function is called.
+The `this_module` argument is needed if the variables are not in the `Main` module. 
+Note: `@__MODULE__` is the name of the module of the calling routine.
 """
 function destroy_external_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
   for branch in lat.branch
@@ -48,15 +52,18 @@ end
 # create_external_ele_vars
 
 """
-Creates Ele variables external to a lattice with the same name as the eles in the lattice.
+Creates `Ele` variables external to a lattice with the same name as the elements in the lattice.
 
-The prefix arg can be used to distinguish between elements of the same name in different lattices.
+For example, if "q23w" is the name of an element in the lattice, this routine will create a
+variable with the name `q23w`. 
 
 In the case where multiple lattice elements have the same name, the corresponding variable 
-will be a vector.
+will be a vector of `Ele`s.
 
-The this_module arg is needed if the variables are not to be in the Main module. 
-Use @__MODULE__ for the module in which the create_extern_ele_vars function is called.
+The `prefix` arg can be used to distinguish between elements of the same name in different lattices.
+
+The `this_module` arg is needed if the variables are not to be in the Main module. 
+Use `@__MODULE__` for the name of the module of the code calling `create_external_ele_vars`.
 """
 function create_external_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
   eled = lat_ele_dict(lat)
@@ -79,7 +86,7 @@ function create_unique_ele_names!(lat::Lat; suffix::AbstractString = "!#")
 
 Modifies a lattice so that all elements have a unique name.
 
-For elements whose names are not unique, the suffix arg is appended to the element name
+For elements whose names are not unique, the `suffix` arg is appended to the element name
 and an integer is substituted for  the "#" character in the suffix arg. If no "#" 
 character exists, a "#" character is appended to the suffix arg.
 """
@@ -143,18 +150,36 @@ end
 bmad_regex(str::AbstractString) = occursin("%", str) || occursin("*", str)
 
 #-----------------------------------------------------------------------------------------
-# offset_ele
+# ele
 
 """
-Returns the lattice element that is a distance `offset` from the input `ele`.
+    function ele(ele::Ele, index_offset::Int, wrap::Bool = true)
+
+Returns the lattice element whose index relative to the index of the input `ele` is `index_offset`.
 Will wrap around the ends of the branch if necessary and wrap = true.
+
+### Input
+
+
+### Output
+  `Ele` in given `branch` and given element i
 """
-function ele_offset(ele::Ele, offset::Int, wrap::Bool = true)
+function ele(ele::Ele, index_offset::Int, wrap::Bool = true)
   return ele(ele.param[branch], offset + ele.param[:ix_ele], wrap)
 end
 
 
 """
+    ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
+
+Returns element in given `branch` with given `ix_ele` element index.
+
+### Input
+If `wrap`
+
+
+### Output
+- `Ele` in given `branch` and given element index `ix_ele
 """
 function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
   n = size(branch.ele,1)
@@ -465,7 +490,7 @@ end
 # branch_bookkeeper!
 
 function branch_bookkeeper!(branch::Branch)
-  if branch.param[:type] == lord_type
+  if branch.param[:type] == LordBranch
     for (ix_ele, ele) in enumerate(branch.ele)
       ele[:ix_ele] = ix_ele
       ele[:branch] = branch

@@ -26,7 +26,7 @@ BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.param))
 #-------------------------------------------------------------------------------------
 # beamline
 
-function beamline(name::AbstractString, line::Vector{T}; geometry::Geometry = open_geom, 
+function beamline(name::AbstractString, line::Vector{T}; geometry::Type{<:Geometry} = OpenGeom, 
                                     multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(:geometry => geometry, 
                                                    :multipass => multipass, :orientation => orientation))
@@ -143,7 +143,7 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   branch = lat.branch[end]
   branch.param[:lat] = lat
   branch.param[:ix_branch] = length(lat.branch)
-  branch.param[:type] = tracking_type
+  branch.param[:type] = TrackingBranch
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
   info = LatConstructionInfo([], beamline.param[:orientation], 0)
 
@@ -162,7 +162,7 @@ function new_lord_branch(lat::Lat, name::AbstractString)
   branch = lat.branch[end]
   branch.param[:lat] = lat
   branch.param[:ix_branch] = length(lat.branch)
-  branch.param[:type] = lord_type
+  branch.param[:type] = LordBranch
   return branch
 end
 
@@ -224,4 +224,29 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
   return lat
 end
 
+# lat_expansion version without lattice name argument.
 lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}) = lat_expansion("Lattice", root_line)
+
+#-------------------------------------------------------------------------------------
+# superimpose!
+
+"""
+"""
+function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles = NULL_ELE, 
+           ref_origin::Type{<:EleBodyLocation} = Center, ele_origin::Type{<:EleBodyLocation} = Center)
+  if typeof(ref) == Ele; ref = [ref]; end
+  for ref_ele in ref
+    superimpose1!(lat, super_ele, offset, ref_ele, offset, ref_origin, ele_origin)
+  end
+end
+
+"Used by superimpose! for superimposing on on individual ref elements."
+function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Ele = NULL_ELE, 
+           ref_origin::Type{<:EleBodyLocation} = Center, ele_origin::Type{<:EleBodyLocation} = Center)
+
+
+end
+
+
+
+

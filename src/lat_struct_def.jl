@@ -12,16 +12,16 @@ struct BmadParseError <: Exception; msg::AbstractString; end
 # A "beamline" is a line defined in a lattice file.
 
 #-------------------------------------------------------------------------------------
+# Base abstract types
 
 "Abstract type that represents a Ele or sub BeamLine contained in a beamline."
 abstract type BeamLineItem end
 
-"Abstract lattice element from which all lattice elements inherit"
+"Abstract lattice element from which all lattice elements inherit."
 abstract type Ele <: BeamLineItem end
 
-"Abstract lattice from which Lat inherits"
-abstract type AbstractLat end
-
+"Single element or vector of elemements."
+Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 
 #-------------------------------------------------------------------------------------
 # Ele
@@ -81,8 +81,10 @@ function Marker(name::AbstractString; kwargs...)
 end
 
 # NullEle
-
-"NullEle lat element"
+"""
+Lattice element type used to indicate the absence of any valid element.
+`NULL_ELE` is the instantiated element
+"""
 mutable struct NullEle <: Ele
   name::AbstractString
   param::Dict{Symbol,Any}
@@ -92,7 +94,7 @@ function NullEle(name::AbstractString; kwargs...)
   eval( :($(Symbol(name)) = NullEle($name, Dict{Symbol,Any}($kwargs...))) )
 end
 
-NULL_ELE      = NullEle("null", Dict{Symbol,Any}())
+NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
 # Ele parameters
@@ -135,6 +137,9 @@ BmadGlobal() = BmadGlobal(1.0e-10, Dict())
 
 #-------------------------------------------------------------------------------------
 # Lat
+
+"Abstract lattice from which Lat inherits"
+abstract type AbstractLat end
 
 mutable struct Lat <: AbstractLat
   name::AbstractString
