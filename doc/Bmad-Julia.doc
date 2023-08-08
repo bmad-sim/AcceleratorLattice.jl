@@ -8,6 +8,24 @@ Superimpose:
   <name>!s<N>
 
 
+------------------------------------------------------------------------------------
+Coordinate System Names:
+
+* Global coordinates  -- (X,Y,Z) Same as existing
+* Body coordinates  -- (x,y,z) Same as existing
+* Machine coordinates -- (x,y,s) curvilinear coordinates with s measured from the start of the lattice branch. 
+* Local coordinates -- (x,y,s) curvilinear coordinates. Same as machine coordinates with s measured from upstream end of element. 
+
+Currently machine coords are called Laboratory coordinates or Local coordinates. 
+Note: Will be left handed for elements with orientation = -1.
+
+Machine coords, Local coords: Upstream, Center, Downstream
+Body coords: Entrance, Center, Exit
+
+------------------------------------------------------------------------------------
+Superimpose:
+
+Difference: offset relative to body coordinates not 
 
 ------------------------------------------------------------------------------------
 Lattice element selection:
@@ -109,6 +127,9 @@ Generally Follow Julia standard conventions (see Julia manual) except:
 Other conventions:
 * Specify AbstractString instead of String for function arguments to avoid incompatibility
 with the SubString type.
+
+Documentation guidelines:
+See:  https://juliareach.github.io/JuliaReachDevDocs/latest/guidelines/
 
 ------------------------------------------------------------------------------------
 Makie for Plotting
