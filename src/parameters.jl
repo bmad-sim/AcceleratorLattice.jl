@@ -1,4 +1,4 @@
-"""A
+"""
 Dictionaries of parameters defined by Bmad
 """
 
@@ -29,9 +29,6 @@ end
 ParamInfo(kind, description) = ParamInfo(kind, description, "", nothing)
 ParamInfo(kind, description, units) = ParamInfo(kind, description, units, nothing)
 
-
-@enum geometry open! closed!
-
 """
 Dictionary of parameters in the Ele.param dict.
 """
@@ -42,11 +39,15 @@ global ele_param = Dict(
   :ix_ele       => ParamInfo(Int, "Index of element in containing branch .ele() array."),
   :orientation  => ParamInfo(Int, "Longitudinal orientation of element. May be +1 or -1."),
   :branch       => ParamInfo(Pointer, "Pointer to branch containing element."),
-  :s            => ParamInfo(Real, "Longitudinal s-position", "m"),
+
+  :e1           => ParamInfo(Real, "Bend entrance face angle", ""),
+  :e2           => ParamInfo(Real, "Bend exit face angle", ""),
+  :e1r          => ParamInfo(Real, "Bend entrance face angle relative to a rectangular geometry", ""),
+  :e2r          => ParamInfo(Real, "Bend exit face angle relative to a rectangular geometry", ""),
   :len          => ParamInfo(Real, "Element length", "m"),
-  :len_chord    => ParamInfo(Real, "Bend element chord element length", "m"),
-  :e1           => ParamInfo(Real, "Bend element entrance face angle", ""),
-  :e2           => ParamInfo(Real, "Bend element exit face angle", ""),
+  :len_chord    => ParamInfo(Real, "Bend chord length", "m"),
+  :s            => ParamInfo(Real, "Longitudinal s-position", "m"),
+
   :floor        => ParamInfo(Struct, "Global floor position and orientation", "", FloorPosition),
 )
 
@@ -54,11 +55,14 @@ global ele_param = Dict(
 Dictionary of parameters in the Branch.param dict.
 """
 global branch_param = Dict(
-  :ix_branch => ParamInfo(Int, "Index of branch in containing lat .branch() array"),
-  :geometry  => ParamInfo(Switch, "open_geom or closed_geom Geometry enums"),
-  :lat       => ParamInfo(Pointer, "Pointer to lattice containing the branch."),
-  :type      => ParamInfo(Switch, "Either lord_type or tracking_type BranchType enums."),
-
+  :ix_branch   => ParamInfo(Int, "Index of branch in containing lat .branch() array"),
+  :geometry    => ParamInfo(Switch, "open_geom or closed_geom Geometry enums"),
+  :lat         => ParamInfo(Pointer, "Pointer to lattice containing the branch."),
+  :type        => ParamInfo(Switch, "Either LordBranch or TrackingBranch BranchType enums."),
+  :from_ele    => ParamInfo(Struct, "Element that forks to this branch.", "", Ele),
+  :live_branch => ParamInfo(Bool, "Used by programs to turn on/off tracking in a branch."),
+  :wall        => ParamInfo(Struct, "Vacuum chamber wall.", "", ChamberWall),
+  :ref_species => ParamInfo(Struct, "Reference tracking species.", "", Species),
 )
 
 
@@ -68,22 +72,32 @@ Dictionary of parameters in the Lat.param dict.
 global lat_param = Dict(
 )
 
+#-----------------------------------------------------------------------------------------
+# parameter groups
+
+
+base_group = [:s, :len, :ix_ele, :branch]
+descrip_group = [:type, :alias, :description]
+misalign_group = [:x_offset, :y_offset, :z_offset, :x_pitch, :y_pitch, :tilt]
+
 
 #-----------------------------------------------------------------------------------------
 # ele_param_by_ele_struct
 
 """
-Table of what parameters are associated with what element types
+Table of what parameters are associated with what element types.
 """
 global ele_param_by_ele_struct = Dict(  
   Dict(
-    Bend           => Dict(),
-    Drift          => Dict(),
-    Marker         => Dict(),
-    ThickMultipole => Dict(),
-    Quadrupole     => Dict(),
+    Bend           => append!(base_group, descrip_group, fieldnames(BendParams), fieldnames(AlignmentParams)),
+    Drift          => append!(base_group, descrip_group, fieldnames(AlignmentParams)),
+    Marker         => Vector(),
+    ThickMultipole => Vector(),
+    Quadrupole     => Vector(),
   )
 )
+
+deleteat!(ele_param_by_ele_struct[Bend], ele_param_by_ele_struct[Bend] .== :tilt)
 
 #-----------------------------------------------------------------------------------------
 # ele_param_defaults

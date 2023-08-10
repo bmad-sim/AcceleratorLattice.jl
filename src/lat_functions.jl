@@ -9,9 +9,23 @@ elements with that name.
 
 ### Input
 
+- `lat` -- Lattice to use.
+
+### Output
+
+(String, Vector{Ele}) Dictionary where the keys are element names and the values are vectors of elements of whose
+name matches the key
+
+### Example
+
+eled = lat_ele_dict(lat)    # Create Dictionary
+eled["q23w"]                
+
+
 """
+
 function lat_ele_dict(lat::Lat)
-  eled = Dict{AbstractString,Vector{Ele}}()
+  eled = Dict{String,Vector{Ele}}()
   for branch in lat.branch
     for ele in branch.ele
       if haskey(eled, ele.name)
@@ -69,7 +83,7 @@ function create_external_ele_vars(lat::Lat; prefix::AbstractString = "", this_mo
   eled = lat_ele_dict(lat)
 
   for (name, evec) in eled
-    if size(evec,1) == 1
+    if length(evec) == 1
       eval( :($(Symbol(this_module)).$(Symbol(name)) = $(evec[1])) )
     else
       eval( :($(Symbol(this_module)).$(Symbol(name))= $(evec)) )
@@ -95,7 +109,7 @@ function create_unique_ele_names!(lat::Lat; suffix::AbstractString = "!#")
   eled = lat_ele_dict(lat)
 
   for (name, evec) in eled
-    if size(evec,1) == 1; continue; end
+    if length(evec) == 1; continue; end
     for (ix, ele) in enumerate(evec)
       ele.name = ele.name * replace(suffix, "#" => string(ix))
     end
@@ -124,6 +138,9 @@ end
 #-----------------------------------------------------------------------------------------
 # Branch[] get and set
 
+
+"""
+"""
 function Base.getindex(branch::Branch, key)
   if key == :name; return branch.name; end
   if haskey(branch.param, key)
@@ -182,7 +199,7 @@ If `wrap`
 - `Ele` in given `branch` and given element index `ix_ele
 """
 function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
-  n = size(branch.ele,1)
+  n = length(branch.ele)
 
   if wrap
     ix_ele = mod(ix_ele-1, n-1) + 1
@@ -239,9 +256,9 @@ function eles_finder_base(Lat::Lat, name::AbstractString, julia_regex::Bool=fals
     attrib = Meta.parse(attrib)     # Makes attrib a Symbol
 
     words = str_split(pattern, "+-")
-    if size(words,1) == 2 || size(words,1) > 3; throw(BmadParseError("Bad lattice element name: " * name)); end
+    if length(words) == 2 || length(words) > 3; throw(BmadParseError("Bad lattice element name: " * name)); end
     pattern = str_unquote(words[1])
-    if size(words,1) == 3; offset = parse(Int, words[2]*words[3]); end
+    if length(words) == 3; offset = parse(Int, words[2]*words[3]); end
 
     for branch in lat.branch
       if !matches_branch(branch, branch_id); continue; end
@@ -261,17 +278,17 @@ function eles_finder_base(Lat::Lat, name::AbstractString, julia_regex::Bool=fals
     if !julia_regex
       words = str_split(name, "+-#", doubleup = true);
 
-      if size(words,1) > 2 && occursin(words[end-1], "+-")
+      if length(words) > 2 && occursin(words[end-1], "+-")
         offset = parse(Int, words[end-1]*words[end])
         words = words[:end-2]
       end
 
-      if size(words,1) > 2 && words[end-1] == "#"
+      if length(words) > 2 && words[end-1] == "#"
         nth_match = parse(Int, words[end])
         words = words[:end-2]
       end
 
-      if size(words,1) != 1; throw(BmadParseError("Bad lattice element name: " * name)); end
+      if length(words) != 1; throw(BmadParseError("Bad lattice element name: " * name)); end
       ele_id = words[1]
       ix_ele = str_to_int(ele_id, -1)
       if ix_ele != NaN && nth_match != 1; return eles; end
@@ -306,7 +323,7 @@ end
 
 function ele_finder(Lat::Lat, name::AbstractString; julia_regex::Bool = false)
     eles = eles_finder_base(lat, name, julia_regex)
-    if size(eles,1) == 0; return NULL_ELE; end
+    if length(eles) == 0; return NULL_ELE; end
     return eles[1]
 end
 
@@ -341,12 +358,12 @@ function eles_finder(lat::Lat, who::AbstractString, julia_regex::Bool=false)
 
   # Intersection
   list = str_split("~&", who, limit = 3)
-  if size(list,1) == 2 || list[1] == "~" || list[1] == "&" || list[3] == "~" || list[3] == "&"
+  if length(list) == 2 || list[1] == "~" || list[1] == "&" || list[3] == "~" || list[3] == "&"
     throw(BmadParseError("Cannot parse: " * who))
   end
 
   eles1 = eles_finder_base(lat, list[1])
-  if size(list,1) == 1; return eles1; end
+  if length(list) == 1; return eles1; end
 
   eles2 = eles_finder(lat, list[3])
   eles = []
@@ -438,7 +455,7 @@ end
 
 function next_ele(ele, offset::Integer=1)
   branch = ele.param[:branch]
-  ix_ele = mod(ele.param[:ix_ele] + offset-1, size(branch.ele,1)-1) + 1
+  ix_ele = mod(ele.param[:ix_ele] + offset-1, length(branch.ele)-1) + 1
   return branch.ele[ix_ele]
 end
 
@@ -519,7 +536,8 @@ end
 # lat_bookkeeper!
 
 function lat_bookkeeper!(lat::Lat)
-  for branch in lat.branch
+  for (ix, branch) in enumerate(lat.branch)
+    branch.param[:ix_branch] = ix
     branch_bookkeeper!(branch)
   end
   # Put stuff like ref energy in lords

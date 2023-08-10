@@ -12,8 +12,10 @@ This is similar to what @enum does except the switch values are types instead of
 """
 macro switch(base, names...)
   eval( :(abstract type $(base) end) )
-
   if hasproperty(base, :args); base = base.args[1]; end    # Strip off "<: SuperT"
+
+  eval( Meta.parse("$(base)Switch = (Type{<:$(base)})") )
+
   for name in names
     eval( :(struct $(name) <: $(base); end) )
   end 
