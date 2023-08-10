@@ -1,16 +1,3 @@
-using OffsetArrays
-using PyFormattedStrings
-
-#-------------------------------------------------------------------------------------
-# Exceptions
-
-struct InfiniteLoop <: Exception;   msg::String; end
-struct RangeError <: Exception;     msg::String; end
-struct BmadParseError <: Exception; msg::String; end
-
-# A "lattice branch" is a branch in a lattice.
-# A "beamline" is a line defined in a lattice file.
-
 #-------------------------------------------------------------------------------------
 # Base abstract types
 
