@@ -4,9 +4,9 @@ using PyFormattedStrings
 #-------------------------------------------------------------------------------------
 # Exceptions
 
-struct InfiniteLoop <: Exception;   msg::AbstractString; end
-struct RangeError <: Exception;     msg::AbstractString; end
-struct BmadParseError <: Exception; msg::AbstractString; end
+struct InfiniteLoop <: Exception;   msg::String; end
+struct RangeError <: Exception;     msg::String; end
+struct BmadParseError <: Exception; msg::String; end
 
 # A "lattice branch" is a branch in a lattice.
 # A "beamline" is a line defined in a lattice file.
@@ -33,26 +33,26 @@ abstract type ThickMultipole <: Ele end
 
 "Bend lat element."
 mutable struct Bend <: Ele
-  name::AbstractString
+  name::String
   param::Dict{Symbol,Any}
 end
 
-function Bend(name::AbstractString; kwargs...) 
+function Bend(name::String; kwargs...) 
   eval( :($(Symbol(name)) = Bend($name, Dict{Symbol,Any}($kwargs...))) )
 end
 
 ## Old way:
-## Bend(name::AbstractString;kwargs...)= Bend(name, Dict{Symbol,Any}(kwargs))
+## Bend(name::String;kwargs...)= Bend(name, Dict{Symbol,Any}(kwargs))
 
 # Drift
 
 "Drift lat element"
 mutable struct Drift <: Ele
-  name::AbstractString
+  name::String
   param::Dict{Symbol,Any}
 end
 
-function Drift(name::AbstractString; kwargs...) 
+function Drift(name::String; kwargs...) 
   eval( :($(Symbol(name)) = Drift($name, Dict{Symbol,Any}($kwargs...))) )
 end
 
@@ -60,11 +60,11 @@ end
 
 "Quadrupole lat element"
 mutable struct Quadrupole <: ThickMultipole
-  name::AbstractString
+  name::String
   param::Dict{Symbol,Any}
 end
 
-function Quadrupole(name::AbstractString; kwargs...) 
+function Quadrupole(name::String; kwargs...) 
   eval( :($(Symbol(name)) = Quadrupole($name, Dict{Symbol,Any}($kwargs...))) )
 end
 
@@ -72,11 +72,11 @@ end
 
 "Marker lat element"
 mutable struct Marker <: Ele
-  name::AbstractString
+  name::String
   param::Dict{Symbol,Any}
 end
 
-function Marker(name::AbstractString; kwargs...) 
+function Marker(name::String; kwargs...) 
   eval( :($(Symbol(name)) = Marker($name, Dict{Symbol,Any}($kwargs...))) )
 end
 
@@ -86,11 +86,11 @@ Lattice element type used to indicate the absence of any valid element.
 `NULL_ELE` is the instantiated element
 """
 mutable struct NullEle <: Ele
-  name::AbstractString
+  name::String
   param::Dict{Symbol,Any}
 end
 
-function NullEle(name::AbstractString; kwargs...) 
+function NullEle(name::String; kwargs...) 
   eval( :($(Symbol(name)) = NullEle($name, Dict{Symbol,Any}($kwargs...))) )
 end
 
@@ -99,7 +99,9 @@ NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 #-------------------------------------------------------------------------------------
 # Ele parameters
 
-mutable struct FloorPosition
+abstract type EleParameterGroup end
+
+struct FloorPosition <: EleParameterGroup
   r::Vector{Float64}       # (x,y,z) in Global coords
   q::Vector{Float64}       # Quaternion orientation
   theta::Float64;  phi::Float64;  psi::Float64  # Angular orientation consistant with q
@@ -107,17 +109,42 @@ end
 
 FloorPosition() = FloorPosition([0,0,0], [1,0,0,0], 0, 0, 0)
 
-mutable struct MultipoleArray
+struct MultipoleArray <: EleParameterGroup
   k::OffsetVector{Float64}
   ks::OffsetVector{Float64}
   tilt::OffsetVector{Float64}
+end
+
+struct AlignmentParams <: EleParameterGroup
+  x_offset::Float64
+  y_offset::Float64
+  z_offset::Float64
+  x_pitch::Float64
+  y_pitch::Float64
+  tilt::Float64     # Not used by Bend elements
+end
+
+struct BendParams <: EleParameterGroup
+  angle::Float64
+  rho::Float64
+  g::Float64
+  dg::Float64
+  e1::Float64
+  e2::Float64
+  e1r::Float64
+  e2r::Float64
+  len_chord::Float64
+  ref_tilt::Float64
+end
+
+struct ChamberWall <: EleParameterGroup
 end
 
 #-------------------------------------------------------------------------------------
 # Branch
 
 mutable struct Branch <: BeamLineItem
-  name::AbstractString
+  name::String
   ele::Vector{Ele}
   param::Dict{Symbol,Any}
 end
@@ -142,7 +169,7 @@ BmadGlobal() = BmadGlobal(1.0e-10, Dict())
 abstract type AbstractLat end
 
 mutable struct Lat <: AbstractLat
-  name::AbstractString
+  name::String
   branch::Vector{Branch}
   param::Dict{Symbol,Any}
   bmad_global::BmadGlobal
@@ -163,7 +190,7 @@ mutable struct BeamLineEle <: BeamLineItem
 end
 
 mutable struct BeamLine <: BeamLineItem
-  name::AbstractString
+  name::String
   line::Vector{BeamLineItem}
   param::Dict{Symbol,Any}
 end
@@ -175,4 +202,8 @@ mutable struct LatConstructionInfo
   n_loop::Int
 end
 
+#-------------------------------------------------------------------------------------
+# Species
 
+struct Species
+end

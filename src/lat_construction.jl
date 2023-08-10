@@ -1,15 +1,18 @@
 #-------------------------------------------------------------------------------------
-# Ele
-
-beginning_ele = Marker("beginning", Dict{Symbol,Any}(:s => 0, :len => 0))
-end_ele       = Marker("end", Dict{Symbol,Any}())
-
-#-------------------------------------------------------------------------------------
 # branch
 
+"""
+    branch(lat::Lat, ix::Int)
+    branch(lat::Lat, who::AbstractString) 
+
+Returns the branch in `lat` with index `ix` or name that matches `who`.
+
+### Input
+"""
+ 
 branch(lat::Lat, ix::Int) = lat.branch[ix]
 
-function branch(lat::Lat, who) 
+function branch(lat::Lat, who::AbstractString) 
   for branch in lat.branch
     if branch.name == who; return branch; end
   end
@@ -147,7 +150,10 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
   info = LatConstructionInfo([], beamline.param[:orientation], 0)
 
-  add_beamlineele_to_branch!(branch, BeamLineItem(beginning_ele))
+  begin_ele = Marker("begin_ele", Dict{Symbol,Any}(:s => 0, :len => 0))
+  end_ele   = Marker("end_ele", Dict{Symbol,Any}())
+
+  add_beamlineele_to_branch!(branch, BeamLineItem(begin_ele))
   add_beamline_to_branch!(branch, beamline, info)
   add_beamlineele_to_branch!(branch, BeamLineItem(end_ele))
 
@@ -233,7 +239,7 @@ lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}) = lat_expansion("Latt
 """
 """
 function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles = NULL_ELE, 
-           ref_origin::Type{<:EleBodyLocation} = Center, ele_origin::Type{<:EleBodyLocation} = Center)
+           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
   if typeof(ref) == Ele; ref = [ref]; end
   for ref_ele in ref
     superimpose1!(lat, super_ele, offset, ref_ele, offset, ref_origin, ele_origin)
@@ -242,7 +248,7 @@ end
 
 "Used by superimpose! for superimposing on on individual ref elements."
 function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Ele = NULL_ELE, 
-           ref_origin::Type{<:EleBodyLocation} = Center, ele_origin::Type{<:EleBodyLocation} = Center)
+           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
 
 
 end

@@ -7,13 +7,6 @@ function memloc(@nospecialize(x))
 end
 
 #-------------------------------------------------------------------------------------
-# Show Ele Vector
-
-function Base.show(io::IO, vec::Vector{Ele}) 
-  print(f"[{join([v.name for v in vec], ',')}]")
-end
-
-#-------------------------------------------------------------------------------------
 # ele_name
 
 function ele_name(ele::Ele, template::AbstractString = "")
@@ -31,95 +24,117 @@ function ele_name(ele::Ele, template::AbstractString = "")
 end
 
 #-------------------------------------------------------------------------------------
-# show_param_name
+# str_param_value
 
-function show_param_name(param, key, template::AbstractString = "")
+function str_param_value(param::Dict, key, template::AbstractString = "")
   who = get(param, key, nothing)
   if who == nothing
-    return ""
+    return "-"
   elseif who isa Ele
     return ele_name(who, template)
-  elseif who isa Vector
+  elseif who isa Vector{Ele}
     return "[" * join([ele_name(ele, template) for ele in who], ", ") * "]"
+  elseif who isa Branch
+    return f"Branch {who.param[:ix_branch]}: {str_quote(who.name)}"
+  elseif who isa String
+    return str_quote(who)
   else
-    return "???"
+    return string(who)
   end
 end
 
 #-------------------------------------------------------------------------------------
-# show_ele
+# Show Vector{Ele}
 
-function show_ele(ele::Ele)
-  println(f"{ele_name(ele)}:   {typeof(ele)}")
+function Base.show(io::IO, vec::Vector{Ele}) 
+  print(f"[{join([v.name for v in vec], ',')}]")
+end
+
+Base.show(vec::Vector{Ele}) = Base.show(stdout, vec::Vector{Ele}) 
+
+#-------------------------------------------------------------------------------------
+# Show Ele
+
+function Base.show(io::IO, ele::Ele)
+  n = maximum([length(key) for key in keys(ele.param)]) + 4 
+  println(io, f"Ele: {ele_name(ele)}   {typeof(ele)}")
   for (key, val) in ele.param
-    kstr = rpad(repr(key), 16)
-    if val isa Ele
-      println(f"  {kstr} {ele_name(val)}")
-    elseif val isa Branch
-      println(f"  {kstr} {str_quote(val.name)}")
-    elseif val isa Vector{Ele}
-      println(f"  {kstr} [{join([ele_name(ele) for ele in val], \", \")}]")
-    else
-      println(f"  {kstr} {val}")
-    end
+    kstr = rpad(repr(key), n)
+    vstr = str_param_value(ele.param, key)
+    println(io, f"  {kstr} {vstr}")
   end
   return nothing
 end
 
-Base.show(io::IO, ele::Ele) = show_ele(ele)
+Base.show(ele::Ele) = Base.show(stdout, ele::Ele)
 
 #-------------------------------------------------------------------------------------
-# show_eles
+# Show Vector{ele}
 
-function show_eles(eles::Vector{Ele})
-  println(f"{size(eles,1)}-element Vector{{Ele}}:")
+function Base.show(io::IO, eles::Vector{Ele})
+  println(io, f"{length(eles)}-element Vector{{Ele}}:")
   for ele in eles
-    println(" " * ele_name(ele))
+    println(io, " " * ele_name(ele))
   end
 end
 
-Base.show(io::IO, ::MIME"text/plain", eles::Vector{Ele}) = show_eles(eles)
+Base.show(io::IO, ::MIME"text/plain", eles::Vector{Ele}) = Base.show(stdout, eles)
+Base.show(eles::Vector{Ele}) = Base.show(stdout, eles)
 
 #-------------------------------------------------------------------------------------
-# show_lat
+# Show Lat
 
-function show_lat(lat::Lat)
-  println(f"Lat: {str_quote(lat.name)}")
+function Base.show(io::IO, lat::Lat)
+  println(io, f"Lat: {str_quote(lat.name)}")
   for branch in lat.branch
-    show_branch(branch)
+    show(io, branch)
   end
   return nothing
 end
 
-Base.show(io::IO, lat::Lat) = show_lat(lat)
+Base.show(lat::Lat) = Base.show(stdout, lat)
 
 #-------------------------------------------------------------------------------------
-# show_branch
+# Show Branch
 
-function show_branch(branch::Branch)
+function Base.show(io::IO, branch::Branch)
   g_str = ""
   if haskey(branch.param, :geometry); g_str = f":geometry => {branch.param[:geometry]}"; end
-  println(f"{branch[:ix_branch]} Branch: {str_quote(branch.name)}  {g_str}")
+  println(io, f"Branch {branch[:ix_branch]}: {str_quote(branch.name)}  {g_str}")
 
   if length(branch.ele) == 0 
-    println("     --- No Elements ---")
+    println(io, "     --- No Elements ---")
   else
     n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
     for ele in branch.ele
-      println(f"  {ele.param[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" *
-        f"  {lpad(ele.param[:orientation], 2)}  {show_param_name(ele.param, :multipass_lord)}{show_param_name(ele.param, :slave)}")
+      println(io, f"  {ele.param[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" *
+        f"  {lpad(ele.param[:orientation], 2)}  {str_param_value(ele.param, :multipass_lord)}{str_param_value(ele.param, :slave)}")
     end
   end
   return nothing
 end
 
-Base.show(io::IO, lb::Branch) = show_branch(lb)
+Base.show(branch::Branch) = Base.show(stdout, branch)
 
 #-------------------------------------------------------------------------------------
-# show_beamline
+# Show Vector{Branch}
 
-function show_beamline(beamline::BeamLine)
-  println(f"Beamline:  {str_quote{beamline.name}}, multipass: {beamline.param[:multipass]}, orientation: {beamline.param[:orientation]}")
+function Base.show(io::IO, branches::Vector{Branch})
+  n = maximum([length(b.name) for b in branches]) + 4
+  for branch in branches
+    g_str = ""
+    if haskey(branch.param, :geometry); g_str = f", :geometry => {branch.param[:geometry]}"; end
+    println(io, f"{branch[:ix_branch]}: {rpad(str_quote(branch.name), n)} #Elements{lpad(length(branch.ele), 5)}{g_str}")
+  end
+end
+
+Base.show(io::IO, ::MIME"text/plain", branches::Vector{Branch}) = Base.show(stdout, branches)
+
+#-------------------------------------------------------------------------------------
+# Show Beamline
+
+function Base.show(io::IO, bl::BeamLine)
+  println(io, f"Beamline:  {str_quote{beamline.name}}, multipass: {beamline.param[:multipass]}, orientation: {beamline.param[:orientation]}")
   n = 6
   for item in beamline.line
     if item isa BeamLineEle
@@ -131,13 +146,21 @@ function show_beamline(beamline::BeamLine)
 
   for (ix, item) in enumerate(beamline.line)
     if item isa BeamLineEle
-      println(f"{ix:5i}  {rpad(str_quote(item.ele.name), n)}  {rpad(typeof(item.ele), 12)}  {lpad(item.param[:orientation], 2)}")
+      println(io, f"{ix:5i}  {rpad(str_quote(item.ele.name), n)}  {rpad(typeof(item.ele), 12)}  {lpad(item.param[:orientation], 2)}")
     else  # BeamLine
-      println(f"{ix:5i}  {rpad(str_quote(item.name), n)}  {rpad(typeof(item), 12)}  {lpad(item.param[:orientation], 2)}")
+      println(io, f"{ix:5i}  {rpad(str_quote(item.name), n)}  {rpad(typeof(item), 12)}  {lpad(item.param[:orientation], 2)}")
     end
   end
   return nothing
 end
 
-Base.show(io::IO, bl::BeamLine) = show_beamline(bl)
+Base.show(bl::BeamLine) = Base.show(stdout, bl)
 
+#-----------------------------------------------------------------------------------------
+# Show Dict{String, Vector{Ele}}
+
+function Base.show(io::IO, eled::Dict{String, Vector{Ele}})
+  println(io, f"Dict{{AbstractString, Vector{{Ele}}}} with {length(eled)} entries.")
+end
+
+Base.show(io::IO, ::MIME"text/plain", eled::Dict{String, Vector{Ele}}) = Base.show(stdout, eled)
