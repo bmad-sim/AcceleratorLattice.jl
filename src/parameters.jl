@@ -3,7 +3,7 @@ Dictionaries of parameters defined by Bmad
 """
 
 """
-Possible kind values: String, Int, Real, Bool, Switch, Struct, Pointer
+Possible kind values: String, IntKind, RealKind, RealVec, BoolKind, Switch, Struct, Pointer
 
 A Switch is a variable that has only a finite number of values.
 Generally, a Switch will either be an enum or something that has a finite number of integer states.
@@ -15,54 +15,73 @@ itself is considered to be a Pointer as well as its components.
 A Struct is a struct. For example, the :floor parameter holds a FloorPosition struct
 """
 
-abstract type Struct end
-abstract type Switch end
-abstract type Pointer end
+abstract type ParamKind
+abstract type Struct <: ParamKind end
+abstract type Switch <: ParamKind end
+abstract type Pointer <: ParamKind end
+abstract type RealVec <: ParamKind end
 
-struct ParamInfo
-  kind
-  description::AbstractString
-  units::AbstractString 
-  struct_type                        # Set for Struct parameters
+struct LatticeParamInfo
+  parent_struct::DataType
+  kind::ParamKind
+  description::String
+  units::String 
 end
 
-ParamInfo(kind, description) = ParamInfo(kind, description, "", nothing)
-ParamInfo(kind, description, units) = ParamInfo(kind, description, units, nothing)
+LatticeParamInfo(parent::DataType, kind::ParamKind, description::String) = LatticeParamInfo(parent, kind, description, "")
 
 """
 Dictionary of parameters in the Ele.param dict.
 """
 global ele_param = Dict(
-  :type         => ParamInfo(String, "Type of element. Set by User and ignored by Bmad."),
-  :alias        => ParamInfo(String, "Alias name. Set by User and ignored by Bmad."),
-  :description  => ParamInfo(String, "Descriptive info. Set by User and ignored by Bmad."),
-  :ix_ele       => ParamInfo(Int, "Index of element in containing branch .ele() array."),
-  :orientation  => ParamInfo(Int, "Longitudinal orientation of element. May be +1 or -1."),
-  :branch       => ParamInfo(Pointer, "Pointer to branch containing element."),
+  :type         => LatticeParamInfo(String,    "Type of element. Set by User and ignored by Bmad."),
+  :alias        => LatticeParamInfo(String,    "Alias name. Set by User and ignored by Bmad."),
+  :description  => LatticeParamInfo(String,    "Descriptive info. Set by User and ignored by Bmad."),
+  :ix_ele       => LatticeParamInfo(IntKind,   "Index of element in containing branch .ele() array."),
+  :orientation  => LatticeParamInfo(IntKind,   "Longitudinal orientation of element. May be +1 or -1."),
+  :branch       => LatticeParamInfo(Pointer,   "Pointer to branch containing element."),
+  :e            => LatticeParamInfo(RealVec,   "Bend entrance  and exit face angles. Equivalent to [:e1, :e2]., "rad"),
+  :e1           => LatticeParamInfo(RealKind,  "Bend entrance face angle. Equivalent to :(e[1])", "rad"),
+  :e2           => LatticeParamInfo(RealKind,  "Bend exit face angle. Equivalent to :(e[2])", "rad"),
+  :er           => LatticeParamInfo(RealVec,   "Bend entrance  and exit face angles relative to a rectangular geometry. Equivalent to [:er1, :er2]., "rad"),
+  :er1          => LatticeParamInfo(RealKind,  "Bend entrance face angle relative to a rectangular geometry.", "rad"),
+  :er2          => LatticeParamInfo(RealKind,  "Bend exit face angle relative to a rectangular geometry.", "rad"),
+  :len          => LatticeParamInfo(RealKind,  "Element length.", "m"),
+  :len_chord    => LatticeParamInfo(RealKind,  "Bend chord length.", "m"),
+  :s            => LatticeParamInfo(RealKind,  "Longitudinal s-position.", "m"),
+  :x_limit      => LatticeParamInfo(RealVec
+  :y_limit
+  :fint
+  :hgap
 
-  :e1           => ParamInfo(Real, "Bend entrance face angle", ""),
-  :e2           => ParamInfo(Real, "Bend exit face angle", ""),
-  :e1r          => ParamInfo(Real, "Bend entrance face angle relative to a rectangular geometry", ""),
-  :e2r          => ParamInfo(Real, "Bend exit face angle relative to a rectangular geometry", ""),
-  :len          => ParamInfo(Real, "Element length", "m"),
-  :len_chord    => ParamInfo(Real, "Bend chord length", "m"),
-  :s            => ParamInfo(Real, "Longitudinal s-position", "m"),
-
-  :floor        => ParamInfo(Struct, "Global floor position and orientation", "", FloorPosition),
 )
+
+struct EleParamKey
+  kind::DataType
+  description::String
+end
+
+global ele_dict_keys = Dict(
+  :floor           => EleParamKey(FloorPosition, "Global floor position and orientation"),
+  :kmultipoles     => EleParamKey(EleKMultipoles, "Normalized magnetic multipoles."),
+  :fieldmultipoles => EleParamKey(EleFieldMultipoles, "Unnormalized magnetic multipoles.")
+  :emultipoles     => EleParamKey(EleEMultipolse, "Electric multipoles.")
+  :alignment       => EleParamKey(Alignment
+)
+
 
 """
 Dictionary of parameters in the Branch.param dict.
 """
 global branch_param = Dict(
-  :ix_branch   => ParamInfo(Int, "Index of branch in containing lat .branch() array"),
-  :geometry    => ParamInfo(Switch, "open_geom or closed_geom Geometry enums"),
-  :lat         => ParamInfo(Pointer, "Pointer to lattice containing the branch."),
-  :type        => ParamInfo(Switch, "Either LordBranch or TrackingBranch BranchType enums."),
-  :from_ele    => ParamInfo(Struct, "Element that forks to this branch.", "", Ele),
-  :live_branch => ParamInfo(Bool, "Used by programs to turn on/off tracking in a branch."),
-  :wall        => ParamInfo(Struct, "Vacuum chamber wall.", "", ChamberWall),
-  :ref_species => ParamInfo(Struct, "Reference tracking species.", "", Species),
+  :ix_branch   => LatticeParamInfo(Int, "Index of branch in containing lat .branch() array"),
+  :geometry    => LatticeParamInfo(Switch, "open_geom or closed_geom Geometry enums"),
+  :lat         => LatticeParamInfo(Pointer, "Pointer to lattice containing the branch."),
+  :type        => LatticeParamInfo(Switch, "Either LordBranch or TrackingBranch BranchType enums."),
+  :from_ele    => LatticeParamInfo(Struct, "Element that forks to this branch.", "", Ele),
+  :live_branch => LatticeParamInfo(Bool, "Used by programs to turn on/off tracking in a branch."),
+  :wall        => LatticeParamInfo(Struct, "Vacuum chamber wall.", "", ChamberWall),
+  :ref_species => LatticeParamInfo(Struct, "Reference tracking species.", "", Species),
 )
 
 
@@ -87,6 +106,7 @@ misalign_group = [:x_offset, :y_offset, :z_offset, :x_pitch, :y_pitch, :tilt]
 """
 Table of what parameters are associated with what element types.
 """
+
 global ele_param_by_ele_struct = Dict(  
   Dict(
     Bend           => append!(base_group, descrip_group, fieldnames(BendParams), fieldnames(AlignmentParams)),

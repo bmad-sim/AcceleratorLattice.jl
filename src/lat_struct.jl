@@ -16,71 +16,38 @@ Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 "General thick multipole that is inherited by quadrupoles, sextupoles, etc."
 abstract type ThickMultipole <: Ele end
 
-# Bend
-
-"Bend lat element."
-mutable struct Bend <: Ele
-  name::String
-  param::Dict{Symbol,Any}
-end
-
-function Bend(name::String; kwargs...) 
-  eval( :($(Symbol(name)) = Bend($name, Dict{Symbol,Any}($kwargs...))) )
-end
-
-## Old way:
-## Bend(name::String;kwargs...)= Bend(name, Dict{Symbol,Any}(kwargs))
-
-# Drift
-
-"Drift lat element"
-mutable struct Drift <: Ele
-  name::String
-  param::Dict{Symbol,Any}
-end
-
-function Drift(name::String; kwargs...) 
-  eval( :($(Symbol(name)) = Drift($name, Dict{Symbol,Any}($kwargs...))) )
-end
-
-# Quadrupole
-
-"Quadrupole lat element"
-mutable struct Quadrupole <: ThickMultipole
-  name::String
-  param::Dict{Symbol,Any}
-end
-
-function Quadrupole(name::String; kwargs...) 
-  eval( :($(Symbol(name)) = Quadrupole($name, Dict{Symbol,Any}($kwargs...))) )
-end
-
-# Marker
-
-"Marker lat element"
-mutable struct Marker <: Ele
-  name::String
-  param::Dict{Symbol,Any}
-end
-
-function Marker(name::String; kwargs...) 
-  eval( :($(Symbol(name)) = Marker($name, Dict{Symbol,Any}($kwargs...))) )
-end
-
 # NullEle
 """
 Lattice element type used to indicate the absence of any valid element.
 `NULL_ELE` is the instantiated element
 """
-mutable struct NullEle <: Ele
-  name::String
-  param::Dict{Symbol,Any}
-end
 
-function NullEle(name::String; kwargs...) 
-  eval( :($(Symbol(name)) = NullEle($name, Dict{Symbol,Any}($kwargs...))) )
-end
+mutable struct Bend <: Ele; name::String; param::Dict{Symbol,Any}; end
+Bend(name::String; kwargs...) = eval( :($(Symbol(name)) = Bend($name, Dict{Symbol,Any}($kwargs...))) )
 
+mutable struct Drift <: Ele; name::String; param::Dict{Symbol,Any}; end
+Drift(name::String; kwargs...) = eval( :($(Symbol(name)) = Drift($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Quadrupole <: ThickMultipole; name::String; param::Dict{Symbol,Any}; end
+Quadrupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Quadrupole($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Sextupole <: ThickMultipole; name::String; param::Dict{Symbol,Any}; end
+Sextupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Sextupole($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Marker <: Ele; name::String; param::Dict{Symbol,Any}; end
+Marker(name::String; kwargs...) = eval( :($(Symbol(name)) = Marker($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Lcavity <: ThickMultipole; name::String; param::Dict{Symbol,Any} end
+Lcavity(name::String; kwargs...) = eval( :($(Symbol(name)) = Lcavity($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct RFcavity <: Ele; name::String; param::Dict{Symbol,Any}; end
+RFcavity(name::String; kwargs...) = eval( :($(Symbol(name)) = RFcavity($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Fork <: Ele; name::String; param::Dict{Symbol,Any}; end
+Fork(name::String; kwargs...) = eval( :($(Symbol(name)) = Fork($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct NullEle <: Ele; name::String; param::Dict{Symbol,Any}; end
+NullEle(name::String; kwargs...) = eval( :($(Symbol(name)) = NullEle($name, Dict{Symbol,Any}($kwargs...))) )
 NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
@@ -96,13 +63,43 @@ end
 
 FloorPosition() = FloorPosition([0,0,0], [1,0,0,0], 0, 0, 0)
 
-struct MultipoleArray <: EleParameterGroup
-  k::OffsetVector{Float64}
-  ks::OffsetVector{Float64}
-  tilt::OffsetVector{Float64}
+struct KMultipole <: EleParameterGroup  # A single multipole
+  k::Float64
+  ks::Float64
+  tilt::Float64
+  n::Int64
 end
 
-struct AlignmentParams <: EleParameterGroup
+struct EleKMultipoles <: EleParameterGroup
+  n_vec::Vector{Int64}          # Vector of multipole order.
+  mp_vec::Vector{KMulitpole}    # Vector of multipoles.
+end
+
+struct FieldMultipole <: EleParameterGroup  # A single multipole
+  F::Float64
+  Fs::Float64
+  tilt::Float64
+  n::Int64
+end
+
+struct EleFieldMultipoles <: EleParameterGroup
+  n_vec::Vector{Int64}          # Vector of multipole order.
+  mp_vec::Vector{FieldMulitpole}    # Vector of multipoles. 
+end
+
+struct EMultipole <: EleParameterGroup
+  E::Float64
+  Es::Float64
+  tilt::Float64
+  n::Int64
+end
+
+struct EleEMultipoles <: EleParameterGroup
+  n_vec::Vector{Int64}          # Vector of multipole order.
+  mp_vec::Vector{EMulitpole}    # Vector of multipoles. 
+end
+
+struct EleAlignment <: EleParameterGroup
   x_offset::Float64
   y_offset::Float64
   z_offset::Float64
@@ -111,20 +108,51 @@ struct AlignmentParams <: EleParameterGroup
   tilt::Float64     # Not used by Bend elements
 end
 
-struct BendParams <: EleParameterGroup
+struct EleBendParams <: EleParameterGroup
   angle::Float64
   rho::Float64
   g::Float64
   dg::Float64
-  e1::Float64
-  e2::Float64
-  e1r::Float64
-  e2r::Float64
+  e::Vector{Float64}    # Edge angles
+  e_rect::Vector{Float64}   # Edge angles with respect to rectangular geometry.
   len_chord::Float64
   ref_tilt::Float64
+  fint::Vector{Float64}
+  hgap::Vector{Float64}
 end
 
-struct ChamberWall <: EleParameterGroup
+struct EleAperture <: EleParameterGroup
+  x_limit::Vector{Float64}
+  y_limit::Vector{Float64}
+  aperture_type::ApertureType
+  aperture_at::ApertureAt
+  offset_moves_aperture::Bool
+end
+
+struct EleInfo <: EleParameterGroup
+  type::String
+  alias::String
+  description::String
+end
+
+struct EleRF <: EleParameterGroup
+  voltage::Float64
+  gradient::Float64
+  rf_phase::Float64
+  rf_frequency::Float64
+  harmon::Float64
+  cavity_type::CavityType
+  n_cell::Int64
+end
+
+struct EleTracking <: EleParameterGroup
+  tracking_method::TrackingMethod
+  field_calc::FieldCalcMethod
+  num_steps::Int64
+  ds_step::Int64
+end
+
+struct EleChamberWall <: EleParameterGroup
 end
 
 #-------------------------------------------------------------------------------------

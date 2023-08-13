@@ -9,6 +9,47 @@ end
 #-------------------------------------------------------------------------------------
 # ele_name
 
+"""
+    function ele_name(ele::Ele, template::AbstractString = "")
+
+Returns a string containing the element name. The `template` string determines the format
+of the output string.
+
+### Input:
+
+- `ele`      -- Element whose name is to be outputted.
+- `template` -- Output format.
+
+### Output:
+
+String containing the element name.
+
+### Notes:
+
+The output string is formed by starting with the `template` string.
+The `template` string is scanned and all `token` sub-strings are replaced by the appropriate string.
+Tokens are two character strings:
+  "@N" is replaced by ele.name
+  "!#" is replaced by `branch.name>>ix_ele` where `branch` = ele[:branch] is the branch that the 
+          element is in and `ix_ele` = ele[:ix_ele] is the element index.
+  "&#" is replaced by `ix_ele` if there is only one branch in the lattice 
+        else the token is replaced the same as "!#".
+  "%#" is replaced by `ix_ele` if the element is in branch 1 else the token is replaced the same as "!#".
+
+If the `template` is blank (""), the `template` is taken to be "\"@N\" (!#)"
+
+### Examples:
+
+If `ele` has ele.name = "q02w", ele[:ix_ele] = 7 and the element lives in branch named "ring":
+  template      output
+  --------      ------
+ @N             q02w
+ !#             fodo>>7
+ "@N" (!#)      "q02w" (fodo>>7)  
+ &#             `7` if there is only one branch in the lattice.
+ %#             `7` if fodo is branch 1.
+
+"""
 function ele_name(ele::Ele, template::AbstractString = "")
   if !haskey(ele.param, :ix_ele); return ele.name; end
   if template == ""; template = "\"@N\" (!#)"; end
@@ -17,7 +58,7 @@ function ele_name(ele::Ele, template::AbstractString = "")
   branch = ele.param[:branch]
   lat = branch.param[:lat]
   str = replace(template, "@N" => ele.name)
-  str = replace(str, "%#" => (branch === lat.branch[1] ? ix_ele : branch.name * ">>" * string(ix_ele)))
+  str = replace(str, "%#" => (branch === lat.branch[1] ? string(ix_ele) : branch.name * ">>" * string(ix_ele)))
   str = replace(str, "&#" => (lat.branch == 1 ? string(ix_ele) : branch.name * ">>" * string(ix_ele)))
   str = replace(str, "!#" => branch.name * ">>" * string(ix_ele))
   return str
@@ -42,15 +83,6 @@ function str_param_value(param::Dict, key, template::AbstractString = "")
     return string(who)
   end
 end
-
-#-------------------------------------------------------------------------------------
-# Show Vector{Ele}
-
-function Base.show(io::IO, vec::Vector{Ele}) 
-  print(f"[{join([v.name for v in vec], ',')}]")
-end
-
-Base.show(vec::Vector{Ele}) = Base.show(stdout, vec::Vector{Ele}) 
 
 #-------------------------------------------------------------------------------------
 # Show Ele

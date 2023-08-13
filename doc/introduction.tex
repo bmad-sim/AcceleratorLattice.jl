@@ -1,0 +1,143 @@
+\chapter{Overview and Introduction}
+
+%---------------------------------------------------------------------------------------------------
+\section{acknowledgements}
+
+It is my pleasure to express appreciation to people who have contributed to this effort, and without
+whom, \bmad would only be a shadow of what it is today: To David Rubin for his support all these
+years, to \'Etienne Forest (aka Patrice Nishikawa) for use of his remarkable PTC/FPP library (not to
+mention his patience in explaining everything to me), to Desmond Barber for very useful discussions
+on how to simulate spin, to Mark Palmer, Matt Rendina, and Attilio De~Falco for all their work
+maintaining the build system and for porting \bmad to different platforms, to Frank Schmidt and CERN
+for permission to use the \mad tracking code. To Hans Grote and CERN for granting permission to
+adapt figures from the \mad manual for use in this one, to Martin Berz for his DA package, and to
+Dan Abell, Jacob Asimow, Ivan Bazarov, Moritz Beckmann, Scott Berg, Oleksii Beznosov, Joel Brock,
+Sarah Buchan, Avishek Chatterjee, Jing Yee Chee, Christie Chiu, Joseph Choi, Robert Cope, Jim
+Crittenden, Laurent Deniau, Gerry Dugan, Michael Ehrlichman, Jim Ellison, Ken Finkelstein, Mike
+Forster, Thomas Gl{\"a}{\ss}le, Juan Pablo Gonzalez-Aguilera, Colwyn Gulliford, Klaus Heinemann,
+Richard Helms, Georg Hoffstaetter, Henry Lovelace III, Chris Mayes, Karthik Narayan, Katsunobu Oide,
+Tia Plautz, Matt Randazzo, Michael Saelim, Jim Shanks, Matthew Signorelli, Hugo Slepicka, Jeff
+Smith, Jeremy Urban, Ningdong Wang, Suntao Wang, Mark Woodley, and Demin Zhou for their help.
+
+%---------------------------------------------------------------------------------------------------
+\section{What is Bmad?}
+
+The original Bmad was developed as a subroutine
+library ("toolkit") for charged--particle and X-Ray simulations in accelerators and storage rings and 
+has served as the calculational engine
+for many accelerator simulation programs including the \tao program which is widely used in the
+accelerator community. \bmad has
+been developed at the Cornell Laboratory for Accelerator-based ScienceS and Education (CLASSE) and
+has been in use since 1996.
+Eventually, in 2023, the organic growth of Bmad --- leading to the code not being as well structured
+as it should be --- pushed the decision that the code needed to be
+refactored. On top of this was the realization that, while the modern Fortran object-orientated
+language that \bmad was written in was a reasonable choice from a purely technical standpoint, 
+the Fortran community had atrophied to the point where Fortran compiler maintenance was severely 
+affected. The choice was made to use the \julia language for the rewrite.
+
+The name ``\bmad" thus has several meanings. Originally, the term only referred to the \bmad
+toolkit. As time went on, and \bmad was used in more and more programs, the term \bmad was
+applied to mean the whole ecosystem of toolkit plus programs. Finally, there is refactored
+\bmad. This \bmad is a \julia package and as such has is more akin to \bmad-the-ecosystem as
+opposed to \bmad-the-toolkit in that \bmad-the-package is used both for constructing lattices
+(like \bmad-the-toolkit) and for simulation work without an intermediate program interfacing in between.
+
+%---------------------------------------------------------------------------------------------------
+\section{History}
+
+\bmad (Otherwise known as ``Baby MAD" or ``Better MAD" or just plain ``Be MAD!") is a subroutine
+library for charged--particle and X-Ray simulations in accelerators and storage rings. \bmad has
+been developed at the Cornell Laboratory for Accelerator-based ScienceS and Education (CLASSE) and
+has been in use since 1996.
+
+Prior to the development of \bmad, simulation programs at Cornell were written almost from scratch
+to perform calculations that were beyond the capability of existing, generally available software.
+This practice was inefficient, leading to much duplication of effort. Since the development of
+simulation programs was time consuming, needed calculations where not being done. As a response, the
+\bmad subroutine library, using an object oriented approach and written in modern object-oriented
+Fortran, were developed. The aim of the \bmad project was to:
+\begin{Itemize}
+\item Cut down on the time needed to develop programs.
+\item Cut down on programming errors.
+\item Provide a simple mechanism for lattice function calculations
+from within control system programs.
+\item Provide a flexible and powerful lattice input format.
+\item Standardize sharing of lattice information between 
+programs.
+\end{Itemize}
+
+\bmad can be used to study both single and multi--particle beam dynamics as well as X-rays.  Over
+the years, \bmad modules have been developed for simulating a wide variety of phenomena including
+intra beam scattering (IBS), coherent synchrotron radiation (CSR), Wakefields, Touschek scattering,
+higher order mode (HOM) resonances, etc., etc.  \bmad has various tracking algorithms including
+Runge--Kutta and symplectic (Lie algebraic) integration. Wakefields, and radiation excitation and
+damping can be simulated. \bmad has routines for calculating transfer matrices, emittances, Twiss
+parameters, dispersion, coupling, etc. The elements that \bmad knows about include quadrupoles, RF
+cavities (both storage ring and LINAC accelerating types), solenoids, dipole bends, Bragg crystals
+etc.  In addition, elements can be defined to control the attributes of other elements. This can be
+used to simulate the ``girder'' which physically support components in the accelerator or to easily
+simulate the action of control room ``knobs'' that gang together, say, the current going through a
+set of quadrupoles.
+
+%---------------------------------------------------------------------------------------------------
+\section{Why Julia?}
+
+The choice of \julia as the basis for the new \bmad was not an easy one. Other possibilities included
+C++ \cite{}, Python \cite{}, a combination of Python and C/C++, etc. If the \bmad refactoring
+project had been started before 2023 the choice probably would have been Python/C/C++. But in
+2023 \julia development was mature enough, and the advantages of \julia over the alternatives was
+large enough, so that the decision was made to use \julia.
+
+* Short history of \julia
+
+* \julia was constructed for simulations/large data handling.
+
+* Very active community (not Fortran)
+
+But what is the compelling reason for using \julia? First of all, \julia is a scripting language which
+means that it is 
+like Python. 
+
+%---------------------------------------------------------------------------------------------------
+\section{Manual Organization}
+
+As a consequence of \bmad being a software library, this manual serves two masters: The
+programmer who wants to develop applications and needs to know about the inner workings of
+\bmad, and the user who simply needs to know about the \bmad standard input format and
+about the physics behind the various calculations that \bmad performs.
+
+\index{MAD|hyperbf}
+To this end, this manual is divided into three parts. The first two
+parts are for both the user and programmer while the third part is
+meant just for programmers. 
+  \begin{description}
+  \item[Part~I] \Newline
+Part~I discusses the \bmad lattice input standard. The \bmad lattice input standard was
+developed using the \mad\cite{b:maduser,b:madphysics}. lattice input standard as a
+starting point but, as \bmad evolved, \bmad's syntax has evolved with it.
+  \item[Part~II] \Newline
+part~II gives the conventions used by \bmad --- coordinate systems, magnetic field
+expansions, etc. --- along with some of the physics behind the calculations. By necessity,
+the physics documentation is brief and the reader is assumed to be familiar with high
+energy accelerator physics formalism.
+  \item[Part~III] \Newline
+Part~III gives the nitty--gritty details of the \bmad
+subroutines and the structures upon which they are based.
+\end{description}
+
+\index{Bmad!information}
+More information, including the most up--to--date version of this manual, can be found at
+the \bmad web site\cite{b:bmad.web}.  Errors and omissions are a fact of life for any
+reference work and comments from you, dear reader, are therefore most welcome. Please send
+any missives (or chocolates, or any other kind of sustenance) to:
+\begin{example}
+  David Sagan <dcs16@cornell.edu>
+\end{example}
+\index{Bmad!error reporting}
+
+The \bmad manual is organized as reference guide and so does not do a good job of instructing the
+beginner as to how to use \bmad. For that there is an introduction and tutorial on \bmad and \tao
+(\sref{s:tao.intro}) concepts that can be downloaded from the \bmad web page. Go to either the \bmad or
+\tao manual pages and there will be a link for the tutorial.
+
