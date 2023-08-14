@@ -1,2 +1,9 @@
+doc/bmad.lof
+doc/bmad.log
+doc/bmad.lot
+doc/bmad-test*
+doc/bmad.out
+doc/bmad.toc
 /Manifest.toml
+.DS_Store
 *~

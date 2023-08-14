@@ -29,7 +29,7 @@ BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.param))
 #-------------------------------------------------------------------------------------
 # beamline
 
-function beamline(name::AbstractString, line::Vector{T}; geometry::Type{<:Geometry} = OpenGeom, 
+function beamline(name::AbstractString, line::Vector{T}; geometry::GeometrySwitch = OpenGeom, 
                                     multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(:geometry => geometry, 
                                                    :multipass => multipass, :orientation => orientation))
@@ -247,7 +247,7 @@ function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles =
 end
 
 "Used by superimpose! for superimposing on on individual ref elements."
-function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Ele = NULL_ELE, 
+function superimpose1!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Ele = NULL_ELE, 
            ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
 
 
