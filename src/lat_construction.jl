@@ -29,7 +29,7 @@ BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.param))
 #-------------------------------------------------------------------------------------
 # beamline
 
-function beamline(name::AbstractString, line::Vector{T}; geometry::Type{<:Geometry} = OpenGeom, 
+function beamline(name::AbstractString, line::Vector{T}; geometry::GeometrySwitch = OpenGeom, 
                                     multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(:geometry => geometry, 
                                                    :multipass => multipass, :orientation => orientation))

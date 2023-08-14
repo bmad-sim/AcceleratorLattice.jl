@@ -519,7 +519,7 @@ function branch_bookkeeper!(branch::Branch)
   ele.param[:ix_ele] = 1
   ele.param[:branch] = branch
   if !haskey(ele.param, :s); ele.param[:s] = 0; end
-  if !haskey(ele.param, :floor_position); ele.param[:floor_position] = FloorPosition(); end
+  if !haskey(ele.param, :floor_position); ele.param[:floor_position] = FloorPositionGroup(); end
   old_ele = ele
 
   for (ix, ele) in enumerate(branch.ele[2:end])

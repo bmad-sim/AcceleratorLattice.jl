@@ -67,14 +67,14 @@ end
 #-------------------------------------------------------------------------------------
 # str_param_value
 
-function str_param_value(param::Dict, key, template::AbstractString = "")
+function str_param_value(param::Dict, key, default::AbstractString = "???")
   who = get(param, key, nothing)
   if who == nothing
-    return "-"
+    return default
   elseif who isa Ele
-    return ele_name(who, template)
+    return ele_name(who)
   elseif who isa Vector{Ele}
-    return "[" * join([ele_name(ele, template) for ele in who], ", ") * "]"
+    return "[" * join([ele_name(ele) for ele in who], ", ") * "]"
   elseif who isa Branch
     return f"Branch {who.param[:ix_branch]}: {str_quote(who.name)}"
   elseif who isa String
@@ -140,7 +140,7 @@ function Base.show(io::IO, branch::Branch)
     n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
     for ele in branch.ele
       println(io, f"  {ele.param[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" *
-        f"  {lpad(ele.param[:orientation], 2)}  {str_param_value(ele.param, :multipass_lord)}{str_param_value(ele.param, :slave)}")
+        f"  {lpad(ele.param[:orientation], 2)}  {str_param_value(ele.param, :multipass_lord, \"\")}{str_param_value(ele.param, :slave, \"\")}")
     end
   end
   return nothing

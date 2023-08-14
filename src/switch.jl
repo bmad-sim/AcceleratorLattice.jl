@@ -1,14 +1,20 @@
+abstract type Switch end
+
 """
     macro switch(base, names...)
 
-Creates a set of "switch types" which are subtypes of `base`.
-This is similar to what @enum does except the switch values are types instead of integers.
+Creates a "switch" group. A switch group is a set of switch values along with a switch group
+variable which represents the union of all the switch values. 
+
+This is similar to what @enum does except with switches, a given switch value may be used
+in different switch groups.
 
 ### Input
 
 - `base` Base type name. Can be something like `MyBase <: SuperT` if the constructed
           Type is to be a subtype of some other type.
 
+- `base2` Used for switch intersections.
 ### Output
 
 - An abstract type with the `base` name is created.
@@ -20,25 +26,60 @@ This is similar to what @enum does except the switch values are types instead of
 
 ### Example
 
+### Notes:
 
+Use `isa` to test for valid switch values EG: `OpenGeom isa GeometrySwitch` returns true.
+Use `show` to show the switch values for a given switch group variable. EG: show(GeometrySwitch)
 
 """
 macro switch(base, names...)
-  eval( :(abstract type $(base) end) )
-  # Something simple like base = Geom does not have args but base = Geom <
-  if hasproperty(base, :args); base = base.args[1]; end    # Strip off "<: SuperT"
-
-  eval( Meta.parse("$(base)Switch = (Type{<:$(base)})") )
-
+  # If a name is not defined, define a struct with that name.
   for name in names
-    eval( :(struct $(name) <: $(base); end) )
-  end 
+    if ! isdefined(@__MODULE__, name)
+      eval( :(abstract type $(name) <: Switch end) )
+    end
+  end
+
+  # Define base as the union of all names.
+  str = "$(base) = Union{"
+  for name in names
+    str *= "Type{$name},"
+  end
+  str *= "}"
+  eval( Meta.parse(str) )
+
+  # Add to switch_list_dict
+  if ! isdefined(@__MODULE__, :switch_list_dict)
+    eval( Meta.parse("switch_list_dict = Dict()") )
+  end
+  eval( Meta.parse("switch_list_dict[:$base] = $names") )
 end
 
+"""
+Shows groups that a switch value is in
+"""
 
-@switch Geometry OpenGeom ClosedGeom 
-@switch BranchType TrackingBranch LordBranch 
-@switch EleBodyLocation EntranceEnd Center ExitEnd BothEnds NoWhere EveryWhere
-@switch Position UpStream Inside DownStream
-@switch ApertureType Rectangular Elliptical
+function switch(io::IO, switchval::Type{<:Switch})
+  # Turn switchval into string since using eval on switchval causes infinite recursion. 
+  vstr = string(switchval)
+  for (key, tuple) in switch_list_dict
+    if vstr in [string(x) for x in tuple]
+      println(io, f"  In switch group: {key}")
+    end
+  end
+end
 
+switch(switchval::Type{<:Switch}) = show(stdout, switchval)
+
+
+
+@switch GeometrySwitch OpenGeom ClosedGeom 
+@switch BranchTypeSwitch TrackingBranch LordBranch 
+@switch EleBodyLocationSwitch EntranceEnd Center ExitEnd BothEnds NoWhere EveryWhere
+@switch PositionSwitch UpStream Inside DownStream
+@switch ApertureTypeSwitch Rectangular Elliptical
+@switch CavityTypeSwitch StandingWave TravelingWave
+@switch TrackingMethodSwitch RungeKutta TimeRungeKutta BmadStandard
+@switch FieldCalcMethodSwitch FieldMap BmadStandard
+
+# {Symbol,Tuple{Symbol}}

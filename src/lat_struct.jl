@@ -53,53 +53,53 @@ NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 #-------------------------------------------------------------------------------------
 # Ele parameters
 
-abstract type EleParameterGroup end
+abstract type ParameterGroup end
 
-struct FloorPosition <: EleParameterGroup
+struct FloorPositionGroup <: ParameterGroup
   r::Vector{Float64}       # (x,y,z) in Global coords
   q::Vector{Float64}       # Quaternion orientation
   theta::Float64;  phi::Float64;  psi::Float64  # Angular orientation consistant with q
 end
 
-FloorPosition() = FloorPosition([0,0,0], [1,0,0,0], 0, 0, 0)
+FloorPositionGroup() = FloorPositionGroup([0,0,0], [1,0,0,0], 0, 0, 0)
 
-struct KMultipole <: EleParameterGroup  # A single multipole
+struct KMultipole1 <: ParameterGroup  # A single multipole
   k::Float64
   ks::Float64
   tilt::Float64
   n::Int64
 end
 
-struct EleKMultipoles <: EleParameterGroup
+struct KMultipoleGroup <: ParameterGroup
   n_vec::Vector{Int64}          # Vector of multipole order.
-  mp_vec::Vector{KMulitpole}    # Vector of multipoles.
+  mp_vec::Vector{KMultipole1}    # Vector of multipoles.
 end
 
-struct FieldMultipole <: EleParameterGroup  # A single multipole
+struct FieldMultipole1 <: ParameterGroup  # A single multipole
   F::Float64
   Fs::Float64
   tilt::Float64
   n::Int64
 end
 
-struct EleFieldMultipoles <: EleParameterGroup
-  n_vec::Vector{Int64}          # Vector of multipole order.
-  mp_vec::Vector{FieldMulitpole}    # Vector of multipoles. 
+struct FieldMultipoleGroup <: ParameterGroup
+  n_vec::Vector{Int64}              # Vector of multipole order.
+  mp_vec::Vector{FieldMultipole1}    # Vector of multipoles. 
 end
 
-struct EMultipole <: EleParameterGroup
+struct EMultipole1 <: ParameterGroup
   E::Float64
   Es::Float64
   tilt::Float64
   n::Int64
 end
 
-struct EleEMultipoles <: EleParameterGroup
+struct EMultipoleGroup <: ParameterGroup
   n_vec::Vector{Int64}          # Vector of multipole order.
-  mp_vec::Vector{EMulitpole}    # Vector of multipoles. 
+  mp_vec::Vector{EMultipole1}    # Vector of multipoles. 
 end
 
-struct EleAlignment <: EleParameterGroup
+struct AlignmentGroup <: ParameterGroup
   x_offset::Float64
   y_offset::Float64
   z_offset::Float64
@@ -108,7 +108,7 @@ struct EleAlignment <: EleParameterGroup
   tilt::Float64     # Not used by Bend elements
 end
 
-struct EleBendParams <: EleParameterGroup
+struct BendGroup <: ParameterGroup
   angle::Float64
   rho::Float64
   g::Float64
@@ -121,38 +121,38 @@ struct EleBendParams <: EleParameterGroup
   hgap::Vector{Float64}
 end
 
-struct EleAperture <: EleParameterGroup
+struct ApertureGroup <: ParameterGroup
   x_limit::Vector{Float64}
   y_limit::Vector{Float64}
-  aperture_type::ApertureType
-  aperture_at::ApertureAt
+  aperture_type::ApertureTypeSwitch
+  aperture_at::EleBodyLocationSwitch
   offset_moves_aperture::Bool
 end
 
-struct EleInfo <: EleParameterGroup
+struct StringGroup <: ParameterGroup
   type::String
   alias::String
   description::String
 end
 
-struct EleRF <: EleParameterGroup
+struct RF <: ParameterGroup
   voltage::Float64
   gradient::Float64
   rf_phase::Float64
   rf_frequency::Float64
   harmon::Float64
-  cavity_type::CavityType
+  cavity_type::CavityTypeSwitch
   n_cell::Int64
 end
 
-struct EleTracking <: EleParameterGroup
-  tracking_method::TrackingMethod
-  field_calc::FieldCalcMethod
+struct TrackingGroup <: ParameterGroup
+  tracking_method::TrackingMethodSwitch
+  field_calc::FieldCalcMethodSwitch
   num_steps::Int64
   ds_step::Int64
 end
 
-struct EleChamberWall <: EleParameterGroup
+struct ChamberWallGroup <: ParameterGroup
 end
 
 #-------------------------------------------------------------------------------------
