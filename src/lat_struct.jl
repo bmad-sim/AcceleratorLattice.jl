@@ -75,6 +75,8 @@ struct KMultipoleGroup <: ParameterGroup
   mp_vec::Vector{KMultipole1}    # Vector of multipoles.
 end
 
+KMultipoleGroup() = KMultipoleGroup(Vector{Int64}(), Vector{KMultipole1})
+
 struct FieldMultipole1 <: ParameterGroup  # A single multipole
   F::Float64
   Fs::Float64
@@ -86,6 +88,8 @@ struct FieldMultipoleGroup <: ParameterGroup
   n_vec::Vector{Int64}              # Vector of multipole order.
   mp_vec::Vector{FieldMultipole1}    # Vector of multipoles. 
 end
+
+FieldMultipoleGroup() = FieldMultipoleGroup(Vector{Int64}(), Vector{FieldMultipole1})
 
 struct EMultipole1 <: ParameterGroup
   E::Float64
@@ -99,6 +103,8 @@ struct EMultipoleGroup <: ParameterGroup
   mp_vec::Vector{EMultipole1}    # Vector of multipoles. 
 end
 
+EMultipoleGroup() = EMultipoleGroup(Vector{Int64}(), Vector{EMultipole1})
+
 struct AlignmentGroup <: ParameterGroup
   x_offset::Float64
   y_offset::Float64
@@ -108,18 +114,22 @@ struct AlignmentGroup <: ParameterGroup
   tilt::Float64     # Not used by Bend elements
 end
 
+AlignmentGroup() = AlignmentGroup(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
 struct BendGroup <: ParameterGroup
   angle::Float64
   rho::Float64
   g::Float64
   dg::Float64
-  e::Vector{Float64}    # Edge angles
-  e_rect::Vector{Float64}   # Edge angles with respect to rectangular geometry.
   len_chord::Float64
   ref_tilt::Float64
+  e::Vector{Float64}    # Edge angles
+  e_rect::Vector{Float64}   # Edge angles with respect to rectangular geometry.
   fint::Vector{Float64}
   hgap::Vector{Float64}
 end
+
+BendGroup() = BendGroup(NaN, NaN, 0.0, 0.0, 0.0, 0.0, [0.0, 0.0], [NaN, NaN], [0.5, 0.5], [0.0, 0.0])
 
 struct ApertureGroup <: ParameterGroup
   x_limit::Vector{Float64}
@@ -129,13 +139,17 @@ struct ApertureGroup <: ParameterGroup
   offset_moves_aperture::Bool
 end
 
+ApertureGroup() = ApertureGroup([NaN, NaN], [NaN, NaN], Elliptical, EntranceEnd, true)
+
 struct StringGroup <: ParameterGroup
   type::String
   alias::String
   description::String
 end
 
-struct RF <: ParameterGroup
+StringGroup() = StringGroup("", "", "")
+
+struct RFGroup <: ParameterGroup
   voltage::Float64
   gradient::Float64
   rf_phase::Float64
@@ -145,12 +159,16 @@ struct RF <: ParameterGroup
   n_cell::Int64
 end
 
+RFGroup() = RFGroup(0.0, 0.0, 0.0, 0.0, 0.0, StandingWave, 1)
+
 struct TrackingGroup <: ParameterGroup
   tracking_method::TrackingMethodSwitch
   field_calc::FieldCalcMethodSwitch
   num_steps::Int64
   ds_step::Int64
 end
+
+TrackingGroup() = TrackingGroup(BmadStandard, BmadStandard, NaI, NaI)
 
 struct ChamberWallGroup <: ParameterGroup
 end

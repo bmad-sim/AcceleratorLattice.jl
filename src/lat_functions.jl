@@ -40,18 +40,18 @@ function lat_ele_dict(lat::Lat)
 end
 
 #-----------------------------------------------------------------------------------------
-# destroy_external_ele_vars
+# kill_ele_vars
 
 """
-Set variables created with create_external_ele_vars to `nothing`. 
+Set variables created with create_ele_vars to `nothing`. 
 (Currently there is no way to undefine the variables).
 
-The `prefix` argument is needed if a prefix was given in `create_external_ele_vars`.
+The `prefix` argument is needed if a prefix was given in `create_ele_vars`.
 
 The `this_module` argument is needed if the variables are not in the `Main` module. 
 Note: `@__MODULE__` is the name of the module of the calling routine.
 """
-function destroy_external_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
+function kill_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
   for branch in lat.branch
     for ele in branch.ele
       nam = prefix * ele.name
@@ -63,7 +63,7 @@ function destroy_external_ele_vars(lat::Lat; prefix::AbstractString = "", this_m
 end
 
 #-----------------------------------------------------------------------------------------
-# create_external_ele_vars
+# create_ele_vars
 
 """
 Creates `Ele` variables external to a lattice with the same name as the elements in the lattice.
@@ -77,9 +77,9 @@ will be a vector of `Ele`s.
 The `prefix` arg can be used to distinguish between elements of the same name in different lattices.
 
 The `this_module` arg is needed if the variables are not to be in the Main module. 
-Use `@__MODULE__` for the name of the module of the code calling `create_external_ele_vars`.
+Use `@__MODULE__` for the name of the module of the code calling `create_ele_vars`.
 """
-function create_external_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
+function create_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
   eled = lat_ele_dict(lat)
 
   for (name, evec) in eled
@@ -133,6 +133,20 @@ function Base.setindex!(ele::Ele, val, key)
     ele.param[key] = val
   end
   return ele
+end
+
+#-----------------------------------------------------------------------------------------
+# Vector{Ele}[] get and set
+
+function Base.getindex(eles::Vector{Ele}, key::Symbol)
+  return [ele[key] for ele in eles]
+end
+
+function Base.setindex!(eles::Vector{Ele}, val, key::Symbol)
+  for ele in eles
+    ele[key] = val
+  end
+  return eles
 end
 
 #-----------------------------------------------------------------------------------------

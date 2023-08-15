@@ -99,9 +99,9 @@ global lat_param = Dict(
 
 
 base_group = [:s, :len, :ix_ele, :branch]
-descrip_group = [:type, :alias, :description]
-misalign_group = [:x_offset, :y_offset, :z_offset, :x_pitch, :y_pitch, :tilt]
-
+extended_base_group = append!(base_group, fieldnames(StringGroup), fieldnames(AlignmentGroup),
+                        fieldnames(FloorPositionGroup))
+multipole_group = append!(vector(fieldnames(KMultipoleGroup)), fieldnames(FieldMultipoleGroup), fieldnames(EMultipoleGroup))
 
 #-----------------------------------------------------------------------------------------
 # ele_param_by_ele_struct
@@ -112,11 +112,11 @@ Table of what parameters are associated with what element types.
 
 global ele_param_by_ele_struct = Dict(  
   Dict(
-#    Bend           => append!(base_group, descrip_group, fieldnames(BendParams), fieldnames(AlignmentParams)),
-#    Drift          => append!(base_group, descrip_group, fieldnames(AlignmentParams)),
-#    Marker         => Vector(),
-#    ThickMultipole => Vector(),
-#    Quadrupole     => Vector(),
+    Bend           => append!(extended_base_group, fieldnames(BendGroup)),
+    Drift          => append!(extended_base_group, multipole_group),
+    Marker         => append!(extended_base_group, multipole_group),
+    ThickMultipole => append!(extended_base_group, multipole_group),
+    Quadrupole     => append!(extended_base_group, multipole_group),
   )
 )
 
