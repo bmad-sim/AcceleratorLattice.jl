@@ -4,6 +4,7 @@
 using OffsetArrays
 using PyFormattedStrings
 using Accessors
+using LinearAlgebra
 
 #-------------------------------------------------------------------------------------
 # Exceptions
