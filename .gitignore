@@ -4,6 +4,7 @@ doc/bmad.lot
 doc/bmad-test*
 doc/bmad.out
 doc/bmad.toc
+doc/*.aux
 /Manifest.toml
 .DS_Store
 *~

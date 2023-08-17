@@ -115,7 +115,6 @@ global ele_param_by_ele_struct = Dict(
     Bend           => append!(extended_base_group, fieldnames(BendGroup)),
     Drift          => append!(extended_base_group, multipole_group),
     Marker         => append!(extended_base_group, multipole_group),
-    ThickMultipole => append!(extended_base_group, multipole_group),
     Quadrupole     => append!(extended_base_group, multipole_group),
   )
 )
