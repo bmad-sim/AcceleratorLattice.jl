@@ -10,6 +10,7 @@ This is a long term project currently under development.
 1. In Julia do:
 ```
 julia> import Pkg
-julia> Pkg.activate("~/.julia/dev/Bmad")
-julia> import Bmad
+julia> Pkg.activate(".julia/dev/Bmad.jl") # This is relative to the current directory
+                                          # so make sure you are in the root directory.
+julia> using Bmad
 ```

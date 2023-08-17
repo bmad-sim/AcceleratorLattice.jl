@@ -5,11 +5,14 @@ export InfiniteLoop, Bend, Drift, Quadrupole, Marker, FloorPositionGroup, Branch
 export branch_split!, branch_insert_ele!, branch_bookkeeper!, lat_bookkeeper!
 
 include("core.jl")
+include("math_base.jl")
+include("quaternion.jl")
 include("utilities.jl")
 include("switch.jl")
 include("string.jl")
 include("lat_struct.jl")
 include("parameters.jl")
+include("geometry.jl")
 include("show.jl")
 include("lat_construction.jl")
 include("lat_functions.jl")

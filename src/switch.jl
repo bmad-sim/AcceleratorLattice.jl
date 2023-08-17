@@ -78,8 +78,8 @@ switch(switchval::Type{<:Switch}) = show(stdout, switchval)
 @switch CavityTypeSwitch StandingWave TravelingWave
 @switch EleBodyLocationSwitch EntranceEnd Center ExitEnd BothEnds NoWhere EveryWhere
 @switch FieldCalcMethodSwitch FieldMap BmadStandard
-@switch GeometrySwitch OpenGeom ClosedGeom 
+@switch BranchGeometrySwitch OpenGeom ClosedGeom 
 @switch PositionSwitch UpStream Inside DownStream
 @switch TrackingMethodSwitch RungeKutta TimeRungeKutta BmadStandard
+@switch EleGeometrySwitch Straight Circular ZeroLength PatchLike GirderLike CrystalLike MirrorLike
 
-# {Symbol,Tuple{Symbol}}

@@ -13,42 +13,101 @@ Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 #-------------------------------------------------------------------------------------
 # Ele
 
-"General thick multipole that is inherited by quadrupoles, sextupoles, etc."
-abstract type ThickMultipole <: Ele end
-
-# NullEle
-"""
-Lattice element type used to indicate the absence of any valid element.
-`NULL_ELE` is the instantiated element
-"""
+mutable struct BeamBeam <: Ele; name::String; param::Dict{Symbol,Any}; end
+BeamBeam(name::String; kwargs...) = eval( :($(Symbol(name)) = BeamBeam($name, Dict{Symbol,Any}($kwargs...))) )
 
 mutable struct Bend <: Ele; name::String; param::Dict{Symbol,Any}; end
 Bend(name::String; kwargs...) = eval( :($(Symbol(name)) = Bend($name, Dict{Symbol,Any}($kwargs...))) )
 
+mutable struct Controller <: Ele; name::String; param::Dict{Symbol,Any}; end
+Controller(name::String; kwargs...) = eval( :($(Symbol(name)) = Controller($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct CrabCavity <: Ele; name::String; param::Dict{Symbol,Any}; end
+CrabCavity(name::String; kwargs...) = eval( :($(Symbol(name)) = CrabCavity($name, Dict{Symbol,Any}($kwargs...))) )
+
 mutable struct Drift <: Ele; name::String; param::Dict{Symbol,Any}; end
 Drift(name::String; kwargs...) = eval( :($(Symbol(name)) = Drift($name, Dict{Symbol,Any}($kwargs...))) )
 
-mutable struct Quadrupole <: ThickMultipole; name::String; param::Dict{Symbol,Any}; end
-Quadrupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Quadrupole($name, Dict{Symbol,Any}($kwargs...))) )
+mutable struct EGun <: Ele; name::String; param::Dict{Symbol,Any}; end
+EGun(name::String; kwargs...) = eval( :($(Symbol(name)) = EGun($name, Dict{Symbol,Any}($kwargs...))) )
 
-mutable struct Sextupole <: ThickMultipole; name::String; param::Dict{Symbol,Any}; end
-Sextupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Sextupole($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Marker <: Ele; name::String; param::Dict{Symbol,Any}; end
-Marker(name::String; kwargs...) = eval( :($(Symbol(name)) = Marker($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Lcavity <: ThickMultipole; name::String; param::Dict{Symbol,Any} end
-Lcavity(name::String; kwargs...) = eval( :($(Symbol(name)) = Lcavity($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct RFcavity <: Ele; name::String; param::Dict{Symbol,Any}; end
-RFcavity(name::String; kwargs...) = eval( :($(Symbol(name)) = RFcavity($name, Dict{Symbol,Any}($kwargs...))) )
+mutable struct EMfield <: Ele; name::String; param::Dict{Symbol,Any}; end
+EMfield(name::String; kwargs...) = eval( :($(Symbol(name)) = EMfield($name, Dict{Symbol,Any}($kwargs...))) )
 
 mutable struct Fork <: Ele; name::String; param::Dict{Symbol,Any}; end
 Fork(name::String; kwargs...) = eval( :($(Symbol(name)) = Fork($name, Dict{Symbol,Any}($kwargs...))) )
 
+mutable struct Kicker <: Ele; name::String; param::Dict{Symbol,Any}; end
+Kicker(name::String; kwargs...) = eval( :($(Symbol(name)) = Kicker($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Lcavity <: Ele; name::String; param::Dict{Symbol,Any} end
+Lcavity(name::String; kwargs...) = eval( :($(Symbol(name)) = Lcavity($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Marker <: Ele; name::String; param::Dict{Symbol,Any}; end
+Marker(name::String; kwargs...) = eval( :($(Symbol(name)) = Marker($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Mask <: Ele; name::String; param::Dict{Symbol,Any}; end
+Mask(name::String; kwargs...) = eval( :($(Symbol(name)) = Mask($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Match <: Ele; name::String; param::Dict{Symbol,Any}; end
+Match(name::String; kwargs...) = eval( :($(Symbol(name)) = Match($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Multipole <: Ele; name::String; param::Dict{Symbol,Any}; end
+Multipole(name::String; kwargs...) = eval( :($(Symbol(name)) = Multipole($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Patch <: Ele; name::String; param::Dict{Symbol,Any}; end
+Patch(name::String; kwargs...) = eval( :($(Symbol(name)) = Patch($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Octupole <: Ele; name::String; param::Dict{Symbol,Any}; end
+Octupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Octupole($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Quadrupole <: Ele; name::String; param::Dict{Symbol,Any}; end
+Quadrupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Quadrupole($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct RFcavity <: Ele; name::String; param::Dict{Symbol,Any}; end
+RFcavity(name::String; kwargs...) = eval( :($(Symbol(name)) = RFcavity($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Sextupole <: Ele; name::String; param::Dict{Symbol,Any}; end
+Sextupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Sextupole($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Taylor <: Ele; name::String; param::Dict{Symbol,Any}; end
+Taylor(name::String; kwargs...) = eval( :($(Symbol(name)) = Taylor($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Undulator <: Ele; name::String; param::Dict{Symbol,Any}; end
+Undulator(name::String; kwargs...) = eval( :($(Symbol(name)) = Undulator($name, Dict{Symbol,Any}($kwargs...))) )
+
+mutable struct Wiggler <: Ele; name::String; param::Dict{Symbol,Any}; end
+Wiggler(name::String; kwargs...) = eval( :($(Symbol(name)) = Wiggler($name, Dict{Symbol,Any}($kwargs...))) )
+
+
+"""
+NullEle lattice element type used to indicate the absence of any valid element.
+`NULL_ELE` is the instantiated element
+"""
+
 mutable struct NullEle <: Ele; name::String; param::Dict{Symbol,Any}; end
 NullEle(name::String; kwargs...) = eval( :($(Symbol(name)) = NullEle($name, Dict{Symbol,Any}($kwargs...))) )
-NULL_ELE = NullEle("null", Dict{Symbol,Any}())
+const NULL_ELE = NullEle("null", Dict{Symbol,Any}())
+
+#-------------------------------------------------------------------------------------
+# Element traits
+
+"General thick multipole. Returns a Bool."
+function thick_multipole_ele(ele::Ele)
+  if ele <: Union{Drift, Quadrupole, Sextupole}; return true; end
+  return false
+end
+
+"Geometry type. Returns a EleGeometrySwitch"
+function ele_geometry(ele::Ele)
+  if ele isa Bend; return Circular; end
+  if ele isa Patch; return PatchLike; end
+  if ele <: Union{Marker, Mask, Multipole}; return ZeroLength; end
+  if ele isa Girder; return GirderLike; end
+  return Straight
+end
+
+
 
 #-------------------------------------------------------------------------------------
 # Ele parameters
@@ -57,11 +116,11 @@ abstract type ParameterGroup end
 
 struct FloorPositionGroup <: ParameterGroup
   r::Vector{Float64}       # (x,y,z) in Global coords
-  q::Vector{Float64}       # Quaternion orientation
+  q::Quaternion            # Quaternion orientation
   theta::Float64;  phi::Float64;  psi::Float64  # Angular orientation consistant with q
 end
 
-FloorPositionGroup() = FloorPositionGroup([0,0,0], [1,0,0,0], 0, 0, 0)
+FloorPositionGroup() = FloorPositionGroup([0,0,0], Quaternion([1,0,0,0]), 0, 0, 0)
 
 struct KMultipole1 <: ParameterGroup  # A single multipole
   k::Float64
@@ -71,8 +130,9 @@ struct KMultipole1 <: ParameterGroup  # A single multipole
 end
 
 struct KMultipoleGroup <: ParameterGroup
-  n_vec::Vector{Int64}          # Vector of multipole order.
+  n_vec::Vector{Int64}           # Vector of multipole order.
   mp_vec::Vector{KMultipole1}    # Vector of multipoles.
+  integrated::Bool               # ?? Is this good ??
 end
 
 KMultipoleGroup() = KMultipoleGroup(Vector{Int64}(), Vector{KMultipole1})
@@ -85,7 +145,7 @@ struct FieldMultipole1 <: ParameterGroup  # A single multipole
 end
 
 struct FieldMultipoleGroup <: ParameterGroup
-  n_vec::Vector{Int64}              # Vector of multipole order.
+  n_vec::Vector{Int64}               # Vector of multipole order.
   mp_vec::Vector{FieldMultipole1}    # Vector of multipoles. 
 end
 
