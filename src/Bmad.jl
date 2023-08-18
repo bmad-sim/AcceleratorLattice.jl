@@ -6,7 +6,6 @@ export branch_split!, branch_insert_ele!, branch_bookkeeper!, lat_bookkeeper!
 
 include("core.jl")
 include("math_base.jl")
-include("quaternion.jl")
 include("utilities.jl")
 include("switch.jl")
 include("string.jl")
