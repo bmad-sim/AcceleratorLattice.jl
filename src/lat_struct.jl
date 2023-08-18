@@ -116,7 +116,7 @@ abstract type ParameterGroup end
 
 struct FloorPositionGroup <: ParameterGroup
   r::Vector{Float64}       # (x,y,z) in Global coords
-  q::Quaternion            # Quaternion orientation
+  q::Quaternion{Float64}   # Quaternion orientation
   theta::Float64;  phi::Float64;  psi::Float64  # Angular orientation consistant with q
 end
 
@@ -127,12 +127,12 @@ struct KMultipole1 <: ParameterGroup  # A single multipole
   ks::Float64
   tilt::Float64
   n::Int64
+  integrated::Bool
 end
 
 struct KMultipoleGroup <: ParameterGroup
   n_vec::Vector{Int64}           # Vector of multipole order.
   mp_vec::Vector{KMultipole1}    # Vector of multipoles.
-  integrated::Bool               # ?? Is this good ??
 end
 
 KMultipoleGroup() = KMultipoleGroup(Vector{Int64}(), Vector{KMultipole1})
@@ -142,6 +142,7 @@ struct FieldMultipole1 <: ParameterGroup  # A single multipole
   Fs::Float64
   tilt::Float64
   n::Int64
+  integrated::Bool
 end
 
 struct FieldMultipoleGroup <: ParameterGroup
