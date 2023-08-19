@@ -12,12 +12,25 @@ function vector(this)
 end
 
 #-------------------------------------------------------------------------------------
-# Misc
-
-"NaI stands for NotAnInteger. Technically equal to -987654321."
-NaI = -987654321
-
-#-------------------------------------------------------------------------------------
 # magnitude of vector
 
 mag(v::Vector{T}) where T <: Number = sqrt(sum(v .* v))
+
+#-------------------------------------------------------------------------------------
+# Misc
+
+"NaI stands for NotAnInteger. Technically equal to -1234567890123456789."
+NaI = -1234567890123456789
+
+#-------------------------------------------------------------------------------------
+# cos_one
+
+"""
+    cos_one(x)
+
+Function to calculate cos(x) - 1 to machine precision.
+This is usful if angle can be near zero where the direct evaluation of cos(x) - 1 is inaccurate.
+"""
+
+cos_one(x) = -2.0 * sin(x/2.0)^2
+

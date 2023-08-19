@@ -81,5 +81,5 @@ switch(switchval::Type{<:Switch}) = show(stdout, switchval)
 @switch BranchGeometrySwitch OpenGeom ClosedGeom 
 @switch PositionSwitch UpStream Inside DownStream
 @switch TrackingMethodSwitch RungeKutta TimeRungeKutta BmadStandard
-@switch EleGeometrySwitch Straight Circular ZeroLength PatchLike GirderLike CrystalLike MirrorLike
+@switch EleGeometrySwitch Straight Circular ZeroLength PatchGeom GirderGeom CrystalGeom MirrorGeom
 

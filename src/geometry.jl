@@ -1,3 +1,8 @@
+#---------------------------------------------------------------------------------------------------
+
+Quat64 = QuatRotation{Float64}
+
+#---------------------------------------------------------------------------------------------------
 """
     propagate_ele_geometry(floor_start::FloorPositionGroup, ele::Ele)
 
@@ -16,21 +21,48 @@ the routine ele_geometry_with_misalignments.
 
 """
 
-function propagate_ele_geometry(floor_start::FloorPositionGroup, ele::Ele)
+function propagate_ele_geometry(fstart::FloorPositionGroup, ele::Ele)
+  const len = ele[:len]
+
   if ele_geometry(ele) == ZeroLength
-    return floor_start
+    return fstart
 
   elseif ele_geometry(ele) == Straight
-
+    r = fstart.r + rot(fstart.q, [0.0, 0.0, len]
+    return FloorPositionGroup(r, fstart.q, fstart.theta, fstart.phi, fstart,psi)
 
   elseif ele_geometry(ele) == Circular
+    const bend::BendGroup = get(BendGroup, ele)
+    (r_trans, q_trans) = ele_floor_transform(bend)
+    r = fstart.r + rot(fstart.q, r_trans)
+    q = rot(fstart.q, q_trans)
+    (theta, phi, psi) = floor_angles(q, fstart)
 
+  elseif ele_geometry(ele) == PatchGeom
+    throw("Not yet implemented!")
 
-  elseif ele_geometry(ele) == PatchLike
+  elseif ele_geometry(ele) == GirderGeom
+    throw("Not yet implemented!")
 
-  elseif ele_geometry(ele) == GirderLike
+  elseif ele_geometry(ele) == CrystalGeom
+    throw("Not yet implemented!")
 
   else
     throw(SwitchError(f"ele_geometry function returns an unknown LatGeometrySwitch {ele_geometry(ele)} for {ele}"))
   end
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele_floor_transform
+
+"""
+"""
+
+ele_floor_transform(bend::BendGroup)
+  qa = Quat64(RotY(bend.angle))
+  r_vec = [bend.rho * cos_one(bend.angle), 0.0, bend.rho * sin(bend.angle)]
+  if bend.ref_tilt == 0; return (r_vec, qa)
+
+  qt = Quat64(RotZ(-bend.ref_tilt))
+  return (rot(qt, r_vec), qt * qa * inv(qt))
 end

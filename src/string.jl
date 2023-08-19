@@ -72,7 +72,7 @@ function str_split(str::AbstractString, delims::AbstractString; doubleup=false, 
   end
 
   if this_word != ""; push!(words, this_word); end
-  if quote_mark != ' '; throw(BmadParseError("Unbalanced quotation marks in: " * str)); end
+  if quote_mark != ' '; throw(StringParseError("Unbalanced quotation marks in: " * str)); end
 
   return words
 end
@@ -138,7 +138,7 @@ function str_to_int(str::AbstractString, default = nothing)
     return parse(Int, str)
   catch
     if default == nothing
-      throw(BmadParseError("Bad integer: " * str))
+      throw(StringParseError("Bad integer: " * str))
     else
       return default
     end
