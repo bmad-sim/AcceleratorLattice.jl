@@ -176,6 +176,13 @@ function Base.setindex!(branch::Branch, val, key)
 end
 
 #-----------------------------------------------------------------------------------------
+# get_group for element groups
+
+function get_group(group::Type{T}, ele::Ele) where T <: ParameterGroup
+  return ele.param[Symbol(group)]
+end
+
+#-----------------------------------------------------------------------------------------
 # bmad_regex
 
 bmad_regex(str::AbstractString) = occursin("%", str) || occursin("*", str)

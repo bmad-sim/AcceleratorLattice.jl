@@ -176,7 +176,7 @@ end
 # lat_expansion
 
 function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
-  lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(), BmadGlobal())
+  lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(), LatticeGlobal())
 
   if root_line == nothing; root_line = root_beamline end
   

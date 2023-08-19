@@ -1,5 +1,5 @@
 """
-Dictionaries of parameters defined by Bmad
+Dictionaries of parameters defined in a lattice
 """
 
 """
@@ -35,9 +35,9 @@ Dictionary of parameters in the Ele.param dict.
 """
 
 global ele_param = Dict(
-  :type         => LatParamDict(StringGroup,    String,    "Type of element. Set by User and ignored by Bmad."),
-  :alias        => LatParamDict(StringGroup,    String,    "Alias name. Set by User and ignored by Bmad."),
-  :description  => LatParamDict(StringGroup,    String,    "Descriptive info. Set by User and ignored by Bmad."),
+  :type         => LatParamDict(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
+  :alias        => LatParamDict(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
+  :description  => LatParamDict(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
   :ix_ele       => LatParamDict(Nothing,        Int,       "Index of element in containing branch .ele() array."),
   :orientation  => LatParamDict(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
   :branch       => LatParamDict(Nothing,        Pointer,   "Pointer to branch containing element."),

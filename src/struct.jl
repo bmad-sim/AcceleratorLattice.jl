@@ -31,8 +31,8 @@ Drift(name::String; kwargs...) = eval( :($(Symbol(name)) = Drift($name, Dict{Sym
 mutable struct EGun <: Ele; name::String; param::Dict{Symbol,Any}; end
 EGun(name::String; kwargs...) = eval( :($(Symbol(name)) = EGun($name, Dict{Symbol,Any}($kwargs...))) )
 
-mutable struct EMfield <: Ele; name::String; param::Dict{Symbol,Any}; end
-EMfield(name::String; kwargs...) = eval( :($(Symbol(name)) = EMfield($name, Dict{Symbol,Any}($kwargs...))) )
+mutable struct EMField <: Ele; name::String; param::Dict{Symbol,Any}; end
+EMField(name::String; kwargs...) = eval( :($(Symbol(name)) = EMField($name, Dict{Symbol,Any}($kwargs...))) )
 
 mutable struct Fork <: Ele; name::String; param::Dict{Symbol,Any}; end
 Fork(name::String; kwargs...) = eval( :($(Symbol(name)) = Fork($name, Dict{Symbol,Any}($kwargs...))) )
@@ -40,8 +40,8 @@ Fork(name::String; kwargs...) = eval( :($(Symbol(name)) = Fork($name, Dict{Symbo
 mutable struct Kicker <: Ele; name::String; param::Dict{Symbol,Any}; end
 Kicker(name::String; kwargs...) = eval( :($(Symbol(name)) = Kicker($name, Dict{Symbol,Any}($kwargs...))) )
 
-mutable struct Lcavity <: Ele; name::String; param::Dict{Symbol,Any} end
-Lcavity(name::String; kwargs...) = eval( :($(Symbol(name)) = Lcavity($name, Dict{Symbol,Any}($kwargs...))) )
+mutable struct LCavity <: Ele; name::String; param::Dict{Symbol,Any} end
+LCavity(name::String; kwargs...) = eval( :($(Symbol(name)) = LCavity($name, Dict{Symbol,Any}($kwargs...))) )
 
 mutable struct Marker <: Ele; name::String; param::Dict{Symbol,Any}; end
 Marker(name::String; kwargs...) = eval( :($(Symbol(name)) = Marker($name, Dict{Symbol,Any}($kwargs...))) )
@@ -64,8 +64,8 @@ Octupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Octupole($name, Di
 mutable struct Quadrupole <: Ele; name::String; param::Dict{Symbol,Any}; end
 Quadrupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Quadrupole($name, Dict{Symbol,Any}($kwargs...))) )
 
-mutable struct RFcavity <: Ele; name::String; param::Dict{Symbol,Any}; end
-RFcavity(name::String; kwargs...) = eval( :($(Symbol(name)) = RFcavity($name, Dict{Symbol,Any}($kwargs...))) )
+mutable struct RFCavity <: Ele; name::String; param::Dict{Symbol,Any}; end
+RFCavity(name::String; kwargs...) = eval( :($(Symbol(name)) = RFCavity($name, Dict{Symbol,Any}($kwargs...))) )
 
 mutable struct Sextupole <: Ele; name::String; param::Dict{Symbol,Any}; end
 Sextupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Sextupole($name, Dict{Symbol,Any}($kwargs...))) )
@@ -107,20 +107,18 @@ function ele_geometry(ele::Ele)
   return Straight
 end
 
-
-
 #-------------------------------------------------------------------------------------
 # Ele parameters
 
 abstract type ParameterGroup end
 
 struct FloorPositionGroup <: ParameterGroup
-  r::Vector{Float64}       # (x,y,z) in Global coords
-  q::Quaternion{Float64}   # Quaternion orientation
+  r::Vector{Float64}         # (x,y,z) in Global coords
+  q::Quat64                  # Quaternion orientation
   theta::Float64;  phi::Float64;  psi::Float64  # Angular orientation consistant with q
 end
 
-FloorPositionGroup() = FloorPositionGroup([0,0,0], Quaternion([1,0,0,0]), 0, 0, 0)
+FloorPositionGroup() = FloorPositionGroup([0,0,0], QuatRotation{Float64}(1,0,0,0), 0, 0, 0)
 
 struct KMultipole1 <: ParameterGroup  # A single multipole
   k::Float64
@@ -244,17 +242,17 @@ mutable struct Branch <: BeamLineItem
 end
 
 #-------------------------------------------------------------------------------------
-# BmadGlobal
+# LatticeGlobal
 
 """
 Global parameters used for tracking
 """
-mutable struct BmadGlobal
+mutable struct LatticeGlobal
   significant_length::Float64
   other::Dict{Any,Any}                      # For user defined stuff.
 end
 
-BmadGlobal() = BmadGlobal(1.0e-10, Dict())
+LatticeGlobal() = LatticeGlobal(1.0e-10, Dict())
 
 #-------------------------------------------------------------------------------------
 # Lat
@@ -266,7 +264,7 @@ mutable struct Lat <: AbstractLat
   name::String
   branch::Vector{Branch}
   param::Dict{Symbol,Any}
-  bmad_global::BmadGlobal
+  lattice_global::LatticeGlobal
 end
 
 #-------------------------------------------------------------------------------------
