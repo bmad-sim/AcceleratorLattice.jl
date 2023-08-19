@@ -1,4 +1,4 @@
-using AcceleratorSimulation
+using AcceleratorLattice
 using Test
 
 qf = latele(Quadrupole, "qf", l = 0.6, k1 = 0.3)
@@ -14,7 +14,7 @@ lat = lat_expansion([ln, ln2], "mylat")
 
 #-----------------------------
 
-@testset "AcceleratorSimulation.jl" begin
+@testset "AcceleratorLattice.jl" begin
   @test 2 == 2
   @test 2 ≈ 3 atol = 2
 end

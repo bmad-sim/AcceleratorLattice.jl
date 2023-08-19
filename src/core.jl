@@ -16,6 +16,10 @@ struct LatticeParseError <: Exception; msg::String; end
 struct SwitchError <: Exception; msg::String; end
 struct StringParseError <: Exception; msg::String; end
 
+#---------------------------------------------------------------------------------------------------
+
+Quat64 = QuatRotation{Float64}
+
 #-------------------------------------------------------------------------------------
 # The Rotation.jl package displays the 3x3 rotation matrix with 
 # the show command which is not what is wanted.

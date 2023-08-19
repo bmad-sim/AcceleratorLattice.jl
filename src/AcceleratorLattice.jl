@@ -9,11 +9,11 @@ module AcceleratorLattice
   include("utilities.jl")
   include("switch.jl")
   include("string.jl")
-  include("lat_struct.jl")
+  include("struct.jl")
   include("parameters.jl")
   include("geometry.jl")
   include("show.jl")
-  include("lat_construction.jl")
-  include("lat_functions.jl")
+  include("construction.jl")
+  include("functions.jl")
 
 end

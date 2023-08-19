@@ -176,9 +176,9 @@ function Base.setindex!(branch::Branch, val, key)
 end
 
 #-----------------------------------------------------------------------------------------
-# get for element groups
+# get_group for element groups
 
-function get(group::Type{T}, ele::Ele) where T <: ParameterGroup
+function get_group(group::Type{T}, ele::Ele) where T <: ParameterGroup
   return ele.param[Symbol(group)]
 end
 
