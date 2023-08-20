@@ -130,6 +130,7 @@ function Base.setindex!(ele::Ele, val, key)
   if key == :name
     ele.name = val
   else
+    
     ele.param[key] = val
   end
   return ele
