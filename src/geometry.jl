@@ -32,7 +32,7 @@ function propagate_ele_geometry(fstart::FloorPositionGroup, ele::Ele)
     (r_trans, q_trans) = ele_floor_transform(bend)
     r = fstart.r + rot(fstart.q, r_trans)
     q = rot(fstart.q, q_trans)
-    (theta, phi, psi) = floor_angles(q, fstart)
+    return FloorPositionGroup(r, q, floor_angles(q, fstart))
 
   elseif ele_geometry(ele) == PatchGeom
     throw("Not yet implemented!")
@@ -62,3 +62,50 @@ function ele_floor_transform(bend::BendGroup)
   qt = Quat64(RotZ(-bend.ref_tilt))
   return (rot(qt, r_vec), qt * qa * inv(qt))
 end
+
+#---------------------------------------------------------------------------------------------------
+# Quat64
+
+QuatRotation{Float64}(theta::Float64, phi::Float64, psi::Float64) = Quat64(RotY(theta) * RotX(-phi) * RotZ(psi))
+
+#---------------------------------------------------------------------------------------------------
+# floor_angles
+
+"""
+    floor_angles(q::Quat64, floor0::FloorPositionGroup = FloorPositionGroup())
+
+Function to construct the angles that define the orientation of an element
+in the global "floor" coordinates from the quaternion.
+
+Input:
+   w_mat(3,3) -- Real(rp): Orientation matrix.
+   floor0     -- floor_position_struct, optional: There are two solutions related by:
+                   [theta, phi, psi] & [pi+theta, pi-phi, pi+psi]
+                 If floor0 is present, choose the solution "nearest" the angles in floor0.
+
+
+"""
+
+function floor_angles(q::Quat64, f0::FloorPositionGroup = FloorPositionGroup())
+  m = RotMatrix(q)
+  # Special case where cos(phi) is close to zero.
+  if abs(m[1,3]) + abs(m[3,3]) < 1e-12
+    # Only theta +/- pis is well defined here so this is rather arbitrary.
+    if m[2,3] > 0
+      return f0.theta, pi/2, atan2(-m[3,1], m[1,1]) - f0.theta
+    else
+      return f0.theta, -pi/2, atan2(m[3,1], m[1,1]) + f0.theta
+    end
+
+  else
+    theta = atan2(m[1,3], m[3,3])
+    phi = atan2(m[2,3], sqrt(m[1,3]^2 + m[3,3]^2))
+    psi = atan2(m[2,1], m[2,2])
+    diff1 = (modulo2(theta-f0.theta, pi), modulo2(phi-f0.phi, pi), modulo2(psi-f0.psi, pi))
+    diff2 = (modulo2(pi+theta-f0.theta, pi), modulo2(pi-phi-f0.phi, pi), modulo2(pi+psi-f0.psi, pi))
+    sum(abs(diff1)) < sum(abs(diff2)) ? d = diff1 : d = diff2
+    return theta+d[1], phi+d[2], psi+d[3]
+  end
+end
+
+

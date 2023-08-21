@@ -16,6 +16,9 @@ Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 mutable struct BeamBeam <: Ele; name::String; param::Dict{Symbol,Any}; end
 BeamBeam(name::String; kwargs...) = eval( :($(Symbol(name)) = BeamBeam($name, Dict{Symbol,Any}($kwargs...))) )
 
+mutable struct BeginningEle <: Ele; name::String; param::Dict{Symbol,Any}; end
+BeginningEle(name::String; kwargs...) = eval( :($(Symbol(name)) = BeginningEle($name, Dict{Symbol,Any}($kwargs...))) )
+
 mutable struct Bend <: Ele; name::String; param::Dict{Symbol,Any}; end
 Bend(name::String; kwargs...) = eval( :($(Symbol(name)) = Bend($name, Dict{Symbol,Any}($kwargs...))) )
 
@@ -135,17 +138,17 @@ end
 
 KMultipoleGroup() = KMultipoleGroup(Vector{Int64}(), Vector{KMultipole1})
 
-struct FieldMultipole1 <: ParameterGroup  # A single multipole
-  F::Float64
-  Fs::Float64
+struct BMultipole1 <: ParameterGroup  # A single multipole
+  B::Float64
+  Bs::Float64
   tilt::Float64
   n::Int64
   integrated::Bool
 end
 
-struct FieldMultipoleGroup <: ParameterGroup
+struct BMultipoleGroup <: ParameterGroup
   n_vec::Vector{Int64}               # Vector of multipole order.
-  mp_vec::Vector{FieldMultipole1}    # Vector of multipoles. 
+  mp_vec::Vector{BMultipole1}    # Vector of multipoles. 
 end
 
 FieldMultipoleGroup() = FieldMultipoleGroup(Vector{Int64}(), Vector{FieldMultipole1})
@@ -179,7 +182,7 @@ struct BendGroup <: ParameterGroup
   angle::Float64
   rho::Float64
   g::Float64
-  dg::Float64
+  bend_field::Float64
   len_chord::Float64
   ref_tilt::Float64
   e::Vector{Float64}    # Edge angles
@@ -188,7 +191,7 @@ struct BendGroup <: ParameterGroup
   hgap::Vector{Float64}
 end
 
-BendGroup() = BendGroup(NaN, NaN, 0.0, 0.0, 0.0, 0.0, [0.0, 0.0], [NaN, NaN], [0.5, 0.5], [0.0, 0.0])
+BendGroup() = BendGroup(NaN, NaN, NaN, NaN, NaN, 0.0, [NaN, NaN], [NaN, NaN], [0.5, 0.5], [0.0, 0.0])
 
 struct ApertureGroup <: ParameterGroup
   x_limit::Vector{Float64}
