@@ -62,9 +62,13 @@ global ele_param_dict = Dict(
 
   :aperture_type  => LatParamDict(ApertureGroup,  ApertureTypeSwitch, "Type of aperture."),
   :aperture_at    => LatParamDict(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is."),
-  :offset_moves_aperture => LatParamDict(ApertureGroup, Bool, "Does moving the element move the aperture?"),
+  :offset_moves_aperture => 
+                     LatParamDict(ApertureGroup,  Bool, "Does moving the element move the aperture?"),
   :x_limit        => LatParamDict(ApertureGroup,  RealVec,   "Vector of horizontal aperture limits.", "m"),
   :y_limit        => LatParamDict(ApertureGroup,  RealVec,   "Vector of vertical aperture limits.", "m"),
+
+  :r_floor        => LatParamDict(FloorPositionGroup, RealVec,   "3-vector of floor position.", "m", alias = :(r[])),
+  :q_floor        => LatParamDict(FloorPositionGroup, RealVec,   "Quaternion orientation.", "m", alias = :(q[])),
 
   :s              => LatParamDict(Nothing,        Real,      "Longitudinal s-position.", "m"),
   :ix_ele         => LatParamDict(Nothing,        Int,       "Index of element in containing branch .ele() array."),
