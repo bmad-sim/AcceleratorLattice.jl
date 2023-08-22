@@ -56,12 +56,20 @@ NullEle lattice element type used to indicate the absence of any valid element.
 const NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
+# ele.field overload
+
+function Base.getproperty(ele::Type{T}, s::Symbol) where T <: Ele
+  if s in [:name, :param, :flags]; return getfield(ele, s); end
+  println(f"Here: {s}")
+end
+
+
+#-------------------------------------------------------------------------------------
 # Element traits
 
 "General thick multipole. Returns a Bool."
 function thick_multipole_ele(ele::Ele)
-  if ele <: Union{Drift, Quadrupole, Sextupole}; return true; end
-  return false
+  ele <: Union{Drift, Quadrupole, Sextupole, Octupole} ? (return true) : (return false)
 end
 
 "Geometry type. Returns a EleGeometrySwitch"
