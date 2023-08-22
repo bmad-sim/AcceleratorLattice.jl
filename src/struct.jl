@@ -13,83 +13,46 @@ Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 #-------------------------------------------------------------------------------------
 # Ele
 
-mutable struct BeamBeam <: Ele; name::String; param::Dict{Symbol,Any}; end
-BeamBeam(name::String; kwargs...) = eval( :($(Symbol(name)) = BeamBeam($name, Dict{Symbol,Any}($kwargs...))) )
+function ele_instantiator(ele_type::Symbol, name::String, kwargs...)
+  eval( :($(Symbol(name)) = $ele_type($name, Dict{Symbol,Any}($kwargs...))) )
+end
 
-mutable struct BeginningEle <: Ele; name::String; param::Dict{Symbol,Any}; end
-BeginningEle(name::String; kwargs...) = eval( :($(Symbol(name)) = BeginningEle($name, Dict{Symbol,Any}($kwargs...))) )
+macro construct_ele_type(ele_type)
+  eval( Meta.parse("mutable struct $ele_type <: Ele; name::String; param::Dict{Symbol,Any}; end") )
+  eval( Meta.parse("$ele_type(name::String; kwargs...) = ele_instantiator(Symbol($ele_type), name, kwargs...)") )
+  return nothing
+end
 
-mutable struct Bend <: Ele; name::String; param::Dict{Symbol,Any}; end
-Bend(name::String; kwargs...) = eval( :($(Symbol(name)) = Bend($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Controller <: Ele; name::String; param::Dict{Symbol,Any}; end
-Controller(name::String; kwargs...) = eval( :($(Symbol(name)) = Controller($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct CrabCavity <: Ele; name::String; param::Dict{Symbol,Any}; end
-CrabCavity(name::String; kwargs...) = eval( :($(Symbol(name)) = CrabCavity($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Drift <: Ele; name::String; param::Dict{Symbol,Any}; end
-Drift(name::String; kwargs...) = eval( :($(Symbol(name)) = Drift($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct EGun <: Ele; name::String; param::Dict{Symbol,Any}; end
-EGun(name::String; kwargs...) = eval( :($(Symbol(name)) = EGun($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct EMField <: Ele; name::String; param::Dict{Symbol,Any}; end
-EMField(name::String; kwargs...) = eval( :($(Symbol(name)) = EMField($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Fork <: Ele; name::String; param::Dict{Symbol,Any}; end
-Fork(name::String; kwargs...) = eval( :($(Symbol(name)) = Fork($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Kicker <: Ele; name::String; param::Dict{Symbol,Any}; end
-Kicker(name::String; kwargs...) = eval( :($(Symbol(name)) = Kicker($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct LCavity <: Ele; name::String; param::Dict{Symbol,Any} end
-LCavity(name::String; kwargs...) = eval( :($(Symbol(name)) = LCavity($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Marker <: Ele; name::String; param::Dict{Symbol,Any}; end
-Marker(name::String; kwargs...) = eval( :($(Symbol(name)) = Marker($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Mask <: Ele; name::String; param::Dict{Symbol,Any}; end
-Mask(name::String; kwargs...) = eval( :($(Symbol(name)) = Mask($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Match <: Ele; name::String; param::Dict{Symbol,Any}; end
-Match(name::String; kwargs...) = eval( :($(Symbol(name)) = Match($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Multipole <: Ele; name::String; param::Dict{Symbol,Any}; end
-Multipole(name::String; kwargs...) = eval( :($(Symbol(name)) = Multipole($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Patch <: Ele; name::String; param::Dict{Symbol,Any}; end
-Patch(name::String; kwargs...) = eval( :($(Symbol(name)) = Patch($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Octupole <: Ele; name::String; param::Dict{Symbol,Any}; end
-Octupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Octupole($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Quadrupole <: Ele; name::String; param::Dict{Symbol,Any}; end
-Quadrupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Quadrupole($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct RFCavity <: Ele; name::String; param::Dict{Symbol,Any}; end
-RFCavity(name::String; kwargs...) = eval( :($(Symbol(name)) = RFCavity($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Sextupole <: Ele; name::String; param::Dict{Symbol,Any}; end
-Sextupole(name::String; kwargs...) = eval( :($(Symbol(name)) = Sextupole($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Taylor <: Ele; name::String; param::Dict{Symbol,Any}; end
-Taylor(name::String; kwargs...) = eval( :($(Symbol(name)) = Taylor($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Undulator <: Ele; name::String; param::Dict{Symbol,Any}; end
-Undulator(name::String; kwargs...) = eval( :($(Symbol(name)) = Undulator($name, Dict{Symbol,Any}($kwargs...))) )
-
-mutable struct Wiggler <: Ele; name::String; param::Dict{Symbol,Any}; end
-Wiggler(name::String; kwargs...) = eval( :($(Symbol(name)) = Wiggler($name, Dict{Symbol,Any}($kwargs...))) )
-
+@construct_ele_type BeamBeam
+@construct_ele_type BeginningEle
+@construct_ele_type Bend
+@construct_ele_type Controller
+@construct_ele_type CrabCavity
+@construct_ele_type Drift
+@construct_ele_type EGun
+@construct_ele_type EMField
+@construct_ele_type Fork
+@construct_ele_type Kicker
+@construct_ele_type LCavity
+@construct_ele_type Marker
+@construct_ele_type Mask
+@construct_ele_type Match
+@construct_ele_type Multipole
+@construct_ele_type Patch
+@construct_ele_type Octupole
+@construct_ele_type Quadrupole
+@construct_ele_type RFCavity
+@construct_ele_type Sextupole
+@construct_ele_type Taylor
+@construct_ele_type Undulator
+@construct_ele_type Wiggler
+@construct_ele_type NullEle
 
 """
 NullEle lattice element type used to indicate the absence of any valid element.
 `NULL_ELE` is the instantiated element
 """
 
-mutable struct NullEle <: Ele; name::String; param::Dict{Symbol,Any}; end
-NullEle(name::String; kwargs...) = eval( :($(Symbol(name)) = NullEle($name, Dict{Symbol,Any}($kwargs...))) )
 const NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
@@ -115,122 +78,105 @@ end
 
 abstract type ParameterGroup end
 
-struct FloorPositionGroup <: ParameterGroup
-  r::Vector{Float64}         # (x,y,z) in Global coords
-  q::Quat64                  # Quaternion orientation
-  theta::Float64;  phi::Float64;  psi::Float64  # Angular orientation consistant with q
+@kwdef struct FloorPositionGroup <: ParameterGroup
+  r::Vector64 =[0, 0, 0]               # (x,y,z) in Global coords
+  q::Quat64 = Quat64(1.0, 0, 0, 0)    # Quaternion orientation
+  theta::Float64 = 0
+  phi::Float64 = 0
+  psi::Float64 = 0
 end
 
-FloorPositionGroup() = FloorPositionGroup([0,0,0], QuatRotation{Float64}(1,0,0,0), 0, 0, 0)
-
-struct KMultipole1 <: ParameterGroup  # A single multipole
-  k::Float64
-  ks::Float64
-  tilt::Float64
-  n::Int64
-  integrated::Bool
+@kwdef struct KMultipole1 <: ParameterGroup  # A single multipole
+  k::Float64 = 0
+  ks::Float64 = 0
+  tilt::Float64 = 0
+  n::Int64 = -1
+  integrated::Bool = false
 end
 
-struct KMultipoleGroup <: ParameterGroup
-  n_vec::Vector{Int64}           # Vector of multipole order.
-  mp_vec::Vector{KMultipole1}    # Vector of multipoles.
+@kwdef struct KMultipoleGroup <: ParameterGroup
+  n_vec::Vector{Int64} = []           # Vector of multipole order.
+  mp_vec::Vector{KMultipole1} = []    # Vector of multipoles.
 end
 
-KMultipoleGroup() = KMultipoleGroup(Vector{Int64}(), Vector{KMultipole1})
-
-struct BMultipole1 <: ParameterGroup  # A single multipole
-  B::Float64
-  Bs::Float64
-  tilt::Float64
-  n::Int64
-  integrated::Bool
+@kwdef struct BMultipole1 <: ParameterGroup  # A single multipole
+  B::Float64 = 0
+  Bs::Float64 = 0
+  tilt::Float64 = 0
+  n::Int64 = -1
+  integrated::Bool = false
 end
 
-struct BMultipoleGroup <: ParameterGroup
-  n_vec::Vector{Int64}               # Vector of multipole order.
-  mp_vec::Vector{BMultipole1}    # Vector of multipoles. 
+@kwdef struct BMultipoleGroup <: ParameterGroup
+  n_vec::Vector{Int64} = []           # Vector of multipole order.
+  mp_vec::Vector{BMultipole1} = []    # Vector of multipoles. 
 end
 
-FieldMultipoleGroup() = FieldMultipoleGroup(Vector{Int64}(), Vector{FieldMultipole1})
-
-struct EMultipole1 <: ParameterGroup
-  E::Float64
-  Es::Float64
-  tilt::Float64
-  n::Int64
+@kwdef struct EMultipole1 <: ParameterGroup
+  E::Float64 = 0
+  Es::Float64 = 0
+  tilt::Float64 = 0
+  n::Int64 = -1
 end
 
-struct EMultipoleGroup <: ParameterGroup
-  n_vec::Vector{Int64}          # Vector of multipole order.
-  mp_vec::Vector{EMultipole1}    # Vector of multipoles. 
+@kwdef struct EMultipoleGroup <: ParameterGroup
+  n_vec::Vector{Int64} = []           # Vector of multipole order.
+  mp_vec::Vector{EMultipole1} = []    # Vector of multipoles. 
 end
 
-EMultipoleGroup() = EMultipoleGroup(Vector{Int64}(), Vector{EMultipole1})
-
-struct AlignmentGroup <: ParameterGroup
-  x_offset::Float64
-  y_offset::Float64
-  z_offset::Float64
-  x_pitch::Float64
-  y_pitch::Float64
-  tilt::Float64     # Not used by Bend elements
+@kwdef struct AlignmentGroup <: ParameterGroup
+  offset::Vector64 = [0,0,0]   # [x, y, z] offsets
+  pitch::Vector64 = [0,0]      # [x, y] pitches
+  tilt::Float64 = 0            # Not used by Bend elements
 end
 
-AlignmentGroup() = AlignmentGroup(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-
-struct BendGroup <: ParameterGroup
-  angle::Float64
-  rho::Float64
-  g::Float64
-  bend_field::Float64
-  len_chord::Float64
-  ref_tilt::Float64
-  e::Vector{Float64}    # Edge angles
-  e_rect::Vector{Float64}   # Edge angles with respect to rectangular geometry.
-  fint::Vector{Float64}
-  hgap::Vector{Float64}
+@kwdef struct BendGroup <: ParameterGroup
+  angle::Float64 = NaN
+  rho::Float64 = NaN
+  g::Float64 = NaN
+  bend_field::Float64 = NaN
+  len_chord::Float64 = NaN
+  ref_tilt::Float64 = 0
+  e::Vector64 = [NaN, NaN]       # Edge angles
+  e_rect::Vector64 = [NaN, NaN]  # Edge angles with respect to rectangular geometry.
+  fint::Vector64 = [0.5, 0.5]
+  hgap::Vector64 = [0, 0]
 end
 
-BendGroup() = BendGroup(NaN, NaN, NaN, NaN, NaN, 0.0, [NaN, NaN], [NaN, NaN], [0.5, 0.5], [0.0, 0.0])
-
-struct ApertureGroup <: ParameterGroup
-  x_limit::Vector{Float64}
-  y_limit::Vector{Float64}
-  aperture_type::ApertureTypeSwitch
-  aperture_at::EleBodyLocationSwitch
-  offset_moves_aperture::Bool
+@kwdef struct ApertureGroup <: ParameterGroup
+  limit::Vector64 = [NaN, NaN]
+  aperture_type::ApertureTypeSwitch = Elliptical
+  aperture_at::EleBodyLocationSwitch = EntranceEnd
+  offset_moves_aperture::Bool = true
 end
 
-ApertureGroup() = ApertureGroup([NaN, NaN], [NaN, NaN], Elliptical, EntranceEnd, true)
-
-struct StringGroup <: ParameterGroup
+@kwdef struct StringGroup <: ParameterGroup
   type::String
   alias::String
   description::String
 end
 
-StringGroup() = StringGroup("", "", "")
-
-struct RFGroup <: ParameterGroup
-  voltage::Float64
-  gradient::Float64
-  rf_phase::Float64
-  rf_frequency::Float64
-  harmon::Float64
-  cavity_type::CavityTypeSwitch
-  n_cell::Int64
+@kwdef struct RFGroup <: ParameterGroup
+  voltage::Float64 = 0
+  gradient::Float64 = 0
+  auto_scale:: Float64 = 1
+  phase::Float64 = 0
+  auto_phase::Float64 = 0
+  multipass_phase::Float64 = 0
+  frequency::Float64 = 0
+  harmon::Float64 = 0
+  cavity_type::CavityTypeSwitch = StandingWave
+  n_cell::Int64 = 1
 end
 
-RFGroup() = RFGroup(0.0, 0.0, 0.0, 0.0, 0.0, StandingWave, 1)
-
-struct TrackingGroup <: ParameterGroup
+@kwdef struct TrackingGroup <: ParameterGroup
   tracking_method::TrackingMethodSwitch
   field_calc::FieldCalcMethodSwitch
-  num_steps::Int64
-  ds_step::Int64
+  num_steps::Int64 = -1
+  ds_step::Float64 = NaN
 end
 
-TrackingGroup() = TrackingGroup(BmadStandard, BmadStandard, NaI, NaI)
+TrackingGroup() = TrackingGroup(BmadStandard, BmadStandard, NaI, NaN)
 
 struct ChamberWallGroup <: ParameterGroup
 end

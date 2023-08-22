@@ -19,6 +19,7 @@ struct StringParseError <: Exception; msg::String; end
 #---------------------------------------------------------------------------------------------------
 
 Quat64 = QuatRotation{Float64}
+Vector64 = Vector{Float64}
 
 #-------------------------------------------------------------------------------------
 # The Rotation.jl package displays the 3x3 rotation matrix with 
