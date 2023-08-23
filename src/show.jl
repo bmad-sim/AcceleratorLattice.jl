@@ -88,13 +88,17 @@ end
 # Show Ele
 
 function Base.show(io::IO, ele::Ele)
-  n = maximum([length(key) for key in keys(ele.param)]) + 4 
   println(io, f"Ele: {ele_name(ele)}   {typeof(ele)}")
-  for (key, val) in ele.param
-    kstr = rpad(repr(key), n)
-    vstr = str_param_value(ele.param, key)
-    println(io, f"  {kstr} {vstr}")
+
+  if length(ele.param) > 0   # Need test since will bomb on zero length dict
+    n = maximum([length(key) for key in keys(ele.param)]) + 4 
+    for (key, val) in ele.param
+      kstr = rpad(repr(key), n)
+      vstr = str_param_value(ele.param, key)
+      println(io, f"  {kstr} {vstr}")
+    end
   end
+
   return nothing
 end
 

@@ -13,13 +13,20 @@ Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 #-------------------------------------------------------------------------------------
 # Ele
 
-function ele_instantiator(ele_type::Symbol, name::String, kwargs...)
-  eval( :($(Symbol(name)) = $ele_type($name, Dict{Symbol,Any}($kwargs...))) )
+macro ele(expr)
+  if expr.head != :(=); throw("Missing equals sign '=' after element name. " * 
+                               "Expecting something like: \"q1 = Quadrupole(...)\""); end
+  name = expr.args[1]
+  insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
+  eval(expr)
+end
+
+function (::Type{T})(; name::String, kwargs...) where T <: Ele
+  return T(name, Dict{Symbol,Any}(kwargs))
 end
 
 macro construct_ele_type(ele_type)
   eval( Meta.parse("mutable struct $ele_type <: Ele; name::String; param::Dict{Symbol,Any}; end") )
-  eval( Meta.parse("$ele_type(name::String; kwargs...) = ele_instantiator(Symbol($ele_type), name, kwargs...)") )
   return nothing
 end
 
@@ -58,8 +65,8 @@ const NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 #-------------------------------------------------------------------------------------
 # ele.field overload
 
-function Base.getproperty(ele::Type{T}, s::Symbol) where T <: Ele
-  if s in [:name, :param, :flags]; return getfield(ele, s); end
+function Base.getproperty(ele::T, s::Symbol) where T <: Ele
+  if s in [:name, :param]; return getfield(ele, s); end
   println(f"Here: {s}")
 end
 
