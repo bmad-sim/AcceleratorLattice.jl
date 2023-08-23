@@ -58,8 +58,8 @@ const NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 #-------------------------------------------------------------------------------------
 # ele.field overload
 
-function Base.getproperty(ele::Type{T}, s::Symbol) where T <: Ele
-  if s in [:name, :param, :flags]; return getfield(ele, s); end
+function Base.getproperty(ele::T, s::Symbol) where T <: Ele
+  if s in [:name, :param]; return getfield(ele, s); end
   println(f"Here: {s}")
 end
 

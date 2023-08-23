@@ -25,12 +25,11 @@ struct LatParamDict
   kind::Union{DataType, Union}   # Something like ApertureTypeSwitch is a Union.
   description::String
   units::String
-  alias::Union{Symbol,Expr}
   default
 end
 
 LatParamDict(parent::DataType, kind::Union{DataType, Union}, description::String, units::String = ""; 
-      alias::Union{Symbol,Expr} = :nothing, default = nothing) = LatParamDict(parent, kind, description, units, alias, default)
+                                   default = nothing) = LatParamDict(parent, kind, description, units, default)
 
 
 """
@@ -47,26 +46,17 @@ global ele_param_dict = Dict(
   :bend_field       => LatParamDict(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
   :rho              => LatParamDict(BendGroup,      Real,      "Design bend radius", "m"),
   :g                => LatParamDict(BendGroup,      Real,      "Design bend strength (1/rho)", "1/m"),
-  :e                => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend entrance and exit face angles. Equivalent to [:e1, :e2].", "rad"),
-  :e1               => LatParamDict(BendGroup,      Real,      "Bend entrance face angle. Equivalent to :(e[1]).", "rad", alias = :(e[1])),
-  :e2               => LatParamDict(BendGroup,      Real,      "Bend exit face angle. Equivalent to :(e[2]).", "rad", alias = :(e[2])),
-  :e_rec            => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend entrance and exit face angles relative to a rectangular geometry." *
-                                                                   " Equivalent to [:e1_rec, :e2_rec].", "rad"),
-  :e1_rec           => LatParamDict(BendGroup,      Real,      "Bend entrance face angle relative to a rectangular geometry.", "rad", alias = :(e_rec[1])),
-  :e2_rec           => LatParamDict(BendGroup,      Real,      "Bend exit face angle relative to a rectangular geometry.", "rad", alias = :(e_rec[2])),
+  :e                => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend entrance and exit face angles.", "rad"),
+  :e_rec            => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend entrance and exit face angles relative to a rectangular geometry.", "rad"),
   :len              => LatParamDict(BendGroup,      Real,      "Element length.", "m"),
   :len_chord        => LatParamDict(BendGroup,      Real,      "Bend chord length.", "m"),
   :ref_tilt         => LatParamDict(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :fint             => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend edge field integrals.", ""),
-  :hgap             => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend edge pole gap heights.", "m"),
+  :fint             => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge field integrals.", ""),
+  :hgap             => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge pole gap heights.", "m"),
 
-  :x_offset         => LatParamDict(AlignmentGroup, Real,      "X-offset component of :offset. Equivalent to :(offset[1]).", "m", alias = :(offset[1])),
-  :y_offset         => LatParamDict(AlignmentGroup, Real,      "Y-offset component of :offset. Equivalent to :(offset[2]).", "m", alias = :(offset[2])),
-  :z_offset         => LatParamDict(AlignmentGroup, Real,      "Z-offset component of :offset. Equivalent to :(offset[3]).", "m", alias = :(offset[3])),
-  :offset           => LatParamDict(AlignmentGroup, RealVec,   "3-Vector of [x_offset, y_offset, z_offset] element offsets.", "m"),
-  :x_pitch          => LatParamDict(AlignmentGroup, Real,      "X-pitch component of :pitch. Equivalent to :(pitch[1]).%", "rad", alias = :(pitch[1])),
-  :y_pitch          => LatParamDict(AlignmentGroup, Real,      "Y-pitch component of :pitch. Equivalent to :(pitch[2]).", "rad", alias = :(pitch[2])),
-  :pitch            => LatParamDict(AlignmentGroup, RealVec,   "2-Vector of [x_pitch, y_pitch] element pitches.", "rad"),
+  :offset           => LatParamDict(AlignmentGroup, RealVec,   "3-Vector of [x, y, z] element offsets.", "m"),
+  :x_pitch          => LatParamDict(AlignmentGroup, Real,      "X-pitch element orientation.", "rad"),
+  :y_pitch          => LatParamDict(AlignmentGroup, Real,      "Y-pitch element orientation.", "rad"),
   :tilt             => LatParamDict(AlignmentGroup, Real,      "Element tilt.", "rad"),
 
   :voltage          => LatParamDict(RFGroup,        Real,      "RF voltage.", "volt"),
@@ -74,7 +64,7 @@ global ele_param_dict = Dict(
   :auto_amp_scale   => LatParamDict(RFGroup,        Real,      "Correction to the voltage/gradient calculated by the auto scale code.", ""),
   :phase            => LatParamDict(RFGroup,        Real,      "RF phase.", "rad"),
   :auto_phase       => LatParamDict(RFGroup,        Real,      "Correction RF phase calculated by the auto scale code.", "rad"),
-  :multipoass_phase => LatParamDict(RFGroup,        Real,      "RF phase which can differ from multipass element to multipass element.", "rad"),
+  :multipass_phase  => LatParamDict(RFGroup,        Real,      "RF phase which can differ from multipass element to multipass element.", "rad"),
   :frequency        => LatParamDict(RFGroup,        Real,      "RF frequency.", "Hz"),
   :harmon           => LatParamDict(RFGroup,        Real,      "RF frequency harmonic number.", ""),
   :cavity_type      => LatParamDict(RFGroup,        CavityTypeSwitch, "Type of cavity."),
@@ -92,8 +82,8 @@ global ele_param_dict = Dict(
   :x_limit          => LatParamDict(ApertureGroup,  RealVec,   "Vector of horizontal aperture limits.", "m"),
   :y_limit          => LatParamDict(ApertureGroup,  RealVec,   "Vector of vertical aperture limits.", "m"),
 
-  :r_floor          => LatParamDict(FloorPositionGroup, RealVec,   "3-vector of floor position.", "m", alias = :(r[])),
-  :q_floor          => LatParamDict(FloorPositionGroup, RealVec,   "Quaternion orientation.", "m", alias = :(q[])),
+  :r_floor          => LatParamDict(FloorPositionGroup, RealVec,   "3-vector of floor position.", "m"),
+  :q_floor          => LatParamDict(FloorPositionGroup, RealVec,   "Quaternion orientation.", "m"),
 
   :s                => LatParamDict(Nothing,        Real,      "Longitudinal s-position.", "m"),
   :ix_ele           => LatParamDict(Nothing,        Int,       "Index of element in containing branch .ele() array."),
