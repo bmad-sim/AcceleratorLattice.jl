@@ -104,11 +104,17 @@ struct EleParamKey
 end
 
 global ele_param_group = Dict(
-  FloorPositionGroup     => EleParamKey("Global floor position and orientation"),
-  KMultipoleGroup        => EleParamKey("Normalized magnetic multipoles."),
-  BMultipoleGroup        => EleParamKey("Unnormalized magnetic multipoles."),
-  EMultipoleGroup        => EleParamKey("Electric multipoles."),
-  AlignmentGroup         => EleParamKey("Vacuum chamber aperture."),
+  FloorPositionGroup    => EleParamKey("Global floor position and orientation"),
+  KMultipoleGroup       => EleParamKey("Normalized magnetic multipoles."),
+  BMultipoleGroup       => EleParamKey("Unnormalized magnetic multipoles."),
+  EMultipoleGroup       => EleParamKey("Electric multipoles."),
+  AlignmentGroup        => EleParamKey("Vacuum chamber aperture."),
+  BendGroup             => EleParamKey("Bend element parameters."),
+  ApertureGroup         => EleParamKey("Vacuum chamber aperture."),
+  StringGroup           => EleParamKey("Informational strings."),
+  RFGroup               => EleParamKey("RF parameters."),
+  TrackingGroup         => EleParamKey("Default tracking settings."),
+  ChamberWallGroup      => EleParamKey("Vacuum chamber wall."),
 )
 
 
@@ -125,6 +131,28 @@ global branch_param = Dict(
   :live_branch => LatParamDict(Nothing, Bool,     "Used by programs to turn on/off tracking in a branch."),
   :ref_species => LatParamDict(Species, String,   "Reference tracking species."),
 )
+
+
+#-----------------------------------------------------------------------------------------
+# ele_param_by_struct
+
+"""
+Table of what parameters are associated with what element types.
+"""
+
+base_group_list = [StringGroup, AlignmentGroup, FloorPositionGroup, ApertureGroup, TrackingGroup]
+multipole_group_list = [KMultipoleGroup, BMultipoleGroup, EMultipoleGroup]
+
+global ele_param_groups = Dict(  
+  Dict(
+    Bend           => vcat(base_group_list, multipole_group_list, BendGroup),
+    Drift          => [StringGroup, FloorPositionGroup, TrackingGroup],
+    Marker         => copy(base_group_list),
+    Quadrupole     => vcat(base_group_list, multipole_group_list),
+  )
+)
+
+#-----------------------------------------------------------------------------------------
 
 
 """
