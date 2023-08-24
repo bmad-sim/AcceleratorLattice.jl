@@ -70,16 +70,16 @@ const NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 #-------------------------------------------------------------------------------------
 # ele.XXX overload
 
-#function Base.getproperty(ele::T, s::Symbol) where T <: Ele
-#  if s == :name; return getfield(ele, s); end
-#  print(f"Here {getfield(ele, :name)}")
-#  return getfield(ele, :param)[s]
-#end
+function Base.getproperty(ele::T, s::Symbol) where T <: Ele
+  if s == :param; return getfield(ele, :param); end
+  if s == :name; return getfield(ele, :name); end
+  return getfield(ele, :param)[s]
+end
 
-#function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
-#  if s == :name; return setfield!(ele, :name, value); end
-#  setfield!(ele.param, s, value)
-#end
+function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
+  if s == :name; return setfield!(ele, :name, value); end
+  getfield(ele, :param)[s]  = value
+end
 
 
 

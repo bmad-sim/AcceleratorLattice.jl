@@ -93,7 +93,7 @@ function Base.show(io::IO, ele::Ele)
   if length(ele.param) > 0   # Need test since will bomb on zero length dict
     n = maximum([length(key) for key in keys(ele.param)]) + 4 
     for (key, val) in ele.param
-      kstr = rpad(repr(key), n)
+      kstr = rpad(string(key), n)
       vstr = str_param_value(ele.param, key)
       println(io, f"  {kstr} {vstr}")
     end
