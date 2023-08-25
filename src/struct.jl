@@ -18,12 +18,17 @@ macro ele(expr)
                                "Expecting something like: \"q1 = Quadrupole(...)\""); end
   name = expr.args[1]
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
-  eval(expr)
+  insert!(expr.args[2].args, 2, :($(Expr(:kw, :bookkeeping_on, false))))
+  eval(expr)   # This will call the constructor below
 end
+
+"""Constructor called by `ele` macro."""
 
 function (::Type{T})(; name::String, kwargs...) where T <: Ele
   return T(name, Dict{Symbol,Any}(kwargs))
 end
+
+"""Constructor for element types."""
 
 macro construct_ele_type(ele_type)
   eval( Meta.parse("mutable struct $ele_type <: Ele; name::String; param::Dict{Symbol,Any}; end") )
@@ -57,19 +62,30 @@ end
 
 """
 NullEle lattice element type used to indicate the absence of any valid element.
-`NULL_ELE` is the instantiated element
+`NULL_ELE` is the instantiated element.
 """
 
 const NULL_ELE = NullEle("null", Dict{Symbol,Any}())
 
 #-------------------------------------------------------------------------------------
-# ele.field overload
+# ele.XXX overload
 
 function Base.getproperty(ele::T, s::Symbol) where T <: Ele
-  if s in [:name, :param]; return getfield(ele, s); end
-  println(f"Here: {s}")
+  if s == :param; return getfield(ele, :param); end
+  if s == :name; return getfield(ele, :name); end
+  return getfield(ele, :param)[s]
 end
 
+function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
+  if s == :name; return setfield!(ele, :name, value); end
+  getfield(ele, :param)[s]  = value
+end
+
+
+
+#function Base.propertynames(ele::T) where T <: Ele
+
+#end
 
 #-------------------------------------------------------------------------------------
 # Element traits

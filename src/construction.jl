@@ -29,13 +29,17 @@ BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.param))
 #-------------------------------------------------------------------------------------
 # beamline
 
-function beamline(name::AbstractString, line::Vector{T}; geometry::BranchGeometrySwitch = OpenGeom, 
-                                    multipass::Bool = false, orientation::Int = +1) where T <: BeamLineItem
-  bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(:geometry => geometry, 
-                                                   :multipass => multipass, :orientation => orientation))
+function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
+  bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
+
+  if !haskey(bline.param, :orientation); bline.param[:orientation] = +1; end
+  if !haskey(bline.param, :geometry);    bline.param[:geometry]    = OpenGeom; end
+  if !haskey(bline.param, :multipass);   bline.param[:multipass]   = false; end
+
   for (ix, item) in enumerate(bline.line)
     item.param[:ix_beamline] = ix
   end
+
   return bline
 end
 
@@ -150,11 +154,15 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
   info = LatConstructionInfo([], beamline.param[:orientation], 0)
 
-  begin_ele = BeginningEle("begin_ele", Dict{Symbol,Any}(:s => 0, :len => 0))
-  end_ele   = Marker("end_ele", Dict{Symbol,Any}())
+  if haskey(branch.param, :begin_ele) 
+    add_beamlineele_to_branch!(branch, BeamLineItem(branch.param[:begin_ele]))
+  else
+    @ele begin_ele = BeginningEle(s = 0, len = 0)
+    add_beamlineele_to_branch!(branch, BeamLineItem(begin_ele))
+  end
 
-  add_beamlineele_to_branch!(branch, BeamLineItem(begin_ele))
   add_beamline_to_branch!(branch, beamline, info)
+  @ele end_ele = Marker()
   add_beamlineele_to_branch!(branch, BeamLineItem(end_ele))
 
   # Beginning and end elements inherit orientation from neighbor elements.
