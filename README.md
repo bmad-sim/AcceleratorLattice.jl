@@ -13,5 +13,6 @@ This is a long term project currently under development.
 julia> import Pkg
 julia> Pkg.activate(".julia/dev/AcceleratorLattice.jl")    # This is relative to the current directory!
                                                            # so make sure you are in the root directory.
+julia> Pkg.instantiate()
 julia> using AcceleratorLattice
 ```
