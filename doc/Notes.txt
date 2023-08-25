@@ -1,1 +1,5 @@
 * Explain @kwdef macro for structs.
+
+* Explain how to add custom attributes to an element:
+    * How to extend the list of official attributes
+    * Using something like "q.param[:my_attrib]" for quick and dirty addition.
