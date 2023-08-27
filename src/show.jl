@@ -69,6 +69,10 @@ end
 
 function str_param_value(param::Dict, key, default::AbstractString = "???")
   who = get(param, key, nothing)
+  return str_param_value(who, default)
+end
+
+function str_param_value(who, default::AbstractString = "???")
   if who == nothing
     return default
   elseif who isa Ele
@@ -92,10 +96,24 @@ function Base.show(io::IO, ele::Ele)
 
   if length(ele.param) > 0   # Need test since will bomb on zero length dict
     n = maximum([length(key) for key in keys(ele.param)]) + 4 
-    for (key, val) in ele.param
+    # Print non-group parameters first.
+    for key in sort(collect(keys(ele.param)))
+      val = ele.param[key]
+      if typeof(val) <: ParameterGroup; continue; end
       kstr = rpad(string(key), n)
       vstr = str_param_value(ele.param, key)
       println(io, f"  {kstr} {vstr}")
+    end
+
+    for key in sort(collect(keys(ele.param)))
+      group = ele.param[key]
+      if !(typeof(group) <: ParameterGroup); continue; end
+      println(io, f"  {key}:")
+      for field in fieldnames(typeof(group))
+        kstr = rpad(string(field), n)
+        vstr = str_param_value(Base.getproperty(group, field))
+        println(io, f"    {kstr} {vstr}")  
+      end
     end
   end
 

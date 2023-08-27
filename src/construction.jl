@@ -202,11 +202,25 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
 
   new_lord_branch(lat, "super_lord")
   new_lord_branch(lat, "controller_lord")
-  mp_lord_branch = new_lord_branch(lat, "multipass_lord")
+  new_lord_branch(lat, "multipass_lord")
 
+  lat_init_bookkeeper!(lat)
+
+  lat_bookkeeper!(lat)
+  return lat
+end
+
+# lat_expansion version without lattice name argument.
+lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}) = lat_expansion("Lattice", root_line)
+
+#-------------------------------------------------------------------------------------
+# lat_init_bookkeeper
+
+function lat_init_bookkeeper!(lat::Lat)
   # Multipass: Sort slaves
   mdict = Dict()
   for branch in lat.branch
+    if branch.name == "multipass_lord"; global multipass_branch = branch; end
     for ele in branch.ele
       id = ele.param[:multipass_id]
       delete!(ele.param, :multipass_id)
@@ -220,12 +234,13 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
   end
 
   # Multipass: Create multipass lords
+
   for (key, val) in mdict
-    push!(mp_lord_branch.ele, deepcopy(val[1]))
-    lord = mp_lord_branch.ele[end]
+    push!(multipass_branch.ele, deepcopy(val[1]))
+    lord = multipass_branch.ele[end]
     delete!(lord.param, :multipass_id)
-    lord.param[:branch] = mp_lord_branch
-    lord.param[:ix_ele] = length(mp_lord_branch.ele)
+    lord.param[:branch] = multipass_branch
+    lord.param[:ix_ele] = length(multipass_branch.ele)
     lord.param[:slave] = Vector{Ele}()
     for (ix, ele) in enumerate(val)
       ele.name = ele.name * "!mp" * string(ix)
@@ -234,12 +249,30 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
     end
   end
 
-  lat_bookkeeper!(lat)
-  return lat
+  # Ele parameters: AlignmentGroup
+
+  for branch in lat.branch
+    for ele in branch.ele
+      if !(AlignmentGroup in ele_param_groups[typeof(ele)]); continue; end
+      param = ele.param
+      transfer_params!(param, AlignmentGroup)
+    end
+  end
 end
 
-# lat_expansion version without lattice name argument.
-lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}) = lat_expansion("Lattice", root_line)
+#-------------------------------------------------------------------------------------
+
+function transfer_params!(param::Dict, group::Type{T}) where T <: ParameterGroup
+  gsym = Symbol(group)
+  str = ""
+  for field in fieldnames(group)
+    if !haskey(param, field); continue; end
+    str = str * ", $field = $(param[field])"
+    pop!(param, field)
+  end
+  # Take advantage of the fact that the group has been defined using @kwargs.
+  param[gsym] = eval(Meta.parse("$group($(str[3:end]))"))
+end
 
 #-------------------------------------------------------------------------------------
 # superimpose!

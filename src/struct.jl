@@ -153,7 +153,8 @@ end
 
 @kwdef struct AlignmentGroup <: ParameterGroup
   offset::Vector64 = [0,0,0]   # [x, y, z] offsets
-  pitch::Vector64 = [0,0]      # [x, y] pitches
+  x_pitch::Float64 = 0         # x pitch
+  y_pitch::Float64 = 0         # y pitch
   tilt::Float64 = 0            # Not used by Bend elements
 end
 
