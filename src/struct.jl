@@ -78,6 +78,13 @@ end
 
 function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
   if s == :name; return setfield!(ele, :name, value); end
+
+  if ele.param[:bookkeeping_on]
+    println("Here!")
+    if !haskey(ele_param_by_struct[typeof(ele)], s); throw(f"Not a registered parameter {s} for {ele.name}."); end
+    if !ele_param_by_struct[typeof(ele)][s].settable; throw(f"Parameter is not user settable: {s} for {ele.name}."); end
+  end
+
   getfield(ele, :param)[s]  = value
 end
 
@@ -117,42 +124,31 @@ abstract type ParameterGroup end
   psi::Float64 = 0
 end
 
-@kwdef struct KMultipole1 <: ParameterGroup  # A single multipole
-  k::Float64 = 0
-  ks::Float64 = 0
-  tilt::Float64 = 0
-  n::Int64 = -1
-  integrated::Bool = false
-end
-
-@kwdef struct KMultipoleGroup <: ParameterGroup
-  n_vec::Vector{Int64} = []           # Vector of multipole order.
-  mp_vec::Vector{KMultipole1} = []    # Vector of multipoles.
-end
-
 @kwdef struct BMultipole1 <: ParameterGroup  # A single multipole
-  B::Float64 = 0
-  Bs::Float64 = 0
+  K::Float64 = NaN
+  Ks::Float64 = NaN
+  B::Float64 = NaN
+  Bs::Float64 = NaN  
   tilt::Float64 = 0
   n::Int64 = -1
   integrated::Bool = false
 end
 
 @kwdef struct BMultipoleGroup <: ParameterGroup
-  n_vec::Vector{Int64} = []           # Vector of multipole order.
-  mp_vec::Vector{BMultipole1} = []    # Vector of multipoles. 
+  n_order::Vector{Int64} = []           # Vector of multipole order.
+  vec::Vector{BMultipole1} = []         # Vector of multipoles.
 end
 
 @kwdef struct EMultipole1 <: ParameterGroup
-  E::Float64 = 0
-  Es::Float64 = 0
+  E::Float64 = NaN
+  Es::Float64 = NaN
   tilt::Float64 = 0
   n::Int64 = -1
 end
 
 @kwdef struct EMultipoleGroup <: ParameterGroup
-  n_vec::Vector{Int64} = []           # Vector of multipole order.
-  mp_vec::Vector{EMultipole1} = []    # Vector of multipoles. 
+  n_order::Vector{Int64} = []           # Vector of multipole order.
+  vec::Vector{EMultipole1} = []         # Vector of multipoles. 
 end
 
 @kwdef struct AlignmentGroup <: ParameterGroup
@@ -201,13 +197,11 @@ end
 end
 
 @kwdef struct TrackingGroup <: ParameterGroup
-  tracking_method::TrackingMethodSwitch
-  field_calc::FieldCalcMethodSwitch
+  tracking_method::TrackingMethodSwitch = BmadStandard
+  field_calc::FieldCalcMethodSwitch = BmadStandard
   num_steps::Int64 = -1
   ds_step::Float64 = NaN
 end
-
-TrackingGroup() = TrackingGroup(BmadStandard, BmadStandard, NaI, NaN)
 
 struct ChamberWallGroup <: ParameterGroup
 end
