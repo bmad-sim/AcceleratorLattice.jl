@@ -258,6 +258,15 @@ function lat_init_bookkeeper!(lat::Lat)
       transfer_params!(param, AlignmentGroup)
     end
   end
+
+  #
+
+  for branch in lat.branch
+    for ele in branch.ele
+      ele.map_params_to_groups = true
+      ele.bookkeeping_on = true
+    end
+  end
 end
 
 #-------------------------------------------------------------------------------------

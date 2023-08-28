@@ -20,79 +20,93 @@ abstract type Struct end
 abstract type Pointer end
 abstract type RealVec end
 
-struct LatParamDict
-  parent_struct::DataType
-  kind::Union{DataType, Union}   # Something like ApertureTypeSwitch is a Union.
-  description::String
-  units::String
-  default
+@kwdef struct ParamInfo
+  parent_struct::T where T <: DataType
+  kind::Union{T, Union} where T <: DataType  # Something like ApertureTypeSwitch is a Union.
+  description::String = ""
+  units::String = ""
+  private::Bool = false
 end
 
-LatParamDict(parent::DataType, kind::Union{DataType, Union}, description::String, units::String = ""; 
-                                   default = nothing) = LatParamDict(parent, kind, description, units, default)
-
+ParamInfo(parent::DataType, kind::Union{DataType, Union}, description::String) = ParamInfo(parent, kind, description, "", false)
+ParamInfo(parent::DataType, kind::Union{DataType, Union}, description::String, units::String) = ParamInfo(parent, kind, description, units, false)
 
 """
 Dictionary of parameters in the Ele.param dict.
 """
 
 ele_param_dict = Dict(
-  :type             => LatParamDict(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
-  :alias            => LatParamDict(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
-  :description      => LatParamDict(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
+  :type             => ParamInfo(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
+  :alias            => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
+  :description      => ParamInfo(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
 
-  :angle            => LatParamDict(BendGroup,      Real,      "Design bend angle", "rad"),
-  :bend_field       => LatParamDict(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
-  :rho              => LatParamDict(BendGroup,      Real,      "Design bend radius", "m"),
-  :g                => LatParamDict(BendGroup,      Real,      "Design bend strength (1/rho)", "1/m"),
-  :e                => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend entrance and exit face angles.", "rad"),
-  :e_rec            => LatParamDict(BendGroup,      RealVec,   
+  :angle            => ParamInfo(BendGroup,      Real,      "Design bend angle", "rad"),
+  :bend_field       => ParamInfo(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
+  :rho              => ParamInfo(BendGroup,      Real,      "Design bend radius", "m"),
+  :g                => ParamInfo(BendGroup,      Real,      "Design bend strength (1/rho)", "1/m"),
+  :e                => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend entrance and exit face angles.", "rad"),
+  :e_rec            => ParamInfo(BendGroup,      RealVec,   
                                   "2-Vector of bend entrance and exit face angles relative to a rectangular geometry.", "rad"),
-  :len              => LatParamDict(BendGroup,      Real,      "Element length.", "m"),
-  :len_chord        => LatParamDict(BendGroup,      Real,      "Bend chord length.", "m"),
-  :ref_tilt         => LatParamDict(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :fint             => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge field integrals.", ""),
-  :hgap             => LatParamDict(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge pole gap heights.", "m"),
+  :len              => ParamInfo(BendGroup,      Real,      "Element length.", "m"),
+  :len_chord        => ParamInfo(BendGroup,      Real,      "Bend chord length.", "m"),
+  :ref_tilt         => ParamInfo(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
+  :fint             => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge field integrals.", ""),
+  :hgap             => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge pole gap heights.", "m"),
 
-  :offset           => LatParamDict(AlignmentGroup, RealVec,   "3-Vector of [x, y, z] element offsets.", "m"),
-  :x_pitch          => LatParamDict(AlignmentGroup, Real,      "X-pitch element orientation.", "rad"),
-  :y_pitch          => LatParamDict(AlignmentGroup, Real,      "Y-pitch element orientation.", "rad"),
-  :tilt             => LatParamDict(AlignmentGroup, Real,      "Element tilt.", "rad"),
+  :offset           => ParamInfo(AlignmentGroup, RealVec,   "3-Vector of [x, y, z] element offsets.", "m"),
+  :x_pitch          => ParamInfo(AlignmentGroup, Real,      "X-pitch element orientation.", "rad"),
+  :y_pitch          => ParamInfo(AlignmentGroup, Real,      "Y-pitch element orientation.", "rad"),
+  :tilt             => ParamInfo(AlignmentGroup, Real,      "Element tilt.", "rad"),
 
-  :voltage          => LatParamDict(RFGroup,        Real,      "RF voltage.", "volt"),
-  :gradient         => LatParamDict(RFGroup,        Real,      "RF gradient.", "volt/m"),
-  :auto_amp_scale   => LatParamDict(RFGroup,        Real,      
+  :voltage          => ParamInfo(RFGroup,        Real,      "RF voltage.", "volt"),
+  :gradient         => ParamInfo(RFGroup,        Real,      "RF gradient.", "volt/m"),
+  :auto_amp_scale   => ParamInfo(RFGroup,        Real,      
                                   "Correction to the voltage/gradient calculated by the auto scale code.", ""),
-  :phase            => LatParamDict(RFGroup,        Real,      "RF phase.", "rad"),
-  :auto_phase       => LatParamDict(RFGroup,        Real,      "Correction RF phase calculated by the auto scale code.", "rad"),
-  :multipass_phase  => LatParamDict(RFGroup,        Real,      
+  :phase            => ParamInfo(RFGroup,        Real,      "RF phase.", "rad"),
+  :auto_phase       => ParamInfo(RFGroup,        Real,      "Correction RF phase calculated by the auto scale code.", "rad"),
+  :multipass_phase  => ParamInfo(RFGroup,        Real,      
                                   "RF phase which can differ from multipass element to multipass element.", "rad"),
-  :frequency        => LatParamDict(RFGroup,        Real,      "RF frequency.", "Hz"),
-  :harmon           => LatParamDict(RFGroup,        Real,      "RF frequency harmonic number.", ""),
-  :cavity_type      => LatParamDict(RFGroup,        CavityTypeSwitch, "Type of cavity."),
-  :n_cell           => LatParamDict(RFGroup,        Int,       "Number of RF cells."),
+  :frequency        => ParamInfo(RFGroup,        Real,      "RF frequency.", "Hz"),
+  :harmon           => ParamInfo(RFGroup,        Real,      "RF frequency harmonic number.", ""),
+  :cavity_type      => ParamInfo(RFGroup,        CavityTypeSwitch, "Type of cavity."),
+  :n_cell           => ParamInfo(RFGroup,        Int,       "Number of RF cells."),
 
-  :tracking_method  => LatParamDict(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
-  :field_calc       => LatParamDict(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
-  :num_steps        => LatParamDict(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
-  :ds_step          => LatParamDict(TrackingGroup,  Real,                  "Nominal distance between tracking steps.", "m"),
+  :tracking_method  => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
+  :field_calc       => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
+  :num_steps        => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
+  :ds_step          => ParamInfo(TrackingGroup,  Real,                  "Nominal distance between tracking steps.", "m"),
 
-  :aperture_type    => LatParamDict(ApertureGroup,  ApertureTypeSwitch, "Type of aperture."),
-  :aperture_at      => LatParamDict(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is."),
+  :aperture_type    => ParamInfo(ApertureGroup,  ApertureTypeSwitch, "Type of aperture."),
+  :aperture_at      => ParamInfo(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is."),
   :offset_moves_aperture 
-                    => LatParamDict(ApertureGroup,  Bool, "Does moving the element move the aperture?"),
-  :x_limit          => LatParamDict(ApertureGroup,  RealVec,   "Vector of horizontal aperture limits.", "m"),
-  :y_limit          => LatParamDict(ApertureGroup,  RealVec,   "Vector of vertical aperture limits.", "m"),
+                    => ParamInfo(ApertureGroup,  Bool, "Does moving the element move the aperture?"),
+  :x_limit          => ParamInfo(ApertureGroup,  RealVec,   "2-Vector of horizontal aperture limits.", "m"),
+  :y_limit          => ParamInfo(ApertureGroup,  RealVec,   "2-Vector of vertical aperture limits.", "m"),
 
-  :r_floor          => LatParamDict(FloorPositionGroup, RealVec,   "3-vector of floor position.", "m"),
-  :q_floor          => LatParamDict(FloorPositionGroup, RealVec,   "Quaternion orientation.", "m"),
+  :r_floor          => ParamInfo(FloorPositionGroup, RealVec,   "3-vector of floor position.", "m"),
+  :q_floor          => ParamInfo(FloorPositionGroup, RealVec,   "Quaternion orientation.", ""),
 
-  :s                => LatParamDict(Nothing,        Real,      "Longitudinal s-position.", "m"),
-  :ix_ele           => LatParamDict(Nothing,        Int,       "Index of element in containing branch .ele() array."),
-  :orientation      => LatParamDict(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
-  :branch           => LatParamDict(Nothing,        Pointer,   "Pointer to branch element is in."),
+  :name             => ParamInfo(Nothing,        String,    "Name of the element."),
+  :s                => ParamInfo(Nothing,        Real,      "Longitudinal s-position.", "m"),
+  :ix_ele           => ParamInfo(Nothing,        Int,       "Index of element in containing branch.ele array."),
+  :orientation      => ParamInfo(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
+  :branch           => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
+  :bookkeeping_on   => ParamInfo(Nothing,        Bool,      "Is bookkeeping code active?", "", true),
+  :map_params_to_groups 
+                    => ParamInfo(Nothing,        Bool,      "Map element params to element groups?", "", true),
 )
 
+function units(key)
+  param_info = ele_param_info(key)
+  if param_info == nothing; return "???"; end
+  return param_info.units
+end
+
+function description(key)
+  param_info = ele_param_info(key)
+  if param_info == nothing; return "???"; end
+  return param_info.description
+end
 
 #-----------------------------------------------------------------------------------------
 
@@ -134,13 +148,16 @@ end
 
 #-----------------------------------------------------------------------------------------
 
-function ele_param(sym::Symbol)
+function ele_param_info(sym::Symbol)
   if haskey(ele_param_dict, sym); return ele_param_dict[sym]; end
   (mtype, order) = multipole_type(sym)
+  if mtype == nothing; return nothing; end
+
+  # Must be a multipole
   n = length(mtype)
   if mtype == nothing; return nothing; end
-  if n == 4 && mtype[1:4] == "tilt";  return LatParamDict(BMultipoleGroup, Real, f"Magnetic multipole tilt for order {order}", "rad"); end
-  if n == 5 && mtype[1:5] == "Etilt"; return LatParamDict(EMultipoleGroup, Real, f"Electric multipole tilt for order {order}", "rad"); end
+  if n == 4 && mtype[1:4] == "tilt";  return ParamInfo(BMultipoleGroup, Real, f"Magnetic multipole tilt for order {order}", "rad"); end
+  if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Real, f"Electric multipole tilt for order {order}", "rad"); end
 
   occursin("s", mtype) ? str = "Skew," : str = "Normal (non-skew), "
   if occursin("l", mtype)
@@ -151,18 +168,18 @@ function ele_param(sym::Symbol)
   if mtype[1:1] == "K"
     if order == -1; units = "";
     else           units = f"1/m^{order+1}"; end
-    return LatParamDict(BMultipoleGroup, Real, f"{str}, momentum-normalized magnetic multipole.", units)
+    return ParamInfo(BMultipoleGroup, Real, f"{str}, momentum-normalized magnetic multipole.", units)
 
   elseif mtype[1:1] == "B"
     if order == -1;    units = "T*m";
     elseif order == 0; units = "T"
     else               units = f"T/m^{order}"; end
-    return LatParamDict(BMultipoleGroup, Real, f"{str} magnetic field multipole.", units)
+    return ParamInfo(BMultipoleGroup, Real, f"{str} magnetic field multipole.", units)
 
   elseif mtype[1:1] == "E"
     if order == -1; units = "V";
-    else           units = f"V/m^{order+1}"; end
-    return LatParamDict(EMultipoleGroup, Real, f"{str} electric field multipole.", units) 
+    else            units = f"V/m^{order+1}"; end
+    return ParamInfo(EMultipoleGroup, Real, f"{str} electric field multipole.", units) 
   end
 end
 
@@ -213,8 +230,8 @@ struct ParamState
   settable::Bool
 end
 
-base_dict = Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch]])
-base_dict[:len] = ParamState(true)
+base_dict = merge(Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch]]),
+                  Dict{Symbol,Any}([v => ParamState(true)  for v in [:len, :name, :bookkeeping_on, :map_params_to_groups]]))
 
 #-----------------------------------------------------------------------------------------
 # ele_param_by_struct
@@ -276,13 +293,13 @@ Dictionary of parameters in the Branch.param dict.
 """
 
 branch_param = Dict(
-  :ix_branch   => LatParamDict(Nothing, Int,      "Index of branch in containing lat .branch[] array"),
-  :geometry    => LatParamDict(Nothing, Switch,   "open_geom or closed_geom Geometry enums"),
-  :lat         => LatParamDict(Nothing, Pointer,  "Pointer to lattice containing the branch."),
-  :type        => LatParamDict(Nothing, Switch,   "Either LordBranch or TrackingBranch BranchType enums."),
-  :from_ele    => LatParamDict(Nothing, Pointer,  "Element that forks to this branch."),
-  :live_branch => LatParamDict(Nothing, Bool,     "Used by programs to turn on/off tracking in a branch."),
-  :ref_species => LatParamDict(Species, String,   "Reference tracking species."),
+  :ix_branch   => ParamInfo(Nothing, Int,      "Index of branch in containing lat .branch[] array"),
+  :geometry    => ParamInfo(Nothing, Switch,   "open_geom or closed_geom Geometry enums"),
+  :lat         => ParamInfo(Nothing, Pointer,  "Pointer to lattice containing the branch."),
+  :type        => ParamInfo(Nothing, Switch,   "Either LordBranch or TrackingBranch BranchType enums."),
+  :from_ele    => ParamInfo(Nothing, Pointer,  "Element that forks to this branch."),
+  :live_branch => ParamInfo(Nothing, Bool,     "Used by programs to turn on/off tracking in a branch."),
+  :ref_species => ParamInfo(Species, String,   "Reference tracking species."),
 )
 
 #-----------------------------------------------------------------------------------------

@@ -100,9 +100,10 @@ function Base.show(io::IO, ele::Ele)
     for key in sort(collect(keys(ele.param)))
       val = ele.param[key]
       if typeof(val) <: ParameterGroup; continue; end
+      if key == :name; continue; end
       kstr = rpad(string(key), n)
       vstr = str_param_value(ele.param, key)
-      println(io, f"  {kstr} {vstr}")
+      ele_print_line(io, f"  {kstr} {vstr} {units(key)}", 45, description(key))
     end
 
     for key in sort(collect(keys(ele.param)))
@@ -112,12 +113,23 @@ function Base.show(io::IO, ele::Ele)
       for field in fieldnames(typeof(group))
         kstr = rpad(string(field), n)
         vstr = str_param_value(Base.getproperty(group, field))
-        println(io, f"    {kstr} {vstr}")  
+        ele_print_line(io, f"    {kstr} {vstr} {units(field)}", 45, description(field))
       end
     end
   end
 
   return nothing
+end
+
+ags = 7
+
+function ele_print_line(io::IO, str::String, ix_des::Int, descrip::String)
+  if length(str) < ix_des - 2
+    println(io, f"{rpad(str, ix_des)}{descrip}")
+  else
+    println(io, str)
+    println(io, " "^45 * descrip)
+  end
 end
 
 Base.show(ele::Ele) = Base.show(stdout, ele::Ele)
