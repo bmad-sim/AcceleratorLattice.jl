@@ -100,22 +100,18 @@ function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
     if pinfo.parent_struct == Nothing
       getfield(ele, :param)[s] = value
     else
-      ## getfield(ele, :param)[Symbol(pinfo.parent_struct)] = pinfo.parent_struct(s = 
-      println(f"Here: {Symbol(pinfo.parent_struct)}")
-      ## getfield(pstruct, s)
-      println(f"Here2: {pstruct}")
+      optic = PropertyLens(s)   # See Accessors.jl experimental
+      param = getfield(ele, :param)
+      ps = Symbol(pinfo.parent_struct)
+      old = param[ps]
+      e = @set optic(old) = value
+      param[ps] = e
     end
 
   else
     getfield(ele, :param)[s] = value
   end
 end
-
-
-
-#function Base.propertynames(ele::T) where T <: Ele
-
-#end
 
 #-------------------------------------------------------------------------------------
 # Element traits
@@ -240,6 +236,22 @@ mutable struct Branch <: BeamLineItem
 end
 
 #-------------------------------------------------------------------------------------
+# branch.XXX overload
+
+function Base.getproperty(branch::Branch, s::Symbol)
+  if s == :ele; return getfield(branch, :ele); end
+  if s == :param; return getfield(branch, :param); end
+  if s == :name; return getfield(branch, :name); end
+  return getfield(branch, :param)[s]
+end
+
+
+function Base.setproperty!(branch::Branch, s::Symbol, value)
+  if s == :name; branch.name = value; end
+  getfield(branch, :param)[s] = value
+end
+
+#-------------------------------------------------------------------------------------
 # LatticeGlobal
 
 """
@@ -262,7 +274,7 @@ mutable struct Lat <: AbstractLat
   name::String
   branch::Vector{Branch}
   param::Dict{Symbol,Any}
-  lattice_global::LatticeGlobal
+  global_param::LatticeGlobal
 end
 
 #-------------------------------------------------------------------------------------
