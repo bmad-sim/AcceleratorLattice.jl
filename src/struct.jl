@@ -19,19 +19,20 @@ macro ele(expr)
   name = expr.args[1]
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :bookkeeping_on, false))))
+  insert!(expr.args[2].args, 2, :($(Expr(:kw, :map_params_to_groups, false))))
   eval(expr)   # This will call the constructor below
 end
 
 """Constructor called by `ele` macro."""
 
-function (::Type{T})(; name::String, kwargs...) where T <: Ele
-  return T(name, Dict{Symbol,Any}(kwargs))
+function (::Type{T})(; kwargs...) where T <: Ele
+  return T(Dict{Symbol,Any}(kwargs))
 end
 
 """Constructor for element types."""
 
 macro construct_ele_type(ele_type)
-  eval( Meta.parse("mutable struct $ele_type <: Ele; name::String; param::Dict{Symbol,Any}; end") )
+  eval( Meta.parse("mutable struct $ele_type <: Ele; param::Dict{Symbol,Any}; end") )
   return nothing
 end
 
@@ -65,27 +66,49 @@ NullEle lattice element type used to indicate the absence of any valid element.
 `NULL_ELE` is the instantiated element.
 """
 
-const NULL_ELE = NullEle("null", Dict{Symbol,Any}())
+const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "null"))
 
 #-------------------------------------------------------------------------------------
 # ele.XXX overload
 
 function Base.getproperty(ele::T, s::Symbol) where T <: Ele
   if s == :param; return getfield(ele, :param); end
-  if s == :name; return getfield(ele, :name); end
-  return getfield(ele, :param)[s]
+
+  if ele.param[:map_params_to_groups]
+    pinfo = ele_param_info(s)
+    if pinfo.parent_struct == Nothing
+      return getfield(ele, :param)[s]
+    else
+      return getfield(getfield(ele, :param)[Symbol(pinfo.parent_struct)], s)
+    end
+
+  else
+    return getfield(ele, :param)[s]
+  end
 end
 
+
 function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
-  if s == :name; return setfield!(ele, :name, value); end
+  if !haskey(ele_param_by_struct[typeof(ele)], s); throw(f"Not a registered parameter: {s}. For element: {ele.name}."); end
 
   if ele.param[:bookkeeping_on]
-    println("Here!")
-    if !haskey(ele_param_by_struct[typeof(ele)], s); throw(f"Not a registered parameter {s} for {ele.name}."); end
-    if !ele_param_by_struct[typeof(ele)][s].settable; throw(f"Parameter is not user settable: {s} for {ele.name}."); end
+    if !ele_param_by_struct[typeof(ele)][s].settable; throw(f"Parameter is not user settable: {s}. For element: {ele.name}."); end
   end
 
-  getfield(ele, :param)[s]  = value
+  if ele.param[:map_params_to_groups]
+    pinfo = ele_param_info(s)
+    if pinfo.parent_struct == Nothing
+      getfield(ele, :param)[s] = value
+    else
+      ## getfield(ele, :param)[Symbol(pinfo.parent_struct)] = pinfo.parent_struct(s = 
+      println(f"Here: {Symbol(pinfo.parent_struct)}")
+      ## getfield(pstruct, s)
+      println(f"Here2: {pstruct}")
+    end
+
+  else
+    getfield(ele, :param)[s] = value
+  end
 end
 
 
@@ -153,7 +176,8 @@ end
 
 @kwdef struct AlignmentGroup <: ParameterGroup
   offset::Vector64 = [0,0,0]   # [x, y, z] offsets
-  pitch::Vector64 = [0,0]      # [x, y] pitches
+  x_pitch::Float64 = 0         # x pitch
+  y_pitch::Float64 = 0         # y pitch
   tilt::Float64 = 0            # Not used by Bend elements
 end
 
