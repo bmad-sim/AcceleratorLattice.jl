@@ -249,13 +249,13 @@ function lat_init_bookkeeper!(lat::Lat)
     end
   end
 
-  # Ele parameters: AlignmentGroup
+  # Ele parameter groups
 
   for branch in lat.branch
     for ele in branch.ele
-      if !(AlignmentGroup in ele_param_groups[typeof(ele)]); continue; end
-      param = ele.param
-      transfer_params!(param, AlignmentGroup)
+      for group in ele_param_groups[typeof(ele)]
+        ele_param_group_init!(ele, group)
+      end
     end
   end
 
@@ -271,7 +271,15 @@ end
 
 #-------------------------------------------------------------------------------------
 
-function transfer_params!(param::Dict, group::Type{T}) where T <: ParameterGroup
+function ele_param_group_init!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+  if group != AlignmentGroup; return; end   # Temp for testing
+  param = ele.param
+  transfer_params!(param, group)
+end
+
+#-------------------------------------------------------------------------------------
+
+function transfer_params!(param::Dict, group::Type{T}) where T <: EleParameterGroup
   gsym = Symbol(group)
   str = ""
   for field in fieldnames(group)

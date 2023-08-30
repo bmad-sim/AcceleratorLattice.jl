@@ -179,7 +179,7 @@ end
 #-----------------------------------------------------------------------------------------
 # get_group for element groups
 
-function get_group(group::Type{T}, ele::Ele) where T <: ParameterGroup
+function get_group(group::Type{T}, ele::Ele) where T <: EleParameterGroup
   return ele.param[Symbol(group)]
 end
 

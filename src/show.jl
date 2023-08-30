@@ -99,7 +99,7 @@ function Base.show(io::IO, ele::Ele)
     # Print non-group parameters first.
     for key in sort(collect(keys(ele.param)))
       val = ele.param[key]
-      if typeof(val) <: ParameterGroup; continue; end
+      if typeof(val) <: EleParameterGroup; continue; end
       if key == :name; continue; end
       kstr = rpad(string(key), n)
       vstr = str_param_value(ele.param, key)
@@ -108,7 +108,7 @@ function Base.show(io::IO, ele::Ele)
 
     for key in sort(collect(keys(ele.param)))
       group = ele.param[key]
-      if !(typeof(group) <: ParameterGroup); continue; end
+      if !(typeof(group) <: EleParameterGroup); continue; end
       println(io, f"  {key}:")
       for field in fieldnames(typeof(group))
         kstr = rpad(string(field), n)

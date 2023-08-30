@@ -17,6 +17,7 @@ macro ele(expr)
   if expr.head != :(=); throw("Missing equals sign '=' after element name. " * 
                                "Expecting something like: \"q1 = Quadrupole(...)\""); end
   name = expr.args[1]
+  ### if isdefined(@__MODULE__, name); throw(f"Element already defined: {name}. Use @ele_redef if you really want to redefine."); end
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :bookkeeping_on, false))))
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :map_params_to_groups, false))))
@@ -102,10 +103,10 @@ function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
     else
       optic = PropertyLens(s)   # See Accessors.jl experimental
       param = getfield(ele, :param)
-      ps = Symbol(pinfo.parent_struct)
-      old = param[ps]
-      e = @set optic(old) = value
-      param[ps] = e
+      parent = Symbol(pinfo.parent_struct)
+      old = param[parent]
+      new = @set optic(old) = value
+      param[parent] = new
     end
 
   else
@@ -133,9 +134,9 @@ end
 #-------------------------------------------------------------------------------------
 # Ele parameters
 
-abstract type ParameterGroup end
+abstract type EleParameterGroup end
 
-@kwdef struct FloorPositionGroup <: ParameterGroup
+@kwdef struct FloorPositionGroup <: EleParameterGroup
   r::Vector64 =[0, 0, 0]               # (x,y,z) in Global coords
   q::Quat64 = Quat64(1.0, 0, 0, 0)    # Quaternion orientation
   theta::Float64 = 0
@@ -143,7 +144,7 @@ abstract type ParameterGroup end
   psi::Float64 = 0
 end
 
-@kwdef struct BMultipole1 <: ParameterGroup  # A single multipole
+@kwdef struct BMultipole1 <: EleParameterGroup  # A single multipole
   K::Float64 = NaN
   Ks::Float64 = NaN
   B::Float64 = NaN
@@ -153,31 +154,31 @@ end
   integrated::Bool = false
 end
 
-@kwdef struct BMultipoleGroup <: ParameterGroup
+@kwdef struct BMultipoleGroup <: EleParameterGroup
   n_order::Vector{Int64} = []           # Vector of multipole order.
   vec::Vector{BMultipole1} = []         # Vector of multipoles.
 end
 
-@kwdef struct EMultipole1 <: ParameterGroup
+@kwdef struct EMultipole1 <: EleParameterGroup
   E::Float64 = NaN
   Es::Float64 = NaN
   tilt::Float64 = 0
   n::Int64 = -1
 end
 
-@kwdef struct EMultipoleGroup <: ParameterGroup
+@kwdef struct EMultipoleGroup <: EleParameterGroup
   n_order::Vector{Int64} = []           # Vector of multipole order.
   vec::Vector{EMultipole1} = []         # Vector of multipoles. 
 end
 
-@kwdef struct AlignmentGroup <: ParameterGroup
+@kwdef struct AlignmentGroup <: EleParameterGroup
   offset::Vector64 = [0,0,0]   # [x, y, z] offsets
   x_pitch::Float64 = 0         # x pitch
   y_pitch::Float64 = 0         # y pitch
   tilt::Float64 = 0            # Not used by Bend elements
 end
 
-@kwdef struct BendGroup <: ParameterGroup
+@kwdef struct BendGroup <: EleParameterGroup
   angle::Float64 = NaN
   rho::Float64 = NaN
   g::Float64 = NaN
@@ -188,22 +189,24 @@ end
   e_rect::Vector64 = [NaN, NaN]  # Edge angles with respect to rectangular geometry.
   fint::Vector64 = [0.5, 0.5]
   hgap::Vector64 = [0, 0]
+  type::BendTypeSwitch = SBend
+  field_master::Bool = false
 end
 
-@kwdef struct ApertureGroup <: ParameterGroup
+@kwdef struct ApertureGroup <: EleParameterGroup
   limit::Vector64 = [NaN, NaN]
   aperture_type::ApertureTypeSwitch = Elliptical
   aperture_at::EleBodyLocationSwitch = EntranceEnd
   offset_moves_aperture::Bool = true
 end
 
-@kwdef struct StringGroup <: ParameterGroup
+@kwdef struct StringGroup <: EleParameterGroup
   type::String
   alias::String
   description::String
 end
 
-@kwdef struct RFGroup <: ParameterGroup
+@kwdef struct RFGroup <: EleParameterGroup
   voltage::Float64 = 0
   gradient::Float64 = 0
   auto_scale:: Float64 = 1
@@ -216,14 +219,14 @@ end
   n_cell::Int64 = 1
 end
 
-@kwdef struct TrackingGroup <: ParameterGroup
+@kwdef struct TrackingGroup <: EleParameterGroup
   tracking_method::TrackingMethodSwitch = BmadStandard
   field_calc::FieldCalcMethodSwitch = BmadStandard
   num_steps::Int64 = -1
   ds_step::Float64 = NaN
 end
 
-struct ChamberWallGroup <: ParameterGroup
+struct ChamberWallGroup <: EleParameterGroup
 end
 
 #-------------------------------------------------------------------------------------
