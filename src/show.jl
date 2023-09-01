@@ -132,7 +132,7 @@ function ele_print_line(io::IO, str::String, ix_des::Int, descrip::String)
   end
 end
 
-Base.show(ele::Ele) = Base.show(stdout, ele::Ele)
+Base.show(io::IO, ::MIME"text/plain", ele::Ele) = Base.show(io, ele::Ele)
 
 #-------------------------------------------------------------------------------------
 # Show Vector{ele}
@@ -144,8 +144,7 @@ function Base.show(io::IO, eles::Vector{Ele})
   end
 end
 
-Base.show(io::IO, ::MIME"text/plain", eles::Vector{Ele}) = Base.show(stdout, eles)
-Base.show(eles::Vector{Ele}) = Base.show(stdout, eles)
+Base.show(io::IO, ::MIME"text/plain", eles::Vector{Ele}) = Base.show(io::IO, eles)
 
 #-------------------------------------------------------------------------------------
 # Show Lat
@@ -158,7 +157,7 @@ function Base.show(io::IO, lat::Lat)
   return nothing
 end
 
-Base.show(lat::Lat) = Base.show(stdout, lat)
+Base.show(io::IO, ::MIME"text/plain", lat::Lat) = Base.show(stdout, lat)
 
 #-------------------------------------------------------------------------------------
 # Show Branch
@@ -180,7 +179,7 @@ function Base.show(io::IO, branch::Branch)
   return nothing
 end
 
-Base.show(branch::Branch) = Base.show(stdout, branch)
+Base.show(io::IO, ::MIME"text/plain", branch::Branch) = Base.show(stdout, branch)
 
 #-------------------------------------------------------------------------------------
 # Show Vector{Branch}
@@ -200,9 +199,9 @@ Base.show(io::IO, ::MIME"text/plain", branches::Vector{Branch}) = Base.show(stdo
 # Show Beamline
 
 function Base.show(io::IO, bl::BeamLine)
-  println(io, f"Beamline:  {str_quote{beamline.name}}, multipass: {beamline.param[:multipass]}, orientation: {beamline.param[:orientation]}")
+  println(io, f"Beamline:  {str_quote(bl.name)}, multipass: {bl.param[:multipass]}, orientation: {bl.param[:orientation]}")
   n = 6
-  for item in beamline.line
+  for item in bl.line
     if item isa BeamLineEle
       n = maximum([n, length(item.ele.name)]) + 2
     else  # BeamLine
@@ -210,7 +209,7 @@ function Base.show(io::IO, bl::BeamLine)
     end
   end
 
-  for (ix, item) in enumerate(beamline.line)
+  for (ix, item) in enumerate(bl.line)
     if item isa BeamLineEle
       println(io, f"{ix:5i}  {rpad(str_quote(item.ele.name), n)}  {rpad(typeof(item.ele), 12)}  {lpad(item.param[:orientation], 2)}")
     else  # BeamLine
@@ -220,7 +219,7 @@ function Base.show(io::IO, bl::BeamLine)
   return nothing
 end
 
-Base.show(bl::BeamLine) = Base.show(stdout, bl)
+Base.show(io::IO, ::MIME"text/plain", bl::BeamLine) = Base.show(io, bl)
 
 #-----------------------------------------------------------------------------------------
 # Show Dict{String, Vector{Ele}}

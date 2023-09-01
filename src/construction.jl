@@ -7,10 +7,13 @@
 
 Returns the branch in `lat` with index `ix` or name that matches `who`.
 
-### Input
-"""
- 
-branch(lat::Lat, ix::Int) = lat.branch[ix]
+Returns `nothing` if no branch can be matched.
+"""   branch
+
+function branch(lat::Lat, ix::Int) 
+  if ix < 1 || ix > length(lat.branch); return nothing; end
+  return lat.branch[ix]
+end
 
 function branch(lat::Lat, who::AbstractString) 
   for branch in lat.branch
@@ -22,12 +25,40 @@ end
 #-------------------------------------------------------------------------------------
 # BeamLineItem
 
+"""
+    BeamLineItem(x::Ele)
+    BeamLineItem(x::BeamLine)
+    BeamLineItem(x::BeamLineEle)
+
+Creates a `BeamLineItem` that contains an `Ele`, `BeamLine`, or `BeamLineEle`.
+""" BeamLineItem
+
 BeamLineItem(x::Ele) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :orientation => +1))
 BeamLineItem(x::BeamLine) = BeamLine(x.name, x.line, deepcopy(x.param))
 BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.param))
 
 #-------------------------------------------------------------------------------------
 # beamline
+
+"""
+    beamline(name::AbstractString, line::Vector{T}; kwargs...)
+
+Creates a `beamline` from a vector of `BeamLineItem`s.
+
+### Input
+
+- `name`    Name of created beamline
+- `line`    Vector of `BeamLineItem`s.
+- `kwargs`  Beamline parameters. See below.
+
+### Notes
+
+The beamline parameters can include:
+- `geometry`      Branch geometry. Can be: `OpenGeom` (default) or `ClosedGeom`.
+- `orientaiton`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
+- `multipass`     Multipass line? Default is `false`.
+
+""" beamline
 
 function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
@@ -46,6 +77,18 @@ end
 #-------------------------------------------------------------------------------------
 # Base.reverse
 
+"""
+    reverse(ele::Ele)
+    reverse(x::BeamLineEle)
+    reverse(beamline::BeamLine)
+
+Marks a `Ele`, `BeamLineEle`, or `beamline` as reversed.
+
+!!! Note:
+    For `BeamLine` reversal the `BeamLine` is marked as reversed but not the contained line elements.  
+    Actual reversal of the line elements takes place during lattice expansion.
+""" Base.reverse
+
 function Base.reverse(ele::Ele)
   item = BeamLineItem(ele)
   item.param[:orientation] = +1
@@ -58,10 +101,6 @@ function Base.reverse(x::BeamLineEle)
   return y
 end
 
-"""
-Rule: Reversal marks a beamline as reversed but not the line elements.
-Line element reversal takes place during lattice expansion.
-"""
 function Base.reverse(beamline::BeamLine)
   bl = BeamLine(beamline.name, beamline.line, deepcopy(beamline.param))
   bl.param[:orientation] = -bl.param[:orientation]
@@ -69,10 +108,26 @@ function Base.reverse(beamline::BeamLine)
 end
 
 #-------------------------------------------------------------------------------------
-# beamline reflection
+# beamline reflection and repetition
 
-"reverse() here is the Julia intrinsic."
-reflect(beamline::BeamLine) = BeamLine(beamline.name * "_mult-1", reverse(beamline.line), beamline.param)
+"""
+    reflect(beamline::BeamLine)
+
+Reverse the order of the elements in the `BeamLine` (not to be confused with element longitudinal 
+orientation reversal).
+""" reflect
+
+# Notice that Base.reverse is the Julia defined reversal of a vector and not any of the extended methods. 
+reflect(beamline::BeamLine) = BeamLine(beamline.name * "_mult-1", Base.reverse(beamline.line), beamline.param)
+
+
+"""
+    (-)(beamline::BeamLine)
+    (*)(n::Int, beamline::BeamLine) 
+    (*)(n::Int, ele::Ele)
+
+Beamline reflection (-) and repetition (*).
+""" Base.:(*), Base.:(-)
 
 Base.:-(beamline::BeamLine) = reflect(beamline)
 
@@ -85,8 +140,18 @@ Base.:*(n::Int, ele::Ele) = (if n < 0; throw(BoundsError("Negative multiplier do
 #-------------------------------------------------------------------------------------
 # add_beamlineele_to_branch!
 
-"Adds a BeamLineEle to a Branch under construction."
-function add_beamlineele_to_branch!(branch::Branch, bele::BeamLineEle, info = nothing)
+"""
+    add_beamlineele_to_branch!(branch::Branch, bele::BeamLineEle, 
+                                                 info::Union{LatConstructionInfo, Nothing}  = nothing)
+
+Adds a `BeamLineEle` to a `Branch` under construction. The `info` argument passes on parameters
+from the beamline containing the `BeamLineEle`.
+
+This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
+""" add_beamlineele_to_branch!
+
+function add_beamlineele_to_branch!(branch::Branch, bele::BeamLineEle, 
+                                                 info::Union{LatConstructionInfo, Nothing}  = nothing)
   push!(branch.ele, deepcopy(bele.ele))
   ele = branch.ele[end]
   ele.param[:ix_ele] = length(branch.ele)
@@ -94,7 +159,8 @@ function add_beamlineele_to_branch!(branch::Branch, bele::BeamLineEle, info = no
   if info isa LatConstructionInfo
     ele.param[:orientation] = bele.param[:orientation] * info.orientation_here
     ele.param[:multipass_id] = copy(info.multipass_id)
-    if length(ele.param[:multipass_id]) > 0; push!(ele.param[:multipass_id], ele.name * ":" * string(bele.param[:ix_beamline])); end
+    if length(ele.param[:multipass_id]) > 0; push!(ele.param[:multipass_id], 
+                                              ele.name * ":" * string(bele.param[:ix_beamline])); end
   else
     ele.param[:orientation] = +1
     ele.param[:multipass_id] = []
@@ -105,7 +171,14 @@ end
 #-------------------------------------------------------------------------------------#--------------------
 # add_beamline_item_to_branch!
 
-"Adds a single item of a BeamLine line to the Branch under construction."
+"""
+    add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
+
+Adds a single item of a `BeamLine` line to the `Branch` under construction.
+
+This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
+""" add_beamline_item_to_branch!
+
 function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
   if item isa BeamLineEle
     add_beamlineele_to_branch!(branch, item, info)
@@ -120,7 +193,14 @@ end
 #-------------------------------------------------------------------------------------
 # add_beamline_to_branch!
 
-"Adds a beamline to a Branch under construction."
+"""
+    add_beamline_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
+
+Adds a `BeamLine` to a `Branch` under construction.
+
+This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
+""" add_beamline_to_branch!
+
 function add_beamline_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
   info.n_loop += 1
   if info.n_loop > 100; throw(InfiniteLoop("Infinite loop of beam lines calling beam lines detected.")); end
@@ -144,7 +224,14 @@ end
 #-------------------------------------------------------------------------------------
 # new_tracking_branch!
 
-"Adds a BeamLine to the lattice creating a new Branch."
+"""
+    new_tracking_branch!(lat::Lat, beamline::BeamLine)
+
+Adds a `BeamLine` to the lattice creating a new `Branch`.
+
+This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
+""" new_tracking_branch!
+
 function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   push!(lat.branch, Branch(beamline.name, Vector{Ele}(), Dict{Symbol,Any}(:geometry => beamline.param[:geometry])))
   branch = lat.branch[end]
@@ -183,6 +270,24 @@ end
 #-------------------------------------------------------------------------------------
 # lat_expansion
 
+"""
+    lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
+    lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}})
+
+Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
+
+### Input
+
+- `name`      Optional name put in `lat.name`. If not present or blank (""), `lat.name` will be set
+                to the name of the first branch.
+- root_line   Root beamline or lines.
+
+### Output
+
+- `Lat`       `Lat` instance with expanded beamlines.
+
+""" lat_expansion
+
 function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
   lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(), LatticeGlobal())
 
@@ -211,7 +316,7 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
 end
 
 # lat_expansion version without lattice name argument.
-lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}) = lat_expansion("Lattice", root_line)
+lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}) = lat_expansion("", root_line)
 
 #-------------------------------------------------------------------------------------
 # lat_init_bookkeeper
@@ -270,6 +375,12 @@ function lat_init_bookkeeper!(lat::Lat)
 end
 
 #-------------------------------------------------------------------------------------
+# ele_param_group_init!
+
+"""
+    ele_param_group_init!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+
+""" ele_param_group_init!
 
 function ele_param_group_init!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   if group != AlignmentGroup; return; end   # Temp for testing
@@ -278,6 +389,11 @@ function ele_param_group_init!(ele::Ele, group::Type{T}) where T <: EleParameter
 end
 
 #-------------------------------------------------------------------------------------
+
+"""
+    transfer_params!(param::Dict, group::Type{T}) where T <: EleParameterGroup
+
+""" transfer_params!
 
 function transfer_params!(param::Dict, group::Type{T}) where T <: EleParameterGroup
   gsym = Symbol(group)
@@ -295,7 +411,12 @@ end
 # superimpose!
 
 """
-"""
+    superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles = NULL_ELE, 
+           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
+
+
+""" superimpose!
+
 function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles = NULL_ELE, 
            ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
   if typeof(ref) == Ele; ref = [ref]; end

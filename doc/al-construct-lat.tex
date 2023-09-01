@@ -1,0 +1,46 @@
+\chapter{Constructing a Lattice}
+\label{c:construct-lat}
+
+%---------------------------------------------------------------------------------------------------
+\section{Switches}
+\label{s:switch}
+
+A \vn{switch} is a switch category identifier name, conventionally with the word \vn{Switch} at the end, 
+with a set of possible values. Switches are like enums without the associated integer. 
+The advantage of switches is that a given switch value name can be used for different switches. 
+Additionally, switches provide for a bit cleaner code.
+
+For example, 
+
+How to create switches...
+
+
+
+
+
+%---------------------------------------------------------------------------------------------------
+\section{Defining an Element}
+\label{s:ele.def}
+
+The \julia language itself is used as the basis for constructing lattices. Other simulation programs
+have similarly utilized the underlying programming language for constructing lattices\cite{merlin++,xsuite},
+but this is in marked contrast to such programs as MAD\cite{mad}, Elegant\cite{elegant}, and the 
+original \bmad\cite{bmad-orig}. 
+
+Chapter~\sref{c:ele} gives a list of elements defined by \Bmad. Elements are defined using the \vn{@ele}
+macro. The general syntax is:
+\begin{example}
+  @ele eleName = eleType(param1 = val1, param2 = val2, ...)
+\end{example}
+where \vn{eleName} is the name of the element, \vn{eleType} is the type of element, \vn{param1}, \vn{param2},
+etc. are parameter names and \vn{val1}, \vn{val2}, etc. are the parameter values.
+Example:
+\begin{example}
+  @ele qf = Quadrupole(len = 0.6, K1 = 0.370)
+\end{example}
+The \vn{@ele} macro will construct a \julia variable with the name \vn{eleName}. Additionally the element
+that this variable references will also hold \vn{eleName} as the name of the element.
+
+To copy an element use the \vn{deepcopy} constructor.
+
+

@@ -12,7 +12,8 @@ abstract type Switch end
 """
     macro switch(base, names...)
 
-The macro creates a "switch group" and the function prints.
+The macro creates a "switch group".
+
 A switch group is a set of switch values along with a switch group identifier.
 The values are all types and the identifier is the Union of all the values.
 
@@ -21,24 +22,35 @@ in different switch groups.
 
 ### Input
 
-- `base` Base type name. Can be something like `MyBase <: SuperT` if the constructed
-          Type is to be a subtype of some other type.
+- `base`    Switch group identifier.
+- `names`   Switch group values.
 
 ### Output
 
-- An abstract type with the `base` name is created.
-- A "switch" type is created by appending `Switch` to the `base` name.
-    This is used for function arguments.
-    The switch type is defined to be Type{<: `base`}. That is, will match to any child of `base`
-- A struct is made is made for each of the `names`. 
-    Each of these is a child of `base`.
-
+- A struct is made is made for each of the `names` all of which are children of `Switch`.
+- The `base` is defined to be the Union of all the name structs.
+   
 ### Example
+
+```
+  @switch PositionSwitch UpStream Inside DownStream
+```
+
+This creates structs `UpStream`, `Inside`, and `DownStream`. 
+The variable `PositionSwitch` is created as the Union of the three value structs.
+
+Use examples:
+```
+  function my_func(pos::PositionSwitch, ...) = ...   # Will match to any switch value.
+  function my_func2(in::Inside, ...) = ...           # Will match to Inside struct.
+```
 
 ### Notes:
 
 Use `isa` to test for valid switch values EG: `OpenGeom isa GeometrySwitch` returns true.
-Use `show` to show the switch values for a given switch group variable. EG: show(GeometrySwitch)
+
+Use `show` (or just type the name in the REPL) to show the switch values for a given switch 
+group variable. EG: show(GeometrySwitch).
 """
 macro switch(base, names...)
   # If a name is not defined, define a struct with that name.
@@ -61,7 +73,6 @@ macro switch(base, names...)
     eval( Meta.parse("switch_list_dict = Dict()") )
   end
   eval( Meta.parse("switch_list_dict[:$base] = $names") )
-  eval( Meta.parse("show_switch(io::IO, id::Type{$base}) = show_switch_by_id(io::IO, id)") )
   return nothing
 end
 
@@ -84,17 +95,6 @@ function show_switch(io::IO, switchval::Type{T}) where T <:Switch
       for t in tuple
         println(io, f"    {t}")
       end
-    end
-  end
-end
-
-"""
-function show_switch_by_id(io::IO, id)
-  println("Switch values:")
-  for (key, vals) in switch_list_dict
-    if eval(key) != id; continue; end
-    for val in vals
-      println(f"    {val}")
     end
   end
 end
