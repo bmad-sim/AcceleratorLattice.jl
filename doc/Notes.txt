@@ -6,3 +6,11 @@
 
 * Explain bookkeeping_on flag.
 
+* Explain that AcceleratorLattice.jl can be used standalone.
+
+* Bend .field_master: Only used if p0c changes.
+* Bend .type attribute: Only used if rho, angle, g, bend_field changes
+
+* Explain about flags and how to extend them.
+
+* Element hidden parameters.

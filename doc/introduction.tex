@@ -38,15 +38,16 @@ affected. The choice was made to use the \julia language for the rewrite.
 
 The name ``\bmad" thus has several meanings. Originally, the term only referred to the \bmad
 toolkit. As time went on, and \bmad was used in more and more programs, the term \bmad was
-applied to mean the whole ecosystem of toolkit plus programs. Finally, there is refactored
-\bmad. This \bmad is a \julia package and as such has is more akin to \bmad-the-ecosystem as
-opposed to \bmad-the-toolkit in that \bmad-the-package is used both for constructing lattices
+applied to mean the whole ecosystem of toolkit plus programs. Finally, there is the refactored \julia
+\bmad. This \bmad is more akin to \bmad-the-ecosystem as
+opposed to \bmad-the-toolkit in that \bmad-the-Julia is used both for constructing lattices
 (like \bmad-the-toolkit) and for simulation work without an intermediate program interfacing in between.
 
 %---------------------------------------------------------------------------------------------------
 \section{History}
 
-\bmad (Otherwise known as ``Baby MAD" or ``Better MAD" or just plain ``Be MAD!") is a subroutine
+\bmad (Otherwise known as ``Baby MAD" or ``Better MAD" or just plain ``Be MAD!") was originally created as
+a subroutine
 library for charged--particle and X-Ray simulations in accelerators and storage rings. \bmad has
 been developed at the Cornell Laboratory for Accelerator-based ScienceS and Education (CLASSE) and
 has been in use since 1996.
@@ -107,34 +108,11 @@ programmer who wants to develop applications and needs to know about the inner w
 \bmad, and the user who simply needs to know about the \bmad standard input format and
 about the physics behind the various calculations that \bmad performs.
 
-To this end, this manual is divided into three parts. The first two
-parts are for both the user and programmer while the third part is
-meant just for programmers. 
-  \begin{description}
-  \item[Part~I] \Newline
-Part~I discusses the \bmad lattice input standard. The \bmad lattice input standard was
-developed using the \mad\cite{b:maduser,b:madphysics}. lattice input standard as a
-starting point but, as \bmad evolved, \bmad's syntax has evolved with it.
-  \item[Part~II] \Newline
-part~II gives the conventions used by \bmad --- coordinate systems, magnetic field
-expansions, etc. --- along with some of the physics behind the calculations. By necessity,
-the physics documentation is brief and the reader is assumed to be familiar with high
-energy accelerator physics formalism.
-  \item[Part~III] \Newline
-Part~III gives the nitty--gritty details of the \bmad
-subroutines and the structures upon which they are based.
-\end{description}
+To this end, this manual is divided into XXX parts. 
 
-More information, including the most up--to--date version of this manual, can be found at
-the \bmad web site\cite{b:bmad.web}.  Errors and omissions are a fact of life for any
+Errors and omissions are a fact of life for any
 reference work and comments from you, dear reader, are therefore most welcome. Please send
 any missives (or chocolates, or any other kind of sustenance) to:
 \begin{example}
   David Sagan <dcs16@cornell.edu>
 \end{example}
-
-The \bmad manual is organized as reference guide and so does not do a good job of instructing the
-beginner as to how to use \bmad. For that there is an introduction and tutorial on \bmad and \tao
-(\sref{s:tao.intro}) concepts that can be downloaded from the \bmad web page. Go to either the \bmad or
-\tao manual pages and there will be a link for the tutorial.
-
