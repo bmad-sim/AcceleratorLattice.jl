@@ -263,7 +263,7 @@ or
 
 To match to element lists, use the `eles` function.
 """
-function eles_finder_base(Lat::Lat, name::AbstractString, julia_regex::Bool=false)
+function eles_finder_base(lat::Lat, name::AbstractString, julia_regex::Bool=false)
 
   eles = Ele[]
   if !julia_regex; name = replace(name, "'" => "\""); end
@@ -343,7 +343,7 @@ end
 #-----------------------------------------------------------------------------------------
 # ele_finder
 
-function ele_finder(Lat::Lat, name::AbstractString; julia_regex::Bool = false)
+function ele_finder(lat::Lat, name::AbstractString; julia_regex::Bool = false)
     eles = eles_finder_base(lat, name, julia_regex)
     if length(eles) == 0; return NULL_ELE; end
     return eles[1]

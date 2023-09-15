@@ -21,7 +21,7 @@ macro ele(expr)
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :bookkeeping_on, false))))
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :map_params_to_groups, false))))
-  eval(expr)   # This will call the constructor below
+  return esc(expr)   # This will call the constructor below
 end
 
 """Constructor called by `ele` macro."""
@@ -30,10 +30,12 @@ function (::Type{T})(; kwargs...) where T <: Ele
   return T(Dict{Symbol,Any}(kwargs))
 end
 
-"""Constructor for element types."""
+"""Constructor for element types. Also exports the name.""" construct_ele_type
 
 macro construct_ele_type(ele_type)
   eval( Meta.parse("mutable struct $ele_type <: Ele; param::Dict{Symbol,Any}; end") )
+  str_type =  String("$ele_type")
+  eval( Meta.parse("export $str_type") )
   return nothing
 end
 
