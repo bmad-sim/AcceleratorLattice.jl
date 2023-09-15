@@ -3,7 +3,8 @@
 
 Base type for switches.
 See the documentation for `@switch` for more details.
-"""
+""" Switch
+
 abstract type Switch end
 
 #---------------------------------------------------------------------------------------------------
@@ -51,12 +52,14 @@ Use `isa` to test for valid switch values EG: `OpenGeom isa GeometrySwitch` retu
 
 Use `show` (or just type the name in the REPL) to show the switch values for a given switch 
 group variable. EG: show(GeometrySwitch).
-"""
+""" switch
+
 macro switch(base, names...)
   # If a name is not defined, define a struct with that name.
   for name in names
     if ! isdefined(@__MODULE__, name)
       eval( :(abstract type $(name) <: Switch end) )
+      eval( :(export $(name)) )
     end
   end
 
@@ -85,7 +88,8 @@ end
 Given one switch value, print all possible values of the switch group.
 Called through the Base.show command.
 See `@switch` documentation for more details.
-"""
+""" show_switch
+
 function show_switch(io::IO, switchval::Type{T}) where T <:Switch
   # Turn switchval into string since using eval on switchval causes infinite recursion.
   vstr = string(switchval)

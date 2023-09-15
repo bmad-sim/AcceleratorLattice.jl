@@ -121,7 +121,7 @@ function Base.show(io::IO, ele::Ele)
   return nothing
 end
 
-ags = 7
+
 
 function ele_print_line(io::IO, str::String, ix_des::Int, descrip::String)
   if length(str) < ix_des - 2
