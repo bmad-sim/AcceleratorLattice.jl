@@ -17,7 +17,7 @@ module AcceleratorLattice
   export InfiniteLoop, Branch, Lat, BeamLineEle
   export BeamLineItem, BeamLine, Ele
   export branch_split!, branch_insert_ele!, branch_bookkeeper!, lat_bookkeeper!, construct_ele_type
-  export ele_finder, create_ele_vars
+  export ele_finder, ele_param_groups, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup
   export TrackingGroup, ChamberWallGroup

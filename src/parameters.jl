@@ -159,7 +159,7 @@ function ele_param_info(sym::Symbol)
   if n == 4 && mtype[1:4] == "tilt";  return ParamInfo(BMultipoleGroup, Real, f"Magnetic multipole tilt for order {order}", "rad"); end
   if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Real, f"Electric multipole tilt for order {order}", "rad"); end
 
-  occursin("s", mtype) ? str = "Skew," : str = "Normal (non-skew), "
+  occursin("s", mtype) ? str = "Skew," : str = "Normal (non-skew)"
   if occursin("l", mtype)
     str = str * " length-integrated,"
     order = order - 1

@@ -152,25 +152,23 @@ end
   B::Float64 = NaN
   Bs::Float64 = NaN  
   tilt::Float64 = 0
-  n::Int64 = -1
+  n::Int64 = -1             # Multipole order
   integrated::Bool = false
 end
 
 @kwdef struct BMultipoleGroup <: EleParameterGroup
-  n_order::Vector{Int64} = []           # Vector of multipole order.
-  vec::Vector{BMultipole1} = []         # Vector of multipoles.
+  vec::Vector{Union{Nothing,BMultipole1}} = []         # Vector of multipoles.
 end
 
 @kwdef struct EMultipole1 <: EleParameterGroup
   E::Float64 = NaN
   Es::Float64 = NaN
   tilt::Float64 = 0
-  n::Int64 = -1
+  n::Int64 = -1           # Multipole order
 end
 
 @kwdef struct EMultipoleGroup <: EleParameterGroup
-  n_order::Vector{Int64} = []           # Vector of multipole order.
-  vec::Vector{EMultipole1} = []         # Vector of multipoles. 
+  vec::Vector{Union{Nothing,EMultipole1}} = []         # Vector of multipoles. 
 end
 
 @kwdef struct AlignmentGroup <: EleParameterGroup
