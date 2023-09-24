@@ -21,7 +21,7 @@ abstract type Pointer end
 abstract type RealVec end
 
 @kwdef struct ParamInfo
-  parent_struct::T where T <: DataType
+  parent_group::T where T <: DataType
   kind::Union{T, Union} where T <: DataType  # Something like ApertureTypeSwitch is a Union.
   description::String = ""
   units::String = ""
@@ -108,7 +108,8 @@ function description(key)
   return param_info.description
 end
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# multipole_type
 
 """
 `type` will be "K", "Kl", "Ks" "Ksl", "B", "Bl", "Bs", "Bsl", "tilt", "E", "El", "Es", "Esl", "Etilt"
@@ -116,7 +117,7 @@ end
   `str` can be symbol.
 """
 
-function multipole_type(str)
+function multipole_type(str::Union{AbstractString,Symbol})
   if str isa Symbol; str = string(str); end
   if length(str) < 2 || !any(str[1] .== ['K', 'B', 'E', 't']); return (nothing, -1); end
 
@@ -146,7 +147,10 @@ function multipole_type(str)
   order == nothing ? (return nothing, -1) : (return out_str, Int64(order))
 end
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# ele_param_info
+
+"""Returns param_info or nothing""" ele_param_info
 
 function ele_param_info(sym::Symbol)
   if haskey(ele_param_dict, sym); return ele_param_dict[sym]; end
@@ -159,7 +163,7 @@ function ele_param_info(sym::Symbol)
   if n == 4 && mtype[1:4] == "tilt";  return ParamInfo(BMultipoleGroup, Real, f"Magnetic multipole tilt for order {order}", "rad"); end
   if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Real, f"Electric multipole tilt for order {order}", "rad"); end
 
-  occursin("s", mtype) ? str = "Skew," : str = "Normal (non-skew), "
+  occursin("s", mtype) ? str = "Skew," : str = "Normal (non-skew)"
   if occursin("l", mtype)
     str = str * " length-integrated,"
     order = order - 1
@@ -272,9 +276,27 @@ ele_param_by_struct = Dict(
 function has_param(type::Union{T,Type{T}}, sym::Symbol) where T <: Ele
   if typeof(type) != DataType; type = typeof(type); end
   if haskey(ele_param_by_struct[type], sym); return true; end
-  # Rule: If BMultipoleGroup is in ele then EMultipoleGroup is in ele.
+  # Rule: If BMultipoleGroup is in ele then EMultipoleGroup is in ele. (really?)
   if BMultipoleGroup in ele_param_groups[type] && multipole_type(sym)[1] != nothing; return true; end
   return false
+end
+
+function is_settable(ele::T, sym::Symbol) where T <: Ele
+  if haskey(ele_param_by_struct[typeof(ele)], sym); return ele_param_by_struct[type][key].settable; end
+
+  pinfo = ele_param_info(sym)
+  if pinfo == nothing; throw(f"No info on: {sym}"); end
+
+  if pinfo.parent_group == BMultipoleGroup
+    if !haskey(ele.param, :BMultipoleGroup); return true; end
+    vec = ele.param[:BultipoleGroup]
+    (mtype, order) = multipole_type(sym)
+    if length(vec) < order|| vec[order] == nothing || mtype == "tilt"; return true; end
+    v = vec[order]
+    if (mtype[end] == 'l' && !v.integrated) || (mtype[end] != 'l' &&  v.integrated); return false; end
+    if (mtype[1] == 'K' && isnan(v.B) && isnan(v.Bs)) || (mtype[1] == 'B' && isnan(v.K) && isnan(v.Ks)); return true; end
+    return false
+  end
 end
 
 #-----------------------------------------------------------------------------------------

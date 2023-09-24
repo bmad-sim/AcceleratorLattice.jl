@@ -72,51 +72,6 @@ NullEle lattice element type used to indicate the absence of any valid element.
 const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "null"))
 
 #-------------------------------------------------------------------------------------
-# ele.XXX overload
-
-function Base.getproperty(ele::T, s::Symbol) where T <: Ele
-  if s == :param; return getfield(ele, :param); end
-
-  if ele.param[:map_params_to_groups]
-    pinfo = ele_param_info(s)
-    if pinfo.parent_struct == Nothing
-      return getfield(ele, :param)[s]
-    else
-      return getfield(getfield(ele, :param)[Symbol(pinfo.parent_struct)], s)
-    end
-
-  else
-    return getfield(ele, :param)[s]
-  end
-end
-
-
-function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
-  if !haskey(ele_param_by_struct[typeof(ele)], s); throw(f"Not a registered parameter: {s}. For element: {ele.name}."); end
-
-  if ele.param[:bookkeeping_on]
-    if !ele_param_by_struct[typeof(ele)][s].settable; throw(f"Parameter is not user settable: {s}. For element: {ele.name}."); end
-  end
-
-  if ele.param[:map_params_to_groups]
-    pinfo = ele_param_info(s)
-    if pinfo.parent_struct == Nothing
-      getfield(ele, :param)[s] = value
-    else
-      optic = PropertyLens(s)   # See Accessors.jl experimental
-      param = getfield(ele, :param)
-      parent = Symbol(pinfo.parent_struct)
-      old = param[parent]
-      new = @set optic(old) = value
-      param[parent] = new
-    end
-
-  else
-    getfield(ele, :param)[s] = value
-  end
-end
-
-#-------------------------------------------------------------------------------------
 # Element traits
 
 "General thick multipole. Returns a Bool."
@@ -152,25 +107,23 @@ end
   B::Float64 = NaN
   Bs::Float64 = NaN  
   tilt::Float64 = 0
-  n::Int64 = -1
+  n::Int64 = -1             # Multipole order
   integrated::Bool = false
 end
 
 @kwdef struct BMultipoleGroup <: EleParameterGroup
-  n_order::Vector{Int64} = []           # Vector of multipole order.
-  vec::Vector{BMultipole1} = []         # Vector of multipoles.
+  vec::Vector{Union{Nothing,BMultipole1}} = []         # Vector of multipoles.
 end
 
 @kwdef struct EMultipole1 <: EleParameterGroup
   E::Float64 = NaN
   Es::Float64 = NaN
   tilt::Float64 = 0
-  n::Int64 = -1
+  n::Int64 = -1           # Multipole order
 end
 
 @kwdef struct EMultipoleGroup <: EleParameterGroup
-  n_order::Vector{Int64} = []           # Vector of multipole order.
-  vec::Vector{EMultipole1} = []         # Vector of multipoles. 
+  vec::Vector{Union{Nothing,EMultipole1}} = []         # Vector of multipoles. 
 end
 
 @kwdef struct AlignmentGroup <: EleParameterGroup
@@ -229,6 +182,114 @@ end
 end
 
 struct ChamberWallGroup <: EleParameterGroup
+end
+
+#---------------------------------------------------------------------------------------------------
+
+"""
+Possible kind values: String, Int, Real, RealVec, Bool, Switch, Struct, Pointer
+
+A Switch is a variable that has only a finite number of values.
+Generally, a Switch will either be an enum or something that has a finite number of integer states.
+
+A Pointer is something that points to other variables.
+For example, a Ele may have a vector pointing to its lords. In this case the vector
+itself is considered to be a Pointer as well as its components.
+
+A Struct is a struct. For example, the :floor parameter holds a FloorPosition struct
+"""
+
+
+abstract type Struct end
+abstract type Pointer end
+abstract type RealVec end
+
+@kwdef struct ParamInfo
+  parent_group::T where T <: DataType
+  kind::Union{T, Union} where T <: DataType  # Something like ApertureTypeSwitch is a Union.
+  description::String = ""
+  units::String = ""
+  private::Bool = false
+end
+
+ParamInfo(parent::DataType, kind::Union{DataType, Union}, description::String) = ParamInfo(parent, kind, description, "", false)
+ParamInfo(parent::DataType, kind::Union{DataType, Union}, description::String, units::String) = ParamInfo(parent, kind, description, units, false)
+
+"""
+Dictionary of parameters in the Ele.param dict.
+"""
+
+ele_param_dict = Dict(
+  :type             => ParamInfo(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
+  :alias            => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
+  :description      => ParamInfo(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
+
+  :angle            => ParamInfo(BendGroup,      Real,      "Design bend angle", "rad"),
+  :bend_field       => ParamInfo(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
+  :rho              => ParamInfo(BendGroup,      Real,      "Design bend radius", "m"),
+  :g                => ParamInfo(BendGroup,      Real,      "Design bend strength (1/rho)", "1/m"),
+  :e                => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend entrance and exit face angles.", "rad"),
+  :e_rec            => ParamInfo(BendGroup,      RealVec,   
+                                  "2-Vector of bend entrance and exit face angles relative to a rectangular geometry.", "rad"),
+  :len              => ParamInfo(BendGroup,      Real,      "Element length.", "m"),
+  :len_chord        => ParamInfo(BendGroup,      Real,      "Bend chord length.", "m"),
+  :ref_tilt         => ParamInfo(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
+  :fint             => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge field integrals.", ""),
+  :hgap             => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge pole gap heights.", "m"),
+
+  :offset           => ParamInfo(AlignmentGroup, RealVec,   "3-Vector of [x, y, z] element offsets.", "m"),
+  :x_pitch          => ParamInfo(AlignmentGroup, Real,      "X-pitch element orientation.", "rad"),
+  :y_pitch          => ParamInfo(AlignmentGroup, Real,      "Y-pitch element orientation.", "rad"),
+  :tilt             => ParamInfo(AlignmentGroup, Real,      "Element tilt.", "rad"),
+
+  :voltage          => ParamInfo(RFGroup,        Real,      "RF voltage.", "volt"),
+  :gradient         => ParamInfo(RFGroup,        Real,      "RF gradient.", "volt/m"),
+  :auto_amp_scale   => ParamInfo(RFGroup,        Real,      
+                                  "Correction to the voltage/gradient calculated by the auto scale code.", ""),
+  :phase            => ParamInfo(RFGroup,        Real,      "RF phase.", "rad"),
+  :auto_phase       => ParamInfo(RFGroup,        Real,      "Correction RF phase calculated by the auto scale code.", "rad"),
+  :multipass_phase  => ParamInfo(RFGroup,        Real,      
+                                  "RF phase which can differ from multipass element to multipass element.", "rad"),
+  :frequency        => ParamInfo(RFGroup,        Real,      "RF frequency.", "Hz"),
+  :harmon           => ParamInfo(RFGroup,        Real,      "RF frequency harmonic number.", ""),
+  :cavity_type      => ParamInfo(RFGroup,        CavityTypeSwitch, "Type of cavity."),
+  :n_cell           => ParamInfo(RFGroup,        Int,       "Number of RF cells."),
+
+  :tracking_method  => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
+  :field_calc       => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
+  :num_steps        => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
+  :ds_step          => ParamInfo(TrackingGroup,  Real,                  "Nominal distance between tracking steps.", "m"),
+
+  :aperture_type    => ParamInfo(ApertureGroup,  ApertureTypeSwitch, "Type of aperture."),
+  :aperture_at      => ParamInfo(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is."),
+  :offset_moves_aperture 
+                    => ParamInfo(ApertureGroup,  Bool, "Does moving the element move the aperture?"),
+  :x_limit          => ParamInfo(ApertureGroup,  RealVec,   "2-Vector of horizontal aperture limits.", "m"),
+  :y_limit          => ParamInfo(ApertureGroup,  RealVec,   "2-Vector of vertical aperture limits.", "m"),
+
+  :r_floor          => ParamInfo(FloorPositionGroup, RealVec,   "3-vector of floor position.", "m"),
+  :q_floor          => ParamInfo(FloorPositionGroup, RealVec,   "Quaternion orientation.", ""),
+
+  :name             => ParamInfo(Nothing,        String,    "Name of the element."),
+  :s                => ParamInfo(Nothing,        Real,      "Longitudinal s-position.", "m"),
+  :ix_ele           => ParamInfo(Nothing,        Int,       "Index of element in containing branch.ele array."),
+  :orientation      => ParamInfo(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
+  :branch           => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
+  :bookkeeping_on   => ParamInfo(Nothing,        Bool,      "Is bookkeeping code active?", "", true),
+  :map_params_to_groups 
+                    => ParamInfo(Nothing,        Bool,      "Map element params to element groups?", "", true),
+)
+
+function units(key)
+  param_info = ele_param_info(key)
+  if param_info == nothing; return "???"; end
+  return param_info.units
+end
+
+function description(key)
+  param_info = ele_param_info(key)
+  if param_info == nothing; return "???"; end
+  return param_info.description
 end
 
 #-------------------------------------------------------------------------------------
@@ -313,4 +374,49 @@ end
 # Species
 
 struct Species
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele.XXX overload
+
+function Base.getproperty(ele::T, s::Symbol) where T <: Ele
+  if s == :param; return getfield(ele, :param); end
+
+  if ele.param[:map_params_to_groups]
+    pinfo = ele_param_info(s)
+    if pinfo.parent_group == Nothing
+      return getfield(ele, :param)[s]
+    else
+      return getfield(getfield(ele, :param)[Symbol(pinfo.parent_group)], s)
+    end
+
+  else
+    return getfield(ele, :param)[s]
+  end
+end
+
+
+function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
+  if !has_param(ele, s); throw(f"Not a registered parameter: {s}. For element: {ele.name}."); end
+
+  if ele.param[:bookkeeping_on]
+    if !is_settable(ele, s); throw(f"Parameter is not user settable: {s}. For element: {ele.name}."); end
+  end
+
+  if ele.param[:map_params_to_groups]
+    pinfo = ele_param_info(s)
+    if pinfo.parent_group == Nothing
+      getfield(ele, :param)[s] = value
+    else
+      optic = PropertyLens(s)   # See Accessors.jl experimental
+      param = getfield(ele, :param)
+      parent = Symbol(pinfo.parent_group)
+      old = param[parent]
+      new = @set optic(old) = value
+      param[parent] = new
+    end
+
+  else
+    getfield(ele, :param)[s] = value
+  end
 end

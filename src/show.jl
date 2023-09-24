@@ -109,19 +109,46 @@ function Base.show(io::IO, ele::Ele)
     for key in sort(collect(keys(ele.param)))
       group = ele.param[key]
       if !(typeof(group) <: EleParameterGroup); continue; end
-      println(io, f"  {key}:")
-      for field in fieldnames(typeof(group))
-        kstr = rpad(string(field), n)
-        vstr = str_param_value(Base.getproperty(group, field))
-        ele_print_line(io, f"    {kstr} {vstr} {units(field)}", 45, description(field))
-      end
+      show_elegroup(io, group)
     end
   end
 
   return nothing
 end
 
+function show_elegroup(io::IO, group::T) where T <: EleParameterGroup
+  n = maximum(length(field) for field in fieldnames(typeof(group))) + 4
+  println(io, f"  {typeof(group)}:")
+  for field in fieldnames(typeof(group))
+    kstr = rpad(string(field), n)
+    vstr = str_param_value(Base.getproperty(group, field))
+    ele_print_line(io, f"    {kstr} {vstr} {units(field)}", 45, description(field))
+  end
+end
 
+function show_elegroup(io::IO, group::BMultipoleGroup)
+  n = maximum(length(field) for field in fieldnames(typeof(group))) + 4
+  println(io, f"  {typeof(group)}:")
+  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
+  for (n, v) in enumerate(group.vec)
+    if v == nothing; continue; end
+    if !isnan(v.K)
+      println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.K,24)}{lpad(v.Ks,24)}    K  Ks")
+    else
+      println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.B,24)}{lpad(v.Bs,24)}    B  Bs")
+    end
+  end
+end
+
+function show_elegroup(io::IO, group::EMultipoleGroup)
+  n = maximum(length(field) for field in fieldnames(typeof(group))) + 4
+  println(io, f"  {typeof(group)}:")
+  println(io, f"    Order{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
+  for (n, v) in enumerate(group.vec)
+    if v == nothing; continue; end
+    println(io, f"{lpad(n,9)}{lpad(v.E,24)}{lpad(v.tilt,24)}{lpad(v.Es,24)}")
+  end
+end
 
 function ele_print_line(io::IO, str::String, ix_des::Int, descrip::String)
   if length(str) < ix_des - 2
