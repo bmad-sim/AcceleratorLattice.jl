@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Base abstract types
 
 "Abstract type that represents a Ele or sub BeamLine contained in a beamline."
@@ -10,7 +10,7 @@ abstract type Ele <: BeamLineItem end
 "Single element or vector of elemements."
 Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Ele
 
 macro ele(expr)
@@ -19,8 +19,6 @@ macro ele(expr)
   name = expr.args[1]
   ### if isdefined(@__MODULE__, name); throw(f"Element already defined: {name}. Use @ele_redef if you really want to redefine."); end
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
-  insert!(expr.args[2].args, 2, :($(Expr(:kw, :bookkeeping_on, false))))
-  insert!(expr.args[2].args, 2, :($(Expr(:kw, :map_params_to_groups, false))))
   return esc(expr)   # This will call the constructor below
 end
 
@@ -71,7 +69,7 @@ NullEle lattice element type used to indicate the absence of any valid element.
 
 const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "null"))
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Element traits
 
 "General thick multipole. Returns a Bool."
@@ -88,7 +86,7 @@ function ele_geometry(ele::Ele)
   return Straight
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Ele parameters
 
 abstract type EleParameterGroup end
@@ -112,7 +110,13 @@ end
 end
 
 @kwdef struct BMultipoleGroup <: EleParameterGroup
-  vec::Vector{Union{Nothing,BMultipole1}} = []         # Vector of multipoles.
+  vec::Vector{BMultipole1} = Vector{BMultipole1}([])         # Vector of multipoles.
+end
+
+@kwdef struct ReferenceEnergyGroup <: EleParameterGroup
+  p0c::Float64 = NaN
+  E0_tot::Float64 = NaN
+  beta::Float64 = NaN
 end
 
 @kwdef struct EMultipole1 <: EleParameterGroup
@@ -123,7 +127,7 @@ end
 end
 
 @kwdef struct EMultipoleGroup <: EleParameterGroup
-  vec::Vector{Union{Nothing,EMultipole1}} = []         # Vector of multipoles. 
+  vec::Vector{EMultipole1} = Vector{EMultipole1}([])         # Vector of multipoles. 
 end
 
 @kwdef struct AlignmentGroup <: EleParameterGroup
@@ -187,7 +191,7 @@ end
 #---------------------------------------------------------------------------------------------------
 
 """
-Possible kind values: String, Int, Real, RealVec, Bool, Switch, Struct, Pointer
+Possible kind values: String, Int, Real, Vector{Real}, Bool, Switch, Struct, Pointer
 
 A Switch is a variable that has only a finite number of values.
 Generally, a Switch will either be an enum or something that has a finite number of integer states.
@@ -202,7 +206,6 @@ A Struct is a struct. For example, the :floor parameter holds a FloorPosition st
 
 abstract type Struct end
 abstract type Pointer end
-abstract type RealVec end
 
 @kwdef struct ParamInfo
   parent_group::T where T <: DataType
@@ -220,24 +223,24 @@ Dictionary of parameters in the Ele.param dict.
 """
 
 ele_param_dict = Dict(
-  :type             => ParamInfo(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
-  :alias            => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
-  :description      => ParamInfo(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
+  :type             => ParamInfo(Nothing,        String,    "Type of element. Set by User and ignored the code."),
+  :alias            => ParamInfo(Nothing,        String,    "Alias name. Set by User and ignored by the code."),
+  :description      => ParamInfo(Nothing,        String,    "Descriptive info. Set by User and ignored by the code."),
 
   :angle            => ParamInfo(BendGroup,      Real,      "Design bend angle", "rad"),
   :bend_field       => ParamInfo(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
   :rho              => ParamInfo(BendGroup,      Real,      "Design bend radius", "m"),
   :g                => ParamInfo(BendGroup,      Real,      "Design bend strength (1/rho)", "1/m"),
-  :e                => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend entrance and exit face angles.", "rad"),
-  :e_rec            => ParamInfo(BendGroup,      RealVec,   
+  :e                => ParamInfo(BendGroup,      Vector{Real},   "2-Vector of bend entrance and exit face angles.", "rad"),
+  :e_rec            => ParamInfo(BendGroup,      Vector{Real},   
                                   "2-Vector of bend entrance and exit face angles relative to a rectangular geometry.", "rad"),
   :len              => ParamInfo(BendGroup,      Real,      "Element length.", "m"),
   :len_chord        => ParamInfo(BendGroup,      Real,      "Bend chord length.", "m"),
   :ref_tilt         => ParamInfo(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :fint             => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge field integrals.", ""),
-  :hgap             => ParamInfo(BendGroup,      RealVec,   "2-Vector of bend [entrance, exit] edge pole gap heights.", "m"),
+  :fint             => ParamInfo(BendGroup,      Vector{Real},   "2-Vector of bend [entrance, exit] edge field integrals.", ""),
+  :hgap             => ParamInfo(BendGroup,      Vector{Real},   "2-Vector of bend [entrance, exit] edge pole gap heights.", "m"),
 
-  :offset           => ParamInfo(AlignmentGroup, RealVec,   "3-Vector of [x, y, z] element offsets.", "m"),
+  :offset           => ParamInfo(AlignmentGroup, Vector{Real},   "3-Vector of [x, y, z] element offsets.", "m"),
   :x_pitch          => ParamInfo(AlignmentGroup, Real,      "X-pitch element orientation.", "rad"),
   :y_pitch          => ParamInfo(AlignmentGroup, Real,      "Y-pitch element orientation.", "rad"),
   :tilt             => ParamInfo(AlignmentGroup, Real,      "Element tilt.", "rad"),
@@ -264,20 +267,18 @@ ele_param_dict = Dict(
   :aperture_at      => ParamInfo(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is."),
   :offset_moves_aperture 
                     => ParamInfo(ApertureGroup,  Bool, "Does moving the element move the aperture?"),
-  :x_limit          => ParamInfo(ApertureGroup,  RealVec,   "2-Vector of horizontal aperture limits.", "m"),
-  :y_limit          => ParamInfo(ApertureGroup,  RealVec,   "2-Vector of vertical aperture limits.", "m"),
+  :x_limit          => ParamInfo(ApertureGroup,  Vector{Real},   "2-Vector of horizontal aperture limits.", "m"),
+  :y_limit          => ParamInfo(ApertureGroup,  Vector{Real},   "2-Vector of vertical aperture limits.", "m"),
 
-  :r_floor          => ParamInfo(FloorPositionGroup, RealVec,   "3-vector of floor position.", "m"),
-  :q_floor          => ParamInfo(FloorPositionGroup, RealVec,   "Quaternion orientation.", ""),
+  :r_floor          => ParamInfo(FloorPositionGroup, Vector{Real},   "3-vector of floor position.", "m"),
+  :q_floor          => ParamInfo(FloorPositionGroup, Vector{Real},   "Quaternion orientation.", ""),
 
   :name             => ParamInfo(Nothing,        String,    "Name of the element."),
   :s                => ParamInfo(Nothing,        Real,      "Longitudinal s-position.", "m"),
   :ix_ele           => ParamInfo(Nothing,        Int,       "Index of element in containing branch.ele array."),
+  :field_master     => ParamInfo(Nothing,        Bool,      "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
   :orientation      => ParamInfo(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
   :branch           => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
-  :bookkeeping_on   => ParamInfo(Nothing,        Bool,      "Is bookkeeping code active?", "", true),
-  :map_params_to_groups 
-                    => ParamInfo(Nothing,        Bool,      "Map element params to element groups?", "", true),
 )
 
 function units(key)
@@ -292,7 +293,7 @@ function description(key)
   return param_info.description
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Branch
 
 mutable struct Branch <: BeamLineItem
@@ -301,7 +302,7 @@ mutable struct Branch <: BeamLineItem
   param::Dict{Symbol,Any}
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # branch.XXX overload
 
 function Base.getproperty(branch::Branch, s::Symbol)
@@ -317,7 +318,7 @@ function Base.setproperty!(branch::Branch, s::Symbol, value)
   getfield(branch, :param)[s] = value
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # LatticeGlobal
 
 """
@@ -330,7 +331,7 @@ end
 
 LatticeGlobal() = LatticeGlobal(1.0e-10, Dict())
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Lat
 
 "Abstract lattice from which Lat inherits"
@@ -343,7 +344,7 @@ mutable struct Lat <: AbstractLat
   global_param::LatticeGlobal
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # BeamLine
 # Rule: param Dict of BeamLineEle and BeamLine always define :orientation and :multipass keys.
 # Rule: All instances a given Ele in beamlines are identical so that the User can easily 
@@ -370,7 +371,7 @@ mutable struct LatConstructionInfo
   n_loop::Int
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Species
 
 struct Species
@@ -379,44 +380,35 @@ end
 #---------------------------------------------------------------------------------------------------
 # ele.XXX overload
 
+"""
+Get from param queue. 
+If not in param queue, get from ele group.
+""" Base.getproperty
+
 function Base.getproperty(ele::T, s::Symbol) where T <: Ele
   if s == :param; return getfield(ele, :param); end
+  param = getfield(ele, :param)
+  if haskey(param, s); return param[s]; end
 
-  if ele.param[:map_params_to_groups]
-    pinfo = ele_param_info(s)
-    if pinfo.parent_group == Nothing
-      return getfield(ele, :param)[s]
-    else
-      return getfield(getfield(ele, :param)[Symbol(pinfo.parent_group)], s)
-    end
+  # If not at the top level then look for the parameter as part of an ele group
+  pinfo = ele_param_info(s)
+  parent = Symbol(pinfo.parent_group)
+  if !haskey(param, parent); throw(f"Cannot find {s} in element {param[:name]}"); end
 
+  if pinfo.kind <: Vector
+    param[s] = copy(getfield(param[parent], s))
+    return param[s]
   else
-    return getfield(ele, :param)[s]
+    return ele_group_value(param[parent], s)
   end
 end
 
+"""
+Set param queue unless symbol explicitly involves ele group. 
+""" Base.setproperty!
 
 function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
   if !has_param(ele, s); throw(f"Not a registered parameter: {s}. For element: {ele.name}."); end
-
-  if ele.param[:bookkeeping_on]
-    if !is_settable(ele, s); throw(f"Parameter is not user settable: {s}. For element: {ele.name}."); end
-  end
-
-  if ele.param[:map_params_to_groups]
-    pinfo = ele_param_info(s)
-    if pinfo.parent_group == Nothing
-      getfield(ele, :param)[s] = value
-    else
-      optic = PropertyLens(s)   # See Accessors.jl experimental
-      param = getfield(ele, :param)
-      parent = Symbol(pinfo.parent_group)
-      old = param[parent]
-      new = @set optic(old) = value
-      param[parent] = new
-    end
-
-  else
-    getfield(ele, :param)[s] = value
-  end
+  if !is_settable(ele, s); throw(f"Parameter is not user settable: {s}. For element: {ele.name}."); end
+  getfield(ele, :param)[s] = value
 end

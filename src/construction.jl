@@ -363,15 +363,6 @@ function lat_init_bookkeeper!(lat::Lat)
       end
     end
   end
-
-  #
-
-  for branch in lat.branch
-    for ele in branch.ele
-      ele.map_params_to_groups = true
-      ele.bookkeeping_on = true
-    end
-  end
 end
 
 #-------------------------------------------------------------------------------------
@@ -389,65 +380,57 @@ function ele_param_group_init!(ele::Ele, group::Type{T}) where T <: EleParameter
 end
 
 function ele_param_group_init!(ele::Ele, group::Type{BMultipoleGroup})
-  vec::Vector{Union{BMultipole1,Nothing}} = []
+  ele.param[:BMultipoleGroup] = BMultipoleGroup(Vector{BMultipole1}([]))
+  bmg = ele.param[:BMultipoleGroup]
 
   for (p, value) in ele.param
     mstr, order = multipole_type(p)
     if mstr == nothing || (mstr[1] != 'K' && mstr[1] != 'B' && mstr[1] != 't') ; continue; end
     pop!(ele.param, p)
 
-    if length(vec) < order
-      resize!(vec,order)
-      for ix = length(vec):order-1
-        vec[ix] = nothing
-      end
-      vec[order] = BMultipole1(n = order)
-    end
+    mul = multipole(bmg, order, insert = BMultipole1(n = order))
+    ixm = multipole_index(bmg.vec, order)
 
-    v_ord = vec[order]
     if mstr == "tilt"
-      vec[order] = @set v_ord.tilt = value
+      bmg.vec[ixm] = @set mul.tilt = value
     elseif occursin("l", mstr)
-      if vec[order].K == NaN && vec[order].Ks == NaN && vec[order].B == NaN && vec[order].Bs == NaN
-        vec[order] = @set v_ord.integrated = true
-      elseif !vec[order].integrated
+      if mul.K == NaN && mul.Ks == NaN && mul.B == NaN && mul.Bs == NaN
+        bmg.vec[ixm] = @set mul.integrated = true
+      elseif !mul.integrated
         throw("Combining integrated and non-integrated multipole values for a given order not permitted.")
       end
       mstr = mstr[1:end-1]
 
     else
-      if vec[order].K == NaN && vec[order].Ks == NaN && vec[order].B == NaN && vec[order].Bs == NaN
-        vec[order] = @set vec[order].integrated = false
-      elseif vec[order].integrated
+      if mul.K == NaN && mul.Ks == NaN && mul.B == NaN && mul.Bs == NaN
+        bmg.vec[ixm] = @set mul.integrated = false
+      elseif mul.integrated
         throw("Combining integrated and non-integrated multipole values for a given order not permitted.")
       end
     end
 
-    if mstr == "K";      vec[order] = @set v_ord.K  = value
-    elseif mstr == "Ks"; vec[order] = @set v_ord.Ks = value
-    elseif mstr == "B";  vec[order] = @set v_ord.B  = value
-    elseif mstr == "Bs"; vec[order] = @set v_ord.Bs = value
+    if mstr == "K";      bmg.vec[ixm] = @set mul.K  = value
+    elseif mstr == "Ks"; bmg.vec[ixm] = @set mul.Ks = value
+    elseif mstr == "B";  bmg.vec[ixm] = @set mul.B  = value
+    elseif mstr == "Bs"; bmg.vec[ixm] = @set mul.Bs = value
     end
   end
 
-  for (n, mp) in enumerate(vec)
-    if (!isnan(mp.K) || !isnan(mp.Ks)) && (!isnan(mp.B) || !isnan(mp.Bs))
-      println(mp)
+  for (ix, mul) in enumerate(bmg.vec)
+    if (!isnan(mul.K) || !isnan(mul.Ks)) && (!isnan(mul.B) || !isnan(mul.Bs))
       throw("Setting K or Ks for a multipole of a given order along with B or Bs is not permitted.")
     end
 
-    if !isnan(mp.K) || !isnan(mp.Ks)
-      if isnan(mp.K);  vec[n] = @set mp.K  = 0; end
-      if isnan(mp.Ks); vec[n] = @set mp.Ks = 0; end
+    if !isnan(mul.K) || !isnan(mul.Ks)
+      if isnan(mul.K);  bmg.vec[ix] = @set mul.K  = 0; end
+      if isnan(mul.Ks); bmg.vec[ix] = @set mul.Ks = 0; end
     end
 
-    if !isnan(mp.B) || !isnan(mp.Bs)
-      if isnan(mp.B);  vec[n] = @set mp.B  = 0; end
-      if isnan(mp.Bs); vec[n] = @set mp.Bs = 0; end
+    if !isnan(mul.B) || !isnan(mul.Bs)
+      if isnan(mul.B);  bmg.vec[ix] = @set mul.B  = 0; end
+      if isnan(mul.Bs); bmg.vec[ix] = @set mul.Bs = 0; end
     end
   end
-
-  if length(vec) > 0; ele.param[:BMultipoleGroup] = BMultipoleGroup(vec); end
 end
 
 #-------------------------------------------------------------------------------------
