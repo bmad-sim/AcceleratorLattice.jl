@@ -94,22 +94,47 @@ end
 function Base.show(io::IO, ele::Ele)
   println(io, f"Ele: {ele_name(ele)}   {typeof(ele)}")
 
-  if length(ele.param) > 0   # Need test since will bomb on zero length dict
-    n = maximum([length(key) for key in keys(ele.param)]) + 4 
-    # Print non-group parameters first.
-    for key in sort(collect(keys(ele.param)))
-      val = ele.param[key]
+  param = ele.param
+  if length(param) > 0   # Need test since will bomb on zero length dict
+    n = maximum([length(key) for key in keys(param)]) + 4 
+
+    # Print non-group, non-queued parameters first.
+    # Bookkeeping: If queued param has same value as grouped param, remove queued param.
+    queue = []
+    for key in sort(collect(keys(param)))
+      val = param[key]
       if typeof(val) <: EleParameterGroup; continue; end
+      pinfo = ele_param_info(key)
+      if pinfo.parent_group != Nothing
+        parent = Symbol(pinfo.parent_group)
+        if haskey(param, parent) && param[key] == ele_group_value(param[parent], key)
+          pop!(param, key)
+        else
+          push!(queue, key); continue
+        end
+      end
+
       if key == :name; continue; end
       kstr = rpad(string(key), n)
-      vstr = str_param_value(ele.param, key)
+      vstr = str_param_value(param, key)
       ele_print_line(io, f"  {kstr} {vstr} {units(key)}", 45, description(key))
     end
 
-    for key in sort(collect(keys(ele.param)))
-      group = ele.param[key]
+    # Print groups
+    for key in sort(collect(keys(param)))
+      group = param[key]
       if !(typeof(group) <: EleParameterGroup); continue; end
       show_elegroup(io, group)
+    end
+
+    # Print queued params.
+    if length(queue) > 0
+      println(io, "  Queued for Bookkeeping:")
+      for key in queue
+        kstr = rpad(string(key), n)
+        vstr = str_param_value(param, key)
+        ele_print_line(io, f"    {kstr} {vstr} {units(key)}", 45, description(key))
+      end
     end
   end
 
@@ -130,12 +155,13 @@ function show_elegroup(io::IO, group::BMultipoleGroup)
   n = maximum(length(field) for field in fieldnames(typeof(group))) + 4
   println(io, f"  {typeof(group)}:")
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
-  for (n, v) in enumerate(group.vec)
-    if v == nothing; continue; end
+  for v in group.vec
+    v.integrated ? l = "l" : l = ""
+    n = v.n
     if !isnan(v.K)
-      println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.K,24)}{lpad(v.Ks,24)}    K  Ks")
+      println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.K,24)}{lpad(v.Ks,24)}    K{n}{l}  K{n}s{l}")
     else
-      println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.B,24)}{lpad(v.Bs,24)}    B  Bs")
+      println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.B,24)}{lpad(v.Bs,24)}    B{n}{l}  B{n}s{l}")
     end
   end
 end

@@ -4,12 +4,13 @@ module AcceleratorLattice
   include("math_base.jl")
   include("utilities.jl")
   include("switch.jl")
-  include("string.jl")
   include("struct.jl")
+  include("string.jl")
   include("parameters.jl")
   include("geometry.jl")
   include("show.jl")
   include("construction.jl")
+  include("find.jl")
   include("functions.jl")
 
   export memloc, beamline, @ele, @construct_ele_type, lat_expansion, ele_name, show_name, show_ele

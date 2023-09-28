@@ -2,15 +2,17 @@
 
 * Explain how to add custom attributes to an element:
     * How to extend the list of official attributes
-    * Using something like "q.param[:my_attrib]" for quick and dirty addition.
-
-* Explain bookkeeping_on flag.
+    * What functions to extend.
 
 * Explain that AcceleratorLattice.jl can be used standalone.
 
-* Bend .field_master: Only used if p0c changes.
+* ele.field_master: Only used if p0c changes. Default is false. (what group does this go into?)
 * Bend .type attribute: Only used if rho, angle, g, bend_field changes
 
-* Explain about flags and how to extend them.
+* Explain about switches and how to extend them.
 
-* Element hidden parameters.
+* Element grouped and ungrouped parameters.
+
+* Explain that overloaded dot selection "ele.who" is used to ensure some bookkeeping done in background.
+
+* "Lattice" bookkeeping triggered by user (or optimizer).
