@@ -84,7 +84,7 @@ end
 
 Marks a `Ele`, `BeamLineEle`, or `beamline` as reversed.
 
-!!! Note:
+!! Note:
     For `BeamLine` reversal the `BeamLine` is marked as reversed but not the contained line elements.  
     Actual reversal of the line elements takes place during lattice expansion.
 """ Base.reverse
@@ -359,28 +359,32 @@ function lat_init_bookkeeper!(lat::Lat)
   for branch in lat.branch
     for ele in branch.ele
       for group in ele_param_groups[typeof(ele)]
-        ele_param_group_init!(ele, group)
+        ele_param_group_bookkeeper!(ele, group)
       end
     end
   end
 end
 
 #-------------------------------------------------------------------------------------
-# ele_param_group_init!
+# ele_param_group_bookkeeper!
 
 """
-    ele_param_group_init!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+    ele_param_group_bookkeeper!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
 
-""" ele_param_group_init!
+""" ele_param_group_bookkeeper!
 
-function ele_param_group_init!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
-  if group != AlignmentGroup; return; end   # Temp for testing
+function ele_param_group_bookkeeper!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   param = ele.param
-  transfer_params!(param, group)
+  put_params_in_ele_group!(param, group)
 end
 
-function ele_param_group_init!(ele::Ele, group::Type{BMultipoleGroup})
-  ele.param[:BMultipoleGroup] = BMultipoleGroup(Vector{BMultipole1}([]))
+"""
+"""
+
+function ele_param_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup})
+  if !haskey(ele.param, :BMultipoleGroup)
+    ele.param[:BMultipoleGroup] = BMultipoleGroup(Vector{BMultipole1}([]))
+  end
   bmg = ele.param[:BMultipoleGroup]
 
   for (p, value) in ele.param
@@ -388,66 +392,145 @@ function ele_param_group_init!(ele::Ele, group::Type{BMultipoleGroup})
     if mstr == nothing || (mstr[1] != 'K' && mstr[1] != 'B' && mstr[1] != 't') ; continue; end
     pop!(ele.param, p)
 
-    mul = multipole(bmg, order, insert = BMultipole1(n = order))
+    mul = multipole!(bmg, order, insert = BMultipole1(n = order))
     ixm = multipole_index(bmg.vec, order)
 
     if mstr == "tilt"
       bmg.vec[ixm] = @set mul.tilt = value
+
     elseif occursin("l", mstr)
-      if mul.K == NaN && mul.Ks == NaN && mul.B == NaN && mul.Bs == NaN
-        bmg.vec[ixm] = @set mul.integrated = true
-      elseif !mul.integrated
-        throw("Combining integrated and non-integrated multipole values for a given order not permitted.")
+      if !mul.integrated && (!isnan(mul.K) || !isnan(mul.Ks) || !isnan(mul.B) || !isnan(mul.Bs))
+        try
+          len = ele.len
+        catch 
+          error(f"For element: {ele.name}.\n" *
+                f"Combining integrated and non-integrated multipole values for a given order without len defined not permitted.")
+        end
+        if !isnan(mul.K);  bmg.vec[ixm] = @set mul.K  = mul.K * len; end
+        if !isnan(mul.Ks); bmg.vec[ixm] = @set mul.Ks = mul.Ks * len; end
+        if !isnan(mul.B);  bmg.vec[ixm] = @set mul.B  = mul.B * len; end
+        if !isnan(mul.Bs); bmg.vec[ixm] = @set mul.Bs = mul.Bs * len; end
       end
+
+      bmg.vec[ixm] = @set mul.integrated = true
       mstr = mstr[1:end-1]
 
     else
-      if mul.K == NaN && mul.Ks == NaN && mul.B == NaN && mul.Bs == NaN
-        bmg.vec[ixm] = @set mul.integrated = false
-      elseif mul.integrated
-        throw("Combining integrated and non-integrated multipole values for a given order not permitted.")
+      if mul.integrated && (!isnan(mul.K) || !isnan(mul.Ks) || !isnan(mul.B) || !isnan(mul.Bs))
+        try
+          len = ele.len
+        catch 
+          error(f"For element: {ele.name}.\n" *
+                f"Combining non-integrated and integrated multipole values for a given order without len defined not permitted.")
+        end
+        if len == 0; error(f"For element: {ele.name}.\n" *
+                           f"len = 0 but integrated multipole values need to converted to integrated ones."); end
+        if !isnan(mul.K);  bmg.vec[ixm] = @set mul.K  = mul.K / len; end
+        if !isnan(mul.Ks); bmg.vec[ixm] = @set mul.Ks = mul.Ks / len; end
+        if !isnan(mul.B);  bmg.vec[ixm] = @set mul.B  = mul.B / len; end
+        if !isnan(mul.Bs); bmg.vec[ixm] = @set mul.Bs = mul.Bs / len; end
       end
+      bmg.vec[ixm] = @set mul.integrated = false
     end
 
+    mul = bmg.vec[ixm]
     if mstr == "K";      bmg.vec[ixm] = @set mul.K  = value
     elseif mstr == "Ks"; bmg.vec[ixm] = @set mul.Ks = value
     elseif mstr == "B";  bmg.vec[ixm] = @set mul.B  = value
     elseif mstr == "Bs"; bmg.vec[ixm] = @set mul.Bs = value
     end
+
+    if mstr == "K" || mstr == "Ks"
+      mul = bmg.vec[ixm]; bmg.vec[ixm] = @set mul.B  = NaN
+      mul = bmg.vec[ixm]; bmg.vec[ixm] = @set mul.Bs = NaN
+    end
+
+    if mstr == "B" || mstr == "Bs"
+      mul = bmg.vec[ixm]; bmg.vec[ixm] = @set mul.K  = NaN
+      mul = bmg.vec[ixm]; bmg.vec[ixm] = @set mul.Ks = NaN
+    end
+
   end
+end
 
-  for (ix, mul) in enumerate(bmg.vec)
-    if (!isnan(mul.K) || !isnan(mul.Ks)) && (!isnan(mul.B) || !isnan(mul.Bs))
-      throw("Setting K or Ks for a multipole of a given order along with B or Bs is not permitted.")
+"""
+"""
+
+function ele_param_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup})
+  if !haskey(ele.param, :EMultipoleGroup)
+    ele.param[:EMultipoleGroup] = EMultipoleGroup(Vector{EMultipole1}([]))
+  end
+  emg = ele.param[:EMultipoleGroup]
+
+  for (p, value) in ele.param
+    mstr, order = multipole_type(p)
+    if mstr == nothing || mstr[1] != 'E' ; continue; end
+    pop!(ele.param, p)
+    println(f"Start! {ele.name}  {mstr}")
+
+    mul = multipole!(emg, order, insert = EMultipole1(n = order))
+    ixm = multipole_index(emg.vec, order)
+
+    if mstr == "Etilt"
+      emg.vec[ixm] = @set mul.Etilt = value
+    elseif occursin("l", mstr)
+      if !mul.integrated && (!isnan(mul.E) && !isnan(mul.Es))
+        try
+          len = ele.len
+        catch 
+          error(f"For element: {ele.name}.\n" *
+                f"Combining integrated and non-integrated multipole values for a given order without len defined not permitted.")
+        end
+        if !isnan(mul.E);  emg.vec[ixm] = @set mul.E  = mul.E * len; end
+        if !isnan(mul.Es); emg.vec[ixm] = @set mul.Es = mul.Es * len; end
+      end
+
+      emg.vec[ixm] = @set mul.integrated = true
+      mstr = mstr[1:end-1]
+
+    else
+      if mul.integrated && (!isnan(mul.E) || !isnan(mul.Es))
+        try
+          len = ele.len
+        catch 
+          error(f"For element: {ele.name}.\n" *
+                f"Combining non-integrated and integrated multipole values for a given order without len defined not permitted.")
+        end
+        if len == 0; error(f"For element: {ele.name}.\n" *
+                           f"len = 0 but integrated multipole values need to converted to integrated ones."); end
+        if !isnan(mul.E);  emg.vec[ixm] = @set mul.E  = mul.E / len; end
+        if !isnan(mul.Es); emg.vec[ixm] = @set mul.Es = mul.Es / len; end
+      end
+
+      emg.vec[ixm] = @set mul.integrated = false
     end
 
-    if !isnan(mul.K) || !isnan(mul.Ks)
-      if isnan(mul.K);  bmg.vec[ix] = @set mul.K  = 0; end
-      if isnan(mul.Ks); bmg.vec[ix] = @set mul.Ks = 0; end
-    end
-
-    if !isnan(mul.B) || !isnan(mul.Bs)
-      if isnan(mul.B);  bmg.vec[ix] = @set mul.B  = 0; end
-      if isnan(mul.Bs); bmg.vec[ix] = @set mul.Bs = 0; end
-    end
+    mul = emg.vec[ixm]
+    if mstr == "E";  emg.vec[ixm] = @set mul.E  = value; end
+    if mstr == "Es"; emg.vec[ixm] = @set mul.Es = value; end
+    println(f"L: {emg.vec}")
   end
 end
 
 #-------------------------------------------------------------------------------------
 
 """
-    transfer_params!(param::Dict, group::Type{T}) where T <: EleParameterGroup
+    put_params_in_ele_group!(param::Dict, group::Type{T}) where T <: EleParameterGroup
 
-""" transfer_params!
+Transfers parameters from `param` dict to a particular element `group`.
 
-function transfer_params!(param::Dict, group::Type{T}) where T <: EleParameterGroup
+""" put_params_in_ele_group!
+
+function put_params_in_ele_group!(param::Dict, group::Type{T}) where T <: EleParameterGroup
   gsym = Symbol(group)
   str = ""
   for field in fieldnames(group)
     if !haskey(param, field); continue; end
-    str = str * ", $field = $(param[field])"
+
+    str = str * ", $field = $(repr(param[field]))"  # Need repr() for string fields
     pop!(param, field)
   end
+
   # Take advantage of the fact that the group has been defined using @kwargs.
   param[gsym] = eval(Meta.parse("$group($(str[3:end]))"))
 end

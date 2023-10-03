@@ -91,12 +91,22 @@ end
 
 abstract type EleParameterGroup end
 
+@kwdef struct GeneralGroup <: EleParameterGroup
+  len::Float64 = 0
+end
+
 @kwdef struct FloorPositionGroup <: EleParameterGroup
   r::Vector64 =[0, 0, 0]               # (x,y,z) in Global coords
   q::Quat64 = Quat64(1.0, 0, 0, 0)    # Quaternion orientation
   theta::Float64 = 0
   phi::Float64 = 0
   psi::Float64 = 0
+end
+
+@kwdef struct ReferenceEnergyGroup <: EleParameterGroup
+  p0c::Float64 = NaN
+  E0_tot::Float64 = NaN
+  beta::Float64 = NaN
 end
 
 @kwdef struct BMultipole1 <: EleParameterGroup  # A single multipole
@@ -113,17 +123,12 @@ end
   vec::Vector{BMultipole1} = Vector{BMultipole1}([])         # Vector of multipoles.
 end
 
-@kwdef struct ReferenceEnergyGroup <: EleParameterGroup
-  p0c::Float64 = NaN
-  E0_tot::Float64 = NaN
-  beta::Float64 = NaN
-end
-
 @kwdef struct EMultipole1 <: EleParameterGroup
   E::Float64 = NaN
   Es::Float64 = NaN
-  tilt::Float64 = 0
+  Etilt::Float64 = 0
   n::Int64 = -1           # Multipole order
+  integrated::Bool = false
 end
 
 @kwdef struct EMultipoleGroup <: EleParameterGroup
@@ -153,16 +158,17 @@ end
 end
 
 @kwdef struct ApertureGroup <: EleParameterGroup
-  limit::Vector64 = [NaN, NaN]
+  x_limit::Vector64 = [NaN, NaN]
+  y_limit::Vector64 = [NaN, NaN]
   aperture_type::ApertureTypeSwitch = Elliptical
   aperture_at::EleBodyLocationSwitch = EntranceEnd
   offset_moves_aperture::Bool = true
 end
 
 @kwdef struct StringGroup <: EleParameterGroup
-  type::String
-  alias::String
-  description::String
+  type::String = ""
+  alias::String = ""
+  description::String = ""
 end
 
 @kwdef struct RFGroup <: EleParameterGroup
@@ -223,9 +229,20 @@ Dictionary of parameters in the Ele.param dict.
 """
 
 ele_param_dict = Dict(
+  :name             => ParamInfo(Nothing,        String,    "Name of the element."),
   :type             => ParamInfo(Nothing,        String,    "Type of element. Set by User and ignored the code."),
   :alias            => ParamInfo(Nothing,        String,    "Alias name. Set by User and ignored by the code."),
   :description      => ParamInfo(Nothing,        String,    "Descriptive info. Set by User and ignored by the code."),
+
+  :ix_ele           => ParamInfo(Nothing,        Int,       "Index of element in containing branch.ele array."),
+  :field_master     => ParamInfo(Nothing,        Bool,      "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
+  :orientation      => ParamInfo(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
+  :branch           => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
+
+  :s                => ParamInfo(Nothing,        Real,      "Longitudinal s-position.", "m"),
+  :s_exit           => ParamInfo(Nothing,        Real,      "Longitudinal s-position at exit end.", "m"),
+
+  :len              => ParamInfo(GeneralGroup,   Real,      "Element length.", "m"),
 
   :angle            => ParamInfo(BendGroup,      Real,      "Design bend angle", "rad"),
   :bend_field       => ParamInfo(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
@@ -234,7 +251,6 @@ ele_param_dict = Dict(
   :e                => ParamInfo(BendGroup,      Vector{Real},   "2-Vector of bend entrance and exit face angles.", "rad"),
   :e_rec            => ParamInfo(BendGroup,      Vector{Real},   
                                   "2-Vector of bend entrance and exit face angles relative to a rectangular geometry.", "rad"),
-  :len              => ParamInfo(BendGroup,      Real,      "Element length.", "m"),
   :len_chord        => ParamInfo(BendGroup,      Real,      "Bend chord length.", "m"),
   :ref_tilt         => ParamInfo(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
   :fint             => ParamInfo(BendGroup,      Vector{Real},   "2-Vector of bend [entrance, exit] edge field integrals.", ""),
@@ -272,13 +288,9 @@ ele_param_dict = Dict(
 
   :r_floor          => ParamInfo(FloorPositionGroup, Vector{Real},   "3-vector of floor position.", "m"),
   :q_floor          => ParamInfo(FloorPositionGroup, Vector{Real},   "Quaternion orientation.", ""),
-
-  :name             => ParamInfo(Nothing,        String,    "Name of the element."),
-  :s                => ParamInfo(Nothing,        Real,      "Longitudinal s-position.", "m"),
-  :ix_ele           => ParamInfo(Nothing,        Int,       "Index of element in containing branch.ele array."),
-  :field_master     => ParamInfo(Nothing,        Bool,      "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
-  :orientation      => ParamInfo(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
-  :branch           => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
+  :theta_floor      => ParamInfo(FloorPositionGroup, Real,           "Floor theta angle orientation", "rad"),
+  :phi_floor        => ParamInfo(FloorPositionGroup, Real,           "Floor phi angle orientation", "rad"),
+  :psi_floor        => ParamInfo(FloorPositionGroup, Real,           "Floor psi angle orientation", "rad"),
 )
 
 function units(key)
@@ -291,6 +303,24 @@ function description(key)
   param_info = ele_param_info(key)
   if param_info == nothing; return "???"; end
   return param_info.description
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele_group_field_to_param
+
+"""
+Given the field of an element parameter group return the associated symbol at the ele.param[] level.
+""" ele_group_field_to_param
+
+function ele_group_field_to_param(sym::Symbol, group::EleParameterGroup)
+  if typeof(group) == FloorPositionGroup
+    if sym == :r; return :r_floor; end
+    if sym == :q; return :q_floor; end
+    if sym == :theta; return :theta_floor; end
+    if sym == :phi; return :phi_floor; end
+    if sym == :psi; return :psi_floor; end
+  end
+  return sym
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -383,6 +413,7 @@ end
 """
 Get from param queue. 
 If not in param queue, get from ele group.
+If cannot find parameter associated with symbol, throw an error.
 """ Base.getproperty
 
 function Base.getproperty(ele::T, s::Symbol) where T <: Ele
@@ -393,7 +424,7 @@ function Base.getproperty(ele::T, s::Symbol) where T <: Ele
   # If not at the top level then look for the parameter as part of an ele group
   pinfo = ele_param_info(s)
   parent = Symbol(pinfo.parent_group)
-  if !haskey(param, parent); throw(f"Cannot find {s} in element {param[:name]}"); end
+  if !haskey(param, parent); error(f"Cannot find {s} in element {param[:name]}"); end
 
   if pinfo.kind <: Vector
     param[s] = copy(getfield(param[parent], s))

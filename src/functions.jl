@@ -314,11 +314,13 @@ function branch_bookkeeper!(branch::Branch)
   ele.param[:branch] = branch
   if !haskey(ele.param, :s); ele.param[:s] = 0; end
   if !haskey(ele.param, :floor_position); ele.param[:floor_position] = FloorPositionGroup(); end
+  ele.param[:s_exit] = ele.param[:s]
   old_ele = ele
 
   for (ix, ele) in enumerate(branch.ele[2:end])
     ele.param[:ix_ele] = old_ele.param[:ix_ele] + 1 
-    ele.param[:s] = old_ele.param[:s] + get(old_ele.param, :len, 0)
+    ele.param[:s] = old_ele.param[:s_exit]
+    ele.param[:s_exit] = ele.param[:s] + get(ele.param, :len, 0)
     ele.param[:branch] = branch
     # Floor position
     # Reference energy and time

@@ -117,6 +117,7 @@ function Base.show(io::IO, ele::Ele)
       if key == :name; continue; end
       kstr = rpad(string(key), n)
       vstr = str_param_value(param, key)
+      if vstr == ""; continue; end
       ele_print_line(io, f"  {kstr} {vstr} {units(key)}", 45, description(key))
     end
 
@@ -145,9 +146,10 @@ function show_elegroup(io::IO, group::T) where T <: EleParameterGroup
   n = maximum(length(field) for field in fieldnames(typeof(group))) + 4
   println(io, f"  {typeof(group)}:")
   for field in fieldnames(typeof(group))
+    param = ele_group_field_to_param(field, group)
     kstr = rpad(string(field), n)
     vstr = str_param_value(Base.getproperty(group, field))
-    ele_print_line(io, f"    {kstr} {vstr} {units(field)}", 45, description(field))
+    ele_print_line(io, f"    {kstr} {vstr} {units(param)}", 45, description(param))
   end
 end
 
@@ -158,11 +160,8 @@ function show_elegroup(io::IO, group::BMultipoleGroup)
   for v in group.vec
     v.integrated ? l = "l" : l = ""
     n = v.n
-    if !isnan(v.K)
-      println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.K,24)}{lpad(v.Ks,24)}    K{n}{l}  K{n}s{l}")
-    else
-      println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.B,24)}{lpad(v.Bs,24)}    B{n}{l}  B{n}s{l}")
-    end
+    println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.K,24)}{lpad(v.Ks,24)}    K{n}{l}  K{n}s{l}")
+    println(io, " "^44 * f"{lpad(v.B,24)}{lpad(v.Bs,24)}    B{n}{l}  B{n}s{l}")
   end
 end
 
