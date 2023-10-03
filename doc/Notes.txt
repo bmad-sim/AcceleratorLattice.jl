@@ -16,3 +16,5 @@
 * Explain that overloaded dot selection "ele.who" is used to ensure some bookkeeping done in background.
 
 * "Lattice" bookkeeping triggered by user (or optimizer).
+
+* Lattice bookkeeping can be bypassed by setting the element group parameter directly.

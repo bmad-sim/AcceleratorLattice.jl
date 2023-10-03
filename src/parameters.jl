@@ -55,7 +55,7 @@ function ele_param_info(sym::Symbol; no_info_return = missing)
   if haskey(ele_param_dict, sym); return ele_param_dict[sym]; end
   (mtype, order) = multipole_type(sym)
   if mtype == nothing
-    if no_info_return == missing; throw(f"Unrecognized element parameter: {sym}"); end
+    if ismissing(no_info_return); error(f"Unrecognized element parameter: {sym}"); end
     return no_info_return
   end
 
@@ -97,7 +97,8 @@ struct EleParamKey
 end
 
 ele_param_group = Dict(
-  FloorPositionGroup    => EleParamKey("Global floor position and orientation"),
+  GeneralGroup          => EleParamKey("General parameters like len."),
+  FloorPositionGroup    => EleParamKey("Global floor position and orientation."),
   BMultipoleGroup       => EleParamKey("Magnetic multipoles."),
   EMultipoleGroup       => EleParamKey("Electric multipoles."),
   AlignmentGroup        => EleParamKey("Vacuum chamber aperture."),
@@ -117,13 +118,13 @@ ele_param_group = Dict(
 Table of what element groups are associated with what element types.
 """
 
-base_group_list = [StringGroup, AlignmentGroup, FloorPositionGroup, ApertureGroup, TrackingGroup]
+base_group_list = [StringGroup, GeneralGroup, AlignmentGroup, FloorPositionGroup, ApertureGroup, TrackingGroup]
 multipole_group_list = [BMultipoleGroup, EMultipoleGroup]
 
 ele_param_groups = Dict(  
   Dict(
     Bend           => vcat(base_group_list, multipole_group_list, BendGroup),
-    Drift          => [StringGroup, FloorPositionGroup, TrackingGroup],
+    Drift          => [StringGroup, GeneralGroup, FloorPositionGroup, TrackingGroup],
     Marker         => copy(base_group_list),
     Quadrupole     => vcat(base_group_list, multipole_group_list),
     BeginningEle   => [],
@@ -178,7 +179,7 @@ ele_param_by_struct = Dict(
 function has_param(type::Union{T,Type{T}}, sym::Symbol) where T <: Ele
   if typeof(type) != DataType; type = typeof(type); end
   if haskey(ele_param_by_struct[type], sym); return true; end
-  # Rule: If BMultipoleGroup is in ele then EMultipoleGroup is in ele. (really?)
+  # Rule: If BMultipoleGroup is in ele then EMultipoleGroup is in ele. (Is this really wise?)
   if BMultipoleGroup in ele_param_groups[type] && multipole_type(sym)[1] != nothing; return true; end
   return false
 end
@@ -187,27 +188,16 @@ end
 # is_settable
 
 """
-When a multipole value is set, if the value is an integrated one, the corresponding BMultipole1 will
-be converted to integrated is necessary and vice versa.
+
 """
 
 function is_settable(ele::T, sym::Symbol) where T <: Ele
   if haskey(ele_param_by_struct[typeof(ele)], sym); return ele_param_by_struct[typeof(ele)][sym].settable; end
 
   pinfo = ele_param_info(sym)
-  if pinfo == nothing; throw(f"No info on: {sym}"); end
+  if pinfo == nothing; error(f"No info on: {sym}"); end
 
-  if pinfo.parent_group == BMultipoleGroup
-    if !haskey(ele.param, :BMultipoleGroup); return true; end
-    (mtype, order) = multipole_type(sym)
-    mul = multipole(ele.param[:BMultipoleGroup], order)
-    if mul == nothing; return true; end
-    (mtype, order) = multipole_type(sym)
-    if mtype == "tilt"; return true; end
-    if (mtype[end] == 'l' && !mul.integrated) || (mtype[end] != 'l' && mul.integrated); return false; end
-    if (mtype[1] == 'K' && isnan(mul.B) && isnan(mul.Bs)) || (mtype[1] == 'B' && isnan(mul.K) && isnan(mul.Ks)); return true; end
-    return false
-  end
+  return true
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -220,7 +210,7 @@ Finds multipole of a given order.
 Returns `nothing` if `vec` array does not contain element with n = `order` and `insert` = `nothing`.
 """ multipole
 
-function multipole(mgroup, order; insert = nothing)
+function multipole!(mgroup, order; insert = nothing)
   if order < 0; return nothing; end
   ix = multipole_index(mgroup.vec, order)
 
@@ -239,7 +229,7 @@ function multipole(mgroup, order; insert = nothing)
     end
   end
 
-  return vec[ix]
+  return mgroup.vec[ix]
 end
 
 
@@ -312,6 +302,17 @@ function ele_group_value(group::BMultipoleGroup, sym::Symbol)
   elseif mtype == "B"  || mtype == "Bl";    value = mul.B
   elseif mtype == "Bs" || mtype == "Bsl";   value = mul.Bs
   elseif mtype == "tilt";                   value = mul.tilt
+  end  
+end
+
+function ele_group_value(group::EMultipoleGroup, sym::Symbol)
+  (mtype, order) = multipole_type(sym)
+  mul = multipole(group, order)
+  if mul == nothing; return 0.0::Float64; end
+
+  if mtype == "E" || mtype == "El";         value = mul.E
+  elseif mtype == "Es" || mtype == "Esl";   value = mul.Es
+  elseif mtype == "Etilt";                   value = mul.tilt
   end  
 end
 
