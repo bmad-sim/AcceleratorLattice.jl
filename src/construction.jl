@@ -241,8 +241,8 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
   info = LatConstructionInfo([], beamline.param[:orientation], 0)
 
-  if haskey(branch.param, :begin_ele) 
-    add_beamlineele_to_branch!(branch, BeamLineItem(branch.param[:begin_ele]))
+  if haskey(beamline.param, :begin_ele)
+    add_beamlineele_to_branch!(branch, BeamLineItem(beamline.param[:begin_ele]))
   else
     @ele begin_ele = BeginningEle(s = 0, len = 0)
     add_beamlineele_to_branch!(branch, BeamLineItem(begin_ele))

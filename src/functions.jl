@@ -315,6 +315,25 @@ function branch_bookkeeper!(branch::Branch)
   if !haskey(ele.param, :s); ele.param[:s] = 0; end
   if !haskey(ele.param, :floor_position); ele.param[:floor_position] = FloorPositionGroup(); end
   ele.param[:s_exit] = ele.param[:s]
+
+  # ReferenceGroup
+  rg = ele.param[:ReferenceGroup]
+  if rg.species_ref.name == notset_name; error(f"Species not set in branch: {branch.name}"); end
+
+  if !isnan(ele.pc_ref) && !isnan(ele.E_tot_ref)
+    error(f"Beginning element has both pc_ref and E_tot_ref set in branch: {branch.name}")
+  elseif isnan(ele.pc_ref) && isnan(ele.E_tot_ref)
+    error(f"pc_ref and E_tot_ref not set for beginning element in branch: {branch.name}")
+  elseif !isnan(ele.pc_ref)
+    rg = @set rg.E_tot_ref = E_tot(ele.pc_ref, rg.species_ref)
+  else
+    rg = @set rg.pc_ref = pc(ele.E_tot_ref, rg.species_ref)
+  end
+
+  ele.param[:ReferenceGroup] = ReferenceGroup(pc_ref = rg.pc_ref, pc_ref_exit = rg.pc_ref,
+                       E_tot_ref = rg.E_tot_ref, E_tot_ref_exit = rg.E_tot_ref,
+                       time_ref = rg.time_ref, time_ref_exit = rg.time_ref, species_ref = rg.species_ref)
+
   old_ele = ele
 
   for (ix, ele) in enumerate(branch.ele[2:end])
@@ -323,7 +342,14 @@ function branch_bookkeeper!(branch::Branch)
     ele.param[:s_exit] = ele.param[:s] + get(ele.param, :len, 0)
     ele.param[:branch] = branch
     # Floor position
+
     # Reference energy and time
+    rg = ele.param[:ReferenceGroup]
+    dt = c_light * ele.len * rg.pc_ref / rg.E_tot_ref
+    ele.param[:ReferenceGroup] = ReferenceGroup(pc_ref = rg.pc_ref, pc_ref_exit = rg.pc_ref,
+                       E_tot_ref = rg.E_tot_ref, E_tot_ref_exit = rg.E_tot_ref,
+                       time_ref = rg.time_ref, time_ref_exit = rg.time_ref + dt, species_ref = rg.species_ref)
+
     old_ele = ele
   end
 end
@@ -337,5 +363,4 @@ function lat_bookkeeper!(lat::Lat)
     branch_bookkeeper!(branch)
   end
   # Put stuff like ref energy in lords
-  # Put branch index in branch.param
 end

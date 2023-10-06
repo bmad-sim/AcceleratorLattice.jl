@@ -87,11 +87,40 @@ function ele_geometry(ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
+# Species
+
+const notset_name = "Not Set!"
+
+@kwdef struct Species
+  name::String = notset_name
+end
+
+function species(name::AbstractString)
+  return Species(name)
+end
+
+"""
+mass in eV / c^2
+"""
+
+function mass(species::Species)
+  return 1e3
+end
+
+function E_tot(pc::Float64, species::Species)
+  return sqrt(pc^2 + mass(species)^2)
+end
+
+function pc(E_tot::Float64, species::Species)
+  return sqrt(E_tot^2 - mass(species)^2)
+end
+
+#---------------------------------------------------------------------------------------------------
 # Ele parameters
 
 abstract type EleParameterGroup end
 
-@kwdef struct GeneralGroup <: EleParameterGroup
+@kwdef struct LengthGroup <: EleParameterGroup
   len::Float64 = 0
 end
 
@@ -103,10 +132,14 @@ end
   psi::Float64 = 0
 end
 
-@kwdef struct ReferenceEnergyGroup <: EleParameterGroup
-  p0c::Float64 = NaN
-  E0_tot::Float64 = NaN
-  beta::Float64 = NaN
+@kwdef struct ReferenceGroup <: EleParameterGroup
+  species_ref::Species = Species("NotSet")
+  pc_ref::Float64 = NaN
+  E_tot_ref::Float64 = NaN
+  time_ref::Float64 = 0
+  pc_ref_exit::Float64 = NaN
+  E_tot_ref_exit::Float64 = NaN
+  time_ref_exit::Float64 = 0
 end
 
 @kwdef struct BMultipole1 <: EleParameterGroup  # A single multipole
@@ -145,16 +178,16 @@ end
 @kwdef struct BendGroup <: EleParameterGroup
   angle::Float64 = NaN
   rho::Float64 = NaN
-  g::Float64 = NaN
+  g::Float64 = NaN                # Old Bmad dg -> K0.
   bend_field::Float64 = NaN
   len_chord::Float64 = NaN
   ref_tilt::Float64 = 0
-  e::Vector64 = [NaN, NaN]       # Edge angles
-  e_rect::Vector64 = [NaN, NaN]  # Edge angles with respect to rectangular geometry.
+  e::Vector64 = [NaN, NaN]        # Edge angles
+  e_rect::Vector64 = [NaN, NaN]   # Edge angles with respect to rectangular geometry.
   fint::Vector64 = [0.5, 0.5]
   hgap::Vector64 = [0, 0]
   type::BendTypeSwitch = SBend
-  field_master::Bool = false
+  field_master::Bool = false      # If ref energy changes does bend_field or g stay constant?
 end
 
 @kwdef struct ApertureGroup <: EleParameterGroup
@@ -242,7 +275,15 @@ ele_param_dict = Dict(
   :s                => ParamInfo(Nothing,        Real,      "Longitudinal s-position.", "m"),
   :s_exit           => ParamInfo(Nothing,        Real,      "Longitudinal s-position at exit end.", "m"),
 
-  :len              => ParamInfo(GeneralGroup,   Real,      "Element length.", "m"),
+  :len              => ParamInfo(LengthGroup,    Real,      "Element length.", "m"),
+
+  :species_ref      => ParamInfo(ReferenceGroup, Species,   "Reference species."),
+  :pc_ref           => ParamInfo(ReferenceGroup, Real,      "Reference momentum * c.", "eV"),
+  :E_tot_ref        => ParamInfo(ReferenceGroup, Real,      "Reference total energy.", "eV"),
+  :time_ref         => ParamInfo(ReferenceGroup, Real,      "Reference time.", "sec"),
+  :pc_ref_exit      => ParamInfo(ReferenceGroup, Real,      "Reference momentum * c at exit end.", "eV"),
+  :E_tot_ref_exit   => ParamInfo(ReferenceGroup, Real,      "Reference total energy at exit end.", "eV"),
+  :time_ref_exit    => ParamInfo(ReferenceGroup, Real,      "Reference total energy at exit end.", "eV"),
 
   :angle            => ParamInfo(BendGroup,      Real,      "Design bend angle", "rad"),
   :bend_field       => ParamInfo(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
@@ -399,12 +440,6 @@ mutable struct LatConstructionInfo
   multipass_id::Vector{String}
   orientation_here::Int
   n_loop::Int
-end
-
-#---------------------------------------------------------------------------------------------------
-# Species
-
-struct Species
 end
 
 #---------------------------------------------------------------------------------------------------

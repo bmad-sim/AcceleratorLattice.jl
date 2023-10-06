@@ -1,5 +1,6 @@
 module AcceleratorLattice
 
+  include("PhysicalConstants.jl")
   include("core.jl")
   include("math_base.jl")
   include("utilities.jl")
