@@ -97,17 +97,18 @@ struct EleParamKey
 end
 
 ele_param_group = Dict(
-  GeneralGroup          => EleParamKey("General parameters like len."),
-  FloorPositionGroup    => EleParamKey("Global floor position and orientation."),
-  BMultipoleGroup       => EleParamKey("Magnetic multipoles."),
-  EMultipoleGroup       => EleParamKey("Electric multipoles."),
   AlignmentGroup        => EleParamKey("Vacuum chamber aperture."),
-  BendGroup             => EleParamKey("Bend element parameters."),
   ApertureGroup         => EleParamKey("Vacuum chamber aperture."),
-  StringGroup           => EleParamKey("Informational strings."),
-  RFGroup               => EleParamKey("RF parameters."),
-  TrackingGroup         => EleParamKey("Default tracking settings."),
+  BendGroup             => EleParamKey("Bend element parameters."),
+  BMultipoleGroup       => EleParamKey("Magnetic multipoles."),
   ChamberWallGroup      => EleParamKey("Vacuum chamber wall."),
+  EMultipoleGroup       => EleParamKey("Electric multipoles."),
+  FloorPositionGroup    => EleParamKey("Global floor position and orientation."),
+  LengthGroup           => EleParamKey("Length parameter."),
+  ReferenceGroup        => EleParamKey("Reference energy and species."),
+  RFGroup               => EleParamKey("RF parameters."),
+  StringGroup           => EleParamKey("Informational strings."),
+  TrackingGroup         => EleParamKey("Default tracking settings."),
 )
 
 
@@ -118,16 +119,16 @@ ele_param_group = Dict(
 Table of what element groups are associated with what element types.
 """
 
-base_group_list = [StringGroup, GeneralGroup, AlignmentGroup, FloorPositionGroup, ApertureGroup, TrackingGroup]
+base_group_list = [LengthGroup, StringGroup, ReferenceGroup, AlignmentGroup, FloorPositionGroup, ApertureGroup, TrackingGroup]
 multipole_group_list = [BMultipoleGroup, EMultipoleGroup]
 
 ele_param_groups = Dict(  
   Dict(
+    BeginningEle   => [StringGroup, ReferenceGroup, FloorPositionGroup, ApertureGroup, TrackingGroup],
     Bend           => vcat(base_group_list, multipole_group_list, BendGroup),
-    Drift          => [StringGroup, GeneralGroup, FloorPositionGroup, TrackingGroup],
+    Drift          => [StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup],
     Marker         => copy(base_group_list),
     Quadrupole     => vcat(base_group_list, multipole_group_list),
-    BeginningEle   => [],
   )
 )
 
