@@ -18,3 +18,8 @@
 * "Lattice" bookkeeping triggered by user (or optimizer).
 
 * Lattice bookkeeping can be bypassed by setting the element group parameter directly.
+
+* Old Bmad roll is "tilt" in new bmad.
+* Bend x_pitch and y_pitch are about the chord center and not the bend arc center. This is the same as a girder.
+
+* bend angle is always a dependent parameter dependent on g and len.

@@ -122,10 +122,12 @@ abstract type EleParameterGroup end
 
 @kwdef struct LengthGroup <: EleParameterGroup
   len::Float64 = 0
+  field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
+  voltage_master::Bool = false       # Voltage or gradient stay constant with length changes?
 end
 
 @kwdef struct FloorPositionGroup <: EleParameterGroup
-  r::Vector64 =[0, 0, 0]               # (x,y,z) in Global coords
+  r::Vector64 =[0, 0, 0]              # (x,y,z) in Global coords
   q::Quat64 = Quat64(1.0, 0, 0, 0)    # Quaternion orientation
   theta::Float64 = 0
   phi::Float64 = 0
@@ -149,7 +151,7 @@ end
   Bs::Float64 = NaN  
   tilt::Float64 = 0
   n::Int64 = -1             # Multipole order
-  integrated::Bool = false
+  integrated::Bool = false  # Also determines what stays constant with length changes.
 end
 
 @kwdef struct BMultipoleGroup <: EleParameterGroup
@@ -182,12 +184,15 @@ end
   bend_field::Float64 = NaN
   len_chord::Float64 = NaN
   ref_tilt::Float64 = 0
-  e::Vector64 = [NaN, NaN]        # Edge angles
-  e_rect::Vector64 = [NaN, NaN]   # Edge angles with respect to rectangular geometry.
-  fint::Vector64 = [0.5, 0.5]
-  hgap::Vector64 = [0, 0]
-  type::BendTypeSwitch = SBend
-  field_master::Bool = false      # If ref energy changes does bend_field or g stay constant?
+  e1::Float64 = NaN
+  e2::Float64 = NaN
+  e1_rect::Float64 = NaN          # Edge angle with respect to rectangular geometry.
+  e2_rect::Float64 = NaN          # Edge angle with respect to rectangular geometry.
+  fint1::Float64 = 0.5
+  fint2::Float64 = 0.5
+  hgap1::Float64 = 0
+  hgap2::Float64 = 0
+  bend_type::BendTypeSwitch = SBend    # If g is varied does e or e_rect
 end
 
 @kwdef struct ApertureGroup <: EleParameterGroup
@@ -214,6 +219,7 @@ end
   frequency::Float64 = 0
   harmon::Float64 = 0
   cavity_type::CavityTypeSwitch = StandingWave
+  voltage_master::Bool = false       # Voltage or gradient stay constant with length changes?
   n_cell::Int64 = 1
 end
 
@@ -268,7 +274,6 @@ ele_param_dict = Dict(
   :description      => ParamInfo(Nothing,        String,    "Descriptive info. Set by User and ignored by the code."),
 
   :ix_ele           => ParamInfo(Nothing,        Int,       "Index of element in containing branch.ele array."),
-  :field_master     => ParamInfo(Nothing,        Bool,      "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
   :orientation      => ParamInfo(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
   :branch           => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
 
@@ -276,6 +281,7 @@ ele_param_dict = Dict(
   :s_exit           => ParamInfo(Nothing,        Real,      "Longitudinal s-position at exit end.", "m"),
 
   :len              => ParamInfo(LengthGroup,    Real,      "Element length.", "m"),
+  :field_master     => ParamInfo(LengthGroup,    Bool,      "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
 
   :species_ref      => ParamInfo(ReferenceGroup, Species,   "Reference species."),
   :pc_ref           => ParamInfo(ReferenceGroup, Real,      "Reference momentum * c.", "eV"),
@@ -289,13 +295,17 @@ ele_param_dict = Dict(
   :bend_field       => ParamInfo(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
   :rho              => ParamInfo(BendGroup,      Real,      "Design bend radius", "m"),
   :g                => ParamInfo(BendGroup,      Real,      "Design bend strength (1/rho)", "1/m"),
-  :e                => ParamInfo(BendGroup,      Vector{Real},   "2-Vector of bend entrance and exit face angles.", "rad"),
-  :e_rec            => ParamInfo(BendGroup,      Vector{Real},   
-                                  "2-Vector of bend entrance and exit face angles relative to a rectangular geometry.", "rad"),
+  :e1               => ParamInfo(BendGroup,      Real,      "Bend entrance face angle.", "rad"),
+  :e2               => ParamInfo(BendGroup,      Real,      "Bend exit face angle.", "rad"),
+  :e1_rect          => ParamInfo(BendGroup,      Real,      "bend entrance face angles relative to a rectangular geometry.", "rad"),
+  :e2_rect          => ParamInfo(BendGroup,      Real,      "bend exit face angles relative to a rectangular geometry.", "rad"),
   :len_chord        => ParamInfo(BendGroup,      Real,      "Bend chord length.", "m"),
   :ref_tilt         => ParamInfo(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :fint             => ParamInfo(BendGroup,      Vector{Real},   "2-Vector of bend [entrance, exit] edge field integrals.", ""),
-  :hgap             => ParamInfo(BendGroup,      Vector{Real},   "2-Vector of bend [entrance, exit] edge pole gap heights.", "m"),
+  :fint1            => ParamInfo(BendGroup,      Real,      "Bend entrance edge field integral.", ""),
+  :fint2            => ParamInfo(BendGroup,      Real,      "Bend exit edge field integral.", ""),
+  :hgap1            => ParamInfo(BendGroup,      Real,      "Bend entrance edge pole gap height.", "m"),
+  :hgap2            => ParamInfo(BendGroup,      Real,      "Bend exit edge pole gap height.", "m"),
+  :bend_type        => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
 
   :offset           => ParamInfo(AlignmentGroup, Vector{Real},   "3-Vector of [x, y, z] element offsets.", "m"),
   :x_pitch          => ParamInfo(AlignmentGroup, Real,      "X-pitch element orientation.", "rad"),
@@ -314,6 +324,7 @@ ele_param_dict = Dict(
   :harmon           => ParamInfo(RFGroup,        Real,      "RF frequency harmonic number.", ""),
   :cavity_type      => ParamInfo(RFGroup,        CavityTypeSwitch, "Type of cavity."),
   :n_cell           => ParamInfo(RFGroup,        Int,       "Number of RF cells."),
+  :voltage_master   => ParamInfo(RFGroup,        Bool,      "Voltage or gradient is constant with length changes."),
 
   :tracking_method  => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
   :field_calc       => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),

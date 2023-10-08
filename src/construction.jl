@@ -365,7 +365,20 @@ function lat_init_bookkeeper!(lat::Lat)
   end
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# param_conflict_check
+
+function param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
+  for ix1 in 1:length(syms)-1
+    for ix2 in ix1+1:length(syms)
+      if haskey(gdict, syms[ix1]) && haskey(gdict, syms[ix2])
+        error(f"{syms[ix1]} and {syms[ix2]} cannot both be sepecified for a {typeof(ele)} element: {ele.name}")
+      end
+    end
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
 # ele_param_group_bookkeeper!
 
 """
@@ -376,6 +389,35 @@ end
 function ele_param_group_bookkeeper!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   param = ele.param
   put_params_in_ele_group!(param, group)
+end
+
+"""
+"""
+
+function ele_param_group_bookkeeper!(ele::Ele, group::Type{BendGroup})
+  param = ele.param
+  bdict = Dict{Symbol, Any}()
+  try; bdict[:len] = ele.len; catch; end
+
+  for field in fieldnames(BendGroup)
+    if !haskey(param, field); continue; end
+    bdict[field] = pop!(param, field)
+  end
+
+  if haskey(param, :BendGroup)
+
+  else  # Starting from scratch
+    param_conflict_check(ele, bdict, :len, :len_chord)
+    param_conflict_check(ele, bdict, :bend_field, :g, :rho, :angle)
+    param_conflict_check(ele, bdict, :e1, :e1_rect)
+    param_conflict_check(ele, bdict, :e2, :e2_rect)
+
+    if !haskey(bdict, :bend_type) && (haskey(bdict, :len_chord) || 
+              haskey(bdict, :e1_rect) || haskey(bdict, :e2_rect))
+      bdict[:bend_type] = RBend
+    end
+  end
+
 end
 
 """
@@ -513,6 +555,7 @@ function ele_param_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup})
 end
 
 #-------------------------------------------------------------------------------------
+# put_params_in_ele_group
 
 """
     put_params_in_ele_group!(param::Dict, group::Type{T}) where T <: EleParameterGroup
@@ -523,12 +566,22 @@ Transfers parameters from `param` dict to a particular element `group`.
 
 function put_params_in_ele_group!(param::Dict, group::Type{T}) where T <: EleParameterGroup
   gsym = Symbol(group)
-  str = ""
+  gdict = Dict{Symbol, Any}()
+
+  if hasfield(group, gsym)
+    for field in param[gsym]
+      gdict[field] = param[field]
+    end
+  end
+
   for field in fieldnames(group)
     if !haskey(param, field); continue; end
+    gdict[field] = pop!(param, field)
+  end
 
-    str = str * ", $field = $(repr(param[field]))"  # Need repr() for string fields
-    pop!(param, field)
+  str = ""
+  for (field, value) in gdict
+    str = str * ", $field = $(repr(value))"  # Need repr() for string fields
   end
 
   # Take advantage of the fact that the group has been defined using @kwargs.
@@ -553,7 +606,7 @@ function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles =
   end
 end
 
-"Used by superimpose! for superimposing on on individual ref elements."
+"Used by superimpose! superimposing on on individual ref elements."
 function superimpose1!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Ele = NULL_ELE, 
            ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
 
