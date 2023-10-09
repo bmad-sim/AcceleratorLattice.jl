@@ -1,6 +1,6 @@
 module AcceleratorLattice
 
-  include("PhysicalConstants.jl")
+  include("AtomicAndPhysicalConstants.jl")
   include("core.jl")
   include("math_base.jl")
   include("utilities.jl")
@@ -8,9 +8,11 @@ module AcceleratorLattice
   include("struct.jl")
   include("string.jl")
   include("parameters.jl")
+  include("manipulation.jl")
   include("geometry.jl")
   include("show.jl")
-  include("construction.jl")
+  include("bookkeeper.jl")
+  include("lat_construction.jl")
   include("find.jl")
   include("functions.jl")
 

@@ -50,3 +50,34 @@ export m_electron, m_proton, m_neutron, m_muon, m_helion, m_pion_0, m_pion_charg
 export c_light, e_charge, h_planck, h_bar_planck, r_e, r_p, mu_0_vac, eps_0_vac, classical_radius_factor, N_avogadro
 export fine_structure_constant, anom_mag_moment_electron, anom_mag_moment_proton, anom_mag_moment_muon
 export anom_mag_moment_deuteron, anom_mag_moment_neutron, anom_mag_moment_He3
+
+#---------------------------------------------------------------------------------------------------
+# Species
+
+const notset_name = "Not Set!"
+
+@kwdef struct Species
+  name::String = notset_name
+end
+
+function species(name::AbstractString)
+  return Species(name)
+end
+
+"""
+mass in eV / c^2
+"""
+
+function mass(species::Species)
+  return 1e3
+end
+
+function E_tot(pc::Float64, species::Species)
+  return sqrt(pc^2 + mass(species)^2)
+end
+
+function pc(E_tot::Float64, species::Species)
+  return sqrt(E_tot^2 - mass(species)^2)
+end
+
+export notset_name, Species, species, mass, E_tot, pc

@@ -19,7 +19,7 @@ Will wrap around the ends of the branch if necessary and wrap = true.
   `Ele` in given `branch` and given element i
 """
 function ele(ele::Ele, index_offset::Int, wrap::Bool = true)
-  return ele(ele.param[branch], offset + ele.param[:ix_ele], wrap)
+  return ele(ele.pdict[branch], offset + ele.pdict[:ix_ele], wrap)
 end
 
 
@@ -61,7 +61,7 @@ function matches_branch(name::AbstractString, branch::Branch)
 
   try
     ix = parse(Int, name)
-    return branch.param[:ix_branch] == ix
+    return branch.pdict[:ix_branch] == ix
   catch
     str_match(name, branch.name)
   end
@@ -100,11 +100,11 @@ function eles_finder_base(lat::Lat, name::AbstractString, julia_regex::Bool=fals
     for branch in lat.branch
       if !matches_branch(branch, branch_id); continue; end
       for ele in branch.ele
-        if !haskey(ele.param, attrib); continue; end
+        if !haskey(ele.pdict, attrib); continue; end
         if julia_regex
-          if occursin(pattern, ele.param[attrib]); push!(eles, ele_offset(ele, offset)); end
+          if occursin(pattern, ele.pdict[attrib]); push!(eles, ele_offset(ele, offset)); end
         else
-          if str_match(pattern, ele.param[attrib]); push!(eles, ele_offset(ele, offset)); end
+          if str_match(pattern, ele.pdict[attrib]); push!(eles, ele_offset(ele, offset)); end
         end
       end
     end

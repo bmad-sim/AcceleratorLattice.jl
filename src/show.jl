@@ -51,12 +51,12 @@ If `ele` has ele.name = "q02w", ele[:ix_ele] = 7 and the element lives in branch
 
 """
 function ele_name(ele::Ele, template::AbstractString = "")
-  if !haskey(ele.param, :ix_ele); return ele.name; end
+  if !haskey(ele.pdict, :ix_ele); return ele.name; end
   if template == ""; template = "\"@N\" (!#)"; end
 
-  ix_ele = ele.param[:ix_ele]
-  branch = ele.param[:branch]
-  lat = branch.param[:lat]
+  ix_ele = ele.pdict[:ix_ele]
+  branch = ele.pdict[:branch]
+  lat = branch.pdict[:lat]
   str = replace(template, "@N" => ele.name)
   str = replace(str, "%#" => (branch === lat.branch[1] ? string(ix_ele) : branch.name * ">>" * string(ix_ele)))
   str = replace(str, "&#" => (lat.branch == 1 ? string(ix_ele) : branch.name * ">>" * string(ix_ele)))
@@ -67,8 +67,8 @@ end
 #-------------------------------------------------------------------------------------
 # str_param_value
 
-function str_param_value(param::Dict, key, default::AbstractString = "???")
-  who = get(param, key, nothing)
+function str_param_value(pdict::Dict, key, default::AbstractString = "???")
+  who = get(pdict, key, nothing)
   return str_param_value(who, default)
 end
 
@@ -80,7 +80,7 @@ function str_param_value(who, default::AbstractString = "???")
   elseif who isa Vector{Ele}
     return "[" * join([ele_name(ele) for ele in who], ", ") * "]"
   elseif who isa Branch
-    return f"Branch {who.param[:ix_branch]}: {str_quote(who.name)}"
+    return f"Branch {who.pdict[:ix_branch]}: {str_quote(who.name)}"
   elseif who isa String
     return str_quote(who)
   else
@@ -93,48 +93,40 @@ end
 
 function Base.show(io::IO, ele::Ele)
   println(io, f"Ele: {ele_name(ele)}   {typeof(ele)}")
+  nn = 18
 
-  param = ele.param
-  if length(param) > 0   # Need test since will bomb on zero length dict
-    n = maximum([length(key) for key in keys(param)]) + 4 
-
-    # Print non-group, non-queued parameters first.
-    # Bookkeeping: If queued param has same value as grouped param, remove queued param.
-    queue = []
-    for key in sort(collect(keys(param)))
-      val = param[key]
-      if typeof(val) <: EleParameterGroup; continue; end
+  pdict = ele.pdict
+  if length(pdict) > 0   # Need test since will bomb on zero length dict
+    # Print non-group, non-inbox parameters first.
+    for key in sort(collect(keys(pdict)))
+      val = pdict[key]
+      if typeof(val) <: EleParameterGroup || key == :inbox; continue; end
       pinfo = ele_param_info(key)
-      if pinfo.parent_group != Nothing
-        parent = Symbol(pinfo.parent_group)
-        if haskey(param, parent) && param[key] == ele_group_value(param[parent], key)
-          pop!(param, key)
-        else
-          push!(queue, key); continue
-        end
-      end
-
       if key == :name; continue; end
-      kstr = rpad(string(key), n)
-      vstr = str_param_value(param, key)
+      nn2 = max(nn, length(string(key)))
+      kstr = rpad(string(key), nn2)
+      vstr = str_param_value(pdict, key)
       if vstr == ""; continue; end
-      ele_print_line(io, f"  {kstr} {vstr} {units(key)}", 45, description(key))
+      ele_print_line(io, f"  {kstr} {vstr} {units(key)}", description(key))
     end
 
     # Print groups
-    for key in sort(collect(keys(param)))
-      group = param[key]
+    for key in sort(collect(keys(pdict)))
+      group = pdict[key]
       if !(typeof(group) <: EleParameterGroup); continue; end
       show_elegroup(io, group)
     end
 
-    # Print queued params.
-    if length(queue) > 0
-      println(io, "  Queued for Bookkeeping:")
-      for key in queue
-        kstr = rpad(string(key), n)
-        vstr = str_param_value(param, key)
-        ele_print_line(io, f"    {kstr} {vstr} {units(key)}", 45, description(key))
+    # Print inbox params.
+    # Bookkeeping: If inbox param has same value as corresponding grouped param, remove inbox param.
+    inbox = pdict[:inbox]
+    if length(inbox) > 0
+      println(io, "  inbox:")
+      for (key, value) in inbox
+        nn2 = max(nn, length(string(key)))
+        kstr = rpad(string(key), nn2)
+        vstr = str_param_value(inbox, key)
+        ele_print_line(io, f"    {kstr} {vstr} {units(key)}", description(key))
       end
     end
   end
@@ -143,13 +135,14 @@ function Base.show(io::IO, ele::Ele)
 end
 
 function show_elegroup(io::IO, group::T) where T <: EleParameterGroup
-  n = maximum(length(field) for field in fieldnames(typeof(group))) + 4
+  nn = 18
   println(io, f"  {typeof(group)}:")
   for field in fieldnames(typeof(group))
-    param = ele_group_field_to_param(field, group)
-    kstr = rpad(string(field), n)
+    pdict = ele_group_field_to_inbox_name(field, group)
+    nn2 = max(nn, length(string(field)))
+    kstr = rpad(string(field), nn2)
     vstr = str_param_value(Base.getproperty(group, field))
-    ele_print_line(io, f"    {kstr} {vstr} {units(param)}", 45, description(param))
+    ele_print_line(io, f"    {kstr} {vstr} {units(pdict)}", description(pdict))
   end
 end
 
@@ -175,12 +168,12 @@ function show_elegroup(io::IO, group::EMultipoleGroup)
   end
 end
 
-function ele_print_line(io::IO, str::String, ix_des::Int, descrip::String)
-  if length(str) < ix_des - 2
-    println(io, f"{rpad(str, ix_des)}{descrip}")
+function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 50)
+  if length(str) < ix_descrip - 1
+    println(io, f"{rpad(str, ix_descrip)}{descrip}")
   else
     println(io, str)
-    println(io, " "^45 * descrip)
+    println(io, " "^ix_descrip * descrip)
   end
 end
 
@@ -216,16 +209,16 @@ Base.show(io::IO, ::MIME"text/plain", lat::Lat) = Base.show(stdout, lat)
 
 function Base.show(io::IO, branch::Branch)
   g_str = ""
-  if haskey(branch.param, :geometry); g_str = f":geometry => {branch.param[:geometry]}"; end
-  println(io, f"Branch {branch[:ix_branch]}: {str_quote(branch.name)}  {g_str}")
+  if haskey(branch.pdict, :geometry); g_str = f":geometry => {branch.pdict[:geometry]}"; end
+  println(io, f"Branch {branch.ix_branch}: {str_quote(branch.name)}  {g_str}")
 
   if length(branch.ele) == 0 
     println(io, "     --- No Elements ---")
   else
     n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
     for ele in branch.ele
-      println(io, f"  {ele.param[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" *
-        f"  {lpad(ele.param[:orientation], 2)}  {str_param_value(ele.param, :multipass_lord, \"\")}{str_param_value(ele.param, :slave, \"\")}")
+      println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" *
+        f"  {lpad(ele.pdict[:orientation], 2)}  {str_param_value(ele.pdict, :multipass_lord, \"\")}{str_param_value(ele.pdict, :slave, \"\")}")
     end
   end
   return nothing
@@ -240,7 +233,7 @@ function Base.show(io::IO, branches::Vector{Branch})
   n = maximum([length(b.name) for b in branches]) + 4
   for branch in branches
     g_str = ""
-    if haskey(branch.param, :geometry); g_str = f", :geometry => {branch.param[:geometry]}"; end
+    if haskey(branch.pdict, :geometry); g_str = f", :geometry => {branch.pdict[:geometry]}"; end
     println(io, f"{branch[:ix_branch]}: {rpad(str_quote(branch.name), n)} #Elements{lpad(length(branch.ele), 5)}{g_str}")
   end
 end
@@ -251,7 +244,7 @@ Base.show(io::IO, ::MIME"text/plain", branches::Vector{Branch}) = Base.show(stdo
 # Show Beamline
 
 function Base.show(io::IO, bl::BeamLine)
-  println(io, f"Beamline:  {str_quote(bl.name)}, multipass: {bl.param[:multipass]}, orientation: {bl.param[:orientation]}")
+  println(io, f"Beamline:  {str_quote(bl.name)}, multipass: {bl.pdict[:multipass]}, orientation: {bl.pdict[:orientation]}")
   n = 6
   for item in bl.line
     if item isa BeamLineEle
@@ -263,9 +256,9 @@ function Base.show(io::IO, bl::BeamLine)
 
   for (ix, item) in enumerate(bl.line)
     if item isa BeamLineEle
-      println(io, f"{ix:5i}  {rpad(str_quote(item.ele.name), n)}  {rpad(typeof(item.ele), 12)}  {lpad(item.param[:orientation], 2)}")
+      println(io, f"{ix:5i}  {rpad(str_quote(item.ele.name), n)}  {rpad(typeof(item.ele), 12)}  {lpad(item.pdict[:orientation], 2)}")
     else  # BeamLine
-      println(io, f"{ix:5i}  {rpad(str_quote(item.name), n)}  {rpad(typeof(item), 12)}  {lpad(item.param[:orientation], 2)}")
+      println(io, f"{ix:5i}  {rpad(str_quote(item.name), n)}  {rpad(typeof(item), 12)}  {lpad(item.pdict[:orientation], 2)}")
     end
   end
   return nothing
