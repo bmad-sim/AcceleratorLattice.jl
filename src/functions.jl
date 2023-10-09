@@ -119,72 +119,6 @@ function create_unique_ele_names!(lat::Lat; suffix::AbstractString = "!#")
 end
 
 #-----------------------------------------------------------------------------------------
-# Ele[] get and set
-
-function Base.getindex(ele::Ele, key)
-  if key == :name; return ele.name; end
-  return ele.param[key]
-end
-
-function Base.setindex!(ele::Ele, val, key)
-  if key == :name
-    ele.name = val
-  else
-    
-    ele.param[key] = val
-  end
-  return ele
-end
-
-#-----------------------------------------------------------------------------------------
-# Vector{Ele}[] get and set
-
-function Base.getindex(eles::Vector{Ele}, key::Symbol)
-  return [ele[key] for ele in eles]
-end
-
-function Base.setindex!(eles::Vector{Ele}, val, key::Symbol)
-  for ele in eles
-    ele[key] = val
-  end
-  return eles
-end
-
-#-----------------------------------------------------------------------------------------
-# Branch[] get and set
-
-
-"""
-"""
-function Base.getindex(branch::Branch, key)
-  if key == :name; return branch.name; end
-  if haskey(branch.param, key)
-    return branch.param[key]
-  elseif haskey(branch_param_defaults, key)
-    return branch_param_defaults[key]
-  else
-    return "branch.param key not found: " * key
-  end
-end
-
-function Base.setindex!(branch::Branch, val, key)
-  if key == :name
-    branch.name = val
-  else
-    branch.param[key] = val
-  end
-  return ele
-end
-
-#-----------------------------------------------------------------------------------------
-# get_group for element groups
-
-function get_group(group::Type{T}, ele::Ele) where T <: EleParameterGroup
-  return ele.param[Symbol(group)]
-end
-
-
-#-----------------------------------------------------------------------------------------
 # eles_order_by_index
 
 """
@@ -210,35 +144,35 @@ function ele_at_s(branch::Branch, s::Real; choose_max::Bool = False, ele_near = 
   # If ele_near is not set
   if ele_near == nothing
     n1 = 1
-    n3 = branch.ele[end].param[:ix_ele]
+    n3 = branch.ele[end].pdict[:ix_ele]
 
     while true
       if n3 == n1 + 1; break; end
       n2 = div(n1 + n3, 2)
-      branch.ele[n2].param[:s] > s || (choose_max && branch.ele[n2].param[:s] == s) ? n3 = n2 : n1 = n2
+      branch.ele[n2].pdict[:s] > s || (choose_max && branch.ele[n2].pdict[:s] == s) ? n3 = n2 : n1 = n2
     end
 
     # Solution is n1 except in one case.
-    if choose_max && branch.ele[n3].param[:s] == s; n1 = n3; end
+    if choose_max && branch.ele[n3].pdict[:s] == s; n1 = n3; end
     return branch.ele[n1]
   end
 
   # If ele_near is used
   ele = ele_near
 
-  if ele.param[:s] < s || choose_max && s == ele.param[:s]
+  if ele.pdict[:s] < s || choose_max && s == ele.pdict[:s]
     while true
       ele2 = next_ele(ele)
-      if ele2.param[:s] > s && choose_max && ele.param[:s] == s; return ele; end
-      if ele2.param[:s] > s || (!choose_max && ele2.param[:s] == s); return ele2; end
+      if ele2.pdict[:s] > s && choose_max && ele.pdict[:s] == s; return ele; end
+      if ele2.pdict[:s] > s || (!choose_max && ele2.pdict[:s] == s); return ele2; end
       ele = ele2
     end
 
   else
     while true
       ele2 = next_ele(ele, -1)
-      if ele2.param[:s] < s && !choose_max && ele.param[:s] == s; return ele; end
-      if ele2.param[:s] < s || (choose_max && ele2.param[:s] == s); return ele2; end
+      if ele2.pdict[:s] < s && !choose_max && ele.pdict[:s] == s; return ele; end
+      if ele2.pdict[:s] < s || (choose_max && ele2.pdict[:s] == s); return ele2; end
       ele = ele2
     end
   end
@@ -248,8 +182,8 @@ end
 # next_ele
 
 function next_ele(ele, offset::Integer=1)
-  branch = ele.param[:branch]
-  ix_ele = mod(ele.param[:ix_ele] + offset-1, length(branch.ele)-1) + 1
+  branch = ele.pdict[:branch]
+  ix_ele = mod(ele.pdict[:ix_ele] + offset-1, length(branch.ele)-1) + 1
   return branch.ele[ix_ele]
 end
 
@@ -273,7 +207,7 @@ end
 # s_inbounds
 
 """
-Returns the equivalent inbounds s-position in the range [branch.ele[1].param(:s), branch.ele[end].param(:s)]
+Returns the equivalent inbounds s-position in the range [branch.ele[1].pdict(:s), branch.ele[end].pdict(:s)]
 if the branch has a closed geometry. Otherwise returns s.
 This is useful since in closed geometries 
 """
@@ -284,8 +218,8 @@ end
 # check_if_s_in_branch_range
 
 function check_if_s_in_branch_range(branch::Branch, s::Real)
-  if s_split < branch.ele[1].param[:s] || s_split > branch.ele[end].param[:s]
-    throw(RangeError(f"s_split ({string(s_split)}) position out of range [{branch.ele[1].param[:s]}], for branch ({branch.name})"))
+  if s_split < branch.ele[1].pdict[:s] || s_split > branch.ele[end].pdict[:s]
+    throw(RangeError(f"s_split ({string(s_split)}) position out of range [{branch.ele[1].pdict[:s]}], for branch ({branch.name})"))
   end
 end
 
@@ -297,70 +231,25 @@ function branch_insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
   branch_bookkeeper!(branch)
 end
 
-#-----------------------------------------------------------------------------------------
-# branch_bookkeeper!
+#-------------------------------------------------------------------------------------
+# superimpose!
 
-function branch_bookkeeper!(branch::Branch)
-  if branch.param[:type] == LordBranch
-    for (ix_ele, ele) in enumerate(branch.ele)
-      ele[:ix_ele] = ix_ele
-      ele[:branch] = branch
-    end
-    return
-  end
+"""
+    superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles = NULL_ELE, 
+           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
 
-  ele = branch.ele[1]
-  ele.param[:ix_ele] = 1
-  ele.param[:branch] = branch
-  if !haskey(ele.param, :s); ele.param[:s] = 0; end
-  if !haskey(ele.param, :floor_position); ele.param[:floor_position] = FloorPositionGroup(); end
-  ele.param[:s_exit] = ele.param[:s]
 
-  # ReferenceGroup
-  rg = ele.param[:ReferenceGroup]
-  if rg.species_ref.name == notset_name; error(f"Species not set in branch: {branch.name}"); end
+""" superimpose!
 
-  if !isnan(ele.pc_ref) && !isnan(ele.E_tot_ref)
-    error(f"Beginning element has both pc_ref and E_tot_ref set in branch: {branch.name}")
-  elseif isnan(ele.pc_ref) && isnan(ele.E_tot_ref)
-    error(f"pc_ref and E_tot_ref not set for beginning element in branch: {branch.name}")
-  elseif !isnan(ele.pc_ref)
-    rg = @set rg.E_tot_ref = E_tot(ele.pc_ref, rg.species_ref)
-  else
-    rg = @set rg.pc_ref = pc(ele.E_tot_ref, rg.species_ref)
-  end
-
-  ele.param[:ReferenceGroup] = ReferenceGroup(pc_ref = rg.pc_ref, pc_ref_exit = rg.pc_ref,
-                       E_tot_ref = rg.E_tot_ref, E_tot_ref_exit = rg.E_tot_ref,
-                       time_ref = rg.time_ref, time_ref_exit = rg.time_ref, species_ref = rg.species_ref)
-
-  old_ele = ele
-
-  for (ix, ele) in enumerate(branch.ele[2:end])
-    ele.param[:ix_ele] = old_ele.param[:ix_ele] + 1 
-    ele.param[:s] = old_ele.param[:s_exit]
-    ele.param[:s_exit] = ele.param[:s] + get(ele.param, :len, 0)
-    ele.param[:branch] = branch
-    # Floor position
-
-    # Reference energy and time
-    rg = ele.param[:ReferenceGroup]
-    dt = c_light * ele.len * rg.pc_ref / rg.E_tot_ref
-    ele.param[:ReferenceGroup] = ReferenceGroup(pc_ref = rg.pc_ref, pc_ref_exit = rg.pc_ref,
-                       E_tot_ref = rg.E_tot_ref, E_tot_ref_exit = rg.E_tot_ref,
-                       time_ref = rg.time_ref, time_ref_exit = rg.time_ref + dt, species_ref = rg.species_ref)
-
-    old_ele = ele
+function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles = NULL_ELE, 
+           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
+  if typeof(ref) == Ele; ref = [ref]; end
+  for ref_ele in ref
+    superimpose1!(lat, super_ele, offset, ref_ele, offset, ref_origin, ele_origin)
   end
 end
 
-#-----------------------------------------------------------------------------------------
-# lat_bookkeeper!
-
-function lat_bookkeeper!(lat::Lat)
-  for (ix, branch) in enumerate(lat.branch)
-    branch.param[:ix_branch] = ix
-    branch_bookkeeper!(branch)
-  end
-  # Put stuff like ref energy in lords
+"Used by superimpose! superimposing on on individual ref elements."
+function superimpose1!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Ele = NULL_ELE, 
+           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
 end

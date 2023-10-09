@@ -23,3 +23,6 @@
 * Bend x_pitch and y_pitch are about the chord center and not the bend arc center. This is the same as a girder.
 
 * bend angle is always a dependent parameter dependent on g and len.
+
+* `NaN` is used instead of something like `missing` since `NaN` can be used to set Float parameters.
+Note: Could also have defined parameters to be Union{Float64,Missing} but this possibly incurs a speed penalty (but this has not been tested).
