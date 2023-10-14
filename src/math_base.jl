@@ -2,12 +2,16 @@
 # vector
 
 """
-Return a vector version of `this`
-"""
+Return a vector version of `this`.
+That is: 
+  returns `this` if `this` is a vector.
+  returns the vector version of `this` if `this` is a `Tuple`. 
+  returns `[this]` if `this` is a scaler.
+""" vector
 
 function vector(this)
   if this isa Vector; return this; end
-  if this isa Tuple; return [item for item in this]; end
+  if this isa Tuple; return [this...]; end
   return [this]
 end
 
@@ -30,7 +34,7 @@ NaI = -1234567890123456789
 
 Function to calculate cos(x) - 1 to machine precision.
 This is usful if angle can be near zero where the direct evaluation of cos(x) - 1 is inaccurate.
-"""
+""" cos_one
 
 cos_one(x) = -2.0 * sin(x/2.0)^2
 

@@ -44,13 +44,6 @@ const anom_mag_moment_deuteron::Float64 = -0.14298726925e0
 const anom_mag_moment_neutron::Float64  = -1.91304273e0
 const anom_mag_moment_He3::Float64      = -4.184153686e0
 
-#
-
-export m_electron, m_proton, m_neutron, m_muon, m_helion, m_pion_0, m_pion_charged, m_deuteron, atomic_mass_unit
-export c_light, e_charge, h_planck, h_bar_planck, r_e, r_p, mu_0_vac, eps_0_vac, classical_radius_factor, N_avogadro
-export fine_structure_constant, anom_mag_moment_electron, anom_mag_moment_proton, anom_mag_moment_muon
-export anom_mag_moment_deuteron, anom_mag_moment_neutron, anom_mag_moment_He3
-
 #---------------------------------------------------------------------------------------------------
 # Species
 
@@ -72,12 +65,24 @@ function mass(species::Species)
   return 1e3
 end
 
-function E_tot(pc::Float64, species::Species)
+function charge(species::Species)
+  return -1
+end
+
+function E_tot_from_pc(pc::Float64, species::Species)
   return sqrt(pc^2 + mass(species)^2)
 end
 
-function pc(E_tot::Float64, species::Species)
+function pc_from_E_tot(E_tot::Float64, species::Species)
   return sqrt(E_tot^2 - mass(species)^2)
 end
 
-export notset_name, Species, species, mass, E_tot, pc
+#---------------------------------------------------------------------------------------------------
+
+export m_electron, m_proton, m_neutron, m_muon, m_helion, m_pion_0, m_pion_charged, m_deuteron, atomic_mass_unit
+export c_light, e_charge, h_planck, h_bar_planck, r_e, r_p, mu_0_vac, eps_0_vac, classical_radius_factor, N_avogadro
+export fine_structure_constant, anom_mag_moment_electron, anom_mag_moment_proton, anom_mag_moment_muon
+export anom_mag_moment_deuteron, anom_mag_moment_neutron, anom_mag_moment_He3
+export Species, species, mass, charge, E_tot_from_pc, pc_from_E_tot
+
+export notset_name, Species, species, mass, E_tot_from_pc, pc_from_E_tot

@@ -15,21 +15,26 @@ A Struct is a struct. For example, the :floor parameter holds a FloorPosition st
 abstract type Struct end
 abstract type Pointer end
 
-@kwdef struct ParamInfo
-  parent_group::T where T <: DataType
-  kind::Union{T, Union} where T <: DataType  # Something like ApertureTypeSwitch is a Union.
+@kwdef mutable struct ParamInfo
+  parent_group::T where T <: Union{DataType,Union}  # Use the parent_group function to get the parent group.
+  kind::Union{T, Union} where T <: DataType         # Something like ApertureTypeSwitch is a Union.
   description::String = ""
   units::String = ""
   private::Bool = false
+  group_field = :same    # :same means that inbox name is the same as the group field name
 end
 
-ParamInfo(parent::DataType, kind::Union{DataType, Union}, description::String) = ParamInfo(parent, kind, description, "", false)
-ParamInfo(parent::DataType, kind::Union{DataType, Union}, description::String, units::String) = ParamInfo(parent, kind, description, units, false)
+ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String) = 
+                                                    ParamInfo(parent, kind, description, "", false, :same)
+ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String, units::String) = 
+                                                    ParamInfo(parent, kind, description, units, false, :same)
+
+ap = Union{AlignmentGroup,PatchGroup}
 
 """
-Dictionary of parameter types in the Ele.pdict.
+Dictionary of parameter types. Keys are inbox names (which can be different from group names. 
+EG: theta_floor inbox name corresponds to theta in the FloorPositionGroup.
 """
-
 ele_param_info_dict = Dict(
   :name             => ParamInfo(Nothing,        String,    "Name of the element."),
   :ix_ele           => ParamInfo(Nothing,        Int,       "Index of element in containing branch.ele array."),
@@ -44,10 +49,11 @@ ele_param_info_dict = Dict(
   :s                => ParamInfo(LengthGroup,    Real,      "Longitudinal s-position.", "m"),
   :s_exit           => ParamInfo(LengthGroup,    Real,      "Longitudinal s-position at exit end.", "m"),
 
-  :field_master     => ParamInfo(MasterGroup,    Bool,      "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
-  :voltage_master   => ParamInfo(MasterGroup,    Bool,      "Voltage or gradient is constant with length changes?"),
+  :field_master     => ParamInfo(MasterGroup,    Bool,      
+                                  "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
 
   :species_ref      => ParamInfo(ReferenceGroup, Species,   "Reference species."),
+  :species_ref_exit => ParamInfo(ReferenceGroup, Species,   "Reference species at exit end."),
   :pc_ref           => ParamInfo(ReferenceGroup, Real,      "Reference momentum * c.", "eV"),
   :E_tot_ref        => ParamInfo(ReferenceGroup, Real,      "Reference total energy.", "eV"),
   :time_ref         => ParamInfo(ReferenceGroup, Real,      "Reference time.", "sec"),
@@ -65,48 +71,84 @@ ele_param_info_dict = Dict(
   :e2_rect          => ParamInfo(BendGroup,      Real,      "bend exit face angles relative to a rectangular geometry.", "rad"),
   :len_chord        => ParamInfo(BendGroup,      Real,      "Bend chord length.", "m"),
   :ref_tilt         => ParamInfo(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
+  :fint             => ParamInfo(BendGroup,      Real,      "Used to set fint1 and fint2 both at once.", ""),
   :fint1            => ParamInfo(BendGroup,      Real,      "Bend entrance edge field integral.", ""),
   :fint2            => ParamInfo(BendGroup,      Real,      "Bend exit edge field integral.", ""),
+  :hgap             => ParamInfo(BendGroup,      Real,      "Used to set hgap1 and hgap2 both at once.", ""),
   :hgap1            => ParamInfo(BendGroup,      Real,      "Bend entrance edge pole gap height.", "m"),
   :hgap2            => ParamInfo(BendGroup,      Real,      "Bend exit edge pole gap height.", "m"),
   :bend_type        => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
 
-  :offset           => ParamInfo(AlignmentGroup, Vector{Real}, "3-Vector of [x, y, z] element offsets.", "m"),
-  :x_pitch          => ParamInfo(AlignmentGroup, Real,      "X-pitch element orientation.", "rad"),
-  :y_pitch          => ParamInfo(AlignmentGroup, Real,      "Y-pitch element orientation.", "rad"),
-  :tilt             => ParamInfo(AlignmentGroup, Real,      "Element tilt.", "rad"),
+  :offset           => ParamInfo(ap,             Vector{Real}, "3-Vector of [x, y, z] element offsets.", "m"),
+  :x_pitch          => ParamInfo(ap,             Real,         "X-pitch element orientation.", "rad"),
+  :y_pitch          => ParamInfo(ap,             Real,         "Y-pitch element orientation.", "rad"),
+  :tilt             => ParamInfo(ap,             Real,         "Element tilt.", "rad"),
 
-  :voltage          => ParamInfo(RFGroup,        Real,      "RF voltage.", "volt"),
-  :gradient         => ParamInfo(RFGroup,        Real,      "RF gradient.", "volt/m"),
-  :auto_amp_scale   => ParamInfo(RFGroup,        Real,      
+  :offset_tot       => ParamInfo(AlignmentGroup, Vector{Real}, "Offset including Girder orientation.", "m"),
+  :x_pitch_tot      => ParamInfo(AlignmentGroup, Real,         "X-pitch element orientation including Girder orientation.", "rad"),
+  :y_pitch_tot      => ParamInfo(AlignmentGroup, Real,         "Y-pitch element orientation including Girder orientation.", "rad"),
+  :tilt_tot         => ParamInfo(AlignmentGroup, Real,         "Element tilt including Girder orientation.", "rad"),
+
+  :E_tot_offset     => ParamInfo(PatchGroup,     Float64,      "Reference energy offset.", "eV"),
+  :E_tot_exit       => ParamInfo(PatchGroup,     Float64,      "Reference energy at exit end.", "eV"),
+  :pc_exit          => ParamInfo(PatchGroup,     Float64,      "Reference momentum at exit end.", "eV"),
+  :flexible         => ParamInfo(PatchGroup,     Bool,         "Flexible patch?"),
+  :user_sets_length => ParamInfo(PatchGroup,     Bool,         "Does Bmad calculate the patch length?"),
+  :ref_coords       => ParamInfo(PatchGroup,     EleEndLocationSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
+
+  :voltage          => ParamInfo(RFFieldGroup,   Real,          "RF voltage.", "volt"),
+  :gradient         => ParamInfo(RFFieldGroup,   Real,          "RF gradient.", "volt/m"),
+  :phase            => ParamInfo(RFFieldGroup,   Real,          "RF phase.", "rad"),
+
+  :auto_amp         => ParamInfo(RFGroup,        Real,      
                                   "Correction to the voltage/gradient calculated by the auto scale code.", ""),
-  :phase            => ParamInfo(RFGroup,        Real,      "RF phase.", "rad"),
-  :auto_phase       => ParamInfo(RFGroup,        Real,      "Correction RF phase calculated by the auto scale code.", "rad"),
+  :auto_phase       => ParamInfo(RFGroup,        Real,          "Correction RF phase calculated by the auto scale code.", "rad"),
   :multipass_phase  => ParamInfo(RFGroup,        Real,      
                                   "RF phase which can differ from multipass element to multipass element.", "rad"),
-  :frequency        => ParamInfo(RFGroup,        Real,      "RF frequency.", "Hz"),
-  :harmon           => ParamInfo(RFGroup,        Real,      "RF frequency harmonic number.", ""),
+  :frequency        => ParamInfo(RFGroup,        Real,             "RF frequency.", "Hz"),
+  :harmon           => ParamInfo(RFGroup,        Real,             "RF frequency harmonic number.", ""),
   :cavity_type      => ParamInfo(RFGroup,        CavityTypeSwitch, "Type of cavity."),
-  :n_cell           => ParamInfo(RFGroup,        Int,       "Number of RF cells."),
+  :n_cell           => ParamInfo(RFGroup,        Int,              "Number of RF cells."),
+
+  :voltage_ref      => ParamInfo(LCavityGroup,   Real,          "Reference RF voltage.", "volt"),
+  :voltage_err      => ParamInfo(LCavityGroup,   Real,          "RF voltage error.", "volt"),
+  :voltage_tot      => ParamInfo(LCavityGroup,   Real,          "Actual RF voltage (ref + err).", "volt"),
+  :gradient_ref     => ParamInfo(LCavityGroup,   Real,          "Reference RF gradient.", "volt/m"),
+  :gradient_err     => ParamInfo(LCavityGroup,   Real,          "RF gradient error.", "volt/m"),
+  :gradient_tot     => ParamInfo(LCavityGroup,   Real,          "Actual RF gradient (ref + err).", "volt/m"),
+  :phase_ref        => ParamInfo(LCavityGroup,   Real,          "Reference RF phase.", "rad"),
+  :phase_err        => ParamInfo(LCavityGroup,   Real,          "RF phase error.", "rad"),
+  :phase_tot        => ParamInfo(LCavityGroup,   Real,          "Actual RF phase. (ref + err)", "rad"),
+
+  :voltage_master   => ParamInfo(RFMasterGroup,  Bool,          "Voltage or gradient is constant with length changes?"),
+  :do_auto_amp      => ParamInfo(RFMasterGroup,  Bool,          "Autoscale voltage/gradient?"),
+  :do_auto_phase    => ParamInfo(RFMasterGroup,  Bool,          "Autoscale phase?"),
+  :do_auto_scale    => ParamInfo(RFMasterGroup,  Bool,          "Used to set do_auto_amp and do_auto_phase both at once."),
 
   :tracking_method  => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
   :field_calc       => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
   :num_steps        => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
   :ds_step          => ParamInfo(TrackingGroup,  Real,                  "Nominal distance between tracking steps.", "m"),
 
-  :aperture_type    => ParamInfo(ApertureGroup,  ApertureTypeSwitch, "Type of aperture."),
+  :aperture_type    => ParamInfo(ApertureGroup,  ApertureTypeSwitch,    "Type of aperture."),
   :aperture_at      => ParamInfo(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is."),
   :offset_moves_aperture 
-                    => ParamInfo(ApertureGroup,  Bool, "Does moving the element move the aperture?"),
-  :x_limit          => ParamInfo(ApertureGroup,  Vector{Real},   "2-Vector of horizontal aperture limits.", "m"),
-  :y_limit          => ParamInfo(ApertureGroup,  Vector{Real},   "2-Vector of vertical aperture limits.", "m"),
+                    => ParamInfo(ApertureGroup,  Bool,               "Does moving the element move the aperture?"),
+  :x_limit          => ParamInfo(ApertureGroup,  Vector{Real},       "2-Vector of horizontal aperture limits.", "m"),
+  :y_limit          => ParamInfo(ApertureGroup,  Vector{Real},       "2-Vector of vertical aperture limits.", "m"),
 
-  :r_floor          => ParamInfo(FloorPositionGroup, Vector{Real},   "3-vector of floor position.", "m"),
-  :q_floor          => ParamInfo(FloorPositionGroup, Vector{Real},   "Quaternion orientation.", ""),
-  :theta_floor      => ParamInfo(FloorPositionGroup, Real,           "Floor theta angle orientation", "rad"),
-  :phi_floor        => ParamInfo(FloorPositionGroup, Real,           "Floor phi angle orientation", "rad"),
-  :psi_floor        => ParamInfo(FloorPositionGroup, Real,           "Floor psi angle orientation", "rad"),
+  :r_floor          => ParamInfo(FloorPositionGroup, Vector{Real},       "3-vector of floor position.", "m"),
+  :q_floor          => ParamInfo(FloorPositionGroup, Vector{Real},       "Quaternion orientation.", ""),
+  :theta_floor      => ParamInfo(FloorPositionGroup, Real,               "Floor theta angle orientation", "rad"),
+  :phi_floor        => ParamInfo(FloorPositionGroup, Real,               "Floor phi angle orientation", "rad"),
+  :psi_floor        => ParamInfo(FloorPositionGroup, Real,               "Floor psi angle orientation", "rad"),
 )
+
+ele_param_info_dict[:r_floor].group_field = :r
+ele_param_info_dict[:q_floor].group_field = :q
+ele_param_info_dict[:theta_floor].group_field = :theta
+ele_param_info_dict[:phi_floor].group_field = :phi
+ele_param_info_dict[:psi_floor].group_field = :psi
 
 function units(key)
   param_info = ele_param_info(key)
@@ -120,6 +162,44 @@ function description(key)
   return param_info.description
 end
 
+function parent_group(info::ParamInfo, ele::Ele)
+  if typeof(info.parent_group) == DataType; return info.parent_group; end
+
+  if info.parent_group == Union{AlignmentGroup,PatchGroup}
+    typeof(ele) == Patch ? (return PatchGroup) : (return AlignmentGroup)
+  end
+
+  error("??? Error in parent_group. Please report this error!")
+end
+
+"""
+An alias is something like `hgap` which gets mapped to `hgap1` and `hgap2`
+"""
+param_alias = Dict(
+  :hgap           => [:hgap1, :hgap2],
+  :fint           => [:fint1, :fint2],
+  :do_auto_scale  => [:do_auto_amp, :do_auto_phase]
+)
+
+"""
+"""
+function info(sym::Union{Symbol,String})
+  if typeof(sym) == String; sym = Symbol(sym); end
+  for (param, info) in ele_param_info_dict
+    if sym == param || sym == info.group_field
+      println(f"  Element parameter:       {param}")
+      if info.group_field != :same; println(f"  Name in group structure: {info.group_field}"); end
+      println(f"  Element group:   {info.parent_group}")
+      println(f"  Parameter type:  {info.kind}")
+      if info.units != ""; println(f"  Units:           {info.units}"); end
+      println(f"  Description:     {info.description}")
+      return 
+   end
+  end
+
+  println(f"No information found on: {sym}")
+end
+
 #---------------------------------------------------------------------------------------------------
 # ele_group_field_to_inbox_name
 
@@ -128,16 +208,17 @@ Given the field of an element parameter group return the associated symbol in el
 """ ele_group_field_to_inbox_name
 
 function ele_group_field_to_inbox_name(sym::Symbol, group::EleParameterGroup)
-  if typeof(group) == FloorPositionGroup
-    if sym == :r; return :r_floor; end
-    if sym == :q; return :q_floor; end
-    if sym == :theta; return :theta_floor; end
-    if sym == :phi; return :phi_floor; end
-    if sym == :psi; return :psi_floor; end
+  for (param, info) in ele_param_info_dict
+    if typeof(info.parent_group) == Union
+      if !(typeof(group) in Base.uniontypes(info.parent_group)); continue; end
+    else
+      if info.parent_group != typeof(group); continue; end
+    end
+    if info.group_field == sym || (info.group_field == :same && param == sym); return param; end
   end
-  return sym
-end
 
+  return nothing
+end
 
 #---------------------------------------------------------------------------------------------------
 # multipole_type
@@ -183,16 +264,17 @@ end
 
 """
 Returns param_info or `default`.
-If the value `no_info_return` is `missing` (the default), an error is thrown.
+If the value `no_info_return` is `Error` (the default), an error is thrown.
+Otherwise the value of `no_info_return` is returned
 
 
 """ ele_param_info
 
-function ele_param_info(sym::Symbol; no_info_return = missing)
+function ele_param_info(sym::Symbol; no_info_return = Error)
   if haskey(ele_param_info_dict, sym); return ele_param_info_dict[sym]; end
   (mtype, order) = multipole_type(sym)
-  if mtype == nothing
-    if ismissing(no_info_return); error(f"Unrecognized element parameter: {sym}"); end
+  if isnothing(mtype)
+    if no_info_return == Error; error(f"Unrecognized element parameter: {sym}"); end
     return no_info_return
   end
 
@@ -226,48 +308,35 @@ function ele_param_info(sym::Symbol; no_info_return = missing)
   end
 end
 
-
-#---------------------------------------------------------------------------------------------------
-
-struct EleParamKey
-  description::String
-end
-
-ele_param_group = Dict(
-  AlignmentGroup        => EleParamKey("Vacuum chamber aperture."),
-  ApertureGroup         => EleParamKey("Vacuum chamber aperture."),
-  BendGroup             => EleParamKey("Bend element parameters."),
-  BMultipoleGroup       => EleParamKey("Magnetic multipoles."),
-  ChamberWallGroup      => EleParamKey("Vacuum chamber wall."),
-  EMultipoleGroup       => EleParamKey("Electric multipoles."),
-  FloorPositionGroup    => EleParamKey("Global floor position and orientation."),
-  LengthGroup           => EleParamKey("Element length and s-positions."),
-  MasterGroup           => EleParamKey("Field_master and voltage_master logicals."),
-  ReferenceGroup        => EleParamKey("Reference energy and species."),
-  RFGroup               => EleParamKey("RF parameters."),
-  StringGroup           => EleParamKey("Informational strings."),
-  TrackingGroup         => EleParamKey("Default tracking settings."),
-)
-
-
 #---------------------------------------------------------------------------------------------------
 # ele_param_groups
 
 """
 Table of what element groups are associated with what element types.
+Order is important. Bookkeeping routines rely on: 
+  LengthGroup being first.
+  BendGroup after ReferenceGroup and MasterGroup.
+  BMultipoleGroup and EMultipoleGroup after MasterGroup.
+  RFGroup comes last (triggers autoscale/autophase and ReferenceGroup correction)
 """
 
 base_group_list = [LengthGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
+general_group_list = vcat(base_group_list, alignment_group_list, multipole_group_list)
 
 ele_param_groups = Dict(  
   Dict(
     BeginningEle   => base_group_list,
-    Bend           => vcat(base_group_list, alignment_group_list, multipole_group_list, BendGroup),
+    Bend           => vcat(general_group_list, BendGroup),
     Drift          => base_group_list,
+    LCavity        => vcat(general_group_list, RFMasterGroup, LCavityGroup, RFGroup),
     Marker         => base_group_list,
-    Quadrupole     => vcat(base_group_list, alignment_group_list, multipole_group_list),
+    Octupole       => general_group_list,
+    Patch          => vcat(base_group_list, PatchGroup),
+    Quadrupole     => general_group_list,
+    RFCavity       => vcat(general_group_list, RFMasterGroup, RFFieldGroup, RFGroup),
+    Sextupole      => general_group_list,
   )
 )
 
@@ -277,48 +346,31 @@ struct ParamState
   settable::Bool
 end
 
-base_dict = merge(Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch]]),
-                  Dict{Symbol,Any}([v => ParamState(true)  for v in [:len, :name]]))
-
 #---------------------------------------------------------------------------------------------------
-# ele_param_by_struct
-
-function to_dict_from_groups(ele_type::Type{T}, groups) where T <: Ele
-  dict = Dict{Symbol,Any}()
-  for group in groups
-    if group in [BMultipoleGroup, EMultipoleGroup]; continue; end
-    dict = merge(dict, Dict{Symbol,Any}([v => ParamState(true) for v in fieldnames(group)]))
-  end
-
-  if ele_type != BeginningEle
-    for key in [:theta, :phi, :psi]
-      if haskey(dict, key); dict[key] = ParamState(false); end
-    end
-  end
-
-  if ele_type == Bend; pop!(dict, :tilt); end
-
-  return dict
-end
-
+# ele_param_by_ele_type
 
 """
 Table of what parameters are associated with what element types.
 """
 
-ele_param_by_struct = Dict(  
-  Dict(
-    Bend           => merge(base_dict, to_dict_from_groups(Bend, ele_param_groups[Bend])),
-    Drift          => merge(base_dict, to_dict_from_groups(Drift, ele_param_groups[Drift])),
-    Marker         => merge(base_dict, to_dict_from_groups(Marker, ele_param_groups[Marker])),
-    Quadrupole     => merge(base_dict, to_dict_from_groups(Quadrupole, ele_param_groups[Quadrupole])),
-    BeginningEle   => base_dict,
-  )
-)
+base_dict = merge(Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch]]),
+                  Dict{Symbol,Any}([v => ParamState(true)  for v in [:len, :name]]))
+
+ele_param_by_ele_type = Dict{DataType,Dict{Symbol,Any}}()
+for (ele_type, group_list) in ele_param_groups
+  ele_param_by_ele_type[ele_type] = base_dict
+  for group in group_list
+    if group in [BMultipoleGroup, EMultipoleGroup]; continue; end
+    ele_param_by_ele_type[ele_type] = merge(ele_param_by_ele_type[ele_type], 
+                            Dict{Symbol,Any}([v => ParamState(true) for v in fieldnames(group)]))
+  end
+end
+ele_param_by_ele_type[BeginningEle][:s] = ParamState(true)
+
 
 function has_param(type::Union{T,Type{T}}, sym::Symbol) where T <: Ele
   if typeof(type) != DataType; type = typeof(type); end
-  if haskey(ele_param_by_struct[type], sym); return true; end
+  if haskey(ele_param_by_ele_type[type], sym); return true; end
   # Rule: If BMultipoleGroup is in ele then EMultipoleGroup is in ele. (Is this really wise?)
   if BMultipoleGroup in ele_param_groups[type] && multipole_type(sym)[1] != nothing; return true; end
   return false
@@ -332,7 +384,7 @@ end
 """
 
 function is_settable(ele::T, sym::Symbol) where T <: Ele
-  if haskey(ele_param_by_struct[typeof(ele)], sym); return ele_param_by_struct[typeof(ele)][sym].settable; end
+  if haskey(ele_param_by_ele_type[typeof(ele)], sym); return ele_param_by_ele_type[typeof(ele)][sym].settable; end
 
   pinfo = ele_param_info(sym)
   if pinfo == nothing; error(f"No info on: {sym}"); end

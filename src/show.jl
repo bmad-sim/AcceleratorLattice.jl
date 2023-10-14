@@ -138,33 +138,32 @@ function show_elegroup(io::IO, group::T) where T <: EleParameterGroup
   nn = 18
   println(io, f"  {typeof(group)}:")
   for field in fieldnames(typeof(group))
-    pdict = ele_group_field_to_inbox_name(field, group)
+    param = ele_group_field_to_inbox_name(field, group)
     nn2 = max(nn, length(string(field)))
     kstr = rpad(string(field), nn2)
     vstr = str_param_value(Base.getproperty(group, field))
-    ele_print_line(io, f"    {kstr} {vstr} {units(pdict)}", description(pdict))
+    ele_print_line(io, f"    {kstr} {vstr} {units(param)}", description(param))
   end
 end
 
 function show_elegroup(io::IO, group::BMultipoleGroup)
-  n = maximum(length(field) for field in fieldnames(typeof(group))) + 4
   println(io, f"  {typeof(group)}:")
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
   for v in group.vec
     v.integrated ? l = "l" : l = ""
-    n = v.n
+    n = v.order
     println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.K,24)}{lpad(v.Ks,24)}    K{n}{l}  K{n}s{l}")
     println(io, " "^44 * f"{lpad(v.B,24)}{lpad(v.Bs,24)}    B{n}{l}  B{n}s{l}")
   end
 end
 
 function show_elegroup(io::IO, group::EMultipoleGroup)
-  n = maximum(length(field) for field in fieldnames(typeof(group))) + 4
   println(io, f"  {typeof(group)}:")
-  println(io, f"    Order{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
-  for (n, v) in enumerate(group.vec)
-    if v == nothing; continue; end
-    println(io, f"{lpad(n,9)}{lpad(v.E,24)}{lpad(v.tilt,24)}{lpad(v.Es,24)}")
+  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
+  for v in group.vec
+    v.integrated ? l = "l" : l = ""
+    n = v.order
+    println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.E,24)}{lpad(v.Es,24)}    E{n}{l}  E{n}s{l}")
   end
 end
 

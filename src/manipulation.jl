@@ -47,8 +47,9 @@ Set ele.pdict[:inbox][s] unless symbol explicitly involves ele group.
 """ Base.setproperty!
 
 function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
-  if isa_eleparametergroup(s); getfield(ele, :pdict)[s] = value; return; end
-  if !has_param(ele, s); error(f"Not a registered parameter: {s}. For element: {ele.name}."); end
+  # :name is special since it is not associated with an element group.
+  if isa_eleparametergroup(s) || s == :name; getfield(ele, :pdict)[s] = value; return; end
+  if !has_param(ele, s); error(f"Not a registered parameter: {s}. For element: {ele.name} of type {typeof(ele)}."); end
   if !is_settable(ele, s); error(f"Parameter is not user settable: {s}. For element: {ele.name}."); end
   getfield(ele, :pdict)[:inbox][s] = value
 end

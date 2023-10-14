@@ -7,7 +7,7 @@
 * Explain that AcceleratorLattice.jl can be used standalone.
 
 * ele.field_master: Only used if p0c changes. Default is false. (what group does this go into?)
-* Bend .type attribute: Only used if rho, angle, g, bend_field changes
+* Bend .type attribute: Only used if rho, angle, g, bend_field changes.
 
 * Explain about switches and how to extend them.
 
@@ -24,5 +24,32 @@
 
 * bend angle is always a dependent parameter dependent on g and len.
 
-* `NaN` is used instead of something like `missing` since `NaN` can be used to set Float parameters.
+* `NaN` is used instead of something like `missing` since `NaN` is considered a Float so can specify a parameter like `len_chord` as `Float64` instead of `Union{Float64,Missing}` which is not as clean and will slow down calculations.
+
 Note: Could also have defined parameters to be Union{Float64,Missing} but this possibly incurs a speed penalty (but this has not been tested).
+
+* Implementation note: Bookkeeping is element-by-element rather then parameter group by parameter group since 
+the parameter groups are not necessarily independent. For example, the reference time will depend upon
+the FloorPositionGroup if the lattice contains a flexible patch. 
+
+* Using Strings for the keys of ele.pdict[] would have worked instead of Symbols. Using Symbols gives
+a slightly cleaner look to the code.
+
+* Before lattice expansion element parameter setting order is not important (except if a given parmeter
+values is redefined).
+
+* Discuss how tracking is used to calculate ref energy and time and how to override the standard calc.
+
+* Magnetic multipoles: Specifying both normalized ("K") multipole and non-normalized ("B") values for a given order is not permitted. EG: "K2 = 0.3, B2 = 4".
+
+* Multipoles: Before lattice expansion when defining an element: multipole value of a given order must be all integrated (Knl, Knsl, Bnl, Bnsl, Enl, Ensl) or not integrated (Kn, Kns, Bn, Bns, En, Ens). No mixing but can have one order integrated and another not. After lattice expansion, can switch from non-integrated to integrated  by setting an integrated value and vice versa. 
+
+* Coding tip: Element group structures are not mutable by design to maximize tracking speed. This is a bit inconvenient when a structure needs to be modified. One way to handle this is using the @set macro. Another way is to convert a structure instance to a Dict, change the Dict, and then convert back (note: this is possible since the @kwdef macro was used to define the element group structures). Example: ...
+
+* Some element groups are optional and may not be present in a given element. For example, LengthGroup is required and BMultipoleGroup and EMultipoleGroup are optional.
+
+* Online documentation: For element groups use REPL "?" and type in the name.
+
+* Internally radians will be used for all parameters like RF phase, etc. This is in contrast to Fortran-Bmad which used radians/2pi for RF phase units.
+
+* ele.name is an exception in that setting it will directly set ele.pdict[:name] bypassing the inbox.
