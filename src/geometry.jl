@@ -66,7 +66,7 @@ end
 #---------------------------------------------------------------------------------------------------
 # Quat64
 
-QuatRotation{Float64}(theta::Float64, phi::Float64, psi::Float64) = Quat64(RotY(theta) * RotX(-phi) * RotZ(psi))
+QuatRotation(theta::Float64, phi::Float64, psi::Float64) = Quat64(RotY(theta) * RotX(-phi) * RotZ(psi))
 
 #---------------------------------------------------------------------------------------------------
 # floor_angles

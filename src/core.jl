@@ -6,7 +6,6 @@ using PyFormattedStrings
 using Accessors
 using LinearAlgebra
 using Rotations
-using PhysicalConstants
 
 #-------------------------------------------------------------------------------------
 # Exceptions
@@ -16,6 +15,8 @@ struct RangeError <: Exception;     msg::String; end
 struct LatticeParseError <: Exception; msg::String; end
 struct SwitchError <: Exception; msg::String; end
 struct StringParseError <: Exception; msg::String; end
+
+abstract type Error end
 
 #---------------------------------------------------------------------------------------------------
 

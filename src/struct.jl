@@ -13,6 +13,8 @@ Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 #---------------------------------------------------------------------------------------------------
 # Ele
 
+ele_types_set = Set()
+
 macro ele(expr)
   if expr.head != :(=); error("Missing equals sign '=' after element name. " * 
                                "Expecting something like: \"q1 = Quadrupole(...)\""); end
@@ -37,6 +39,7 @@ macro construct_ele_type(ele_type)
   eval( Meta.parse("mutable struct $ele_type <: Ele; pdict::Dict{Symbol,Any}; end") )
   str_type =  String("$ele_type")
   eval( Meta.parse("export $str_type") )
+  push!(ele_types_set, eval(Meta.parse("$str_type")))
   return nothing
 end
 
@@ -91,21 +94,41 @@ function ele_geometry(ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Ele parameters
+# Element groups
 
+"""
+Base type for all element parameter groups
+"""
 abstract type EleParameterGroup end
 
+"""
+Element length and s-positions.
+"""
 @kwdef struct LengthGroup <: EleParameterGroup
   len::Float64 = 0
   s::Float64 = 0
   s_exit::Float64 = 0
 end
 
+"""
+Field_master logical.
+
+The `field_master` setting matters when there is a change in reference energy.
+In this case, if `field_master` = true, B-multipoles and BendGroup `bend_field` will be held constant
+and K-multipols and bend `g` will be varied. Vice versa when `field_master = false.
+"""
 @kwdef struct MasterGroup <: EleParameterGroup
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
-  voltage_master::Bool = false       # Voltage or gradient stay constant with length changes?
 end
 
+"""
+Position and orientation in global coordinates.
+The FloorPositionGroup in a lattice element gives the coordinates at the entrance end of an element
+ignoring misalignments.
+
+Note: When setting parameters here the corresponding names have a `_floor` suffix.
+For example, `r_floor` is mapped to `r` in the FloorPositionGroup structure.
+"""
 @kwdef struct FloorPositionGroup <: EleParameterGroup
   r::Vector64 =[0, 0, 0]              # (x,y,z) in Global coords
   q::Quat64 = Quat64(1.0, 0, 0, 0)    # Quaternion orientation
@@ -114,67 +137,129 @@ end
   psi::Float64 = 0
 end
 
+"""
+Patch element parameters
+"""
+@kwdef struct PatchGroup <: EleParameterGroup
+  offset::Vector64 = [0,0,0]    # [x, y, z] offsets
+  t_offset::Float64 = 0         # Time offset.
+  x_pitch::Float64 = 0          # x pitch
+  y_pitch::Float64 = 0          # y pitch
+  tilt::Float64 = 0             # tilt
+  E_tot_offset::Float64 = NaN
+  E_tot_exit::Float64 = NaN     # Reference energy at exit end
+  pc_exit::Float64 = NaN        # Reference momentum at exit end
+  flexible::Bool = false
+  user_sets_length::Bool = false.
+  ref_coords::EleEndLocationSwitch = ExitEnd
+end
+
+"""
+Reference energy, time and species.
+"""
 @kwdef struct ReferenceGroup <: EleParameterGroup
   species_ref::Species = Species("NotSet")
+  species_ref_exit::Species = Species("NotSet")
   pc_ref::Float64 = NaN
-  E_tot_ref::Float64 = NaN
-  time_ref::Float64 = 0
   pc_ref_exit::Float64 = NaN
+  E_tot_ref::Float64 = NaN
   E_tot_ref_exit::Float64 = NaN
+  time_ref::Float64 = 0
   time_ref_exit::Float64 = 0
 end
 
+"""
+Single magnetic multipole of a given order.
+See BMultipoleGroup.
+"""
 @kwdef struct BMultipole1 <: EleParameterGroup  # A single multipole
-  K::Float64 = NaN
-  Ks::Float64 = NaN
+  K::Float64 = NaN          # EG: "K2", "K2l" 
+  Ks::Float64 = NaN         # EG: "K2s", "K2sl"
   B::Float64 = NaN
   Bs::Float64 = NaN  
   tilt::Float64 = 0
-  n::Int64 = -1             # Multipole order
+  order::Int64 = -1         # Multipole order
   integrated::Bool = false  # Also determines what stays constant with length changes.
 end
 
+"""
+  Vector of magnetic multipoles.
+
+  This group is optional and will not appear in an element that does not have any multipoles.
+"""
 @kwdef struct BMultipoleGroup <: EleParameterGroup
   vec::Vector{BMultipole1} = Vector{BMultipole1}([])         # Vector of multipoles.
 end
 
+"""
+Single electric multipole of a given order.
+See EMultipoleGroup.
+"""
 @kwdef struct EMultipole1 <: EleParameterGroup
-  E::Float64 = NaN
-  Es::Float64 = NaN
+  E::Float64 = NaN            # EG: "E2", "E2l"
+  Es::Float64 = NaN           # EG: "E2s", "E2sl"
   Etilt::Float64 = 0
-  n::Int64 = -1           # Multipole order
+  order::Int64 = -1           # Multipole order
   integrated::Bool = false
 end
 
+"""
+  Vector of Electric multipoles.
+
+  This group is optional and will not appear in an element that does not have any multipoles.
+"""
 @kwdef struct EMultipoleGroup <: EleParameterGroup
   vec::Vector{EMultipole1} = Vector{EMultipole1}([])         # Vector of multipoles. 
 end
 
+"""
+Orientation of an element (specifically, orientation of the body coordinates) with respect to the 
+laboratory coordinates.
+"""
 @kwdef struct AlignmentGroup <: EleParameterGroup
-  offset::Vector64 = [0,0,0]   # [x, y, z] offsets
-  x_pitch::Float64 = 0         # x pitch
-  y_pitch::Float64 = 0         # y pitch
-  tilt::Float64 = 0            # Not used by Bend elements
+  offset::Vector64 = [0,0,0]       # [x, y, z] offsets
+  offset_tot::Vector64 = [0,0,0]   # [x, y, z] offsets including Girder misalignment.
+  x_pitch::Float64 = 0             # x pitch
+  x_pitch_tot::Float64 = 0         # x pitch including Girder misalignment.
+  y_pitch::Float64 = 0             # y pitch
+  y_pitch_tot::Float64 = 0         # y pitch including Girder misalignment.
+  tilt::Float64 = 0                # Not used by Bend elements
+  tilt_tot::Float64 = 0            # Tilt including Girder misalignment
 end
 
+
+"""
+Bend element parameters.
+
+For tracking there is no distinction made between sector like (`SBend`) bends and
+rectangular like (`RBend`) bends. The `bend_type` switch is only important when the
+bend angle or length is varied. See the documentation for details.
+
+Whether `bend_field` or `g` is held constant when the reference energy is varied is
+determined by the `field_master` setting in the MasterGroup struct.
+"""
 @kwdef struct BendGroup <: EleParameterGroup
-  angle::Float64 = NaN
-  rho::Float64 = NaN
-  g::Float64 = NaN                # Old Bmad dg -> K0.
-  bend_field::Float64 = NaN
+  angle::Float64 = 0
+  rho::Float64 = Inf
+  g::Float64 = 0                # Note: Old Bmad dg -> K0.
+  bend_field::Float64 = 0
   len_chord::Float64 = NaN
+  len_sagitta::Float64 = 0
   ref_tilt::Float64 = 0
-  e1::Float64 = NaN
-  e2::Float64 = NaN
-  e1_rect::Float64 = NaN          # Edge angle with respect to rectangular geometry.
-  e2_rect::Float64 = NaN          # Edge angle with respect to rectangular geometry.
+  e1::Float64 = 0
+  e2::Float64 = 0
+  e1_rect::Float64 = 0          # Edge angle with respect to rectangular geometry.
+  e2_rect::Float64 = 0          # Edge angle with respect to rectangular geometry.
   fint1::Float64 = 0.5
   fint2::Float64 = 0.5
   hgap1::Float64 = 0
   hgap2::Float64 = 0
-  bend_type::BendTypeSwitch = SBend    # If g is varied does e or e_rect
+  bend_type::BendTypeSwitch = SBend    # Is e or e_rect fixed? Also is len or len_chord fixed?
 end
 
+"""
+Vacuum chamber aperture.
+"""
 @kwdef struct ApertureGroup <: EleParameterGroup
   x_limit::Vector64 = [NaN, NaN]
   y_limit::Vector64 = [NaN, NaN]
@@ -183,18 +268,24 @@ end
   offset_moves_aperture::Bool = true
 end
 
+"""
+Strings that can be set and used with element searches.
+
+These strings have no affect on tracking.
+"""
 @kwdef struct StringGroup <: EleParameterGroup
   type::String = ""
   alias::String = ""
   description::String = ""
 end
 
+"""
+RF parameters except for voltage and phase.
+See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
+""" 
 @kwdef struct RFGroup <: EleParameterGroup
-  voltage::Float64 = 0
-  gradient::Float64 = 0
-  auto_scale:: Float64 = 1
-  phase::Float64 = 0
-  auto_phase::Float64 = 0
+  auto_amp:: Float64 = 1        # See do_auto_amp in RFMasterGroup.
+  auto_phase::Float64 = 0       # See do_auto_phase in RFMasterGroup.
   multipass_phase::Float64 = 0
   frequency::Float64 = 0
   harmon::Float64 = 0
@@ -202,6 +293,44 @@ end
   n_cell::Int64 = 1
 end
 
+"""
+RF voltage parameters. Used by RFCavity element.
+See also RFMasterGroup and RFGroup.
+"""
+@kwdef struct RFFieldGroup <: EleParameterGroup
+  voltage::Float64 = 0
+  gradient::Float64 = 0
+  phase::Float64 = 0
+end
+
+"""
+Used by LCavity elements. 
+See also RFMasterGroup and RFGroup.
+"""
+@kwdef struct LCavityGroup <: EleParameterGroup
+  voltage_ref::Float64 = 0
+  voltage_err::Float64 = 0
+  voltage_tot::Float64 = 0
+  gradient_ref::Float64 = 0
+  gradient_err::Float64 = 0
+  gradient_tot::Float64 = 0
+  phase_ref::Float64 = 0
+  phase_err::Float64 = 0
+  phase_tot::Float64 = 0
+end
+
+"""
+RF autoscale and voltage_master
+"""
+@kwdef struct RFMasterGroup <: EleParameterGroup
+  voltage_master::Bool = false      # Voltage or gradient stay constant with length changes?
+  do_auto_amp::Bool = true          # Will autoscaling set auto_amp in RFGroup?
+  do_auto_phase::Bool = true        # Will autoscaling set auto_phase in RFGroup?
+end
+
+"""
+Sets the nominal values for tracking prameters.
+"""
 @kwdef struct TrackingGroup <: EleParameterGroup
   tracking_method::TrackingMethodSwitch = BmadStandard
   field_calc::FieldCalcMethodSwitch = BmadStandard
@@ -209,7 +338,10 @@ end
   ds_step::Float64 = NaN
 end
 
-struct ChamberWallGroup <: EleParameterGroup
+"""
+Vacuum chamber wall.
+"""
+@kwdef struct ChamberWallGroup <: EleParameterGroup
 end
 
 #---------------------------------------------------------------------------------------------------

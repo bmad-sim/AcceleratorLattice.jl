@@ -11,25 +11,26 @@ abstract type Switch end
 # macro switch
 
 """
-    macro switch(base, names...)
+    macro switch(identifier, names...)
 
 The macro creates a "switch group".
 
-A switch group is a set of switch values along with a switch group identifier.
-The values are all types and the identifier is the Union of all the values.
+A switch `group` is a set of switch `names` along with a switch group `identifier`.
+The `names` are all abstract types inherited from the abstract type `Switch`.
+The identifier is the Union of all the names.
 
-This is similar to what @enum does except with switches, a given switch value may be used
+This is similar to what @enum does except with switches, a given switch name may be used
 in different switch groups. 
 
 ### Input
 
-- `base`    Switch group identifier.
-- `names`   Switch group values.
+- `identifier`    Switch group identifier.
+- `names`         Switch group values.
 
 ### Output
 
-- A struct is made is made for each of the `names` all of which are children of `Switch`.
-- The `base` is defined to be the Union of all the name structs.
+- An abstract type is made for each of the `names` all of which are children of `Switch`.
+- The `identifier` is defined to be the Union of all the name abstract types.
    
 ### Example
 
@@ -37,8 +38,8 @@ in different switch groups.
   @switch PositionSwitch UpStream Inside DownStream
 ```
 
-This creates structs `UpStream`, `Inside`, and `DownStream`. 
-The variable `PositionSwitch` is created as the Union of the three value structs.
+This creates abstract types `UpStream`, `Inside`, and `DownStream`. 
+The variable `PositionSwitch` is created as the Union of the three abstract types.
 
 Use examples:
 ```
@@ -55,7 +56,7 @@ group variable. EG: show(GeometrySwitch).
 """ switch
 
 macro switch(base, names...)
-  # If a name is not defined, define a struct with that name.
+  # If a name is not defined, define a type with that name.
   for name in names
     if ! isdefined(@__MODULE__, name)
       eval( :(abstract type $(name) <: Switch end) )
@@ -112,10 +113,12 @@ Base.show(switchval::Type{<:Switch}) = show_switch(stdout, switchval)
 @switch BranchTypeSwitch TrackingBranch LordBranch 
 @switch CavityTypeSwitch StandingWave TravelingWave
 @switch EleBodyLocationSwitch EntranceEnd Center ExitEnd BothEnds NoWhere EveryWhere
+@switch EleEndLocationSwitch EntranceEnd ExitEnd
 @switch FieldCalcMethodSwitch FieldMap BmadStandard
 @switch BranchGeometrySwitch OpenGeom ClosedGeom 
-@switch PositionSwitch UpStream Inside DownStream
+@switch PositionSwitch UpstreamEnd Inside DownstreamEnd
 @switch TrackingMethodSwitch RungeKutta TimeRungeKutta BmadStandard
+@switch TrackingStateSwitch PreBorn Alive NotSet Lost LostNegX LostPosX LostNegY LostPosY LostPz LostZ
 @switch EleGeometrySwitch Straight Circular ZeroLength PatchGeom GirderGeom CrystalGeom MirrorGeom
 @switch BendTypeSwitch SBend RBend
 
