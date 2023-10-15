@@ -24,15 +24,15 @@ function propagate_ele_geometry(fstart::FloorPositionGroup, ele::Ele)
     return fstart
 
   elseif ele_geometry(ele) == Straight
-    r = fstart.r + rot(fstart.q, [0.0, 0.0, len])
-    return FloorPositionGroup(r, fstart.q, fstart.theta, fstart.phi, fstart.psi)
+    r_floor = fstart.r_floor + rot(fstart.q_floor, [0.0, 0.0, len])
+    return FloorPositionGroup(r_floor, fstart.q_floor, fstart.theta, fstart.phi, fstart.psi)
 
   elseif ele_geometry(ele) == Circular
     bend::BendGroup = ele.BendGroup
     (r_trans, q_trans) = ele_floor_transform(bend)
-    r = fstart.r + rot(fstart.q, r_trans)
-    q = rot(fstart.q, q_trans)
-    return FloorPositionGroup(r, q, floor_angles(q, fstart))
+    r_floor = fstart.r_floor + rot(fstart.q_floor, r_trans)
+    q_floor = rot(fstart.q_floor, q_trans)
+    return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart))
 
   elseif ele_geometry(ele) == PatchGeom
     error("Not yet implemented!")

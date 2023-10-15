@@ -21,13 +21,12 @@ abstract type Pointer end
   description::String = ""
   units::String = ""
   private::Bool = false
-  group_field = :same    # :same means that inbox name is the same as the group field name
 end
 
 ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String) = 
-                                                    ParamInfo(parent, kind, description, "", false, :same)
+                                                    ParamInfo(parent, kind, description, "", false)
 ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String, units::String) = 
-                                                    ParamInfo(parent, kind, description, units, false, :same)
+                                                    ParamInfo(parent, kind, description, units, false)
 
 ap = Union{AlignmentGroup,PatchGroup}
 
@@ -139,16 +138,10 @@ ele_param_info_dict = Dict(
 
   :r_floor          => ParamInfo(FloorPositionGroup, Vector{Real},       "3-vector of floor position.", "m"),
   :q_floor          => ParamInfo(FloorPositionGroup, Vector{Real},       "Quaternion orientation.", ""),
-  :theta_floor      => ParamInfo(FloorPositionGroup, Real,               "Floor theta angle orientation", "rad"),
-  :phi_floor        => ParamInfo(FloorPositionGroup, Real,               "Floor phi angle orientation", "rad"),
-  :psi_floor        => ParamInfo(FloorPositionGroup, Real,               "Floor psi angle orientation", "rad"),
+  :theta            => ParamInfo(FloorPositionGroup, Real,               "Floor theta angle orientation", "rad"),
+  :phi              => ParamInfo(FloorPositionGroup, Real,               "Floor phi angle orientation", "rad"),
+  :psi              => ParamInfo(FloorPositionGroup, Real,               "Floor psi angle orientation", "rad"),
 )
-
-ele_param_info_dict[:r_floor].group_field = :r
-ele_param_info_dict[:q_floor].group_field = :q
-ele_param_info_dict[:theta_floor].group_field = :theta
-ele_param_info_dict[:phi_floor].group_field = :phi
-ele_param_info_dict[:psi_floor].group_field = :psi
 
 function units(key)
   param_info = ele_param_info(key)
@@ -186,9 +179,8 @@ param_alias = Dict(
 function info(sym::Union{Symbol,String})
   if typeof(sym) == String; sym = Symbol(sym); end
   for (param, info) in ele_param_info_dict
-    if sym == param || sym == info.group_field
+    if sym == param
       println(f"  Element parameter:       {param}")
-      if info.group_field != :same; println(f"  Name in group structure: {info.group_field}"); end
       println(f"  Element group:   {info.parent_group}")
       println(f"  Parameter type:  {info.kind}")
       if info.units != ""; println(f"  Units:           {info.units}"); end
@@ -198,26 +190,6 @@ function info(sym::Union{Symbol,String})
   end
 
   println(f"No information found on: {sym}")
-end
-
-#---------------------------------------------------------------------------------------------------
-# ele_group_field_to_inbox_name
-
-"""
-Given the field of an element parameter group return the associated symbol in ele.pdict[:inbox].
-""" ele_group_field_to_inbox_name
-
-function ele_group_field_to_inbox_name(sym::Symbol, group::EleParameterGroup)
-  for (param, info) in ele_param_info_dict
-    if typeof(info.parent_group) == Union
-      if !(typeof(group) in Base.uniontypes(info.parent_group)); continue; end
-    else
-      if info.parent_group != typeof(group); continue; end
-    end
-    if info.group_field == sym || (info.group_field == :same && param == sym); return param; end
-  end
-
-  return nothing
 end
 
 #---------------------------------------------------------------------------------------------------

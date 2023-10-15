@@ -138,11 +138,10 @@ function show_elegroup(io::IO, group::T) where T <: EleParameterGroup
   nn = 18
   println(io, f"  {typeof(group)}:")
   for field in fieldnames(typeof(group))
-    param = ele_group_field_to_inbox_name(field, group)
     nn2 = max(nn, length(string(field)))
     kstr = rpad(string(field), nn2)
     vstr = str_param_value(Base.getproperty(group, field))
-    ele_print_line(io, f"    {kstr} {vstr} {units(param)}", description(param))
+    ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
   end
 end
 
