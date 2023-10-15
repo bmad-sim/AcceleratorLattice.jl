@@ -312,7 +312,6 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
   new_lord_branch(lat, "super_lord")
   new_lord_branch(lat, "controller_lord")
   new_lord_branch(lat, "multipass_lord")
-
   init_bookkeeper!(lat)
   bookkeeper!(lat)
   return lat

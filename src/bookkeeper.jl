@@ -1,11 +1,40 @@
 #---------------------------------------------------------------------------------------------------
-# init_bookkeeper (lat)
+# init_bookkeeper!(Lat)
 
 function init_bookkeeper!(lat::Lat)
   init_multipass_bookkeeper!(lat)
 
   for branch in lat.branch
-    init_branch_bookkeeper!(branch)
+    init_bookkeeper!(branch)
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# init_bookkeeper!(Branch)
+
+function init_bookkeeper!(branch::Branch)
+  # Set ix_ele and branch pointer for elements.
+  for (ix_ele, ele) in enumerate(branch.ele)
+    ele.pdict[:ix_ele] = ix_ele
+    ele.pdict[:branch] = branch
+  end
+
+  if branch.pdict[:type] == LordBranch; return; end
+
+  old_ele = nothing
+  for ele in branch.ele
+    init_bookkeeper!(ele, old_ele)
+    old_ele = ele
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# init_bookkeeper!(Ele, old_ele)
+
+function init_bookkeeper!(ele::Ele, old_ele::Union{Ele,Nothing})
+  sort_ele_inbox!(ele)
+  for group in ele_param_groups[typeof(ele)]
+    init_ele_group_bookkeeper!(ele, group, old_ele)
   end
 end
 
@@ -55,35 +84,6 @@ function param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
         error(f"{syms[ix1]} and {syms[ix2]} cannot both be sepecified for a {typeof(ele)} element: {ele.name}")
       end
     end
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# init_branch_bookkeeper
-
-function init_branch_bookkeeper!(branch::Branch)
-  # Set ix_ele and branch pointer for elements.
-  for (ix_ele, ele) in enumerate(branch.ele)
-    ele.pdict[:ix_ele] = ix_ele
-    ele.pdict[:branch] = branch
-  end
-
-  if branch.pdict[:type] == LordBranch; return; end
-
-  old_ele = nothing
-  for ele in branch.ele
-    init_ele_bookkeeper!(ele, old_ele)
-    old_ele = ele
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# init_ele_bookkeeper
-
-function init_ele_bookkeeper!(ele::Ele, old_ele::Union{Ele,Nothing})
-  sort_ele_inbox!(ele)
-  for group in ele_param_groups[typeof(ele)]
-    init_ele_group_bookkeeper!(ele, group, old_ele)
   end
 end
 
@@ -139,17 +139,6 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{T}, old_ele::Union{Ele
 end
 
 #---------------------------------------------------------------------------------------------------
-# init_bookkeeper (lat)
-
-function init_bookkeeper!(lat::Lat)
-  init_multipass_bookkeeper!(lat)
-
-  for branch in lat.branch
-    init_branch_bookkeeper!(branch)
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
 # init_multipass_bookkeeper
 
 function init_multipass_bookkeeper!(lat::Lat)
@@ -195,35 +184,6 @@ function param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
         error(f"{syms[ix1]} and {syms[ix2]} cannot both be sepecified for a {typeof(ele)} element: {ele.name}")
       end
     end
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# init_branch_bookkeeper
-
-function init_branch_bookkeeper!(branch::Branch)
-  # Set ix_ele and branch pointer for elements.
-  for (ix_ele, ele) in enumerate(branch.ele)
-    ele.pdict[:ix_ele] = ix_ele
-    ele.pdict[:branch] = branch
-  end
-
-  if branch.pdict[:type] == LordBranch; return; end
-
-  old_ele = nothing
-  for ele in branch.ele
-    init_ele_bookkeeper!(ele, old_ele)
-    old_ele = ele
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# init_ele_bookkeeper
-
-function init_ele_bookkeeper!(ele::Ele, old_ele::Union{Ele,Nothing})
-  sort_ele_inbox!(ele)
-  for group in ele_param_groups[typeof(ele)]
-    init_ele_group_bookkeeper!(ele, group, old_ele)
   end
 end
 
@@ -278,22 +238,27 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{T}, old_ele::Union{Ele
   init_ele_group_from_inbox!(ele, group)
 end
 
+#---------------------------------------------------------------------------------------------------
 """
 """
 
 function init_ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, old_ele::Union{Ele,Nothing})
   pdict = ele.pdict
-  if !haskey(pdict[:inbox], :LengthGroup)
-    pdict[:LengthGroup] = LengthGroup()
- 
-  else
-    lg = pdict[:inbox][:LengthGroup]
-    s = get(lg, :s, 0.0)
-    pdict[:LengthGroup] = LengthGroup(len = 0.0, s = s, s_exit = s)
+  inbox = pdict[:inbox]
+
+  isnothing(old_ele) ? s = 0.0 : s = old_ele.pdict[:LengthGroup].s_exit
+
+  if haskey(inbox, :LengthGroup) 
+    len::Float64 = get(inbox[:LengthGroup], :len, 0.0)
     pop!(pdict[:inbox], :LengthGroup)
+  else
+    len = 0.0
   end
+
+  pdict[:LengthGroup] = LengthGroup(len = len, s = s, s_exit = s+len)
 end
 
+#---------------------------------------------------------------------------------------------------
 """
 If there is a reference energy change (LCavity), this will be handled when bookkeeping of the RFGroup is done.
 """
@@ -331,7 +296,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_e
     pc           = old_rg.pc_ref_exit
     E_tot        = old_rg.E_tot_ref_exit
     time         = old_rg.time_ref_exit
-    species      = old_rg.species_ref
+    species      = old_rg.species_ref_exit
     species_exit = old_rg.species_ref_exit
   end
 
@@ -343,6 +308,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_e
               species_ref = species, species_ref_exit = species_exit)
 end
 
+#---------------------------------------------------------------------------------------------------
 """
 """
 
@@ -422,6 +388,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
   pop!(pdict[:inbox], :BendGroup)
 end
 
+#---------------------------------------------------------------------------------------------------
 """
 """
 
@@ -488,6 +455,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, old_
   pop!(inbox, :BMultipoleGroup)
 end
 
+#---------------------------------------------------------------------------------------------------
 """
 """
 function init_ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, old_ele::Ele)
@@ -534,6 +502,8 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, old_
   pop!(inbox, :EMultipoleGroup)
 end
 
+#---------------------------------------------------------------------------------------------------
+
 """
 """
 function init_ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, old_ele::Union{Ele,Nothing})
@@ -543,7 +513,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, o
   if isnothing(old_ele)
     init_ele_group_from_inbox!(ele, FloorPositionGroup)
     fpg = Dict(k => getfield(pdict[:FloorPositionGroup], k) for k in fieldnames(FloorPositionGroup))
-    fpg[:q] = QuatRotation(fpg[:theta], fpg[:phi], fpg[:psi])
+    fpg[:q_floor] = QuatRotation(fpg[:theta], fpg[:phi], fpg[:psi])
     pdict[:FloorPositionGroup] = FloorPositionGroup(; fpg...)
   else
     if haskey(inbox,:FloorPositionGroup); error(f"Setting floor position parameters not allowed in {ele.name}"); end
@@ -609,7 +579,18 @@ The exception is the `this_ele_length` parameter which is reset for each element
 end  
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper! (for Branch)
+# bookkeeper!(Lat)
+
+function bookkeeper!(lat::Lat)
+  for (ix, branch) in enumerate(lat.branch)
+    branch.pdict[:ix_branch] = ix
+    bookkeeper!(branch)
+  end
+  # Put stuff like ref energy in lords
+end
+
+#---------------------------------------------------------------------------------------------------
+# bookkeeper!(Branch)
 
 function bookkeeper!(branch::Branch)
   # Set ix_ele and branch pointer for elements.
@@ -631,7 +612,7 @@ function bookkeeper!(branch::Branch)
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper! (for Ele)
+# bookkeeper!(Ele)
 
 function bookkeeper!(ele::Ele, changed::ChangedLedger, old_ele::Union{Ele,Nothing})
   sort_ele_inbox!(ele)
@@ -649,6 +630,7 @@ function bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger,
   if !changed.s_position && !haskey(inbox, :LengthGroup); return; end
 
   isnothing(old_ele) ? s = pdict[:LengthGroup].s : s = old_ele.s_exit
+
   if haskey(inbox, :LengthGroup)
     len = inbox[:LengthGroup][:len]
     changed.this_ele_length = true
@@ -663,6 +645,7 @@ function bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger,
 end
 
 
+#---------------------------------------------------------------------------------------------------
 """
   ReferenceGroup
 
@@ -679,26 +662,25 @@ function bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedg
     rg = pdict[:ReferenceGroup]
     rgin = inbox[:ReferenceGroup]
     if !haskey(rgin, :species_ref); rgin[:species_ref] = rg.species_ref; end
-    if !haskey(rgin, :species_ref_exit); rgin[:species_ref_exit] = rg.species_ref_exit; end
+    if !haskey(rgin, :time_ref); rgin[:time] = rg.time_ref; end
 
     if haskey(rgin, :pc_ref) && haskey(rgin, :E_tot_ref)
       error(f"Beginning element has both pc_ref and E_tot_ref set in {ele.name}")
     elseif haskey(rgin, :E_tot_ref)
-      E_tot = rgin[:E_tot_ref]
-      pc = pc_from_E_tot(rgin[:E_tot_ref], rgin[:species_ref])
+      rgin[:pc_ref] = pc_from_E_tot(rgin[:E_tot_ref], rgin[:species_ref])
     elseif  haskey(rgin, :pc_ref)
-      pc = rgin[:pc_ref]
-      E_tot = E_tot_from_pc(pc, rgin.species_ref)
+      rgin[:E_tot_ref] = E_tot_from_pc(rgin[:pc_ref], rgin.species_ref)
     else
-      E_tot = rg.E_tot_ref
-      pc = rg.pc_ref
+      rgin[:E_tot_ref] = rg.E_tot_ref
+      rgin[:pc_ref] = rg.pc_ref
     end
 
-    haskey(rgin, :time_ref) ? time = rgin[:time_ref] : time = rg.time_ref
+    rgin[:pc_ref_exit] = rgin[:pc_ref]
+    rgin[:E_tot_ref_exit] = rgin[:E_tot_ref]
+    rgin[:time_ref_exit] = rgin[:time_ref]
+    rgin[:species_ref_exit] = rgin[:species_ref]
 
-    pdict[:ReferenceGroup] = ReferenceGroup(pc_ref = pc, pc_ref_exit = pc,
-                       E_tot_ref = E_tot, E_tot_ref_exit = E_tot,
-                       time_ref = time, time_ref_exit = time, species_ref = species)
+    pdict[:ReferenceGroup] = ReferenceGroup(; rgin...)
     pop!(inbox, :ReferenceGroup)
   end
 
@@ -708,16 +690,18 @@ function bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedg
   pc = old_rg.pc_ref_exit
   E_tot = old_rg.E_tot_ref_exit
   time    = old_rg.time_ref_exit
-  species = old_rg.species_ref
+  species = old_rg.species_ref_exit
+  species_exit = species
 
   len = pdict[:LengthGroup].len
   dt = len * pc / E_tot
 
   ele.ReferenceGroup = ReferenceGroup(pc_ref = pc, pc_ref_exit = pc,
-                       E_tot_ref = E_tot, E_tot_ref_exit = E_tot,
-                       time_ref = time, time_ref_exit = time+dt, species_ref = species)
+                       E_tot_ref = E_tot, E_tot_ref_exit = E_tot, time_ref = time, time_ref_exit = time+dt, 
+                       species_ref = species, species_exit = species_exit)
 end
 
+#---------------------------------------------------------------------------------------------------
 
 """
   FloorPositionGroup
@@ -731,6 +715,8 @@ function bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, changed::Changed
   pdict[:FloorPositionGroup] = propagate_ele_geometry(old_ele.FloorPositionGroup, old_ele)
   if haskey(inbox, :FloorPositionGroup); pop!(inbox, :FloorPositionGroup); end
 end
+
+#---------------------------------------------------------------------------------------------------
 
 """
 Everything else not covered by a specific function.
@@ -758,20 +744,10 @@ function update_ele_group!(ele::Ele, group::Type{T}) where T <: EleParameterGrou
   pop!(inbox, gs)
 end
 
-#---------------------------------------------------------------------------------------------------
-# bookkeeper! (for Lat)
-
-function bookkeeper!(lat::Lat)
-  for (ix, branch) in enumerate(lat.branch)
-    branch.pdict[:ix_branch] = ix
-    bookkeeper!(branch)
-  end
-  # Put stuff like ref energy in lords
-end
 
 """
 """
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, old_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, old_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   if !haskey(pdict[:inbox], :LengthGroup)
     pdict[:LengthGroup] = LengthGroup()
@@ -784,10 +760,12 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, old_ele:
   end
 end
 
+#---------------------------------------------------------------------------------------------------
+
 """
 If there is a reference energy change (LCavity), this will be handled when bookkeeping of the RFGroup is done.
 """
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   inbox = pdict[:inbox]
   haskey(pdict, :branch) ? branch_name = pdict[:branch].name : branch_name = "No-Associated-Branch"
@@ -831,10 +809,12 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_e
                        time_ref = time, time_ref_exit = time+dt, species_ref = species)
 end
 
+#---------------------------------------------------------------------------------------------------
+
 """
 """
 
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::Ele)
+function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::Ele)
   pdict = ele.pdict
   len = pdict[:LengthGroup].len
 
@@ -910,10 +890,12 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
   pop!(pdict[:inbox], :BendGroup)
 end
 
+#---------------------------------------------------------------------------------------------------
+
 """
 """
 
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, old_ele::Ele)
+function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, old_ele::Ele)
   pdict = ele.pdict
   inbox = pdict[:inbox]
 
@@ -976,9 +958,11 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, old_
   pop!(inbox, :BMultipoleGroup)
 end
 
+#---------------------------------------------------------------------------------------------------
+
 """
 """
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, old_ele::Ele)
+function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, old_ele::Ele)
   pdict = ele.pdict
   inbox = pdict[:inbox]
 
@@ -1022,236 +1006,21 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, old_
   pop!(inbox, :EMultipoleGroup)
 end
 
+#---------------------------------------------------------------------------------------------------
+
 """
 """
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, old_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, old_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   inbox = pdict[:inbox]
 
   if isnothing(old_ele)
-    init_ele_group_from_inbox!(ele, FloorPositionGroup)
+    ele_group_from_inbox!(ele, FloorPositionGroup)
     fpg = Dict(k => getfield(pdict[:FloorPositionGroup], k) for k in fieldnames(FloorPositionGroup))
-    fpg[:q] = QuatRotation(fpg[:theta], fpg[:phi], fpg[:psi])
+    fpg[:q_floor] = QuatRotation(fpg[:theta], fpg[:phi], fpg[:psi])
     pdict[:FloorPositionGroup] = FloorPositionGroup(; fpg...)
   else
     if haskey(inbox,:FloorPositionGroup); error(f"Setting floor position parameters not allowed in {ele.name}"); end
     pdict[:FloorPositionGroup] = propagate_ele_geometry(old_ele.FloorPositionGroup, old_ele)
   end
-end
-
-#---------------------------------------------------------------------------------------------------
-# sort_ele_inbox!
-
-"""
-
-"""
-function sort_ele_inbox!(ele::Union{Ele,Nothing})
-  if isnothing(ele); return; end
-
-  pdict = ele.pdict
-  inbox = pdict[:inbox]
-
-  for sym in copy(keys(inbox))
-    pinfo = ele_param_info(sym, no_info_return = nothing)
-    if isnothing(pinfo); error(f"No information on: {sym}."); end
-    parent = Symbol(parent_group(pinfo, ele))
-    if !haskey(inbox, parent); inbox[parent] = Dict{Symbol,Any}(); end
-
-    # Check if parmeter value in inbox is different from value in group.
-    # This may happen with vectors since something like "q1.r_floor = [...]" does not get processed
-    # by `Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele`.
-    if haskey(pdict, parent) && hasfield(pdict[parent], param) && inbox[sym] == getfield(pdict[parent], sym)
-      pop!(inbox, sym)
-      continue
-    end
-
-    value = pop!(inbox, sym)
-
-    if haskey(param_alias, sym)
-      for sym2 in param_alias[sym]
-        inbox[parent][sym2] = value
-      end
-    else
-      inbox[parent][sym] = value
-    end
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# change struct
-
-"""
-When bookkeeping a branch, element-by-element, starting from the beginning of the branch,
-the ledger keeps track of what has changed so that the change can propagate to the 
-following elements. 
-
-Ledger parameters, when toggled to true, will never be reset for the remainder of the branch bookkeeping.
-The exception is the `this_ele_length` parameter which is reset for each element.
-"""
-@kwdef mutable struct ChangedLedger
-  this_ele_length::Bool = false
-  s_position::Bool = false
-  ref_energy::Bool = false
-  ref_time:: Bool = false
-  floor::Bool = false
-end  
-
-#---------------------------------------------------------------------------------------------------
-# bookkeeper! (for Branch)
-
-function bookkeeper!(branch::Branch)
-  # Set ix_ele and branch pointer for elements.
-  for (ix_ele, ele) in enumerate(branch.ele)
-    ele.pdict[:ix_ele] = ix_ele
-    ele.pdict[:branch] = branch
-  end
-
-  if branch.pdict[:type] == LordBranch; return; end
-
-  # Not a lord branch...
-  changed = ChangedLedger()
-  old_ele = nothing
-
-  for (ix, ele) in enumerate(branch.ele)
-    bookkeeper!(ele, changed, old_ele) 
-    old_ele = ele
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# bookkeeper! (for Ele)
-
-function bookkeeper!(ele::Ele, changed::ChangedLedger, old_ele::Union{Ele,Nothing})
-  sort_ele_inbox!(ele)
-  for group in ele_param_groups[typeof(ele)]
-    bookkeeper!(ele, group, changed, old_ele)
-  end
-end
-
-"""
-  LengthGroup
-"""
-function bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, old_ele::Union{Ele,Nothing})
-  pdict = ele.pdict
-  inbox = pdict[:inbox]
-  if !changed.s_position && !haskey(inbox, :LengthGroup); return; end
-
-  isnothing(old_ele) ? s = pdict[:LengthGroup].s : s = old_ele.s_exit
-  if haskey(inbox, :LengthGroup)
-    len = inbox[:LengthGroup][:len]
-    changed.this_ele_length = true
-    pop!(inbox, :LengthGroup)
-  else
-    len = pdict[:LengthGroup][:len]
-    changed.this_ele_length = false
-  end
-
-  ele.LengthGroup = LengthGroup(len, s, s + len)
-  changed.s_position = true
-end
-
-
-"""
-  ReferenceGroup
-
-Note: RF reference bookkeeping, which is complicated and needs information from other structures, 
-is handled by the RFGroup bookkeeping code. So this routine simply ignores this complication.
-"""
-function bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, old_ele::Union{Ele,Nothing})
-  pdict = ele.pdict
-  inbox = pdict[:inbox]
-  if !changed.this_ele_length && !changed.ref_energy && !haskey(inbox, :ReferenceGroup); return; end
-  changed.ref_energy = true
-
-  if isnothing(old_ele)   # implies BeginningEle
-    rg = pdict[:ReferenceGroup]
-    rgin = inbox[:ReferenceGroup]
-    if !haskey(rgin, :species_ref); rgin[:species_ref] = rg.species_ref; end
-
-    if haskey(rgin, :pc_ref) && haskey(rgin, :E_tot_ref)
-      error(f"Beginning element has both pc_ref and E_tot_ref set in {ele.name}")
-    elseif haskey(rgin, :E_tot_ref)
-      E_tot = rgin[:E_tot_ref]
-      pc = pc_from_E_tot(rgin[:E_tot_ref], rgin[:species_ref])
-    elseif  haskey(rgin, :pc_ref)
-      pc = rgin[:pc_ref]
-      E_tot = E_tot_from_pc(pc, rgin.species_ref)
-    else
-      E_tot = rg.E_tot_ref
-      pc = rg.pc_ref
-    end
-
-    haskey(rgin, :time_ref) ? time = rgin[:time_ref] : time = rg.time_ref
-
-    pdict[:ReferenceGroup] = ReferenceGroup(pc_ref = pc, pc_ref_exit = pc,
-                       E_tot_ref = E_tot, E_tot_ref_exit = E_tot,
-                       time_ref = time, time_ref_exit = time, species_ref = species)
-    pop!(inbox, :ReferenceGroup)
-  end
-
-  # Has old_ele case
-  if haskey(pdict, :ReferenceGroup); error(f"ReferenceGroup parameters should not be in inbox! for: {ele.name}"); end
-  old_rg = old_ele.pdict[:ReferenceGroup]
-  pc = old_rg.pc_ref_exit
-  E_tot = old_rg.E_tot_ref_exit
-  time    = old_rg.time_ref_exit
-  species = old_rg.species_ref
-
-  len = pdict[:LengthGroup].len
-  dt = len * pc / E_tot
-
-  ele.ReferenceGroup = ReferenceGroup(pc_ref = pc, pc_ref_exit = pc,
-                       E_tot_ref = E_tot, E_tot_ref_exit = E_tot,
-                       time_ref = time, time_ref_exit = time+dt, species_ref = species)
-end
-
-
-"""
-  FloorPositionGroup
-"""
-function bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, changed::ChangedLedger, old_ele::Union{Ele,Nothing})
-  pdict = ele.pdict
-  inbox = pdict[:inbox]
-  if !changed.this_ele_length && !changed.floor && !haskey(inbox, :FloorPositionGroup); return; end
-
-  changed.floor = true
-  pdict[:FloorPositionGroup] = propagate_ele_geometry(old_ele.FloorPositionGroup, old_ele)
-  if haskey(inbox, :FloorPositionGroup); pop!(inbox, :FloorPositionGroup); end
-end
-
-"""
-Everything else not covered by a specific function.
-"""
-function bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, old_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
-  update_ele_group!(ele, group)
-end
-
-#---------------------------------------------------------------------------------------------------
-
-function update_ele_group!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
-  pdict = ele.pdict
-  inbox = pdict[:inbox]
-  gs = Symbol(group)
-  if !haskey(inbox, gs); return; end
-
-  if haskey(pdict, gs)
-    g = Dict(k => getfield(inbox[gs], k) for k in fieldnames(group))
-    g = merge(g, inbox[gs])
-  else
-    g = inbox[gs]
-  end
-
-  eval( :(pdict[gs] = $(group)(; g)) )
-  pop!(inbox, gs)
-end
-
-#---------------------------------------------------------------------------------------------------
-# bookkeeper! (for Lat)
-
-function bookkeeper!(lat::Lat)
-  for (ix, branch) in enumerate(lat.branch)
-    branch.pdict[:ix_branch] = ix
-    bookkeeper!(branch)
-  end
-  # Put stuff like ref energy in lords
 end

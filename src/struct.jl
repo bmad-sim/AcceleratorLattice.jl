@@ -130,8 +130,8 @@ Note: When setting parameters here the corresponding names have a `_floor` suffi
 For example, `r_floor` is mapped to `r` in the FloorPositionGroup structure.
 """
 @kwdef struct FloorPositionGroup <: EleParameterGroup
-  r::Vector64 =[0, 0, 0]              # (x,y,z) in Global coords
-  q::Quat64 = Quat64(1.0, 0, 0, 0)    # Quaternion orientation
+  r_floor::Vector64 =[0, 0, 0]              # (x,y,z) in Global coords
+  q_floor::Quat64 = Quat64(1.0, 0, 0, 0)    # Quaternion orientation
   theta::Float64 = 0
   phi::Float64 = 0
   psi::Float64 = 0
