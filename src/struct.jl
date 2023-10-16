@@ -77,6 +77,22 @@ NullEle lattice element type used to indicate the absence of any valid element.
 const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "null"))
 
 #---------------------------------------------------------------------------------------------------
+# LatEleLocation
+
+"""
+Element location within a lattice
+"""
+struct LatEleLocation
+  ix_ele::Int64       # Element index in branch.ele array.
+  ix_branch::Int64    # Branch index in lat.branch array.
+end
+
+"""
+Return corresponding `LatEleLocation` struct.
+"""
+LatEleLocation(ele::Ele) = LatEleLocation(ele.ix_ele, ele.ix_branch)
+
+#---------------------------------------------------------------------------------------------------
 # Element traits
 
 "General thick multipole. Returns a Bool."
@@ -279,6 +295,18 @@ These strings have no affect on tracking.
   description::String = ""
 end
 
+
+"""
+"""
+@kwdef struct GirderGroup <: EleParameterGroup
+  origin_ele::Ele = NullEle
+  origin_ele_ref_pt::EleRefLocationSwitch = Center
+  dr_girder::Vector{Float64} = [0.0, 0.0, 0.0]
+  dtheta_girder::Float64 = 0.0
+  dphi_girder::Float64 = 0.0
+  dpsi_girder::Float64 = 0.0
+end
+
 """
 RF parameters except for voltage and phase.
 See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
@@ -345,6 +373,71 @@ Vacuum chamber wall.
 end
 
 #---------------------------------------------------------------------------------------------------
+"""
+Controller
+"""
+
+@kwdef mutable struct ControlVar
+  name::Symbol = :NotSet
+  value::Float64 = 0
+  old_value::Float64 = 0
+end
+
+@kwdef mutable struct ControlSlave
+  eles = []                  # Strings, and/or LatEleLocations
+  ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
+  slave_parameter = nothing
+  exp_str::String = ""
+  exp_parsed = nothing
+  x_knot::Vector64 = Vector64()
+  y_knot::Vector64 = Vector64()
+  interpolation::InterpolationSwitch = Spline
+  func = nothing
+  value::Float64 = 0.0
+  type::ControlSetTypeSwitch = NotSet
+end
+
+@kwdef mutable struct ControllerGroup <: EleParameterGroup
+  control::Vector{ControlSlave} = Vector{ControlSlave}()
+  var::Vector{ControlVar} = Vector{ControlVar}()
+end
+
+function var(sym::Symbol, val::Real = 0.0, old::Real = NaN) 
+  isnan(old) ? (return ControlVar(sym, Float64(val), Float64(val))) : (return ControlVar(sym, Float64(val), Float64(old)))
+end
+
+function control(type::ControlSetTypeSwitch, eles, parameter, exp_str::AbstractString)
+  if typeof(eles) == String; eles = [eles]; end
+  return ControlSlave(eles = eles, slave_parameter = parameter, exp_str = exp_str, type = type)
+end
+
+function control(type::ControlSetTypeSwitch, eles, parameter, x_knot::Vector64, y_knot::Vector64, interpolation = Spline)
+  if typeof(eles) == String; eles = [eles]; end
+  return ControlSlave(eles = eles, slave_parameter = parameter, x_knot = x_knot, y_knot = y_knot, type = type)
+end
+
+function control(custom::Type{Custom}, func::Function; eles = nothing, parameter = nothing)
+  if typeof(eles) == String; eles = [eles]; end
+  cs = ControlSlave(eles = eles, slave_parameter = parameter, func = func, type = Custom)
+end
+
+#---------------------------------------------------------------------------------------------------
+# Superposition
+
+@kwdef mutable struct Superimpose
+  ele::String = ""
+  ele_origin::EleRefLocationSwitch = Center
+  ref_ele::String = ""
+  ref_origin::EleRefLocationSwitch = Center
+  offset::Float64 = 0.0
+  wrap_superimpose::Bool = true
+end
+
+function Superimpose(list::Vector{Superimpose}; kwargs...)
+  push!(list, Superimpose(kwargs))
+end
+
+#---------------------------------------------------------------------------------------------------
 # Branch
 
 mutable struct Branch <: BeamLineItem
@@ -376,7 +469,6 @@ mutable struct Lat <: AbstractLat
   name::String
   branch::Vector{Branch}
   pdict::Dict{Symbol,Any}
-  global_param::LatticeGlobal
 end
 
 #---------------------------------------------------------------------------------------------------

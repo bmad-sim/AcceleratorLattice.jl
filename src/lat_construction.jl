@@ -262,12 +262,13 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   return nothing
 end
 
-function new_lord_branch(lat::Lat, name::AbstractString)
+function new_lord_branch!(lat::Lat, name::AbstractString)
   push!(lat.branch, Branch(name, Vector{Ele}(), Dict{Symbol,Any}()))
   branch = lat.branch[end]
   branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = LordBranch
+  lat.pdict[Symbol(name)] = branch
   return branch
 end
 
@@ -292,10 +293,11 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 """ lat_expansion
 
-function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
-  lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(), LatticeGlobal())
+function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}};
+            governors::Vector{T} = Vector{Ele}(), superimpose::Vector{W} = Vector{Ele}()) where {T <: Ele, W <: Ele}
+  lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
 
-  if root_line == nothing; root_line = root_beamline end
+  if root_line == nothing; root_line = root_beamline; end
   
   if root_line isa BeamLine
     new_tracking_branch!(lat, root_line)
@@ -309,13 +311,19 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
 
   # Lord branches
 
-  new_lord_branch(lat, "super_lord")
-  new_lord_branch(lat, "controller_lord")
-  new_lord_branch(lat, "multipass_lord")
-  init_bookkeeper!(lat)
+  new_lord_branch!(lat, "super_lord")
+  new_lord_branch!(lat, "multipass_lord")
+  new_lord_branch!(lat, "governor")
+
+  init_bookkeeper!(lat, superimpose)
+  init_governors!(lat, governors)
   bookkeeper!(lat)
+
   return lat
 end
 
 # lat_expansion version without lattice name argument.
-lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}) = lat_expansion("", root_line)
+function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}; 
+            governors::Vector{Ele} = Vector{Ele}(), superimpose::Vector{Ele} = Vector{Ele}())
+  lat_expansion("", root_line; governors = governors, superimpose = superimpose)
+end

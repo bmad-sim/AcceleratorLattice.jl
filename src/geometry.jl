@@ -32,7 +32,7 @@ function propagate_ele_geometry(fstart::FloorPositionGroup, ele::Ele)
     (r_trans, q_trans) = ele_floor_transform(bend)
     r_floor = fstart.r_floor + rot(fstart.q_floor, r_trans)
     q_floor = rot(fstart.q_floor, q_trans)
-    return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart))
+    return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart)...)
 
   elseif ele_geometry(ele) == PatchGeom
     error("Not yet implemented!")
@@ -92,18 +92,18 @@ function floor_angles(q::Quat64, f0::FloorPositionGroup = FloorPositionGroup())
   if abs(m[1,3]) + abs(m[3,3]) < 1e-12
     # Only theta +/- pis is well defined here so this is rather arbitrary.
     if m[2,3] > 0
-      return f0.theta, pi/2, atan2(-m[3,1], m[1,1]) - f0.theta
+      return f0.theta, pi/2, atan(-m[3,1], m[1,1]) - f0.theta
     else
-      return f0.theta, -pi/2, atan2(m[3,1], m[1,1]) + f0.theta
+      return f0.theta, -pi/2, atan(m[3,1], m[1,1]) + f0.theta
     end
 
   else
-    theta = atan2(m[1,3], m[3,3])
-    phi = atan2(m[2,3], sqrt(m[1,3]^2 + m[3,3]^2))
-    psi = atan2(m[2,1], m[2,2])
+    theta = atan(m[1,3], m[3,3])
+    phi = atan(m[2,3], sqrt(m[1,3]^2 + m[3,3]^2))
+    psi = atan(m[2,1], m[2,2])
     diff1 = (modulo2(theta-f0.theta, pi), modulo2(phi-f0.phi, pi), modulo2(psi-f0.psi, pi))
     diff2 = (modulo2(pi+theta-f0.theta, pi), modulo2(pi-phi-f0.phi, pi), modulo2(pi+psi-f0.psi, pi))
-    sum(abs(diff1)) < sum(abs(diff2)) ? d = diff1 : d = diff2
+    sum(norm(diff1)) < sum(norm(diff2)) ? d = diff1 : d = diff2
     return theta+d[1], phi+d[2], psi+d[3]
   end
 end

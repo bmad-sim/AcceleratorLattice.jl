@@ -1,18 +1,18 @@
 #---------------------------------------------------------------------------------------------------
-# init_bookkeeper!(Lat)
+# init_bookkeeper!(Lat, superimpose)
 
-function init_bookkeeper!(lat::Lat)
+function init_bookkeeper!(lat::Lat, superimpose::Vector{T}) where T <: Ele
   init_multipass_bookkeeper!(lat)
 
   for branch in lat.branch
-    init_bookkeeper!(branch)
+    init_bookkeeper!(branch, superimpose)
   end
 end
 
 #---------------------------------------------------------------------------------------------------
 # init_bookkeeper!(Branch)
 
-function init_bookkeeper!(branch::Branch)
+function init_bookkeeper!(branch::Branch, superimpose::Vector{T}) where T <: Ele
   # Set ix_ele and branch pointer for elements.
   for (ix_ele, ele) in enumerate(branch.ele)
     ele.pdict[:ix_ele] = ix_ele
@@ -25,6 +25,10 @@ function init_bookkeeper!(branch::Branch)
   for ele in branch.ele
     init_bookkeeper!(ele, old_ele)
     old_ele = ele
+  end
+
+  for ele in superimpose
+    superimpose_branch!(branch, ele)
   end
 end
 
@@ -39,7 +43,7 @@ function init_bookkeeper!(ele::Ele, old_ele::Union{Ele,Nothing})
 end
 
 #---------------------------------------------------------------------------------------------------
-# init_multipass_bookkeeper
+# init_multipass_bookkeeper!
 
 function init_multipass_bookkeeper!(lat::Lat)
   # Sort slaves
@@ -72,6 +76,40 @@ function init_multipass_bookkeeper!(lat::Lat)
       push!(lord.pdict[:slave], ele)
     end
   end
+end
+
+#---------------------------------------------------------------------------------------------------
+# init_governors!
+
+"""
+Initialize lattice controllers and girders.
+Used by lat_expansion function. Not meant for general use.
+"""
+function init_governors!(lat::Lat, governors::Vector{T}) where T<: Ele
+  branch = lat.governor
+  branch.ele = Vector{Ele}(governors)
+
+  for (ix, ele) in enumerate(branch.ele)
+    ele.pdict[:ix_ele] = ix
+    ele.pdict[:branch] = branch
+    init_ele_bookkeeper!(ele)
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# init_ele_bookkeeper!(Controller)
+
+function init_ele_bookkeeper!(ele::Controller)
+  lat = ele.branch.lat
+  
+end
+
+#---------------------------------------------------------------------------------------------------
+# init_ele_bookkeeper!(Girder)
+
+function init_ele_bookkeeper!(ele::Girder)
+
+
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -245,7 +283,6 @@ end
 function init_ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, old_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   inbox = pdict[:inbox]
-
   isnothing(old_ele) ? s = 0.0 : s = old_ele.pdict[:LengthGroup].s_exit
 
   if haskey(inbox, :LengthGroup) 
@@ -317,7 +354,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
   len = pdict[:LengthGroup].len
 
   if !haskey(pdict[:inbox], :BendGroup)
-    pdict[:LengthGroup] = BendGroup(len_chord = len)
+    pdict[:BendGroup] = BendGroup(len_chord = len)
     return
   end
 
@@ -579,9 +616,12 @@ The exception is the `this_ele_length` parameter which is reset for each element
 end  
 
 #---------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # bookkeeper!(Lat)
 
 function bookkeeper!(lat::Lat)
+  
+
   for (ix, branch) in enumerate(lat.branch)
     branch.pdict[:ix_branch] = ix
     bookkeeper!(branch)

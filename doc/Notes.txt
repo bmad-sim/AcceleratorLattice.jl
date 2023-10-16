@@ -53,3 +53,18 @@ values is redefined).
 * Internally radians will be used for all parameters like RF phase, etc. This is in contrast to Fortran-Bmad which used radians/2pi for RF phase units.
 
 * ele.name is an exception in that setting it will directly set ele.pdict[:name] bypassing the inbox.
+
+* Lattice elements with the same name are independent.
+
+* element variables defined externally to the lattice will remain after lattice expansion. 
+To remove use kill_external_ele.
+
+* Do not superimpose with reference ele and superimpose ele on different sides of a patch!
+Getting the offset right can be tricky!
+
+* lat.super_lord, lat.multipass_lord, lat.governor pointers.
+
+* info function only lists element parameters that can be set.
+
+* For ele_finder: Using Julia regex has limitations: 
+    No element ranges. 

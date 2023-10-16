@@ -65,28 +65,34 @@ function ele_name(ele::Ele, template::AbstractString = "")
 end
 
 #-------------------------------------------------------------------------------------
-# str_param_value
+# ele_param_str
 
-function str_param_value(pdict::Dict, key, default::AbstractString = "???")
+function ele_param_str(pdict::Dict, key; default::AbstractString = "???")
   who = get(pdict, key, nothing)
-  return str_param_value(who, default)
+  return ele_param_str(who, default = default)
 end
 
-function str_param_value(who, default::AbstractString = "???")
-  if who == nothing
-    return default
-  elseif who isa Ele
-    return ele_name(who)
-  elseif who isa Vector{Ele}
-    return "[" * join([ele_name(ele) for ele in who], ", ") * "]"
-  elseif who isa Branch
-    return f"Branch {who.pdict[:ix_branch]}: {str_quote(who.name)}"
-  elseif who isa String
-    return str_quote(who)
-  else
-    return string(who)
+function ele_param_str(who::Vector{ControlVar}; default::AbstractString = "???")
+  if length(who) == 0; return "No Vars"; end
+  str = f"[{who[1].name} = {who[1].value}"
+  for var in who[2:end] 
+    str = str * f", {var.name} = {var.value}"
   end
+  return str * "]"
 end
+
+function ele_param_str(who::Vector{ControlSlave}; default::AbstractString = "???")
+  if length(who) == 0; return "No Slave Parameters"; end
+  return f"{length(who)} ControlSlaves"
+end
+
+ ele_param_str(who::Nothing; default::AbstractString = "???") = default
+ ele_param_str(who::Ele; default::AbstractString = "???") = ele_name(who)
+ ele_param_str(who::Vector{Ele}; default::AbstractString = "???") = "[" * join([ele_name(ele) for ele in who], ", ") * "]"
+ ele_param_str(who::Branch; default::AbstractString = "???") = f"Branch {who.pdict[:ix_branch]}: {str_quote(who.name)}"
+ ele_param_str(who::String; default::AbstractString = "???") = str_quote(who)
+
+ ele_param_str(who; default::AbstractString = "???") = string(who)
 
 #-------------------------------------------------------------------------------------
 # Show Ele
@@ -105,7 +111,7 @@ function Base.show(io::IO, ele::Ele)
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
       kstr = rpad(string(key), nn2)
-      vstr = str_param_value(pdict, key)
+      vstr = ele_param_str(pdict, key)
       if vstr == ""; continue; end
       ele_print_line(io, f"  {kstr} {vstr} {units(key)}", description(key))
     end
@@ -125,7 +131,7 @@ function Base.show(io::IO, ele::Ele)
       for (key, value) in inbox
         nn2 = max(nn, length(string(key)))
         kstr = rpad(string(key), nn2)
-        vstr = str_param_value(inbox, key)
+        vstr = ele_param_str(inbox, key)
         ele_print_line(io, f"    {kstr} {vstr} {units(key)}", description(key))
       end
     end
@@ -140,7 +146,7 @@ function show_elegroup(io::IO, group::T) where T <: EleParameterGroup
   for field in fieldnames(typeof(group))
     nn2 = max(nn, length(string(field)))
     kstr = rpad(string(field), nn2)
-    vstr = str_param_value(Base.getproperty(group, field))
+    vstr = ele_param_str(Base.getproperty(group, field))
     ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
   end
 end
@@ -174,6 +180,11 @@ function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 
     println(io, " "^ix_descrip * descrip)
   end
 end
+
+function show_elegroup(io::IO, group::Vector{ControlVar})
+  println(f"H")
+end
+
 
 Base.show(io::IO, ::MIME"text/plain", ele::Ele) = Base.show(io, ele::Ele)
 
@@ -215,8 +226,13 @@ function Base.show(io::IO, branch::Branch)
   else
     n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
     for ele in branch.ele
-      println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" *
-        f"  {lpad(ele.pdict[:orientation], 2)}  {str_param_value(ele.pdict, :multipass_lord, \"\")}{str_param_value(ele.pdict, :slave, \"\")}")
+      if haskey(ele.pdict, :orientation) 
+        str = f"  {lpad(ele.pdict[:orientation], 2)}  " *
+            f"{ele_param_str(ele.pdict, :multipass_lord, \"\")}{ele_param_str(ele.pdict, :slave, \"\")}"
+      else
+        str = ""
+      end
+      println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" * str)                    
     end
   end
   return nothing

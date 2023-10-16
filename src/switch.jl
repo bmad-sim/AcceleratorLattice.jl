@@ -110,15 +110,18 @@ Base.show(switchval::Type{<:Switch}) = show_switch(stdout, switchval)
 #---------------------------------------------------------------------------------------------------
 
 @switch ApertureTypeSwitch Rectangular Elliptical
+@switch BendTypeSwitch SBend RBend
+@switch BranchGeometrySwitch OpenGeom ClosedGeom 
 @switch BranchTypeSwitch TrackingBranch LordBranch 
 @switch CavityTypeSwitch StandingWave TravelingWave
+@switch ControlSetTypeSwitch Delta Absolute Ramper NotSet Custom
 @switch EleBodyLocationSwitch EntranceEnd Center ExitEnd BothEnds NoWhere EveryWhere
 @switch EleEndLocationSwitch EntranceEnd ExitEnd
+@switch EleRefLocationSwitch EntranceEnd Center ExitEnd
+@switch EleGeometrySwitch Straight Circular ZeroLength PatchGeom GirderGeom CrystalGeom MirrorGeom
 @switch FieldCalcMethodSwitch FieldMap BmadStandard
-@switch BranchGeometrySwitch OpenGeom ClosedGeom 
+@switch InterpolationSwitch Linear Spline
 @switch PositionSwitch UpstreamEnd Inside DownstreamEnd
 @switch TrackingMethodSwitch RungeKutta TimeRungeKutta BmadStandard
 @switch TrackingStateSwitch PreBorn Alive NotSet Lost LostNegX LostPosX LostNegY LostPosY LostPz LostZ
-@switch EleGeometrySwitch Straight Circular ZeroLength PatchGeom GirderGeom CrystalGeom MirrorGeom
-@switch BendTypeSwitch SBend RBend
 
