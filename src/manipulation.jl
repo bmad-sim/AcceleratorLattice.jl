@@ -1,16 +1,34 @@
 #---------------------------------------------------------------------------------------------------
+# lat.XXX dot operator overload
+
+function Base.getproperty(lat::Lat, s::Symbol)
+  if s == :name; return getfield(lat, :name); end
+  if s == :branch; return getfield(lat, :branch); end
+  if s == :pdict; return getfield(lat, :pdict); end
+  return getfield(lat, :pdict)[s]
+end
+
+
+function Base.setproperty!(lat::Lat, s::Symbol, value)
+  if s == :name;   return setfield!(lat, :name, value); end
+  if s == :branch; return setfield!(lat, :branch, value); end
+  getfield(lat, :pdict)[s] = value
+end
+
+#---------------------------------------------------------------------------------------------------
 # branch.XXX dot operator overload
 
 function Base.getproperty(branch::Branch, s::Symbol)
+  if s == :name; return getfield(branch, :name); end
   if s == :ele; return getfield(branch, :ele); end
   if s == :pdict; return getfield(branch, :pdict); end
-  if s == :name; return getfield(branch, :name); end
   return getfield(branch, :pdict)[s]
 end
 
 
 function Base.setproperty!(branch::Branch, s::Symbol, value)
-  if s == :name; branch.name = value; end
+  if s == :name; return setfield!(branch, :name, value); end
+  if s == :ele;  return setfield!(branch, :ele, value); end
   getfield(branch, :pdict)[s] = value
 end
 
@@ -53,3 +71,11 @@ function Base.setproperty!(ele::T, s::Symbol, value) where T <: Ele
   if !is_settable(ele, s); error(f"Parameter is not user settable: {s}. For element: {ele.name}."); end
   getfield(ele, :pdict)[:inbox][s] = value
 end
+
+#---------------------------------------------------------------------------------------------------
+# Superimpose
+
+function superimpose!(branch::Branch, super_ele::Ele)
+
+end
+

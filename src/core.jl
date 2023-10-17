@@ -7,6 +7,8 @@ using Accessors
 using LinearAlgebra
 using Rotations
 
+import Base.Cartesian.lreplace
+
 #-------------------------------------------------------------------------------------
 # Exceptions
 
@@ -47,7 +49,28 @@ function Base.show(io::IO, ::MIME"text/plain", rv::RotationVec{T}) where T
 end
 
 rot(q::QuatRotation, v::Vector) = Vector(q * v)
+rot(q1::QuatRotation, q2::QuatRotation) = q1 * q2
 
 #-------------------------------------------------------------------------------------
 
 field_names(x) = fieldnames(typeof(x))
+
+#-------------------------------------------------------------------------------------
+
+function integer(str::AbstractString, default::Number)
+  try
+    ix = parse(Int, str)
+    return Int64(ix)
+  catch
+    return Int64(default)
+  end
+end
+
+function float(str::AbstractString, default::Number)
+  try
+    flt = parse(Float, str)
+    return Float64(ix)
+  catch
+    return Float64(default)
+  end
+end

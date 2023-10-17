@@ -1,5 +1,5 @@
 """
-Possible kind values: String, Int, Real, Vector{Real}, Bool, Switch, Struct, Pointer
+Some possible kind values: String, Int64, Float64, Vector64, Bool, Switch, Struct, Pointer
 
 A Switch is a variable that has only a finite number of values.
 Generally, a Switch will either be an enum or something that has a finite number of integer states.
@@ -35,112 +35,122 @@ Dictionary of parameter types. Keys are inbox names (which can be different from
 EG: theta_floor inbox name corresponds to theta in the FloorPositionGroup.
 """
 ele_param_info_dict = Dict(
-  :name             => ParamInfo(Nothing,        String,    "Name of the element."),
-  :ix_ele           => ParamInfo(Nothing,        Int,       "Index of element in containing branch.ele array."),
-  :orientation      => ParamInfo(Nothing,        Int,       "Longitudinal orientation of element. May be +1 or -1."),
-  :branch           => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
+  :name               => ParamInfo(Nothing,        String,    "Name of the element."),
+  :ix_ele             => ParamInfo(Nothing,        Int64,     "Index of element in containing branch.ele array."),
+  :orientation        => ParamInfo(Nothing,        Int64,     "Longitudinal orientation of element. May be +1 or -1."),
+  :branch             => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
 
-  :type             => ParamInfo(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
-  :alias            => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
-  :description      => ParamInfo(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
+  :type               => ParamInfo(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
+  :alias              => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
+  :description        => ParamInfo(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
 
-  :len              => ParamInfo(LengthGroup,    Real,      "Element length.", "m"),
-  :s                => ParamInfo(LengthGroup,    Real,      "Longitudinal s-position.", "m"),
-  :s_exit           => ParamInfo(LengthGroup,    Real,      "Longitudinal s-position at exit end.", "m"),
+  :len                => ParamInfo(LengthGroup,    Float64,   "Element length.", "m"),
+  :s                  => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position.", "m"),
+  :s_exit             => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position at exit end.", "m"),
 
-  :field_master     => ParamInfo(MasterGroup,    Bool,      
+  :field_master       => ParamInfo(MasterGroup,    Bool,      
                                   "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
 
-  :species_ref      => ParamInfo(ReferenceGroup, Species,   "Reference species."),
-  :species_ref_exit => ParamInfo(ReferenceGroup, Species,   "Reference species at exit end."),
-  :pc_ref           => ParamInfo(ReferenceGroup, Real,      "Reference momentum * c.", "eV"),
-  :E_tot_ref        => ParamInfo(ReferenceGroup, Real,      "Reference total energy.", "eV"),
-  :time_ref         => ParamInfo(ReferenceGroup, Real,      "Reference time.", "sec"),
-  :pc_ref_exit      => ParamInfo(ReferenceGroup, Real,      "Reference momentum * c at exit end.", "eV"),
-  :E_tot_ref_exit   => ParamInfo(ReferenceGroup, Real,      "Reference total energy at exit end.", "eV"),
-  :time_ref_exit    => ParamInfo(ReferenceGroup, Real,      "Reference total energy at exit end.", "eV"),
+  :species_ref        => ParamInfo(ReferenceGroup, Species,   "Reference species."),
+  :species_ref_exit   => ParamInfo(ReferenceGroup, Species,   "Reference species at exit end."),
+  :pc_ref             => ParamInfo(ReferenceGroup, Float64,   "Reference momentum * c.", "eV"),
+  :E_tot_ref          => ParamInfo(ReferenceGroup, Float64,   "Reference total energy.", "eV"),
+  :time_ref           => ParamInfo(ReferenceGroup, Float64,   "Reference time.", "sec"),
+  :pc_ref_exit        => ParamInfo(ReferenceGroup, Float64,   "Reference momentum * c at exit end.", "eV"),
+  :E_tot_ref_exit     => ParamInfo(ReferenceGroup, Float64,   "Reference total energy at exit end.", "eV"),
+  :time_ref_exit      => ParamInfo(ReferenceGroup, Float64,   "Reference total energy at exit end.", "eV"),
 
-  :angle            => ParamInfo(BendGroup,      Real,      "Design bend angle", "rad"),
-  :bend_field       => ParamInfo(BendGroup,      Real,      "Design bend field corresponding to g bending", "T"),
-  :rho              => ParamInfo(BendGroup,      Real,      "Design bend radius", "m"),
-  :g                => ParamInfo(BendGroup,      Real,      "Design bend strength (1/rho)", "1/m"),
-  :e1               => ParamInfo(BendGroup,      Real,      "Bend entrance face angle.", "rad"),
-  :e2               => ParamInfo(BendGroup,      Real,      "Bend exit face angle.", "rad"),
-  :e1_rect          => ParamInfo(BendGroup,      Real,      "bend entrance face angles relative to a rectangular geometry.", "rad"),
-  :e2_rect          => ParamInfo(BendGroup,      Real,      "bend exit face angles relative to a rectangular geometry.", "rad"),
-  :len_chord        => ParamInfo(BendGroup,      Real,      "Bend chord length.", "m"),
-  :ref_tilt         => ParamInfo(BendGroup,      Real,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :fint             => ParamInfo(BendGroup,      Real,      "Used to set fint1 and fint2 both at once.", ""),
-  :fint1            => ParamInfo(BendGroup,      Real,      "Bend entrance edge field integral.", ""),
-  :fint2            => ParamInfo(BendGroup,      Real,      "Bend exit edge field integral.", ""),
-  :hgap             => ParamInfo(BendGroup,      Real,      "Used to set hgap1 and hgap2 both at once.", ""),
-  :hgap1            => ParamInfo(BendGroup,      Real,      "Bend entrance edge pole gap height.", "m"),
-  :hgap2            => ParamInfo(BendGroup,      Real,      "Bend exit edge pole gap height.", "m"),
-  :bend_type        => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
+  :angle              => ParamInfo(BendGroup,      Float64,   "Design bend angle", "rad"),
+  :bend_field         => ParamInfo(BendGroup,      Float64,   "Design bend field corresponding to g bending", "T"),
+  :rho                => ParamInfo(BendGroup,      Float64,   "Design bend radius", "m"),
+  :g                  => ParamInfo(BendGroup,      Float64,   "Design bend strength (1/rho)", "1/m"),
+  :e1                 => ParamInfo(BendGroup,      Float64,   "Bend entrance face angle.", "rad"),
+  :e2                 => ParamInfo(BendGroup,      Float64,   "Bend exit face angle.", "rad"),
+  :e1_rect            => ParamInfo(BendGroup,      Float64,   "bend entrance face angles relative to a rectangular geometry.", "rad"),
+  :e2_rect            => ParamInfo(BendGroup,      Float64,   "bend exit face angles relative to a rectangular geometry.", "rad"),
+  :len_chord          => ParamInfo(BendGroup,      Float64,   "Bend chord length.", "m"),
+  :ref_tilt           => ParamInfo(BendGroup,      Float64,   "Bend reference orbit rotation around the upstream z-axis", "rad"),
+  :fint               => ParamInfo(BendGroup,      Float64,   "Used to set fint1 and fint2 both at once.", ""),
+  :fint1              => ParamInfo(BendGroup,      Float64,   "Bend entrance edge field integral.", ""),
+  :fint2              => ParamInfo(BendGroup,      Float64,   "Bend exit edge field integral.", ""),
+  :hgap               => ParamInfo(BendGroup,      Float64,   "Used to set hgap1 and hgap2 both at once.", ""),
+  :hgap1              => ParamInfo(BendGroup,      Float64,   "Bend entrance edge pole gap height.", "m"),
+  :hgap2              => ParamInfo(BendGroup,      Float64,   "Bend exit edge pole gap height.", "m"),
+  :bend_type          => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
 
-  :offset           => ParamInfo(ap,             Vector{Real}, "3-Vector of [x, y, z] element offsets.", "m"),
-  :x_pitch          => ParamInfo(ap,             Real,         "X-pitch element orientation.", "rad"),
-  :y_pitch          => ParamInfo(ap,             Real,         "Y-pitch element orientation.", "rad"),
-  :tilt             => ParamInfo(ap,             Real,         "Element tilt.", "rad"),
+  :offset             => ParamInfo(ap,             Vector64,     "3-Vector of [x, y, z] element offsets.", "m"),
+  :x_pitch            => ParamInfo(ap,             Float64,      "X-pitch element orientation.", "rad"),
+  :y_pitch            => ParamInfo(ap,             Float64,      "Y-pitch element orientation.", "rad"),
+  :tilt               => ParamInfo(ap,             Float64,      "Element tilt.", "rad"),
 
-  :offset_tot       => ParamInfo(AlignmentGroup, Vector{Real}, "Offset including Girder orientation.", "m"),
-  :x_pitch_tot      => ParamInfo(AlignmentGroup, Real,         "X-pitch element orientation including Girder orientation.", "rad"),
-  :y_pitch_tot      => ParamInfo(AlignmentGroup, Real,         "Y-pitch element orientation including Girder orientation.", "rad"),
-  :tilt_tot         => ParamInfo(AlignmentGroup, Real,         "Element tilt including Girder orientation.", "rad"),
+  :offset_tot         => ParamInfo(AlignmentGroup, Vector64,     "Offset including Girder orientation.", "m"),
+  :x_pitch_tot        => ParamInfo(AlignmentGroup, Float64,      "X-pitch element orientation including Girder orientation.", "rad"),
+  :y_pitch_tot        => ParamInfo(AlignmentGroup, Float64,      "Y-pitch element orientation including Girder orientation.", "rad"),
+  :tilt_tot           => ParamInfo(AlignmentGroup, Float64,      "Element tilt including Girder orientation.", "rad"),
 
-  :E_tot_offset     => ParamInfo(PatchGroup,     Float64,      "Reference energy offset.", "eV"),
-  :E_tot_exit       => ParamInfo(PatchGroup,     Float64,      "Reference energy at exit end.", "eV"),
-  :pc_exit          => ParamInfo(PatchGroup,     Float64,      "Reference momentum at exit end.", "eV"),
-  :flexible         => ParamInfo(PatchGroup,     Bool,         "Flexible patch?"),
-  :user_sets_length => ParamInfo(PatchGroup,     Bool,         "Does Bmad calculate the patch length?"),
-  :ref_coords       => ParamInfo(PatchGroup,     EleEndLocationSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
+  :E_tot_offset       => ParamInfo(PatchGroup,     Float64,      "Reference energy offset.", "eV"),
+  :E_tot_exit         => ParamInfo(PatchGroup,     Float64,      "Reference energy at exit end.", "eV"),
+  :pc_exit            => ParamInfo(PatchGroup,     Float64,      "Reference momentum at exit end.", "eV"),
+  :flexible           => ParamInfo(PatchGroup,     Bool,         "Flexible patch?"),
+  :user_sets_length   => ParamInfo(PatchGroup,     Bool,         "Does Bmad calculate the patch length?"),
+  :ref_coords         => ParamInfo(PatchGroup,     EleEndLocationSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
 
-  :voltage          => ParamInfo(RFFieldGroup,   Real,          "RF voltage.", "volt"),
-  :gradient         => ParamInfo(RFFieldGroup,   Real,          "RF gradient.", "volt/m"),
-  :phase            => ParamInfo(RFFieldGroup,   Real,          "RF phase.", "rad"),
+  :voltage            => ParamInfo(RFFieldGroup,   Float64,       "RF voltage.", "volt"),
+  :gradient           => ParamInfo(RFFieldGroup,   Float64,       "RF gradient.", "volt/m"),
+  :phase              => ParamInfo(RFFieldGroup,   Float64,       "RF phase.", "rad"),
 
-  :auto_amp         => ParamInfo(RFGroup,        Real,      
+  :auto_amp           => ParamInfo(RFGroup,        Float64,   
                                   "Correction to the voltage/gradient calculated by the auto scale code.", ""),
-  :auto_phase       => ParamInfo(RFGroup,        Real,          "Correction RF phase calculated by the auto scale code.", "rad"),
-  :multipass_phase  => ParamInfo(RFGroup,        Real,      
+  :auto_phase         => ParamInfo(RFGroup,        Float64,       "Correction RF phase calculated by the auto scale code.", "rad"),
+  :multipass_phase    => ParamInfo(RFGroup,        Float64,   
                                   "RF phase which can differ from multipass element to multipass element.", "rad"),
-  :frequency        => ParamInfo(RFGroup,        Real,             "RF frequency.", "Hz"),
-  :harmon           => ParamInfo(RFGroup,        Real,             "RF frequency harmonic number.", ""),
-  :cavity_type      => ParamInfo(RFGroup,        CavityTypeSwitch, "Type of cavity."),
-  :n_cell           => ParamInfo(RFGroup,        Int,              "Number of RF cells."),
+  :frequency          => ParamInfo(RFGroup,        Float64,          "RF frequency.", "Hz"),
+  :harmon             => ParamInfo(RFGroup,        Float64,          "RF frequency harmonic number.", ""),
+  :cavity_type        => ParamInfo(RFGroup,        CavityTypeSwitch, "Type of cavity."),
+  :n_cell             => ParamInfo(RFGroup,        Int64,            "Number of RF cells."),
 
-  :voltage_ref      => ParamInfo(LCavityGroup,   Real,          "Reference RF voltage.", "volt"),
-  :voltage_err      => ParamInfo(LCavityGroup,   Real,          "RF voltage error.", "volt"),
-  :voltage_tot      => ParamInfo(LCavityGroup,   Real,          "Actual RF voltage (ref + err).", "volt"),
-  :gradient_ref     => ParamInfo(LCavityGroup,   Real,          "Reference RF gradient.", "volt/m"),
-  :gradient_err     => ParamInfo(LCavityGroup,   Real,          "RF gradient error.", "volt/m"),
-  :gradient_tot     => ParamInfo(LCavityGroup,   Real,          "Actual RF gradient (ref + err).", "volt/m"),
-  :phase_ref        => ParamInfo(LCavityGroup,   Real,          "Reference RF phase.", "rad"),
-  :phase_err        => ParamInfo(LCavityGroup,   Real,          "RF phase error.", "rad"),
-  :phase_tot        => ParamInfo(LCavityGroup,   Real,          "Actual RF phase. (ref + err)", "rad"),
+  :voltage_ref        => ParamInfo(LCavityGroup,   Float64,       "Reference RF voltage.", "volt"),
+  :voltage_err        => ParamInfo(LCavityGroup,   Float64,       "RF voltage error.", "volt"),
+  :voltage_tot        => ParamInfo(LCavityGroup,   Float64,       "Actual RF voltage (ref + err).", "volt"),
+  :gradient_ref       => ParamInfo(LCavityGroup,   Float64,       "Reference RF gradient.", "volt/m"),
+  :gradient_err       => ParamInfo(LCavityGroup,   Float64,       "RF gradient error.", "volt/m"),
+  :gradient_tot       => ParamInfo(LCavityGroup,   Float64,       "Actual RF gradient (ref + err).", "volt/m"),
+  :phase_ref          => ParamInfo(LCavityGroup,   Float64,       "Reference RF phase.", "rad"),
+  :phase_err          => ParamInfo(LCavityGroup,   Float64,       "RF phase error.", "rad"),
+  :phase_tot          => ParamInfo(LCavityGroup,   Float64,       "Actual RF phase. (ref + err)", "rad"),
 
-  :voltage_master   => ParamInfo(RFMasterGroup,  Bool,          "Voltage or gradient is constant with length changes?"),
-  :do_auto_amp      => ParamInfo(RFMasterGroup,  Bool,          "Autoscale voltage/gradient?"),
-  :do_auto_phase    => ParamInfo(RFMasterGroup,  Bool,          "Autoscale phase?"),
-  :do_auto_scale    => ParamInfo(RFMasterGroup,  Bool,          "Used to set do_auto_amp and do_auto_phase both at once."),
+  :voltage_master     => ParamInfo(RFMasterGroup,  Bool,          "Voltage or gradient is constant with length changes?"),
+  :do_auto_amp        => ParamInfo(RFMasterGroup,  Bool,          "Autoscale voltage/gradient?"),
+  :do_auto_phase      => ParamInfo(RFMasterGroup,  Bool,          "Autoscale phase?"),
+  :do_auto_scale      => ParamInfo(RFMasterGroup,  Bool,          "Used to set do_auto_amp and do_auto_phase both at once."),
 
-  :tracking_method  => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
-  :field_calc       => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
-  :num_steps        => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
-  :ds_step          => ParamInfo(TrackingGroup,  Real,                  "Nominal distance between tracking steps.", "m"),
+  :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
+  :field_calc         => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
+  :num_steps          => ParamInfo(TrackingGroup,  Int64,                 "Nominal number of tracking steps."),
+  :ds_step            => ParamInfo(TrackingGroup,  Float64,               "Nominal distance between tracking steps.", "m"),
 
-  :aperture_type    => ParamInfo(ApertureGroup,  ApertureTypeSwitch,    "Type of aperture."),
-  :aperture_at      => ParamInfo(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is."),
+  :aperture_type      => ParamInfo(ApertureGroup,  ApertureTypeSwitch,    "Type of aperture. Default is Elliptical."),
+  :aperture_at        => ParamInfo(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is. Default is EntranceEnd."),
   :offset_moves_aperture 
-                    => ParamInfo(ApertureGroup,  Bool,               "Does moving the element move the aperture?"),
-  :x_limit          => ParamInfo(ApertureGroup,  Vector{Real},       "2-Vector of horizontal aperture limits.", "m"),
-  :y_limit          => ParamInfo(ApertureGroup,  Vector{Real},       "2-Vector of vertical aperture limits.", "m"),
+                      => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
+  :x_limit            => ParamInfo(ApertureGroup,  Vector64,              "2-Vector of horizontal aperture limits.", "m"),
+  :y_limit            => ParamInfo(ApertureGroup,  Vector64,              "2-Vector of vertical aperture limits.", "m"),
 
-  :r_floor          => ParamInfo(FloorPositionGroup, Vector{Real},       "3-vector of floor position.", "m"),
-  :q_floor          => ParamInfo(FloorPositionGroup, Vector{Real},       "Quaternion orientation.", ""),
-  :theta            => ParamInfo(FloorPositionGroup, Real,               "Floor theta angle orientation", "rad"),
-  :phi              => ParamInfo(FloorPositionGroup, Real,               "Floor phi angle orientation", "rad"),
-  :psi              => ParamInfo(FloorPositionGroup, Real,               "Floor psi angle orientation", "rad"),
+  :r_floor            => ParamInfo(FloorPositionGroup, Vector64,          "3-vector of floor position.", "m"),
+  :q_floor            => ParamInfo(FloorPositionGroup, Vector64,          "Quaternion orientation.", ""),
+  :theta              => ParamInfo(FloorPositionGroup, Float64,           "Floor theta angle orientation", "rad"),
+  :phi                => ParamInfo(FloorPositionGroup, Float64,           "Floor phi angle orientation", "rad"),
+  :psi                => ParamInfo(FloorPositionGroup, Float64,           "Floor psi angle orientation", "rad"),
+
+  :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
+  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     EleRefLocationSwitch, "Reference location on reference element. Default is Center."),
+  :dr_girder          => ParamInfo(GirderGroup,     Vector64,             "3-vector of girder position with respect to ref ele."),
+  :dtheta_girder      => ParamInfo(GirderGroup,     Float64,              "Theta angle orientation with respect to ref ele."),
+  :dphi_girder        => ParamInfo(GirderGroup,     Float64,              "Phi angle orientation with respect to ref ele."),
+  :dpsi_girder        => ParamInfo(GirderGroup,     Float64,              "Psi angle orientation with respect to ref ele."),
+
+  :control            => ParamInfo(ControllerGroup, Vector{ControlSlave}, "Controlled parameters info."),
+  :variable           => ParamInfo(ControllerGroup, Vector{ControlVar},   "Controller variables."),
 )
 
 function units(key)
@@ -253,8 +263,8 @@ function ele_param_info(sym::Symbol; no_info_return = Error)
   # Must be a multipole
   n = length(mtype)
   if mtype == nothing; return nothing; end
-  if n == 4 && mtype[1:4] == "tilt";  return ParamInfo(BMultipoleGroup, Real, f"Magnetic multipole tilt for order {order}", "rad"); end
-  if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Real, f"Electric multipole tilt for order {order}", "rad"); end
+  if n == 4 && mtype[1:4] == "tilt";  return ParamInfo(BMultipoleGroup, Float64, f"Magnetic multipole tilt for order {order}", "rad"); end
+  if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Float64, f"Electric multipole tilt for order {order}", "rad"); end
 
   occursin("s", mtype) ? str = "Skew," : str = "Normal (non-skew)"
   if occursin("l", mtype)
@@ -265,18 +275,18 @@ function ele_param_info(sym::Symbol; no_info_return = Error)
   if mtype[1:1] == "K"
     if order == -1; units = "";
     else           units = f"1/m^{order+1}"; end
-    return ParamInfo(BMultipoleGroup, Real, f"{str}, momentum-normalized magnetic multipole.", units)
+    return ParamInfo(BMultipoleGroup, Float64, f"{str}, momentum-normalized magnetic multipole.", units)
 
   elseif mtype[1:1] == "B"
     if order == -1;    units = "T*m";
     elseif order == 0; units = "T"
     else               units = f"T/m^{order}"; end
-    return ParamInfo(BMultipoleGroup, Real, f"{str} magnetic field multipole.", units)
+    return ParamInfo(BMultipoleGroup, Float64, f"{str} magnetic field multipole.", units)
 
   elseif mtype[1:1] == "E"
     if order == -1; units = "V";
     else            units = f"V/m^{order+1}"; end
-    return ParamInfo(EMultipoleGroup, Real, f"{str} electric field multipole.", units) 
+    return ParamInfo(EMultipoleGroup, Float64, f"{str} electric field multipole.", units) 
   end
 end
 
@@ -310,6 +320,24 @@ ele_param_groups = Dict(
     RFCavity       => vcat(general_group_list, RFMasterGroup, RFFieldGroup, RFGroup),
     Sextupole      => general_group_list,
   )
+)
+
+
+
+ele_param_group_info = Dict(
+  AlignmentGroup        => "Element position/orientation shift.",
+  ApertureGroup         => "Vacuum chamber aperture.",
+  BendGroup             => "Bend element parameters.",
+  BMultipoleGroup       => "Magnetic multipoles.",
+  ChamberWallGroup      => "Vacuum chamber wall.",
+  ControllerGroup       => "Controller info.",
+  EMultipoleGroup       => "Electric multipoles.",
+  FloorPositionGroup    => "Global floor position and orientation.",
+  LengthGroup           => "Length parameter.",
+  ReferenceGroup        => "Reference energy and species.",
+  RFGroup               => "RF parameters.",
+  StringGroup           => "Informational strings.",
+  TrackingGroup         => "Default tracking settings.",
 )
 
 #---------------------------------------------------------------------------------------------------
@@ -434,7 +462,7 @@ Dictionary of parameters in the Branch.pdict dict.
 """
 
 branch_param = Dict(
-  :ix_branch   => ParamInfo(Nothing, Int,      "Index of branch in containing lat .branch[] array"),
+  :ix_branch   => ParamInfo(Nothing, Int64,    "Index of branch in containing lat .branch[] array"),
   :geometry    => ParamInfo(Nothing, Switch,   "open_geom or closed_geom Geometry enums"),
   :lat         => ParamInfo(Nothing, Pointer,  "Pointer to lattice containing the branch."),
   :type        => ParamInfo(Nothing, Switch,   "Either LordBranch or TrackingBranch BranchType enums."),

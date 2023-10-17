@@ -40,18 +40,19 @@ function lat_ele_dict(lat::Lat)
 end
 
 #-----------------------------------------------------------------------------------------
-# kill_ele_vars
+# kill_external_ele
 
 """
-Set variables created with create_ele_vars to `nothing`. 
+Set external variables corresponding to elements with the same name in a lattice to `nothing`. 
 (Currently there is no way to undefine the variables).
+See also `create_external_ele`.
 
 The `prefix` argument is needed if a prefix was given in `create_ele_vars`.
 
 The `this_module` argument is needed if the variables are not in the `Main` module. 
 Note: `@__MODULE__` is the name of the module of the calling routine.
 """
-function kill_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
+function kill_external_ele(lat::Lat; prefix::AbstractString = "", this_module = Main)
   for branch in lat.branch
     for ele in branch.ele
       nam = prefix * ele.name
@@ -63,7 +64,7 @@ function kill_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main
 end
 
 #-----------------------------------------------------------------------------------------
-# create_ele_vars
+# create_external_ele
 
 """
 Creates `Ele` variables external to a lattice with the same name as the elements in the lattice.
@@ -78,8 +79,10 @@ The `prefix` arg can be used to distinguish between elements of the same name in
 
 The `this_module` arg is needed if the variables are not to be in the Main module. 
 Use `@__MODULE__` for the name of the module of the code calling `create_ele_vars`.
+
+The routine kill_external_ele will remove these external elements.
 """
-function create_ele_vars(lat::Lat; prefix::AbstractString = "", this_module = Main)
+function create_external_ele(lat::Lat; prefix::AbstractString = "", this_module = Main)
   eled = lat_ele_dict(lat)
 
   for (name, evec) in eled

@@ -51,7 +51,7 @@ end
 # matches_branch
 
 """
-Returns if name matches the branch.
+Returns `true`/`false` if `name` matches/does not match `branch`.
 A match can match branch.name or the branch index.
 A blank name matches all branches.
 Bmad standard wildcard characters "*" and "%" can be used.
@@ -59,11 +59,11 @@ Bmad standard wildcard characters "*" and "%" can be used.
 function matches_branch(name::AbstractString, branch::Branch)
   if name == ""; return true; end
 
-  try
-    ix = parse(Int, name)
-    return branch.pdict[:ix_branch] == ix
-  catch
-    str_match(name, branch.name)
+  ix = integer(name, 0)
+  if ix > 0
+    return ix == branch.pdict[:ix_branch]
+  else
+    return str_match(name, branch.name)
   end
 end
 
@@ -182,8 +182,9 @@ Use the eles_order_by_index function to reorder by index is desired.
 
 Note: For something like loc_str = "quad::*", if order_by_index = True, the eles(:) array will
 be ordered by element index. If order_by_index = False, the eles(:) array will be ordered by
-s-position. This is the same as order by index except in the case where where there are super_lord
-elements. Since super_lord elements always have a greater index (at least in branch 0), order by index will place any super_lord elements at the end of the list.
+s-position. This is the same as order by index except in the case where where there are super_lord elements. 
+Since super_lord elements always have a greater index (at least in branch 0), order by index will 
+place any super_lord elements at the end of the list.
 
 Note: When there are multiple element names in loc_str (which will be separated by a comma or blank), 
 the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
@@ -226,3 +227,18 @@ function eles_finder(lat::Lat, who::AbstractString, julia_regex::Bool=false)
 
   return eles
 end
+
+#-----------------------------------------------------------------------------------------
+# branch_finder
+
+"""
+Returns branch corresponding to name. Else returns `nothing`
+"""
+
+function branch_finder(lat::Lat, name::AbstractString)
+  for branch in lat.branch
+    if matches_branch(name, branch); return branch; end
+  end
+  return nothing
+end
+
