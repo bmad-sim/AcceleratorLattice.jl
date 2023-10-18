@@ -114,7 +114,7 @@ Base.show(switchval::Type{<:Switch}) = show_switch(stdout, switchval)
 @switch BranchGeometrySwitch OpenGeom ClosedGeom 
 @switch BranchTypeSwitch TrackingBranch LordBranch 
 @switch CavityTypeSwitch StandingWave TravelingWave
-@switch ControlSetTypeSwitch Delta Absolute Ramper NotSet Custom
+@switch ControlSlaveTypeSwitch Delta Absolute NotSet
 @switch EleBodyLocationSwitch EntranceEnd Center ExitEnd BothEnds NoWhere EveryWhere
 @switch EleEndLocationSwitch EntranceEnd ExitEnd
 @switch EleRefLocationSwitch EntranceEnd Center ExitEnd

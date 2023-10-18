@@ -149,8 +149,8 @@ ele_param_info_dict = Dict(
   :dphi_girder        => ParamInfo(GirderGroup,     Float64,              "Phi angle orientation with respect to ref ele."),
   :dpsi_girder        => ParamInfo(GirderGroup,     Float64,              "Psi angle orientation with respect to ref ele."),
 
-  :control            => ParamInfo(ControllerGroup, Vector{ControlSlave}, "Controlled parameters info."),
-  :variable           => ParamInfo(ControllerGroup, Vector{ControlVar},   "Controller variables."),
+  :control            => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
+  :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
 )
 
 function units(key)
@@ -330,7 +330,8 @@ ele_param_group_info = Dict(
   BendGroup             => "Bend element parameters.",
   BMultipoleGroup       => "Magnetic multipoles.",
   ChamberWallGroup      => "Vacuum chamber wall.",
-  ControllerGroup       => "Controller info.",
+  ControlSlaveGroup     => "Controller or Ramper slave parameters.",
+  ControlVarGroup       => "Controller or Ramper Variables.",
   EMultipoleGroup       => "Electric multipoles.",
   FloorPositionGroup    => "Global floor position and orientation.",
   LengthGroup           => "Length parameter.",

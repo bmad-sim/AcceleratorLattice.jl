@@ -81,9 +81,9 @@ function ele_param_str(who::Vector{ControlVar}; default::AbstractString = "???")
   return str * "]"
 end
 
-function ele_param_str(who::Vector{ControlSlave}; default::AbstractString = "???")
+function ele_param_str(who::Vector{T}; default::AbstractString = "???") where T <: ControlSlave
   if length(who) == 0; return "No Slave Parameters"; end
-  return f"{length(who)} ControlSlaves"
+  return f"[{length(who)} ControlSlaves]"
 end
 
  ele_param_str(who::Nothing; default::AbstractString = "???") = default
@@ -228,7 +228,7 @@ function Base.show(io::IO, branch::Branch)
     for ele in branch.ele
       if haskey(ele.pdict, :orientation) 
         str = f"  {lpad(ele.pdict[:orientation], 2)}  " *
-            f"{ele_param_str(ele.pdict, :multipass_lord, \"\")}{ele_param_str(ele.pdict, :slave, \"\")}"
+            f"{ele_param_str(ele.pdict, :multipass_lord, default = \"\")}{ele_param_str(ele.pdict, :slave, default = \"\")}"
       else
         str = ""
       end
