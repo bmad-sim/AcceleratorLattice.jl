@@ -43,31 +43,41 @@ macro construct_ele_type(ele_type)
   return nothing
 end
 
+@construct_ele_type ACKicker
 @construct_ele_type BeamBeam
 @construct_ele_type BeginningEle
 @construct_ele_type Bend
+@construct_ele_type Collimator
 @construct_ele_type Controller
 @construct_ele_type CrabCavity
+@construct_ele_type Crystal
 @construct_ele_type Drift
 @construct_ele_type EGun
+@construct_ele_type ELSeparator
 @construct_ele_type EMField
 @construct_ele_type Fork
 @construct_ele_type Girder
+@construct_ele_type Instrument
 @construct_ele_type Kicker
 @construct_ele_type LCavity
 @construct_ele_type Marker
 @construct_ele_type Mask
 @construct_ele_type Match
 @construct_ele_type Multipole
-@construct_ele_type Patch
+@construct_ele_type ThickMultipole
+@construct_ele_type NullEle
 @construct_ele_type Octupole
+@construct_ele_type Patch
 @construct_ele_type Quadrupole
+@construct_ele_type Ramper
+@construct_ele_type RFBend
 @construct_ele_type RFCavity
+@construct_ele_type SADMult
 @construct_ele_type Sextupole
+@construct_ele_type Solenoid
 @construct_ele_type Taylor
 @construct_ele_type Undulator
 @construct_ele_type Wiggler
-@construct_ele_type NullEle
 
 """
 NullEle lattice element type used to indicate the absence of any valid element.
@@ -383,43 +393,64 @@ Controller
   old_value::Float64 = 0
 end
 
-@kwdef mutable struct ControlSlave
+@kwdef struct ControlVarGroup <: EleParameterGroup
+  vars::Vector{ControlVar} = Vector{ControlVar}()
+end
+
+abstract type ControlSlave end
+
+@kwdef mutable struct ControlSlaveExpression <: ControlSlave
   eles = []                  # Strings, and/or LatEleLocations
   ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
   slave_parameter = nothing
   exp_str::String = ""
   exp_parsed = nothing
+  value::Float64 = 0.0
+  type::ControlSlaveTypeSwitch = NotSet
+end
+
+@kwdef mutable struct ControlSlaveKnot  <: ControlSlave
+  eles = []                  # Strings, and/or LatEleLocations
+  ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
+  slave_parameter = nothing
   x_knot::Vector64 = Vector64()
   y_knot::Vector64 = Vector64()
   interpolation::InterpolationSwitch = Spline
-  func = nothing
   value::Float64 = 0.0
-  type::ControlSetTypeSwitch = NotSet
+  type::ControlSlaveTypeSwitch = NotSet
 end
 
-@kwdef mutable struct ControllerGroup <: EleParameterGroup
-  control::Vector{ControlSlave} = Vector{ControlSlave}()
-  var::Vector{ControlVar} = Vector{ControlVar}()
+@kwdef mutable struct ControlSlaveFunction  <: ControlSlave
+  eles = []                  # Strings, and/or LatEleLocations
+  ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
+  slave_parameter = nothing
+  func = nothing
+  value::Float64 = 0.0
+  type::ControlSlaveTypeSwitch = NotSet
+end
+
+@kwdef struct ControlSlaveGroup  <: EleParameterGroup
+  slaves::Vector{ControlSlave} = Vector{ControlSlave}()
 end
 
 function var(sym::Symbol, val::Real = 0.0, old::Real = NaN) 
   isnan(old) ? (return ControlVar(sym, Float64(val), Float64(val))) : (return ControlVar(sym, Float64(val), Float64(old)))
 end
 
-function control(type::ControlSetTypeSwitch, eles, parameter, exp_str::AbstractString)
+function ctl(type::ControlSlaveTypeSwitch, eles, parameter, expr::AbstractString)
   if typeof(eles) == String; eles = [eles]; end
-  return ControlSlave(eles = eles, slave_parameter = parameter, exp_str = exp_str, type = type)
+  return ControlSlaveExpression(eles = eles, slave_parameter = parameter, exp_str = expr, type = type)
 end
 
-function control(type::ControlSetTypeSwitch, eles, parameter, x_knot::Vector64, y_knot::Vector64, interpolation = Spline)
+function ctl(type::ControlSlaveTypeSwitch, eles, parameter, x_knot::Vector64, y_knot::Vector64, interpolation = Spline)
   if typeof(eles) == String; eles = [eles]; end
-  return ControlSlave(eles = eles, slave_parameter = parameter, x_knot = x_knot, y_knot = y_knot, type = type)
+  return ControlSlaveKnot(eles = eles, slave_parameter = parameter, x_knot = x_knot, y_knot = y_knot, type = type)
 end
 
-function control(custom::Type{Custom}, func::Function; eles = nothing, parameter = nothing)
-  if typeof(eles) == String; eles = [eles]; end
-  cs = ControlSlave(eles = eles, slave_parameter = parameter, func = func, type = Custom)
-end
+#function ctl(custom::Type{Custom}, func::Function; eles = nothing, parameter = nothing)
+#  if typeof(eles) == String; eles = [eles]; end
+#  cs = ControlSlaveFunction(eles = eles, slave_parameter = parameter, func = func, type = Custom)
+#end
 
 #---------------------------------------------------------------------------------------------------
 # Superposition

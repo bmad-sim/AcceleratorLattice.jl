@@ -101,7 +101,13 @@ end
 
 function init_ele_bookkeeper!(ele::Controller)
   lat = ele.branch.lat
+  pdict = ele.pdict
+  if !haskey(pdict[:inbox], :control); error(f"No control vector defined for Controller: {ele.name}."); end
+  if !haskey(pdict[:inbox], :variable); error(f"No variable vector defined for Controller: {ele.name}."); end
+
+  # Put controls in place
   
+
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -133,7 +139,7 @@ end
 
 Transfers parameters from `inbox` dict to a particular element `group`.
 
-""" init_ele_group!
+""" init_ele_group_from_inbox!
 
 function init_ele_group_from_inbox!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   gsym = Symbol(group)
