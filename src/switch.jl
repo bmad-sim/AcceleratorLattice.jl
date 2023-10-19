@@ -49,7 +49,7 @@ Use examples:
 
 ### Notes:
 
-Use `isa` to test for valid switch values EG: `OpenGeom isa GeometrySwitch` returns true.
+Use `isa` to test for valid switch values EG: `Open` isa GeometrySwitch` returns true.
 
 Use `show` (or just type the name in the REPL) to show the switch values for a given switch 
 group variable. EG: show(GeometrySwitch).
@@ -111,7 +111,7 @@ Base.show(switchval::Type{<:Switch}) = show_switch(stdout, switchval)
 
 @switch ApertureTypeSwitch Rectangular Elliptical
 @switch BendTypeSwitch SBend RBend
-@switch BranchGeometrySwitch OpenGeom ClosedGeom 
+@switch BranchGeometrySwitch Open Closed
 @switch BranchTypeSwitch TrackingBranch LordBranch 
 @switch CavityTypeSwitch StandingWave TravelingWave
 @switch ControlSlaveTypeSwitch Delta Absolute NotSet

@@ -44,7 +44,7 @@ ele_param_info_dict = Dict(
   :alias              => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
   :description        => ParamInfo(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
 
-  :len                => ParamInfo(LengthGroup,    Float64,   "Element length.", "m"),
+  :L                  => ParamInfo(LengthGroup,    Float64,   "Element length.", "m"),
   :s                  => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position.", "m"),
   :s_exit             => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position at exit end.", "m"),
 
@@ -68,7 +68,7 @@ ele_param_info_dict = Dict(
   :e2                 => ParamInfo(BendGroup,      Float64,   "Bend exit face angle.", "rad"),
   :e1_rect            => ParamInfo(BendGroup,      Float64,   "bend entrance face angles relative to a rectangular geometry.", "rad"),
   :e2_rect            => ParamInfo(BendGroup,      Float64,   "bend exit face angles relative to a rectangular geometry.", "rad"),
-  :len_chord          => ParamInfo(BendGroup,      Float64,   "Bend chord length.", "m"),
+  :L_chord            => ParamInfo(BendGroup,      Float64,   "Bend chord length.", "m"),
   :ref_tilt           => ParamInfo(BendGroup,      Float64,   "Bend reference orbit rotation around the upstream z-axis", "rad"),
   :fint               => ParamInfo(BendGroup,      Float64,   "Used to set fint1 and fint2 both at once.", ""),
   :fint1              => ParamInfo(BendGroup,      Float64,   "Bend entrance edge field integral.", ""),
@@ -206,7 +206,7 @@ end
 # multipole_type
 
 """
-`type` will be "K", "Kl", "Ks" "Ksl", "B", "Bl", "Bs", "Bsl", "tilt", "E", "El", "Es", "Esl", "Etilt"
+`type` will be "K", "KL", "Ks" "KsL", "B", "BL", "Bs", "BsL", "tilt", "E", "EL", "Es", "EsL", "Etilt"
 
   `str` can be symbol.
 """
@@ -223,10 +223,10 @@ function multipole_type(str::Union{AbstractString,Symbol})
     order == nothing ? (return nothing, -1) : (return "Etilt", Int64(order))
   end
 
-  if str[end-1:end] == "sl"
+  if str[end-1:end] == "sL"
     out_str = str[1] * str[end-1:end]
     str = str[2:end-2]
-  elseif str[end] == 'l'
+  elseif str[end] == 'L'
     out_str = str[1] * str[end]
     str = str[2:end-1]
   elseif str[end] == 's'
@@ -267,7 +267,7 @@ function ele_param_info(sym::Symbol; no_info_return = Error)
   if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Float64, f"Electric multipole tilt for order {order}", "rad"); end
 
   occursin("s", mtype) ? str = "Skew," : str = "Normal (non-skew)"
-  if occursin("l", mtype)
+  if occursin("L", mtype)
     str = str * " length-integrated,"
     order = order - 1
   end
@@ -355,7 +355,7 @@ Table of what parameters are associated with what element types.
 """
 
 base_dict = merge(Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch]]),
-                  Dict{Symbol,Any}([v => ParamState(true)  for v in [:len, :name]]))
+                  Dict{Symbol,Any}([v => ParamState(true)  for v in [:L, :name]]))
 
 ele_param_by_ele_type = Dict{DataType,Dict{Symbol,Any}}()
 for (ele_type, group_list) in ele_param_groups
@@ -464,7 +464,7 @@ Dictionary of parameters in the Branch.pdict dict.
 
 branch_param = Dict(
   :ix_branch   => ParamInfo(Nothing, Int64,    "Index of branch in containing lat .branch[] array"),
-  :geometry    => ParamInfo(Nothing, Switch,   "open_geom or closed_geom Geometry enums"),
+  :geometry    => ParamInfo(Nothing, Switch,   "Open or closed Geometry"),
   :lat         => ParamInfo(Nothing, Pointer,  "Pointer to lattice containing the branch."),
   :type        => ParamInfo(Nothing, Switch,   "Either LordBranch or TrackingBranch BranchType enums."),
   :from_ele    => ParamInfo(Nothing, Pointer,  "Element that forks to this branch."),
@@ -490,10 +490,10 @@ function ele_group_value(group::BMultipoleGroup, sym::Symbol)
   mul = multipole(group, order)
   if mul == nothing; return 0.0::Float64; end
 
-  if mtype == "K" || mtype == "Kl";         value = mul.K
-  elseif mtype == "Ks" || mtype == "Ksl";   value = mul.Ks
-  elseif mtype == "B"  || mtype == "Bl";    value = mul.B
-  elseif mtype == "Bs" || mtype == "Bsl";   value = mul.Bs
+  if mtype == "K" || mtype == "KL";         value = mul.K
+  elseif mtype == "Ks" || mtype == "KsL";   value = mul.Ks
+  elseif mtype == "B"  || mtype == "BL";    value = mul.B
+  elseif mtype == "Bs" || mtype == "BsL";   value = mul.Bs
   elseif mtype == "tilt";                   value = mul.tilt
   end  
 end
@@ -503,8 +503,8 @@ function ele_group_value(group::EMultipoleGroup, sym::Symbol)
   mul = multipole(group, order)
   if mul == nothing; return 0.0::Float64; end
 
-  if mtype == "E" || mtype == "El";         value = mul.E
-  elseif mtype == "Es" || mtype == "Esl";   value = mul.Es
+  if mtype == "E" || mtype == "EL";         value = mul.E
+  elseif mtype == "Es" || mtype == "EsL";   value = mul.Es
   elseif mtype == "Etilt";                   value = mul.tilt
   end  
 end

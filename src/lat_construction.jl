@@ -58,7 +58,7 @@ Creates a `beamline` from a vector of `BeamLineItem`s.
 ### Notes
 
 The beamline parameters can include:
-- `geometry`      Branch geometry. Can be: `OpenGeom` (default) or `ClosedGeom`.
+- `geometry`      Branch geometry. Can be: `Open` (default) or `Closed`.
 - `orientaiton`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
 - `multipass`     Multipass line? Default is `false`.
 
@@ -68,7 +68,7 @@ function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: B
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
 
   if !haskey(bline.pdict, :orientation); bline.pdict[:orientation] = +1; end
-  if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = OpenGeom; end
+  if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = Open; end
   if !haskey(bline.pdict, :multipass);   bline.pdict[:multipass]   = false; end
 
   for (ix, item) in enumerate(bline.line)
@@ -248,7 +248,7 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   if haskey(beamline.pdict, :begin_ele)
     add_beamlineele_to_branch!(branch, BeamLineItem(beamline.pdict[:begin_ele]))
   else
-    @ele begin_ele = BeginningEle(s = 0, len = 0)
+    @ele begin_ele = BeginningEle(s = 0, L = 0)
     add_beamlineele_to_branch!(branch, BeamLineItem(begin_ele))
   end
 
@@ -293,7 +293,7 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 """ lat_expansion
 
-function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}};
+function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}};
             governors::Vector{T} = Vector{Ele}(), superimpose::Vector{W} = Vector{Ele}()) where {T <: Ele, W <: Ele}
   lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
 
@@ -322,7 +322,7 @@ function lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{Be
   return lat
 end
 
-# lat_expansion version without lattice name argument.
+# expand version without lattice name argument.
 function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}; 
             governors::Vector{Ele} = Vector{Ele}(), superimpose::Vector{Ele} = Vector{Ele}())
   lat_expansion("", root_line; governors = governors, superimpose = superimpose)

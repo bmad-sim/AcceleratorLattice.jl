@@ -1,5 +1,85 @@
 #-------------------------------------------------------------------------------------
-"To print memory location of object"
+
+show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
+  LengthGroup => Dict{Symbol,Symbol}(
+    :s                => :s_exit,
+  ),
+
+  FloorPositionGroup => Dict{Symbol,Symbol}(
+    :r_floor          => :q_floor,
+    :phi              => :psi,
+  ),
+
+  PatchGroup => Dict{Symbol,Symbol}(
+    :offset           => :tilt,
+    :x_pitch          => :y_pitch,
+    :E_tot_offset     => :t_offset,
+    :E_tot_exit       => :pc_exit,
+    :flexible         => :User_sets_length,
+  ),
+
+  ReferenceGroup => Dict{Symbol,Symbol}(
+    :species_ref      => :species_ref_exit,
+    :pc_ref           => :pc_ref_exit,
+    :E_tot_ref        => :E_tot_ref_exit,
+    :time_ref         => :time_ref_exit,
+  ),
+
+  AlignmentGroup => Dict{Symbol,Symbol}(
+    :offset           => :offset_tot,
+    :x_pitch          => :x_pitch_tot,
+    :y_pitch          => :y_pitch_tot,
+    :tilt             => :tilt_tot,
+  ),
+
+  BendGroup => Dict{Symbol,Symbol}(
+    :g                => :bend_field,
+    :angle            => :rho,
+    :L_chord          => :L_sagitta,
+    :e1               => :e1_rect,
+    :e2               => :e2_rect,
+    :fint1            => :hgap1,
+    :fint2            => :hgap2,
+  ),
+
+  ApertureGroup => Dict{Symbol,Symbol}(
+    :x_limit          => :y_limit,
+    :aperture_at      => :aperture_type,
+  ),
+
+  StringGroup => Dict{Symbol,Symbol}(
+    :type             => :alias,
+  ),
+
+  GirderGroup => Dict{Symbol,Symbol}(
+    :origin_ele       => :origin_ele_ref_pt,
+    :dtheta_dgirder   => :dr_girder,
+    :dphi_girder      => :dpsi_girder,
+  ),
+
+  RFFieldGroup => Dict{Symbol,Symbol}(
+    :voltage          => :gradient,
+    :phase            => :rad2pi,
+  ),
+
+  LCavityGroup => Dict{Symbol,Symbol}(
+    :voltage_ref      => :gradient_ref,
+    :voltage_err      => :gradient_err,
+    :voltage_tot      => :gradient_tot,
+  ),
+
+  RFMasterGroup => Dict{Symbol,Symbol}(
+    :do_auto_amp      => :do_auto_phase,
+  ),
+
+  TrackingGroup => Dict{Symbol,Symbol}(
+    :tracking_method  => :field_calc,
+    :num_setp         => :ds_step,
+  ),
+)
+
+#-------------------------------------------------------------------------------------
+# "To print memory location of object"
 
 function memloc(@nospecialize(x))
    y = ccall(:jl_value_ptr, Ptr{Cvoid}, (Any,), x)
@@ -98,6 +178,10 @@ end
 # Show Ele
 
 function Base.show(io::IO, ele::Ele)
+  show_ele(io, ele)
+end
+
+function show_ele(io::IO, ele::Ele; docstring = false)
   println(io, f"Ele: {ele_name(ele)}   {typeof(ele)}")
   nn = 18
 
@@ -120,7 +204,7 @@ function Base.show(io::IO, ele::Ele)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
       if !(typeof(group) <: EleParameterGroup); continue; end
-      show_elegroup(io, group)
+      show_elegroup(io, group, docstring)
     end
 
     # Print inbox params.
@@ -140,18 +224,57 @@ function Base.show(io::IO, ele::Ele)
   return nothing
 end
 
-function show_elegroup(io::IO, group::T) where T <: EleParameterGroup
-  nn = 18
-  println(io, f"  {typeof(group)}:")
-  for field in fieldnames(typeof(group))
-    nn2 = max(nn, length(string(field)))
-    kstr = rpad(string(field), nn2)
+function show_elegroup(io::IO, group::T, docstring::Bool) where T <: EleParameterGroup
+  if docstring
+    show_elegroup_with_doc(io, group)
+  else
+    show_elegroup_wo_doc(io, group)
+  end
+end
+
+function show_elegroup_with_doc(io::IO, group::T) where T <: EleParameterGroup
+  gtype = typeof(group)
+  nn = max(18, maximum(length.(fieldnames(gtype))))
+  println(io, f"  {gtype}:")
+
+  for field in fieldnames(gtype)
+    kstr = rpad(string(field), nn)
     vstr = ele_param_str(Base.getproperty(group, field))
     ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
   end
 end
 
-function show_elegroup(io::IO, group::BMultipoleGroup)
+function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
+  gtype = typeof(group)
+  gtype in keys(show_column2) ? col2 = show_column2[gtype] : col2 = Dict{Symbol,Symbol}()
+  nn = max(18, maximum(length.(fieldnames(gtype))))
+  println(io, f"  {gtype}:")
+
+  for field in fieldnames(gtype)
+    if field in values(col2); continue; end
+    if field in keys(col2)
+      kstr = rpad(string(field), nn)
+      vstr = ele_param_str(Base.getproperty(group, field))
+      str = f"    {kstr} {vstr} {units(field)}"
+      field2 = col2[field]
+      kstr = rpad(string(field2), nn)
+      vstr = ele_param_str(Base.getproperty(group, field2))
+      str2 = f"    {kstr} {vstr} {units(field2)}"
+      if length(str) > 50 || length(str2) > 50
+        println(io, str)
+        println(io, str2)
+      else
+        println(io, f"{rpad(str,50)}{str2}")
+      end
+    else
+      kstr = rpad(string(field), nn)
+      vstr = ele_param_str(Base.getproperty(group, field))
+      println(io, f"    {kstr} {vstr} {units(field)}")
+    end
+  end
+end
+
+function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
   println(io, f"  {typeof(group)}:")
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
   for v in group.vec
@@ -162,7 +285,7 @@ function show_elegroup(io::IO, group::BMultipoleGroup)
   end
 end
 
-function show_elegroup(io::IO, group::EMultipoleGroup)
+function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
   println(io, f"  {typeof(group)}:")
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
   for v in group.vec
@@ -172,6 +295,12 @@ function show_elegroup(io::IO, group::EMultipoleGroup)
   end
 end
 
+function show_elegroup(io::IO, group::Vector{ControlVar})
+  println(f"H")
+end
+
+Base.show(io::IO, ::MIME"text/plain", ele::Ele) = Base.show(io, ele::Ele)
+
 function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 50)
   if length(str) < ix_descrip - 1
     println(io, f"{rpad(str, ix_descrip)}{descrip}")
@@ -180,13 +309,6 @@ function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 
     println(io, " "^ix_descrip * descrip)
   end
 end
-
-function show_elegroup(io::IO, group::Vector{ControlVar})
-  println(f"H")
-end
-
-
-Base.show(io::IO, ::MIME"text/plain", ele::Ele) = Base.show(io, ele::Ele)
 
 #-------------------------------------------------------------------------------------
 # Show Vector{ele}
