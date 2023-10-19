@@ -17,7 +17,7 @@ module AcceleratorLattice
   include("find.jl")
   include("functions.jl")
 
-  export memloc, beamline, @ele, @construct_ele_type, lat_expansion, ele_name, show_name, show_ele
+  export memloc, beamline, @ele, @construct_ele_type, expand, ele_name, show_name, show_ele
   export show_lat, show_branch, show_beamline
   export InfiniteLoop, Branch, Lat, BeamLineEle
   export BeamLineItem, BeamLine, Ele, ele_types_set

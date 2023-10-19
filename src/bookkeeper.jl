@@ -292,13 +292,13 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, old_ele:
   isnothing(old_ele) ? s = 0.0 : s = old_ele.pdict[:LengthGroup].s_exit
 
   if haskey(inbox, :LengthGroup) 
-    len::Float64 = get(inbox[:LengthGroup], :len, 0.0)
+    L::Float64 = get(inbox[:LengthGroup], :L, 0.0)
     pop!(pdict[:inbox], :LengthGroup)
   else
-    len = 0.0
+    L = 0.0
   end
 
-  pdict[:LengthGroup] = LengthGroup(len = len, s = s, s_exit = s+len)
+  pdict[:LengthGroup] = LengthGroup(L = L, s = s, s_exit = s+L)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -343,8 +343,8 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_e
     species_exit = old_rg.species_ref_exit
   end
 
-  len = pdict[:LengthGroup].len
-  dt = len * pc / E_tot
+  L = pdict[:LengthGroup].L
+  dt = L * pc / E_tot
 
   ele.ReferenceGroup = ReferenceGroup(pc_ref = pc, pc_ref_exit = pc,
               E_tot_ref = E_tot, E_tot_ref_exit = E_tot, time_ref = time, time_ref_exit = time+dt, 
@@ -357,27 +357,27 @@ end
 
 function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::Ele)
   pdict = ele.pdict
-  len = pdict[:LengthGroup].len
+  L = pdict[:LengthGroup].L
 
   if !haskey(pdict[:inbox], :BendGroup)
-    pdict[:BendGroup] = BendGroup(len_chord = len)
+    pdict[:BendGroup] = BendGroup(L_chord = L)
     return
   end
 
   bg = pdict[:inbox][:BendGroup]
-  bg[:len] = len
-  if len != 0; param_conflict_check(ele, bg, :len, :len_chord); end
+  bg[:L] = L
+  if L != 0; param_conflict_check(ele, bg, :L, :L_chord); end
   param_conflict_check(ele, bg, :bend_field, :g, :rho, :angle)
   param_conflict_check(ele, bg, :e1, :e1_rect)
   param_conflict_check(ele, bg, :e2, :e2_rect)
 
-  if !haskey(bg, :bend_type) && (haskey(bg, :len_chord) || haskey(bg, :e1_rect) || haskey(bg, :e2_rect))
+  if !haskey(bg, :bend_type) && (haskey(bg, :L_chord) || haskey(bg, :e1_rect) || haskey(bg, :e2_rect))
     bend_type = RBend
   else
     bend_type = SBend
   end
 
-  if haskey(bg, :len_chord); len_chord::Float64 = bg[:len_chord]; end
+  if haskey(bg, :L_chord); L_chord::Float64 = bg[:L_chord]; end
 
   if haskey(bg, :bend_field)
     bend_field::Float64 = bg[:bend_field]
@@ -388,12 +388,12 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
     g = 1.0 / rho
   elseif haskey(bg, :angle)
     angle::Float64 = bg[:angle]
-    if haskey(bg, :len_chord)
-      if len_chord == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele.name}"); end
-      angle == 0 ? g = 0.0 : g = 2.0 * sin(angle/2) / len_chord
+    if haskey(bg, :L_chord)
+      if L_chord == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele.name}"); end
+      angle == 0 ? g = 0.0 : g = 2.0 * sin(angle/2) / L_chord
     else
-      if len == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele.name}"); end
-      angle == 0 ? g = 0 : g = angle / len
+      if L == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele.name}"); end
+      angle == 0 ? g = 0 : g = angle / L
     end
   elseif haskey(bg, :g)
     g = bg[:g]
@@ -401,15 +401,15 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
 
   bend_field = g * pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
   g == 0 ? rho = Inf : rho = 1.0 / g
-  if haskey(bg, :len_chord)
-    angle = 2 * asin(len_chord * g / 2)
-    g = 0 ? len =  len_chord : len = rho * angle
+  if haskey(bg, :L_chord)
+    angle = 2 * asin(L_chord * g / 2)
+    g = 0 ? L =  L_chord : L = rho * angle
   else
-    angle = len * g
-    g = 0 ? len_chord = len : len_chord = 2 * rho * sin(angle/2) 
+    angle = L * g
+    g = 0 ? L_chord = L : L_chord = 2 * rho * sin(angle/2) 
   end
 
-  g = 0 ? len_sagitta = 0.0 : len_sagitta = -rho * cos_one(angle/2)
+  g = 0 ? L_sagitta = 0.0 : L_sagitta = -rho * cos_one(angle/2)
 
   if haskey[bg, :e1]
     e1::Float64 = bg[:e1]
@@ -425,7 +425,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
     e1_rect = 0.0
   end
 
-  pdict[:BendGroup] = BendGroup(angle, rho, g, bend_field, len_chord, len_sagitta, 
+  pdict[:BendGroup] = BendGroup(angle, rho, g, bend_field, L_chord, L_sagitta, 
             get(bg, :ref_tilt, 0.0), e1, e2, e1_rect, e2_rect, get(bg, :fint1, 0.5),
             get(bg, :fint2, 0.5), get(bg, :hgap1, 0.5))
   pop!(pdict[:inbox], :BendGroup)
@@ -452,12 +452,12 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, old_
     for msym in copy(keys(v1))  # copy since keys are modified in loop.
       mstr = String(msym)
       if mstr[1] == 'K' || mstr[1] == 'B'
-        if integrated == NotSet; integrated = occursin("l", mstr); end
-        if integrated != occursin("l", mstr)
+        if integrated == NotSet; integrated = occursin("L", mstr); end
+        if integrated != occursin("L", mstr)
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele.name}")
         end
         if integrated
-          msym2 = Symbol(replace(mstr, "l" => ""))
+          msym2 = Symbol(replace(mstr, "L" => ""))
           v1[msym2] = pop!(v1, msym)
         end
       end
@@ -518,12 +518,12 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, old_
     for msym in copy(keys(v1))  # copy since keys are modified in loop.
       mstr = String(msym)
       if mstr[1] == 'E' && mstr != "Etilt"
-        if integrated == NotSet; integrated = occursin("l", mstr); end
-        if integrated != occursin("l", mstr)
+        if integrated == NotSet; integrated = occursin("L", mstr); end
+        if integrated != occursin("L", mstr)
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele.name}")
         end
         if integrated
-          msym2 = Symbol(replace(mstr, "l" => ""))
+          msym2 = Symbol(replace(mstr, "L" => ""))
           v1[msym2] = pop!(v1, msym)
         end
       end
@@ -678,15 +678,15 @@ function bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger,
   isnothing(old_ele) ? s = pdict[:LengthGroup].s : s = old_ele.s_exit
 
   if haskey(inbox, :LengthGroup)
-    len = inbox[:LengthGroup][:len]
+    L = inbox[:LengthGroup][:L]
     changed.this_ele_length = true
     pop!(inbox, :LengthGroup)
   else
-    len = pdict[:LengthGroup][:len]
+    L = pdict[:LengthGroup].L
     changed.this_ele_length = false
   end
 
-  ele.LengthGroup = LengthGroup(len, s, s + len)
+  pdict[:LengthGroup] = LengthGroup(L, s, s + L)
   changed.s_position = true
 end
 
@@ -739,8 +739,8 @@ function bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedg
   species = old_rg.species_ref_exit
   species_exit = species
 
-  len = pdict[:LengthGroup].len
-  dt = len * pc / E_tot
+  L = pdict[:LengthGroup].L
+  dt = L * pc / E_tot
 
   ele.ReferenceGroup = ReferenceGroup(pc_ref = pc, pc_ref_exit = pc,
                        E_tot_ref = E_tot, E_tot_ref_exit = E_tot, time_ref = time, time_ref_exit = time+dt, 
@@ -801,7 +801,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, old_ele::Unio
   else
     lg = pdict[:inbox][:LengthGroup]
     s = get(lg, :s, 0.0)
-    pdict[:LengthGroup] = LengthGroup(len = 0.0, s = s, s_exit = s)
+    pdict[:LengthGroup] = LengthGroup(L = 0.0, s = s, s_exit = s)
     pop!(pdict[:inbox], :LengthGroup)
   end
 end
@@ -847,8 +847,8 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_ele::U
     species = old_rg.species_ref
   end
 
-  len = pdict[:LengthGroup].len
-  dt = len * pc / E_tot
+  L = pdict[:LengthGroup].L
+  dt = L * pc / E_tot
 
   ele.ReferenceGroup = ReferenceGroup(pc_ref = pc, pc_ref_exit = pc,
                        E_tot_ref = E_tot, E_tot_ref_exit = E_tot,
@@ -862,27 +862,27 @@ end
 
 function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::Ele)
   pdict = ele.pdict
-  len = pdict[:LengthGroup].len
+  L = pdict[:LengthGroup].L
 
   if !haskey(pdict[:inbox], :BendGroup)
-    pdict[:LengthGroup] = BendGroup(len_chord = len)
+    pdict[:LengthGroup] = BendGroup(L_chord = L)
     return
   end
 
   bg = pdict[:inbox][:BendGroup]
-  bg[:len] = len
-  if len != 0; param_conflict_check(ele, bg, :len, :len_chord); end
+  bg[:L] = L
+  if L != 0; param_conflict_check(ele, bg, :L, :L_chord); end
   param_conflict_check(ele, bg, :bend_field, :g, :rho, :angle)
   param_conflict_check(ele, bg, :e1, :e1_rect)
   param_conflict_check(ele, bg, :e2, :e2_rect)
 
-  if !haskey(bg, :bend_type) && (haskey(bg, :len_chord) || haskey(bg, :e1_rect) || haskey(bg, :e2_rect))
+  if !haskey(bg, :bend_type) && (haskey(bg, :L_chord) || haskey(bg, :e1_rect) || haskey(bg, :e2_rect))
     bend_type = RBend
   else
     bend_type = SBend
   end
 
-  if haskey(bg, :len_chord); len_chord::Float64 = bg[:len_chord]; end
+  if haskey(bg, :L_chord); L_chord::Float64 = bg[:L_chord]; end
 
   if haskey(bg, :bend_field)
     bend_field::Float64 = bg[:bend_field]
@@ -893,12 +893,12 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::Ele)
     g = 1.0 / rho
   elseif haskey(bg, :angle)
     angle::Float64 = bg[:angle]
-    if haskey(bg, :len_chord)
-      if len_chord == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele.name}"); end
-      angle == 0 ? g = 0.0 : g = 2.0 * sin(angle/2) / len_chord
+    if haskey(bg, :L_chord)
+      if L_chord == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele.name}"); end
+      angle == 0 ? g = 0.0 : g = 2.0 * sin(angle/2) / L_chord
     else
-      if len == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele.name}"); end
-      angle == 0 ? g = 0 : g = angle / len
+      if L == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele.name}"); end
+      angle == 0 ? g = 0 : g = angle / L
     end
   elseif haskey(bg, :g)
     g = bg[:g]
@@ -906,15 +906,15 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::Ele)
 
   bend_field = g * pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
   g == 0 ? rho = Inf : rho = 1.0 / g
-  if haskey(bg, :len_chord)
-    angle = 2 * asin(len_chord * g / 2)
-    g = 0 ? len =  len_chord : len = rho * angle
+  if haskey(bg, :L_chord)
+    angle = 2 * asin(L_chord * g / 2)
+    g = 0 ? L =  L_chord : L = rho * angle
   else
-    angle = len * g
-    g = 0 ? len_chord = len : len_chord = 2 * rho * sin(angle/2) 
+    angle = L * g
+    g = 0 ? L_chord = L : L_chord = 2 * rho * sin(angle/2) 
   end
 
-  g = 0 ? len_sagitta = 0.0 : len_sagitta = -rho * cos_one(angle/2)
+  g = 0 ? L_sagitta = 0.0 : L_sagitta = -rho * cos_one(angle/2)
 
   if haskey[bg, :e1]
     e1::Float64 = bg[:e1]
@@ -930,7 +930,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::Ele)
     e1_rect = 0.0
   end
 
-  pdict[:BendGroup] = BendGroup(angle, rho, g, bend_field, len_chord, len_sagitta, 
+  pdict[:BendGroup] = BendGroup(angle, rho, g, bend_field, L_chord, L_sagitta, 
             get(bg, :ref_tilt, 0.0), e1, e2, e1_rect, e2_rect, get(bg, :fint1, 0.5),
             get(bg, :fint2, 0.5), get(bg, :hgap1, 0.5))
   pop!(pdict[:inbox], :BendGroup)
@@ -958,12 +958,12 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, old_ele::
     for msym in copy(keys(v1))  # copy since keys are modified in loop.
       mstr = String(msym)
       if mstr[1] == 'K' || mstr[1] == 'B'
-        if integrated == NotSet; integrated = occursin("l", mstr); end
-        if integrated != occursin("l", mstr)
+        if integrated == NotSet; integrated = occursin("L", mstr); end
+        if integrated != occursin("L", mstr)
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele.name}")
         end
         if integrated
-          msym2 = Symbol(replace(mstr, "l" => ""))
+          msym2 = Symbol(replace(mstr, "L" => ""))
           v1[msym2] = pop!(v1, msym)
         end
       end
@@ -1025,12 +1025,12 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, old_ele::
     for msym in copy(keys(v1))  # copy since keys are modified in loop.
       mstr = String(msym)
       if mstr[1] == 'E' && mstr != "Etilt"
-        if integrated == NotSet; integrated = occursin("l", mstr); end
-        if integrated != occursin("l", mstr)
+        if integrated == NotSet; integrated = occursin("L", mstr); end
+        if integrated != occursin("L", mstr)
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele.name}")
         end
         if integrated
-          msym2 = Symbol(replace(mstr, "l" => ""))
+          msym2 = Symbol(replace(mstr, "L" => ""))
           v1[msym2] = pop!(v1, msym)
         end
       end

@@ -131,7 +131,7 @@ abstract type EleParameterGroup end
 Element length and s-positions.
 """
 @kwdef struct LengthGroup <: EleParameterGroup
-  len::Float64 = 0
+  L::Float64 = 0
   s::Float64 = 0
   s_exit::Float64 = 0
 end
@@ -269,8 +269,8 @@ determined by the `field_master` setting in the MasterGroup struct.
   rho::Float64 = Inf
   g::Float64 = 0                # Note: Old Bmad dg -> K0.
   bend_field::Float64 = 0
-  len_chord::Float64 = NaN
-  len_sagitta::Float64 = 0
+  L_chord::Float64 = NaN
+  L_sagitta::Float64 = 0
   ref_tilt::Float64 = 0
   e1::Float64 = 0
   e2::Float64 = 0
@@ -437,17 +437,17 @@ function var(sym::Symbol, val::Real = 0.0, old::Real = NaN)
   isnan(old) ? (return ControlVar(sym, Float64(val), Float64(val))) : (return ControlVar(sym, Float64(val), Float64(old)))
 end
 
-function ctl(type::ControlSlaveTypeSwitch, eles, parameter, expr::AbstractString)
+function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, expr::AbstractString)
   if typeof(eles) == String; eles = [eles]; end
   return ControlSlaveExpression(eles = eles, slave_parameter = parameter, exp_str = expr, type = type)
 end
 
-function ctl(type::ControlSlaveTypeSwitch, eles, parameter, x_knot::Vector64, y_knot::Vector64, interpolation = Spline)
+function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, x_knot::Vector64, y_knot::Vector64, interpolation = Spline)
   if typeof(eles) == String; eles = [eles]; end
   return ControlSlaveKnot(eles = eles, slave_parameter = parameter, x_knot = x_knot, y_knot = y_knot, type = type)
 end
 
-#function ctl(custom::Type{Custom}, func::Function; eles = nothing, parameter = nothing)
+#function ctrl(custom::Type{Custom}, func::Function; eles = nothing, parameter = nothing)
 #  if typeof(eles) == String; eles = [eles]; end
 #  cs = ControlSlaveFunction(eles = eles, slave_parameter = parameter, func = func, type = Custom)
 #end

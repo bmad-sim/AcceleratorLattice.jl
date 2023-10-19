@@ -18,13 +18,13 @@ the routine ele_geometry_with_misalignments.
 """
 
 function propagate_ele_geometry(fstart::FloorPositionGroup, ele::Ele)
-  len = ele.len
+  L = ele.L
 
   if ele_geometry(ele) == ZeroLength
     return fstart
 
   elseif ele_geometry(ele) == Straight
-    r_floor = fstart.r_floor + rot(fstart.q_floor, [0.0, 0.0, len])
+    r_floor = fstart.r_floor + rot(fstart.q_floor, [0.0, 0.0, L])
     return FloorPositionGroup(r_floor, fstart.q_floor, fstart.theta, fstart.phi, fstart.psi)
 
   elseif ele_geometry(ele) == Circular
