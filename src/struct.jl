@@ -100,7 +100,7 @@ end
 """
 Return corresponding `LatEleLocation` struct.
 """
-LatEleLocation(ele::Ele) = LatEleLocation(ele.ix_ele, ele.ix_branch)
+LatEleLocation(ele::Ele) = LatEleLocation(ele.ix_ele, ele.branch.ix_branch)
 
 #---------------------------------------------------------------------------------------------------
 # Element traits
@@ -389,8 +389,8 @@ Controller
 
 @kwdef mutable struct ControlVar
   name::Symbol = :NotSet
-  value::Float64 = 0
-  old_value::Float64 = 0
+  value::Float64 = 0.0
+  old_value::Float64 = 0.0
 end
 
 @kwdef struct ControlVarGroup <: EleParameterGroup

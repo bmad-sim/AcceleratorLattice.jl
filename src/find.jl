@@ -68,7 +68,7 @@ function matches_branch(name::AbstractString, branch::Branch)
 end
 
 #-----------------------------------------------------------------------------------------
-# eles_finder_base
+# ele_finder_base
 
 """
 Returns a vector of all lattice elements that match element `name` which is in the form:
@@ -78,10 +78,17 @@ or
 
 To match to element lists, use the `eles` function.
 """
-function eles_finder_base(lat::Lat, name::AbstractString, julia_regex::Bool=false)
+function ele_finder_base(lat::Lat, name::Union{AbstractString,Regex})
+  julia_regex = (typeof(name) == Regex)
+  name = string(name)
 
   eles = Ele[]
-  if !julia_regex; name = replace(name, "'" => "\""); end
+  if julia_regex
+    name = string(name)[3:end-1]
+  else
+    name = replace(name, "'" => "\"")
+  end
+
   branch_id = ""; offset = 0
   nth_match = 1
 
@@ -158,14 +165,14 @@ end
 #-----------------------------------------------------------------------------------------
 # ele_finder
 
-function ele_finder(lat::Lat, name::AbstractString; julia_regex::Bool = false)
-    eles = eles_finder_base(lat, name, julia_regex)
+function ele_finder(lat::Lat, name::Union{AbstractString,Regex})
+    eles = ele_finder_base(lat, name)
     if length(eles) == 0; return NULL_ELE; end
     return eles[1]
 end
 
 #-----------------------------------------------------------------------------------------
-# eles_finder
+# ele_finder
 
 """
 Returns a vector of all lattice elements that match `who`.
@@ -190,20 +197,21 @@ Note: When there are multiple element names in loc_str (which will be separated 
 the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
 with who = "quad::*,sbend::*", all the quadrupoles will appear in eles(:) before all of the sbends.
 """
-function eles_finder(lat::Lat, who::AbstractString, julia_regex::Bool=false)
+function ele_finder(lat::Lat, who::Union{AbstractString,Regex})
   # Julia regex is simple
-  if julia_regex; return eles_finder_base(lat, who, julia_regex); end
+  if typeof(who) == Regex; return ele_finder_base(lat, who); end
 
   # Intersection
-  list = str_split("~&", who, limit = 3)
-  if length(list) == 2 || list[1] == "~" || list[1] == "&" || list[3] == "~" || list[3] == "&"
+  list = str_split(who, "~&", limit = 3)
+  if length(list) == 2 || list[1] == "~" || list[1] == "&" || 
+                            (length(list) == 3 && (list[3] == "~" || list[3] == "&"))
     throw(BmadParseError("Cannot parse: " * who))
   end
 
-  eles1 = eles_finder_base(lat, list[1])
+  eles1 = ele_finder_base(lat, list[1])
   if length(list) == 1; return eles1; end
 
-  eles2 = eles_finder(lat, list[3])
+  eles2 = ele_finder(lat, list[3])
   eles = []
 
   if list[2] == "&"

@@ -10,6 +10,7 @@ module AcceleratorLattice
   include("parameters.jl")
   include("manipulation.jl")
   include("geometry.jl")
+  include("superimpose.jl")
   include("tracking.jl")
   include("show.jl")
   include("bookkeeper.jl")
