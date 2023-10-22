@@ -36,7 +36,7 @@ EG: theta_floor inbox name corresponds to theta in the FloorPositionGroup.
 """
 ele_param_info_dict = Dict(
   :name               => ParamInfo(Nothing,        String,    "Name of the element."),
-  :ix_ele             => ParamInfo(Nothing,        Int64,     "Index of element in containing branch.ele array."),
+  :ix_ele             => ParamInfo(Nothing,        Int64,     "Index of element in containing branch.ele[] array."),
   :orientation        => ParamInfo(Nothing,        Int64,     "Longitudinal orientation of element. May be +1 or -1."),
   :branch             => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
 
@@ -69,6 +69,7 @@ ele_param_info_dict = Dict(
   :e1_rect            => ParamInfo(BendGroup,      Float64,   "bend entrance face angles relative to a rectangular geometry.", "rad"),
   :e2_rect            => ParamInfo(BendGroup,      Float64,   "bend exit face angles relative to a rectangular geometry.", "rad"),
   :L_chord            => ParamInfo(BendGroup,      Float64,   "Bend chord length.", "m"),
+  :L_sagitta          => ParamInfo(BendGroup,      Float64,   "Bend sagitta length.", "m"),
   :ref_tilt           => ParamInfo(BendGroup,      Float64,   "Bend reference orbit rotation around the upstream z-axis", "rad"),
   :fint               => ParamInfo(BendGroup,      Float64,   "Used to set fint1 and fint2 both at once.", ""),
   :fint1              => ParamInfo(BendGroup,      Float64,   "Bend entrance edge field integral.", ""),
@@ -159,11 +160,28 @@ function units(key)
   return param_info.units
 end
 
+function units(key, eletype::Type{T}) where T <: Ele
+  if eletype == Controller || eletype == Ramper
+    return "" 
+  else
+    return units(key)
+  end
+end
+
 function description(key)
   param_info = ele_param_info(key)
   if param_info == nothing; return "???"; end
   return param_info.description
 end
+
+function description(key, eletype::Type{T}) where T <: Ele
+  if eletype == Controller || eletype == Ramper
+    return "" 
+  else
+    return description(key)
+  end
+end
+
 
 function parent_group(info::ParamInfo, ele::Ele)
   if typeof(info.parent_group) == DataType; return info.parent_group; end

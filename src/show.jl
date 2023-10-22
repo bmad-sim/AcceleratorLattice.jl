@@ -154,11 +154,14 @@ end
 
 function ele_param_str(who::Vector{ControlVar}; default::AbstractString = "???")
   if length(who) == 0; return "No Vars"; end
-  str = f"[{who[1].name} = {who[1].value}"
-  for var in who[2:end] 
+  str = ""
+  for var in who
     str = str * f", {var.name} = {var.value}"
+    if var.old_value != var.value
+      str = str * f" (old = {var.old_value})"
+    end
   end
-  return str * "]"
+  return "[" * str[3:end] * "]"
 end
 
 function ele_param_str(who::Vector{T}; default::AbstractString = "???") where T <: ControlSlave
@@ -177,12 +180,9 @@ end
 #-------------------------------------------------------------------------------------
 # Show Ele
 
-function Base.show(io::IO, ele::Ele)
-  show_ele(io, ele)
-end
-
-function show_ele(io::IO, ele::Ele; docstring = false)
-  println(io, f"Ele: {ele_name(ele)}   {typeof(ele)}")
+function show_ele(io::IO, ele::Ele, docstring = false)
+  eletype = typeof(ele)
+  println(io, f"Ele: {ele_name(ele)}   {eletype}")
   nn = 18
 
   pdict = ele.pdict
@@ -191,13 +191,15 @@ function show_ele(io::IO, ele::Ele; docstring = false)
     for key in sort(collect(keys(pdict)))
       val = pdict[key]
       if typeof(val) <: EleParameterGroup || key == :inbox; continue; end
-      pinfo = ele_param_info(key)
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
       kstr = rpad(string(key), nn2)
       vstr = ele_param_str(pdict, key)
-      if vstr == ""; continue; end
-      ele_print_line(io, f"  {kstr} {vstr} {units(key)}", description(key))
+      if docstring
+        ele_print_line(io, f"  {kstr} {vstr} {units(key)}", description(key))
+      else
+        println(io, f"  {kstr} {vstr} {units(key)}")
+      end
     end
 
     # Print groups
@@ -216,7 +218,11 @@ function show_ele(io::IO, ele::Ele; docstring = false)
         nn2 = max(nn, length(string(key)))
         kstr = rpad(string(key), nn2)
         vstr = ele_param_str(inbox, key)
-        ele_print_line(io, f"    {kstr} {vstr} {units(key)}", description(key))
+        if docstring
+          ele_print_line(io, f"    {kstr} {vstr} {units(key, eletype)}", description(key, eletype))
+        else
+          println(io, f"    {kstr} {vstr} {units(key, eletype)}")
+        end
       end
     end
   end
@@ -278,10 +284,12 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
   println(io, f"  {typeof(group)}:")
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
   for v in group.vec
-    v.integrated ? l = "l" : l = ""
-    n = v.order
-    println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.K,24)}{lpad(v.Ks,24)}    K{n}{l}  K{n}s{l}")
-    println(io, " "^44 * f"{lpad(v.B,24)}{lpad(v.Bs,24)}    B{n}{l}  B{n}s{l}")
+    v.integrated ? l = "L" : l = ""
+    nl = f"{v.order}{l}";          nsl = f"{v.order}s{l}"
+    uk = units(Symbol(f"K{nl}"));  ub = units(Symbol(f"B{nl}"))
+    println(io, f"{lpad(v.order,9)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
+                         f"{lpad(v.K,24)}{lpad(v.Ks,24)}    K{nl} K{nsl} ({uk})")
+    println(io, " "^44 * f"{lpad(v.B,24)}{lpad(v.Bs,24)}    B{nl} B{nsl} ({ub})")
   end
 end
 
@@ -289,7 +297,7 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
   println(io, f"  {typeof(group)}:")
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
   for v in group.vec
-    v.integrated ? l = "l" : l = ""
+    v.integrated ? l = "L" : l = ""
     n = v.order
     println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.E,24)}{lpad(v.Es,24)}    E{n}{l}  E{n}s{l}")
   end
@@ -299,7 +307,9 @@ function show_elegroup(io::IO, group::Vector{ControlVar})
   println(f"H")
 end
 
-Base.show(io::IO, ::MIME"text/plain", ele::Ele) = Base.show(io, ele::Ele)
+Base.show(io::IO, ele::Ele) = show_ele(io, ele, false)
+Base.show(ele::Ele, docstring::Bool) = show_ele(stdout, ele, docstring)
+Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
 
 function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 50)
   if length(str) < ix_descrip - 1

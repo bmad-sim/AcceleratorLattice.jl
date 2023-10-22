@@ -68,3 +68,5 @@ Getting the offset right can be tricky!
 
 * For ele_finder: Using Julia regex has limitations: 
     No element ranges. 
+
+* Basic difference between controller and ramper is that rampers have a time dependence that comes from tracking rather than being dependent upon the variables associated with the element.
