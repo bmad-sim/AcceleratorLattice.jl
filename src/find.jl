@@ -165,15 +165,6 @@ end
 #-----------------------------------------------------------------------------------------
 # ele_finder
 
-function ele_finder(lat::Lat, name::Union{AbstractString,Regex})
-    eles = ele_finder_base(lat, name)
-    if length(eles) == 0; return NULL_ELE; end
-    return eles[1]
-end
-
-#-----------------------------------------------------------------------------------------
-# ele_finder
-
 """
 Returns a vector of all lattice elements that match `who`.
 This is an extension of `ele(lat, name)` to include 

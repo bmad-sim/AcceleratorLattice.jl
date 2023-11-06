@@ -90,14 +90,22 @@ const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "null"))
 # LatEleLocation
 
 """
-Element location within a lattice
-"""
+    struct LatEleLocation
+
+Element location within a lattice.
+
+# Components
+  `ix_ele`        Element index in branch.ele[] array.
+  `ix_branch`     Branch index of branch containing the element in lat.branch[] array.
+""" LatEleLocation
+
 struct LatEleLocation
   ix_ele::Int64       # Element index in branch.ele array.
   ix_branch::Int64    # Branch index in lat.branch array.
 end
 
 """
+    LatEleLocation(ele::Ele)
 Return corresponding `LatEleLocation` struct.
 """
 LatEleLocation(ele::Ele) = LatEleLocation(ele.ix_ele, ele.branch.ix_branch)
@@ -151,9 +159,6 @@ end
 Position and orientation in global coordinates.
 The FloorPositionGroup in a lattice element gives the coordinates at the entrance end of an element
 ignoring misalignments.
-
-Note: When setting parameters here the corresponding names have a `_floor` suffix.
-For example, `r_floor` is mapped to `r` in the FloorPositionGroup structure.
 """
 @kwdef struct FloorPositionGroup <: EleParameterGroup
   r_floor::Vector64 =[0, 0, 0]              # (x,y,z) in Global coords
@@ -220,7 +225,8 @@ end
 """
 Single electric multipole of a given order.
 See EMultipoleGroup.
-"""
+""" EMultipole1
+
 @kwdef struct EMultipole1 <: EleParameterGroup
   E::Float64 = NaN            # EG: "E2", "E2l"
   Es::Float64 = NaN           # EG: "E2s", "E2sl"

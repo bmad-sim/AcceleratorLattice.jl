@@ -26,6 +26,6 @@ module AcceleratorLattice
   export ele_finder, ele_param_groups, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup
-  export TrackingGroup, ChamberWallGroup, info
+  export TrackingGroup, ChamberWallGroup, info, ctrl, var
 
 end

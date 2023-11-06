@@ -13,12 +13,13 @@ The basic building block used to describe a machine is the \vn{lattice} \vn{elem
 element can be a physical thing that particles travel ``through'' like a bending magnet, a
 quadrupole or a Bragg crystal, or something like a \vn{marker} element (\sref{s:mark}) that is used
 to mark a particular point in the machine.  Besides physical elements, there are \vn{controller}
-elements (Table~\ref{t:control.classes}) that can be used for parameter control of other elements.
+elements (\sref{??}) that can be used for parameter control of other elements.
 
 Chapter~\sref{c:elements} lists the complete set of different element types that \bmad knows about.
 
-In a lattice \vn{branch} (\sref{s:branch.def}), The ordered array of elements are assigned a number
-(the element index) starting from one. The first element is called \vn{beginning_ele} (\sref{s:begin.ele}).
+In a lattice \vn{branch} (\sref{s:branch.def}), The ordered array of elements are assigned an 
+\vn{ element index}
+starting from one. The first element is called \vn{beginning_ele} (\sref{s:begin.ele}).
 This element is always included in every \vn{branch} \sref{s:branch.def} and is used as a
 marker for the beginning of the \vn{branch}.  Additionally, every branch will have a final
 marker element (\sref{s:mark}) named \vn{end_ele}.
@@ -32,15 +33,16 @@ The next level up from a \vn{element} is the \vn{branch}. A
 branch can represent a LINAC, X-Ray beam line, storage ring or anything else that can be represented
 as a simple ordered list of elements.
 
-Chapter~\sref{c:sequence} shows how a \vn{branch} can be defined using f \vn{line}s.
+Chapter~\sref{c:sequence} shows how a \vn{branch} can be defined using \vn{line}s.
 
-Branches can be interconnected using \vn{fork} and \vn{photon_fork} elements (\sref{s:fork}). This
+Branches can be interconnected using \vn{fork} elements (\sref{s:fork}). This
 is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
 X-ray beam line. A \vn{branch} from which other \vn{branches} fork but is not forked to by any
 other \vn{branch} is called a \vn{root} branch. A branch that is forked to by some other branch
 is called a \vn{downstream} branch.
 
-There are two types of \vn{branches}, if \vn{Branch.type}  \eeeee
+There are two types of \vn{branches}: \vn{LordBranches} and \vn{TrackingBranches}, Branches whose \vn{Branch.type} are set to \vn{LordBranch}
+hol
 
 %---------------------------------------------------------------------------
 \section{Lattice}

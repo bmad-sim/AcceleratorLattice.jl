@@ -1,3 +1,5 @@
+* Unlike Fortran Bmad, Julia Bmad is entirely case sensitive.
+
 * Explain @kwdef macro for structs.
 
 * Explain how to add custom attributes to an element:

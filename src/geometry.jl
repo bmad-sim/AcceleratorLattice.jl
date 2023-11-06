@@ -15,44 +15,53 @@ coordinates and not the "body" coordinates. To compute coordinates with misalign
 the routine ele_geometry_with_misalignments.
 
 
-"""
+""" propagate_ele_geometry
 
 function propagate_ele_geometry(fstart::FloorPositionGroup, ele::Ele)
-  L = ele.L
+  return propagate_ele_geometry(ele_geometry(ele), fstart, ele)
+end
 
-  if ele_geometry(ele) == ZeroLength
-    return fstart
+function propagate_ele_geometry(::Type{ZeroLength}, fstart::FloorPositionGroup, ele::Ele)
+  return fstart
+end
 
-  elseif ele_geometry(ele) == Straight
-    r_floor = fstart.r_floor + rot(fstart.q_floor, [0.0, 0.0, L])
-    return FloorPositionGroup(r_floor, fstart.q_floor, fstart.theta, fstart.phi, fstart.psi)
+function propagate_ele_geometry(::Type{Straight}, fstart::FloorPositionGroup, ele::Ele)
+  r_floor = fstart.r_floor + rot(fstart.q_floor, [0.0, 0.0, ele.L])
+  return FloorPositionGroup(r_floor, fstart.q_floor, fstart.theta, fstart.phi, fstart.psi)
+end
 
-  elseif ele_geometry(ele) == Circular
-    bend::BendGroup = ele.BendGroup
-    (r_trans, q_trans) = ele_floor_transform(bend)
-    r_floor = fstart.r_floor + rot(fstart.q_floor, r_trans)
-    q_floor = rot(fstart.q_floor, q_trans)
-    return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart)...)
+function propagate_ele_geometry(::Type{Circular}, fstart::FloorPositionGroup, ele::Ele)
+  bend::BendGroup = ele.BendGroup
+  (r_trans, q_trans) = ele_floor_transform(bend)
+  r_floor = fstart.r_floor + rot(fstart.q_floor, r_trans)
+  q_floor = rot(fstart.q_floor, q_trans)
+  return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart)...)
+end
 
-  elseif ele_geometry(ele) == PatchGeom
-    error("Not yet implemented!")
+function propagate_ele_geometry(::Type{PatchGeom}, fstart::FloorPositionGroup, ele::Ele)
+  error("Not yet implemented!")
+end
 
-  elseif ele_geometry(ele) == GirderGeom
-    error("Not yet implemented!")
+function propagate_ele_geometry(::Type{GirderGeom}, fstart::FloorPositionGroup, ele::Ele)
+  error("Not yet implemented!")
+end
 
-  elseif ele_geometry(ele) == CrystalGeom
-    error("Not yet implemented!")
-
-  else
-    throw(SwitchError(f"ele_geometry function returns an unknown LatGeometrySwitch {ele_geometry(ele)} for {ele}"))
-  end
+function propagate_ele_geometry(::Type{CrystalGeom}, fstart::FloorPositionGroup, ele::Ele)
+  error("Not yet implemented!")
 end
 
 #---------------------------------------------------------------------------------------------------
 # ele_floor_transform
 
 """
-"""
+    ele_floor_transform(bend::BendGroup)
+
+Returns the (dr, dq) transformation between the beginning of a bend and the end of the bend.
+
+The transformation is
+  r_end = r_start + rot(q_start, dr)
+  q_end = rot(q_start, dq)
+""" ele_floor_transform
 
 function ele_floor_transform(bend::BendGroup)
   qa = Quat64(RotY(bend.angle))
@@ -64,7 +73,14 @@ function ele_floor_transform(bend::BendGroup)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Quat64
+# QuatRotation
+
+"""
+    QuatRotation(theta::Float64, phi::Float64, psi::Float64)
+
+Function to return the quaternion corresponding to a rotation parameterized
+by `theta`, `phi`, and `psi`.
+""" QuatRotation
 
 QuatRotation(theta::Float64, phi::Float64, psi::Float64) = Quat64(RotY(theta) * RotX(-phi) * RotZ(psi))
 
@@ -84,7 +100,7 @@ Input:
                  If floor0 is present, choose the solution "nearest" the angles in floor0.
 
 
-"""
+""" floor_angles
 
 function floor_angles(q::Quat64, f0::FloorPositionGroup = FloorPositionGroup())
   m = RotMatrix(q)
