@@ -12,7 +12,7 @@
 Returns the branch in `lat` with index `ix` or name that matches `who`.
 
 Returns `nothing` if no branch can be matched.
-"""   branch
+""" branch
 
 function branch(lat::Lat, ix::Int) 
   if ix < 1 || ix > length(lat.branch); return nothing; end
@@ -59,7 +59,7 @@ Creates a `beamline` from a vector of `BeamLineItem`s.
 
 The beamline parameters can include:
 - `geometry`      Branch geometry. Can be: `Open` (default) or `Closed`.
-- `orientaiton`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
+- `orientation`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
 - `multipass`     Multipass line? Default is `false`.
 
 """ beamline

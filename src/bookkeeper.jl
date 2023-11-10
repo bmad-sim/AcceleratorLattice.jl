@@ -1,6 +1,15 @@
 #---------------------------------------------------------------------------------------------------
 # init_bookkeeper!(Lat, superimpose)
 
+"""
+    init_bookkeeper!(lat::Lat, superimpose::Vector{T}) where T <: Ele
+    init_bookkeeper!(branch::Branch, superimpose::Vector{T}) where T <: Ele
+    init_bookkeeper!(ele::Ele, old_ele::Union{Ele,Nothing})
+
+Internal routine called by `expand` to do initial bookkeeping like multipass init,
+superpositions, reference energy propagation, etc. Not meant for general use.
+""" init_bookkeeper!
+
 function init_bookkeeper!(lat::Lat, superimpose::Vector{T}) where T <: Ele
   init_multipass_bookkeeper!(lat)
 
@@ -43,48 +52,15 @@ function init_bookkeeper!(ele::Ele, old_ele::Union{Ele,Nothing})
 end
 
 #---------------------------------------------------------------------------------------------------
-# init_multipass_bookkeeper!
-
-function init_multipass_bookkeeper!(lat::Lat)
-  # Sort slaves
-  mdict = Dict()
-  for branch in lat.branch
-    if branch.name == "multipass_lord"; global multipass_branch = branch; end
-    for ele in branch.ele
-      id = ele.pdict[:multipass_id]
-      delete!(ele.pdict, :multipass_id)
-      if length(id) == 0; continue; end
-      if haskey(mdict, id)
-        push!(mdict[id], ele)
-      else
-        mdict[id] = [ele]
-      end
-    end
-  end
-
-  # Create multipass lords
-  for (key, val) in mdict
-    push!(multipass_branch.ele, deepcopy(val[1]))
-    lord = multipass_branch.ele[end]
-    delete!(lord.pdict, :multipass_id)
-    lord.pdict[:branch] = multipass_branch
-    lord.pdict[:ix_ele] = length(multipass_branch.ele)
-    lord.pdict[:slave] = Vector{Ele}()
-    for (ix, ele) in enumerate(val)
-      ele.name = ele.name * "!mp" * string(ix)
-      ele.pdict[:multipass_lord] = lord
-      push!(lord.pdict[:slave], ele)
-    end
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
 # init_governors!
 
 """
-Initialize lattice controllers and girders.
-Used by lat_expansion function. Not meant for general use.
-"""
+    init_governors!(lat::Lat, governors::Vector{T}) where T<: Ele
+
+Initialize lattice controllers and girders during lattice expansion.
+Called by the `expansion` function. Not meant for general use.
+""" init_governors!
+
 function init_governors!(lat::Lat, governors::Vector{T}) where T<: Ele
   branch = lat.governor
   branch.ele = Vector{Ele}(governors)
@@ -98,6 +74,13 @@ end
 
 #---------------------------------------------------------------------------------------------------
 # init_ele_bookkeeper!(Controller)
+
+"""
+    init_ele_bookkeeper!(ele::Controller)
+    init_ele_bookkeeper!(ele::Girder)
+
+Initialize `Controller` and `Girder` elements during lattice expansion. Not meant for general use.
+""" init_ele_bookkeeper!
 
 function init_ele_bookkeeper!(ele::Controller)
   lat = ele.branch.lat
@@ -137,71 +120,13 @@ function init_ele_bookkeeper!(ele::Girder)
 end
 
 #---------------------------------------------------------------------------------------------------
-# param_conflict_check
-
-function param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
-  for ix1 in 1:length(syms)-1
-    for ix2 in ix1+1:length(syms)
-      if haskey(gdict, syms[ix1]) && haskey(gdict, syms[ix2])
-        error(f"{syms[ix1]} and {syms[ix2]} cannot both be sepecified for a {typeof(ele)} element: {ele.name}")
-      end
-    end
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# init_ele_group_from_inbox!
+# init_multipass_bookkeeper!
 
 """
-    init_ele_group_from_inbox!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+    init_multipass_bookkeeper!(lat::Lat)
 
-Transfers parameters from `inbox` dict to a particular element `group`.
-
-""" init_ele_group_from_inbox!
-
-function init_ele_group_from_inbox!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
-  gsym = Symbol(group)
-  pdict = ele.pdict
-  inbox = pdict[:inbox]
-  if !haskey(pdict[:inbox], gsym)
-    pdict[gsym] = eval(Meta.parse("$group()"))
-    return
-  end
-
-  input = pdict[:inbox][gsym]
-  gdict = Dict{Symbol, Any}()
-
-  # Load gdict with symbols in ele.pdict[:input]
-  for field in fieldnames(group)
-    if !haskey(input, field); continue; end
-    gdict[field] = input[field]
-  end
-  pop!(pdict[:inbox], gsym)
-
-  str = ""
-  for (field, value) in gdict
-    str = str * ", $field = $(repr(value))"  # Need repr() for string fields
-  end
-
-  # Take advantage of the fact that the group has been defined using @kwargs.
-  pdict[gsym] = eval(Meta.parse("$group($(str[3:end]))"))
-  
-end
-
-#---------------------------------------------------------------------------------------------------
-# init_ele_group_bookkeeper!
-
-"""
-    init_ele_group_bookkeeper!(ele::Ele, group::Type{T}, old_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
-
-""" init_ele_group_bookkeeper!
-
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{T}, old_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
-  init_ele_group_from_inbox!(ele, group)
-end
-
-#---------------------------------------------------------------------------------------------------
-# init_multipass_bookkeeper
+Multipass initialization done during lattice expansion. Not meant for general use.
+""" init_multipass_bookkeeper!
 
 function init_multipass_bookkeeper!(lat::Lat)
   # Sort slaves
@@ -238,6 +163,18 @@ end
 
 #---------------------------------------------------------------------------------------------------
 # param_conflict_check
+
+"""
+    param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
+
+Checks if there is a symbol conflict in `gdict`. `gdict` is a Dict o parameter sets for an element.
+A symbol conflict occurs when two keys in `gdict` are not allowed to both be simultaneously set.
+For example, `rho` and `g` for a `Bend` cannot be simultaneously set since it is not clear how
+to handle this case (since `rho` * `g` = 1 they are not independent variables).
+
+
+
+"""  param_conflict_check
 
 function param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
   for ix1 in 1:length(syms)-1
