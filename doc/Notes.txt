@@ -12,6 +12,7 @@
 * Bend .type attribute: Only used if rho, angle, g, bend_field changes.
 
 * Explain about switches and how to extend them.
+    switch_list_dict   -- List all switch groups and values (Using symbols).
 
 * Element grouped and ungrouped parameters.
 
