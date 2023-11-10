@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 
 show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
   LengthGroup => Dict{Symbol,Symbol}(
@@ -78,7 +78,7 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
   ),
 )
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # "To print memory location of object"
 
 function memloc(@nospecialize(x))
@@ -86,7 +86,7 @@ function memloc(@nospecialize(x))
    return repr(UInt64(y))
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # ele_name
 
 """
@@ -144,7 +144,7 @@ function ele_name(ele::Ele, template::AbstractString = "")
   return str
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # ele_param_str
 
 function ele_param_str(pdict::Dict, key; default::AbstractString = "???")
@@ -177,7 +177,7 @@ end
 
  ele_param_str(who; default::AbstractString = "???") = string(who)
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Show Ele
 
 function show_ele(io::IO, ele::Ele, docstring = false)
@@ -320,7 +320,7 @@ function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 
   end
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Show Vector{ele}
 
 function Base.show(io::IO, eles::Vector{Ele})
@@ -332,7 +332,7 @@ end
 
 Base.show(io::IO, ::MIME"text/plain", eles::Vector{Ele}) = Base.show(io::IO, eles)
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Show Lat
 
 function Base.show(io::IO, lat::Lat)
@@ -345,7 +345,7 @@ end
 
 Base.show(io::IO, ::MIME"text/plain", lat::Lat) = Base.show(stdout, lat)
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Show Branch
 
 function Base.show(io::IO, branch::Branch)
@@ -372,7 +372,7 @@ end
 
 Base.show(io::IO, ::MIME"text/plain", branch::Branch) = Base.show(stdout, branch)
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Show Vector{Branch}
 
 function Base.show(io::IO, branches::Vector{Branch})
@@ -386,7 +386,7 @@ end
 
 Base.show(io::IO, ::MIME"text/plain", branches::Vector{Branch}) = Base.show(stdout, branches)
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Show Beamline
 
 function Base.show(io::IO, bl::BeamLine)
@@ -412,7 +412,7 @@ end
 
 Base.show(io::IO, ::MIME"text/plain", bl::BeamLine) = Base.show(io, bl)
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Show Dict{String, Vector{Ele}}
 
 function Base.show(io::IO, eled::Dict{String, Vector{Ele}})
@@ -420,3 +420,28 @@ function Base.show(io::IO, eled::Dict{String, Vector{Ele}})
 end
 
 Base.show(io::IO, ::MIME"text/plain", eled::Dict{String, Vector{Ele}}) = Base.show(stdout, eled)
+
+#---------------------------------------------------------------------------------------------------
+# list_abstract
+
+"""
+  list_abstract()
+
+Print list of the most important abstract types.
+Use the `subtypes(T)` to get a list of types inheriting from abstract type `T`.
+""" list_abstract
+
+function list_abstract
+end
+
+
+
+
+abstract_dict = Dict{DataType,String}(
+  BeamLineItem      => "Base type for items that can be in a BeamLine.",
+  Ele               => "Base type for lattice elements.",
+  EleParameterGroup => "Base type for lattice element parameter groups.",
+  ControlSlave      => "Base type for Controller control structs.",
+  AbstractLat       => "Base type for the Lat struct.",
+  Switch            => "Base type for switch group values. switch_list_dict will show all switches.",
+)

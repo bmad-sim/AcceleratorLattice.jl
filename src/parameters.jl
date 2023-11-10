@@ -1,5 +1,5 @@
 """
-Some possible kind values: String, Int64, Float64, Vector64, Bool, Switch, Struct, Pointer
+Possible `kind` values: String, Int64, Float64, Vector64, Bool, Pointer, etc.
 
 A Switch is a variable that has only a finite number of values.
 Generally, a Switch will either be an enum or something that has a finite number of integer states.
@@ -7,12 +7,8 @@ Generally, a Switch will either be an enum or something that has a finite number
 A Pointer is something that points to other variables.
 For example, a Ele may have a vector pointing to its lords. In this case the vector
 itself is considered to be a Pointer as well as its components.
-
-A Struct is a struct. For example, the :floor parameter holds a FloorPosition struct
 """
 
-
-abstract type Struct end
 abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
@@ -481,13 +477,13 @@ Dictionary of parameters in the Branch.pdict dict.
 """
 
 branch_param = Dict(
-  :ix_branch   => ParamInfo(Nothing, Int64,    "Index of branch in containing lat .branch[] array"),
-  :geometry    => ParamInfo(Nothing, Switch,   "Open or closed Geometry"),
-  :lat         => ParamInfo(Nothing, Pointer,  "Pointer to lattice containing the branch."),
-  :type        => ParamInfo(Nothing, Switch,   "Either LordBranch or TrackingBranch BranchType enums."),
-  :from_ele    => ParamInfo(Nothing, Pointer,  "Element that forks to this branch."),
-  :live_branch => ParamInfo(Nothing, Bool,     "Used by programs to turn on/off tracking in a branch."),
-  :ref_species => ParamInfo(Species, String,   "Reference tracking species."),
+  :ix_branch   => ParamInfo(Nothing, Int64,             "Index of branch in containing lat .branch[] array"),
+  :geometry    => ParamInfo(Nothing, EleGeometrySwitch, "Open or closed Geometry"),
+  :lat         => ParamInfo(Nothing, Pointer,           "Pointer to lattice containing the branch."),
+  :type        => ParamInfo(Nothing, Switch,            "Either LordBranch or TrackingBranch BranchType enums."),
+  :from_ele    => ParamInfo(Nothing, Pointer,           "Element that forks to this branch."),
+  :live_branch => ParamInfo(Nothing, Bool,              "Used by programs to turn on/off tracking in a branch."),
+  :ref_species => ParamInfo(Species, String,            "Reference tracking species."),
 )
 
 #---------------------------------------------------------------------------------------------------

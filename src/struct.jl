@@ -49,12 +49,16 @@ end
 @construct_ele_type Bend
 @construct_ele_type Collimator
 @construct_ele_type Controller
+@construct_ele_type Converter
 @construct_ele_type CrabCavity
 @construct_ele_type Crystal
 @construct_ele_type Drift
 @construct_ele_type EGun
 @construct_ele_type ELSeparator
 @construct_ele_type EMField
+@construct_ele_type Fiducial
+@construct_ele_type FloorShift
+@construct_ele_type Foil
 @construct_ele_type Fork
 @construct_ele_type Girder
 @construct_ele_type Instrument
@@ -64,7 +68,6 @@ end
 @construct_ele_type Mask
 @construct_ele_type Match
 @construct_ele_type Multipole
-@construct_ele_type ThickMultipole
 @construct_ele_type NullEle
 @construct_ele_type Octupole
 @construct_ele_type Patch
@@ -76,6 +79,7 @@ end
 @construct_ele_type Sextupole
 @construct_ele_type Solenoid
 @construct_ele_type Taylor
+@construct_ele_type ThickMultipole
 @construct_ele_type Undulator
 @construct_ele_type Wiggler
 
