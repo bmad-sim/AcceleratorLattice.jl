@@ -11,7 +11,7 @@ This is a long term project currently under development.
 ```
   git clone https://github.com/bmad-sim/AcceleratorLattice.jl.git ~/.julia/dev/AcceleratorLattice
 ```
-2. In Julia do:
+2. For developers: In Julia do:
 ```
 import Pkg
 Pkg.activate(".julia/dev/AcceleratorLattice")    # This is relative to the current directory!

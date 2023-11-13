@@ -57,11 +57,14 @@ Creates a `beamline` from a vector of `BeamLineItem`s.
 
 ### Notes
 
-The beamline parameters can include:
+Recognized beamline parameters:
 - `geometry`      Branch geometry. Can be: `Open` (default) or `Closed`.
 - `orientation`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
 - `multipass`     Multipass line? Default is `false`.
-
+- `begin_ele`     Beginning element. Must be present and must be a `Marker` type. There is no default. 
+                    The element parameters `species_ref` along with `pc_ref` or `E_tot_ref` must be present.
+- `end_ele`       Ending element. If present, must be a `Marker` type or null_ele. Default is a `Marker`. 
+All parameters are optional except for `begin_ele`.
 """ beamline
 
 function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
@@ -117,11 +120,11 @@ end
 """
     reflect(beamline::BeamLine)
 
-Reverse the order of the elements in the `BeamLine` (not to be confused with element longitudinal 
+Reflect the order of the elements in the `BeamLine` (not to be confused with element longitudinal 
 orientation reversal).
 """ reflect
 
-# Notice that Base.reverse is the Julia defined reversal of a vector and not any of the extended methods. 
+# Note: Here Base.reverse is the Julia defined reversal of a vector and not any of the extended methods. 
 reflect(beamline::BeamLine) = BeamLine(beamline.name * "_mult-1", Base.reverse(beamline.line), beamline.pdict)
 
 
@@ -253,8 +256,13 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   end
 
   add_beamline_to_branch!(branch, beamline, info)
-  @ele end_ele = Marker()
-  add_beamlineele_to_branch!(branch, BeamLineItem(end_ele))
+
+  if haskey(beamline.pdict, :end_ele)
+    add_beamlineele_to_branch!(branch, BeamLineItem(beamline.pdict[:end_ele]))
+  else
+    @ele end_ele = Marker()
+    add_beamlineele_to_branch!(branch, BeamLineItem(end_ele))
+  end
 
   # Beginning and end elements inherit orientation from neighbor elements.
   branch.ele[1].pdict[:orientation] = branch.ele[2].pdict[:orientation]

@@ -135,13 +135,17 @@ end
 # ele_at_s
 
 """
-ele_at_s(branch::Branch, s::Real; choose_max::Bool = False, ele_near = nothing)
+ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
 
 Returns lattice element that overlaps a given longitudinal s-position. Also returned
 is the location (upstream, downstream, or inside) of the s-position with respect to the returned 
 
-"""
-function ele_at_s(branch::Branch, s::Real; choose_max::Bool = False, ele_near = nothing)
+`choose_max`    If there is a choice of elements, which can happen if `s` corresponds to a boundary
+                  point, choose the upstream element if choose_upstream is `true` and vice versa.
+
+""" ele_at_s
+
+function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
   check_if_s_in_branch_range(branch, s)
 
   # If ele_near is not set
@@ -166,16 +170,16 @@ function ele_at_s(branch::Branch, s::Real; choose_max::Bool = False, ele_near = 
   if ele.pdict[:s] < s || choose_max && s == ele.pdict[:s]
     while true
       ele2 = next_ele(ele)
-      if ele2.pdict[:s] > s && choose_max && ele.pdict[:s] == s; return ele; end
-      if ele2.pdict[:s] > s || (!choose_max && ele2.pdict[:s] == s); return ele2; end
+      if ele2.pdict[:s] > s && !choose_upstream && ele.pdict[:s] == s; return ele; end
+      if ele2.pdict[:s] > s || (choose_upstream && ele2.pdict[:s] == s); return ele2; end
       ele = ele2
     end
 
   else
     while true
       ele2 = next_ele(ele, -1)
-      if ele2.pdict[:s] < s && !choose_max && ele.pdict[:s] == s; return ele; end
-      if ele2.pdict[:s] < s || (choose_max && ele2.pdict[:s] == s); return ele2; end
+      if ele2.pdict[:s] < s && choose_upstream && ele.pdict[:s] == s; return ele; end
+      if ele2.pdict[:s] < s || (!choose_upstream && ele2.pdict[:s] == s); return ele2; end
       ele = ele2
     end
   end
