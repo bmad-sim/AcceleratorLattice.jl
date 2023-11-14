@@ -192,7 +192,8 @@ end
 """
     init_ele_group_from_inbox!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
 
-Transfers parameters from `inbox` dict to a particular element `group`.
+Transfers parameters from `inbox` dict to a particular element `group` which is  put
+in `indox` for processing.
 
 """ init_ele_group!
 
@@ -267,7 +268,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_e
 
   # BeginningEle bookkeeping
   if isnothing(old_ele)
-    if !haskey(inbox, :ReferenceGroup); error(f"species_ref not set for branch: {branch_name}"); end
+    if !haskey(inbox, :ReferenceGroup); error(f"ReferenceGroup not set for begin_ele in branch: {branch_name}\n {ele}"); end
     rg = inbox[:ReferenceGroup]
     if !haskey(rg, :species_ref); error(f"Species not set in branch: {branch_name}"); end
 

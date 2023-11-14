@@ -73,3 +73,5 @@ Getting the offset right can be tricky!
     No element ranges. 
 
 * Basic difference between controller and ramper is that rampers have a time dependence that comes from tracking rather than being dependent upon the variables associated with the element.
+
+* Beamline expansion: species_ref, pc_ref, E_tot_ref may be stored in the Beamline.pdict or in begin_ele

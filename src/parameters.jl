@@ -151,7 +151,7 @@ ele_param_info_dict = Dict(
 )
 
 function units(key)
-  param_info = ele_param_info(key)
+  param_info = ele_param_info(key, no_info_return = nothing)
   if param_info == nothing; return "???"; end
   return param_info.units
 end
