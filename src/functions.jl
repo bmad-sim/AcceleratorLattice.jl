@@ -238,25 +238,3 @@ function branch_insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
   branch_bookkeeper!(branch)
 end
 
-#-------------------------------------------------------------------------------------
-# superimpose!
-
-"""
-    superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles = NULL_ELE, 
-           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
-
-
-""" superimpose!
-
-function superimpose!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Eles = NULL_ELE, 
-           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
-  if typeof(ref) == Ele; ref = [ref]; end
-  for ref_ele in ref
-    superimpose1!(lat, super_ele, offset, ref_ele, offset, ref_origin, ele_origin)
-  end
-end
-
-"Used by superimpose! superimposing on on individual ref elements."
-function superimpose1!(lat::Lat, super_ele::Ele; offset::Float64 = 0, ref::Ele = NULL_ELE, 
-           ref_origin::EleBodyLocationSwitch = Center, ele_origin::EleBodyLocationSwitch = Center)
-end

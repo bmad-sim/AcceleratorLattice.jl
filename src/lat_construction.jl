@@ -145,19 +145,19 @@ Base.:*(n::Int, ele::Ele) = (if n < 0; throw(BoundsError("Negative multiplier do
         BeamLine(ele.name * "_mult" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1))
 
 #-------------------------------------------------------------------------------------
-# add_beamlineele_to_branch!
+# add_beamline_ele_to_branch!
 
 """
-    add_beamlineele_to_branch!(branch::Branch, bele::BeamLineEle, 
+    add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
                                                  info::Union{LatConstructionInfo, Nothing}  = nothing)
 
 Adds a `BeamLineEle` to a `Branch` under construction. The `info` argument passes on parameters
 from the beamline containing the `BeamLineEle`.
 
 This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
-""" add_beamlineele_to_branch!
+""" add_beamline_ele_to_branch!
 
-function add_beamlineele_to_branch!(branch::Branch, bele::BeamLineEle, 
+function add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
                                                  info::Union{LatConstructionInfo, Nothing}  = nothing)
   push!(branch.ele, deepcopy(bele.ele))
   ele = branch.ele[end]
@@ -188,9 +188,9 @@ This routine is meant solely to be used in the lat_expansion call chain and is n
 
 function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
   if item isa BeamLineEle
-    add_beamlineele_to_branch!(branch, item, info)
+    add_beamline_ele_to_branch!(branch, item, info)
   elseif item isa BeamLine 
-    add_beamline_to_branch!(branch, item, info)
+    add_beamline_line_to_branch!(branch, item, info)
   else
     throw(ArgumentError(f"Beamline item not recognized: {item}"))
   end
@@ -198,23 +198,24 @@ function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::
 end
 
 #-------------------------------------------------------------------------------------
-# add_beamline_to_branch!
+# add_beamline_line_to_branch!
 
 """
-    add_beamline_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
+    add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
 
-Adds a `BeamLine` to a `Branch` under construction.
+Add the elements in a `BeamLine.line` to a `Branch` under construction.
 
 This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
-""" add_beamline_to_branch!
+""" add_beamline_line_to_branch!
 
-function add_beamline_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
+function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
   info.n_loop += 1
   if info.n_loop > 100; throw(InfiniteLoop("Infinite loop of beam lines calling beam lines detected.")); end
 
   info = deepcopy(info)
   info.orientation_here = info.orientation_here * beamline.pdict[:orientation]
   info.orientation_here == 1 ? line = beamline.line : line = reverse(beamline.line)
+
   if info.multipass_id == []
     if beamline.pdict[:multipass]
       info.multipass_id = [beamline.name]
@@ -223,7 +224,9 @@ function add_beamline_to_branch!(branch::Branch, beamline::BeamLine, info::LatCo
     push!(info.multipass_id, beamline.name * ":" * string(beamline.pdict[:ix_beamline]))
   end
 
-  for item in line; add_beamline_item_to_branch!(branch, item, info); end
+  for item in line
+    add_beamline_item_to_branch!(branch, item, info)
+  end
 
   return nothing
 end
@@ -249,19 +252,23 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   info = LatConstructionInfo([], beamline.pdict[:orientation], 0)
 
   if haskey(beamline.pdict, :begin_ele)
-    add_beamlineele_to_branch!(branch, BeamLineItem(beamline.pdict[:begin_ele]))
+    add_beamline_ele_to_branch!(branch, BeamLineItem(beamline.pdict[:begin_ele]))
   else
     @ele begin_ele = BeginningEle(s = 0, L = 0)
-    add_beamlineele_to_branch!(branch, BeamLineItem(begin_ele))
+    add_beamline_ele_to_branch!(branch, BeamLineItem(begin_ele))
   end
 
-  add_beamline_to_branch!(branch, beamline, info)
+  if haskey(beamline.pdict, :species_ref); branch.ele[1].species_ref = beamline.pdict[:species_ref]; end
+  if haskey(beamline.pdict, :pc_ref);      branch.ele[1].pc_ref      = beamline.pdict[:pc_ref]; end
+  if haskey(beamline.pdict, :E_tot_ref);   branch.ele[1].E_tot_ref   = beamline.pdict[:E_tot_ref]; end
+
+  add_beamline_line_to_branch!(branch, beamline, info)
 
   if haskey(beamline.pdict, :end_ele)
-    add_beamlineele_to_branch!(branch, BeamLineItem(beamline.pdict[:end_ele]))
+    add_beamline_ele_to_branch!(branch, BeamLineItem(beamline.pdict[:end_ele]))
   else
     @ele end_ele = Marker()
-    add_beamlineele_to_branch!(branch, BeamLineItem(end_ele))
+    add_beamline_ele_to_branch!(branch, BeamLineItem(end_ele))
   end
 
   # Beginning and end elements inherit orientation from neighbor elements.

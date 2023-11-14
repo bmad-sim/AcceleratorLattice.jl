@@ -267,7 +267,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_e
 
   # BeginningEle bookkeeping
   if isnothing(old_ele)
-    if !haskey(inbox, :ReferenceGroup); error(f"species_ref parameter not set for branch: {branch_name}"); end
+    if !haskey(inbox, :ReferenceGroup); error(f"species_ref not set for branch: {branch_name}"); end
     rg = inbox[:ReferenceGroup]
     if !haskey(rg, :species_ref); error(f"Species not set in branch: {branch_name}"); end
 
