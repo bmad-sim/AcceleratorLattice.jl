@@ -111,6 +111,7 @@ Base.show(switchval::Type{<:Switch}) = show_switch(stdout, switchval)
 
 @switch ApertureTypeSwitch Rectangular Elliptical
 @switch BendTypeSwitch SBend RBend
+@switch BoolSwitch False NotSet True
 @switch BranchGeometrySwitch Open Closed
 @switch BranchTypeSwitch TrackingBranch LordBranch 
 @switch CavityTypeSwitch StandingWave TravelingWave
@@ -124,4 +125,5 @@ Base.show(switchval::Type{<:Switch}) = show_switch(stdout, switchval)
 @switch PositionSwitch UpstreamEnd Inside DownstreamEnd
 @switch TrackingMethodSwitch RungeKutta TimeRungeKutta BmadStandard
 @switch TrackingStateSwitch PreBorn Alive NotSet Lost LostNegX LostPosX LostNegY LostPosY LostPz LostZ
+
 

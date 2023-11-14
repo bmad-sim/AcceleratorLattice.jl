@@ -538,4 +538,3 @@ mutable struct LatConstructionInfo
   orientation_here::Int
   n_loop::Int
 end
-
