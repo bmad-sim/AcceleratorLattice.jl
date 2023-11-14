@@ -192,7 +192,8 @@ end
 """
     init_ele_group_from_inbox!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
 
-Transfers parameters from `inbox` dict to a particular element `group`.
+Transfers parameters from `inbox` dict to a particular element `group` which is  put
+in `indox` for processing.
 
 """ init_ele_group!
 
