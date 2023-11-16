@@ -132,82 +132,12 @@ function eles_order_by_index(eles)
 end
 
 #-----------------------------------------------------------------------------------------
-# ele_at_s
-
-"""
-ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
-
-Returns lattice element that overlaps a given longitudinal s-position. Also returned
-is the location (upstream, downstream, or inside) of the s-position with respect to the returned 
-
-`choose_max`    If there is a choice of elements, which can happen if `s` corresponds to a boundary
-                  point, choose the upstream element if choose_upstream is `true` and vice versa.
-
-""" ele_at_s
-
-function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
-  check_if_s_in_branch_range(branch, s)
-
-  # If ele_near is not set
-  if ele_near == nothing
-    n1 = 1
-    n3 = branch.ele[end].pdict[:ix_ele]
-
-    while true
-      if n3 == n1 + 1; break; end
-      n2 = div(n1 + n3, 2)
-      branch.ele[n2].pdict[:s] > s || (choose_max && branch.ele[n2].pdict[:s] == s) ? n3 = n2 : n1 = n2
-    end
-
-    # Solution is n1 except in one case.
-    if choose_max && branch.ele[n3].pdict[:s] == s; n1 = n3; end
-    return branch.ele[n1]
-  end
-
-  # If ele_near is used
-  ele = ele_near
-
-  if ele.pdict[:s] < s || choose_max && s == ele.pdict[:s]
-    while true
-      ele2 = next_ele(ele)
-      if ele2.pdict[:s] > s && !choose_upstream && ele.pdict[:s] == s; return ele; end
-      if ele2.pdict[:s] > s || (choose_upstream && ele2.pdict[:s] == s); return ele2; end
-      ele = ele2
-    end
-
-  else
-    while true
-      ele2 = next_ele(ele, -1)
-      if ele2.pdict[:s] < s && choose_upstream && ele.pdict[:s] == s; return ele; end
-      if ele2.pdict[:s] < s || (!choose_upstream && ele2.pdict[:s] == s); return ele2; end
-      ele = ele2
-    end
-  end
-end
-
-#-----------------------------------------------------------------------------------------
 # next_ele
 
 function next_ele(ele, offset::Integer=1)
   branch = ele.pdict[:branch]
-  ix_ele = mod(ele.pdict[:ix_ele] + offset-1, length(branch.ele)-1) + 1
+  ix_ele = mod(ele.ix_ele + offset-1, length(branch.ele)-1) + 1
   return branch.ele[ix_ele]
-end
-
-#-----------------------------------------------------------------------------------------
-# branch_split!
-
-"""
-Routine to split an lattice element of a branch into two to create a branch that has an element boundary at the point s = s_split. 
-This routine will not split the lattice if the split would create a "runt" element with length less 
-than 5*bmad_com%significant_length.
-
-branch_split! will redo the appropriate bookkeeping for lords and slaves.
-A super_lord element will be created if needed. 
-"""
-function branch_split!(branch::Branch, s_split::Real; choose_max::Bool = False, ix_insert::Int = -1)
-  check_if_s_in_branch_range(branch, s_split)
-  # return ix_split, split_done
 end
 
 #-----------------------------------------------------------------------------------------
@@ -225,16 +155,8 @@ end
 # check_if_s_in_branch_range
 
 function check_if_s_in_branch_range(branch::Branch, s::Real)
-  if s_split < branch.ele[1].pdict[:s] || s_split > branch.ele[end].pdict[:s]
-    throw(RangeError(f"s_split ({string(s_split)}) position out of range [{branch.ele[1].pdict[:s]}], for branch ({branch.name})"))
+  if s < branch.ele[1].s || s > branch.ele[end].s
+    throw(RangeError(f"s-position ({s}) out of range [{branch.ele[1].s}], for branch ({branch.name})"))
   end
-end
-
-#-----------------------------------------------------------------------------------------
-# branch_insert_ele!
-
-function branch_insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
-  insert!(branch, ix_ele, ele)
-  branch_bookkeeper!(branch)
 end
 

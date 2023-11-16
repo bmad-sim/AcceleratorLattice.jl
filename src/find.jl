@@ -241,3 +241,57 @@ function branch_finder(lat::Lat, name::AbstractString)
   return nothing
 end
 
+#-----------------------------------------------------------------------------------------
+# ele_at_s
+
+"""
+ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
+
+Returns lattice element that overlaps a given longitudinal s-position. 
+
+`choose_upstream` If there is a choice of elements, which can happen if `s` corresponds to a boundary
+                    point, choose the upstream element if choose_upstream is `true` and vice versa.
+
+`ele_near`        ...
+
+""" ele_at_s
+
+function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
+  check_if_s_in_branch_range(branch, s)
+
+  # If ele_near is not set
+  if ele_near == nothing
+    n1 = 1
+    n3 = branch.ele[end].ix_ele
+
+    while true
+      if n3 == n1 + 1; break; end
+      n2 = div(n1 + n3, 2)
+      s < branch.ele[n2].s || (choose_upstream && branch.ele[n2].s == s) ? n3 = n2 : n1 = n2
+    end
+
+    # Solution is n1 except in one case.
+    if !choose_upstream && branch.ele[n3].s == s; n1 = n3; end
+    return branch.ele[n1]
+  end
+
+  # If ele_near is used
+  ele = ele_near
+
+  if ele.s < s || !choose_upstream && s == ele.s
+    while true
+      ele2 = next_ele(ele)
+      if ele2.s > s && !choose_upstream && ele.s == s; return ele; end
+      if ele2.s > s || (choose_upstream && ele2.s == s); return ele2; end
+      ele = ele2
+    end
+
+  else
+    while true
+      ele2 = next_ele(ele, -1)
+      if ele2.s < s && choose_upstream && ele.s == s; return ele; end
+      if ele2.s < s || (!choose_upstream && ele2.s == s); return ele2; end
+      ele = ele2
+    end
+  end
+end

@@ -1,3 +1,6 @@
+#---------------------------------------------------------------------------------------------------
+# ParamInfo
+
 """
 Possible `kind` values: String, Int64, Float64, Vector64, Bool, Pointer, etc.
 
@@ -7,7 +10,7 @@ Generally, a Switch will either be an enum or something that has a finite number
 A Pointer is something that points to other variables.
 For example, a Ele may have a vector pointing to its lords. In this case the vector
 itself is considered to be a Pointer as well as its components.
-"""
+""" ParamInfo
 
 abstract type Pointer end
 
@@ -24,12 +27,16 @@ ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, descripti
 ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String, units::String) = 
                                                     ParamInfo(parent, kind, description, units, false)
 
-ap = Union{AlignmentGroup,PatchGroup}
+#---------------------------------------------------------------------------------------------------
+# ele_param_info_dict
 
 """
 Dictionary of parameter types. Keys are inbox names (which can be different from group names. 
 EG: theta_floor inbox name corresponds to theta in the FloorPositionGroup.
-"""
+""" ele_param_info_dict
+
+ap_union = Union{AlignmentGroup,PatchGroup}   # Only used locally
+
 ele_param_info_dict = Dict(
   :name               => ParamInfo(Nothing,        String,    "Name of the element."),
   :ix_ele             => ParamInfo(Nothing,        Int64,     "Index of element in containing branch.ele[] array."),
@@ -75,10 +82,10 @@ ele_param_info_dict = Dict(
   :hgap2              => ParamInfo(BendGroup,      Float64,   "Bend exit edge pole gap height.", "m"),
   :bend_type          => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
 
-  :offset             => ParamInfo(ap,             Vector64,     "3-Vector of [x, y, z] element offsets.", "m"),
-  :x_pitch            => ParamInfo(ap,             Float64,      "X-pitch element orientation.", "rad"),
-  :y_pitch            => ParamInfo(ap,             Float64,      "Y-pitch element orientation.", "rad"),
-  :tilt               => ParamInfo(ap,             Float64,      "Element tilt.", "rad"),
+  :offset             => ParamInfo(ap_union,       Vector64,     "3-Vector of [x, y, z] element offsets.", "m"),
+  :x_pitch            => ParamInfo(ap_union,       Float64,      "X-pitch element orientation.", "rad"),
+  :y_pitch            => ParamInfo(ap_union,       Float64,      "Y-pitch element orientation.", "rad"),
+  :tilt               => ParamInfo(ap_union,       Float64,      "Element tilt.", "rad"),
 
   :offset_tot         => ParamInfo(AlignmentGroup, Vector64,     "Offset including Girder orientation.", "m"),
   :x_pitch_tot        => ParamInfo(AlignmentGroup, Float64,      "X-pitch element orientation including Girder orientation.", "rad"),
@@ -150,11 +157,17 @@ ele_param_info_dict = Dict(
   :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
 )
 
+#---------------------------------------------------------------------------------------------------
+# param_info
+
 function units(key)
   param_info = ele_param_info(key, no_info_return = nothing)
   if param_info == nothing; return "???"; end
   return param_info.units
 end
+
+#---------------------------------------------------------------------------------------------------
+# units
 
 function units(key, eletype::Type{T}) where T <: Ele
   if eletype == Controller || eletype == Ramper
@@ -163,6 +176,9 @@ function units(key, eletype::Type{T}) where T <: Ele
     return units(key)
   end
 end
+
+#---------------------------------------------------------------------------------------------------
+# description
 
 function description(key)
   param_info = ele_param_info(key)
@@ -178,6 +194,8 @@ function description(key, eletype::Type{T}) where T <: Ele
   end
 end
 
+#---------------------------------------------------------------------------------------------------
+# parent_group
 
 function parent_group(info::ParamInfo, ele::Ele)
   if typeof(info.parent_group) == DataType; return info.parent_group; end
@@ -189,6 +207,9 @@ function parent_group(info::ParamInfo, ele::Ele)
   error("??? Error in parent_group. Please report this error!")
 end
 
+#---------------------------------------------------------------------------------------------------
+# param_alias
+
 """
 An alias is something like `hgap` which gets mapped to `hgap1` and `hgap2`
 """
@@ -197,6 +218,9 @@ param_alias = Dict(
   :fint           => [:fint1, :fint2],
   :do_auto_scale  => [:do_auto_amp, :do_auto_phase]
 )
+
+#---------------------------------------------------------------------------------------------------
+# info
 
 """
 """
@@ -408,14 +432,14 @@ function is_settable(ele::T, sym::Symbol) where T <: Ele
 end
 
 #---------------------------------------------------------------------------------------------------
-# multipole
+# multipole!
 
 """
 
 Finds multipole of a given order.
 
 Returns `nothing` if `vec` array does not contain element with n = `order` and `insert` = `nothing`.
-""" multipole
+""" multipole!
 
 function multipole!(mgroup, order; insert = nothing)
   if order < 0; return nothing; end
@@ -439,6 +463,8 @@ function multipole!(mgroup, order; insert = nothing)
   return mgroup.vec[ix]
 end
 
+#---------------------------------------------------------------------------------------------------
+# multipole_index
 
 """
 Find `vec` index where `order` should be. 

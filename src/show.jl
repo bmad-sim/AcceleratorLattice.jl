@@ -152,10 +152,10 @@ function ele_param_str(pdict::Dict, key; default::AbstractString = "???")
   return ele_param_str(who, default = default)
 end
 
-function ele_param_str(who::Vector{ControlVar}; default::AbstractString = "???")
-  if length(who) == 0; return "No Vars"; end
+function ele_param_str(vec_var::Vector{ControlVar}; default::AbstractString = "???")
+  if length(vec_var) == 0; return "No Vars"; end
   str = ""
-  for var in who
+  for var in vec_var
     str = str * f", {var.name} = {var.value}"
     if var.old_value != var.value
       str = str * f" (old = {var.old_value})"
@@ -169,13 +169,26 @@ function ele_param_str(who::Vector{T}; default::AbstractString = "???") where T 
   return f"[{length(who)} ControlSlaves]"
 end
 
- ele_param_str(who::Nothing; default::AbstractString = "???") = default
- ele_param_str(who::Ele; default::AbstractString = "???") = ele_name(who)
- ele_param_str(who::Vector{Ele}; default::AbstractString = "???") = "[" * join([ele_name(ele) for ele in who], ", ") * "]"
- ele_param_str(who::Branch; default::AbstractString = "???") = f"Branch {who.pdict[:ix_branch]}: {str_quote(who.name)}"
- ele_param_str(who::String; default::AbstractString = "???") = str_quote(who)
+function ele_param_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
+  try
+    val = Base.getproperty(ele, key)
+    if format == ""
+      return val
+    else
+      return eval(Meta.parse("f\"{($val):$format}\""))
+    end
+  catch
+    return default
+  end
+end
 
- ele_param_str(who; default::AbstractString = "???") = string(who)
+ele_param_str(who::Nothing; default::AbstractString = "???") = default
+ele_param_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
+ele_param_str(vec_ele::Vector{Ele}; default::AbstractString = "???") = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
+ele_param_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
+ele_param_str(str::String; default::AbstractString = "???") = str_quote(str)
+ele_param_str(who; default::AbstractString = "???") = string(who)
+
 
 #---------------------------------------------------------------------------------------------------
 # Show Ele
@@ -230,6 +243,9 @@ function show_ele(io::IO, ele::Ele, docstring = false)
   return nothing
 end
 
+#---------------------------------------------------------------------------------------------------
+# show_elegroup
+
 function show_elegroup(io::IO, group::T, docstring::Bool) where T <: EleParameterGroup
   if docstring
     show_elegroup_with_doc(io, group)
@@ -237,6 +253,36 @@ function show_elegroup(io::IO, group::T, docstring::Bool) where T <: EleParamete
     show_elegroup_wo_doc(io, group)
   end
 end
+
+function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
+  println(io, f"  {typeof(group)}:")
+  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
+  for v in group.vec
+    v.integrated ? l = "L" : l = ""
+    nl = f"{v.order}{l}";          nsl = f"{v.order}s{l}"
+    uk = units(Symbol(f"K{nl}"));  ub = units(Symbol(f"B{nl}"))
+    println(io, f"{lpad(v.order,9)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
+                         f"{lpad(v.K,24)}{lpad(v.Ks,24)}    K{nl} K{nsl} ({uk})")
+    println(io, " "^44 * f"{lpad(v.B,24)}{lpad(v.Bs,24)}    B{nl} B{nsl} ({ub})")
+  end
+end
+
+function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
+  println(io, f"  {typeof(group)}:")
+  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
+  for v in group.vec
+    v.integrated ? l = "L" : l = ""
+    n = v.order
+    println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.E,24)}{lpad(v.Es,24)}    E{n}{l}  E{n}s{l}")
+  end
+end
+
+function show_elegroup(io::IO, group::Vector{ControlVar})
+  println(f"H")
+end
+
+#---------------------------------------------------------------------------------------------------
+# show_elegroup_with_doc
 
 function show_elegroup_with_doc(io::IO, group::T) where T <: EleParameterGroup
   gtype = typeof(group)
@@ -249,6 +295,9 @@ function show_elegroup_with_doc(io::IO, group::T) where T <: EleParameterGroup
     ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
   end
 end
+
+#---------------------------------------------------------------------------------------------------
+# show_elegroup_wo_doc
 
 function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
   gtype = typeof(group)
@@ -280,36 +329,13 @@ function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
   end
 end
 
-function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
-  println(io, f"  {typeof(group)}:")
-  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
-  for v in group.vec
-    v.integrated ? l = "L" : l = ""
-    nl = f"{v.order}{l}";          nsl = f"{v.order}s{l}"
-    uk = units(Symbol(f"K{nl}"));  ub = units(Symbol(f"B{nl}"))
-    println(io, f"{lpad(v.order,9)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
-                         f"{lpad(v.K,24)}{lpad(v.Ks,24)}    K{nl} K{nsl} ({uk})")
-    println(io, " "^44 * f"{lpad(v.B,24)}{lpad(v.Bs,24)}    B{nl} B{nsl} ({ub})")
-  end
-end
-
-function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
-  println(io, f"  {typeof(group)}:")
-  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
-  for v in group.vec
-    v.integrated ? l = "L" : l = ""
-    n = v.order
-    println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.E,24)}{lpad(v.Es,24)}    E{n}{l}  E{n}s{l}")
-  end
-end
-
-function show_elegroup(io::IO, group::Vector{ControlVar})
-  println(f"H")
-end
 
 Base.show(io::IO, ele::Ele) = show_ele(io, ele, false)
 Base.show(ele::Ele, docstring::Bool) = show_ele(stdout, ele, docstring)
 Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
+
+#---------------------------------------------------------------------------------------------------
+# ele_print_line
 
 function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 50)
   if length(str) < ix_descrip - 1
@@ -358,13 +384,14 @@ function Base.show(io::IO, branch::Branch)
   else
     n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
     for ele in branch.ele
-      if haskey(ele.pdict, :orientation) 
-        str = f"  {lpad(ele.pdict[:orientation], 2)}  " *
-            f"{ele_param_str(ele.pdict, :multipass_lord, default = \"\")}{ele_param_str(ele.pdict, :slave, default = \"\")}"
-      else
-        str = ""
+      end_str = ""
+      if haskey(ele.pdict, :orientation)
+        s_str = ele_param_str(ele, :s, default = "    "*"-"^7, format = "11.6f")
+        end_str = f"{ele.L:14.6f}{s_str}" *
+             f"  {ele_param_str(ele.pdict, :multipass_lord, default = \"\")}{ele_param_str(ele.pdict, :slave, default = \"\")}"
+        if ele.pdict[:orientation] == -1; end_str = end_str * "  orientation = -1"; end
       end
-      println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" * str)                    
+      println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" * end_str)                    
     end
   end
   return nothing
@@ -434,7 +461,8 @@ Use the `subtypes(T)` to get a list of types inheriting from abstract type `T`.
 function list_abstract
 end
 
-
+#---------------------------------------------------------------------------------------------------
+# abstract_dict
 
 
 abstract_dict = Dict{DataType,String}(

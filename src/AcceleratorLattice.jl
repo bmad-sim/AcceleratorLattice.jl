@@ -8,6 +8,7 @@ module AcceleratorLattice
   include("struct.jl")
   include("string.jl")
   include("parameters.jl")
+  include("accessor.jl")
   include("manipulation.jl")
   include("geometry.jl")
   include("superimpose.jl")

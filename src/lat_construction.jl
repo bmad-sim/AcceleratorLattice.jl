@@ -35,8 +35,7 @@ end
     BeamLineItem(x::BeamLineEle)
 
 Creates a `BeamLineItem` that contains an `Ele`, `BeamLine`, or `BeamLineEle`.
-""" BeamLineItem
-
+"""
 BeamLineItem(x::Ele) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :orientation => +1))
 BeamLineItem(x::BeamLine) = BeamLine(x.name, x.line, deepcopy(x.pdict))
 BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.pdict))
