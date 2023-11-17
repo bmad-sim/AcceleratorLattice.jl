@@ -15,7 +15,7 @@ But bookkeeping is incomplete so the lattice is not usable for simulations.
 2.
 ```
 import Pkg
-Pkg.add(".julia/dev/AcceleratorLattice.jl")    # This is relative to the current directory!
-                                                 # so make sure you are in the root directory.
+Pkg.add(path=".julia/dev/AcceleratorLattice.jl")    # This is relative to the current directory!
+                                                    # so make sure you are in the root directory.
 using AcceleratorLattice
 ``` 
