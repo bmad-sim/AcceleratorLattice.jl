@@ -4,6 +4,9 @@
 """
     Base.getproperty(lat::Lat, s::Symbol)
 
+Redirect Lat.XXX to Lat.pdict[:XXX] . 
+Exceptions are:
+  Lat.name, Lat.branch, Lat.pdict
 """ getproperty
 
 function Base.getproperty(lat::Lat, s::Symbol)
