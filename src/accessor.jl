@@ -7,7 +7,7 @@
 Redirect Lat.XXX to Lat.pdict[:XXX] . 
 Exceptions are:
   Lat.name, Lat.branch, Lat.pdict
-""" getproperty
+""" Base.getproperty
 
 function Base.getproperty(lat::Lat, s::Symbol)
   if s == :name; return getfield(lat, :name); end

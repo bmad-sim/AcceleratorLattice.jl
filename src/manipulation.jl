@@ -40,9 +40,10 @@ than 3*`LatticeGlobal.significant_length`.
 - ele_split     -- Element just before the s = s_split point.
 - split_done    -- logical: True if lat was split.
 
+
 branch_split! will redo the appropriate bookkeeping for lords and slaves.
 A super_lord element will be created if needed. 
-"""branch_split!
+""" branch_split!
 
 function branch_split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ix_insert::Int = -1)
   check_if_s_in_branch_range(branch, s_split)
