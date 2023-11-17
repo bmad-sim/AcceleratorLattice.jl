@@ -16,8 +16,8 @@ Routine to split an lattice element of a branch into two to create a branch that
 This routine will not split the lattice if the split would create a "runt" element with length less 
 than 3*`LatticeGlobal.significant_length`.
 
-branch_split! will redo the appropriate bookkeeping for lords and slaves and
-a super_lord element will be created if needed. 
+`branch_split!` will redo the appropriate bookkeeping for lords and slaves and
+a super-lord element will be created if needed. 
 
 ### Input
 - `branch`            -- Lattice branch
@@ -25,10 +25,10 @@ a super_lord element will be created if needed.
 - `add_suffix`        -- logical, optional: If True (default) add '!1' and '!2" suffixes
                            to the split elements.
 - `choose_upstream`   -- logical, optional: If no splitting of an element is needed, that is, 
-  s_split is at an element boundary, there can be multiple possible split points if there exist zero 
+  `s_split` is at an element boundary, there can be multiple possible split points if there exist zero 
   length elements at the split point. If `choose_upsteam` = true, the split will be chosen to be 
   at the maximal upstream location. If `choose_upstream` = false the split will be chosen to be the 
-  downstream location. If s_split is not at an element boundary, the setting of choose_upstream is immaterial.
+  downstream location. If s_split is not at an element boundary, the setting of `choose_upstream` is immaterial.
   If `ele_near` is present, `choose_upstream` is ignored.
 - `ele_near`          -- Element near the point to be split. ele_neam is useful in the case where
   there is a patch with a negative length which can create an ambiguity as to where to do the split
@@ -36,7 +36,7 @@ a super_lord element will be created if needed.
   are elements with zero length nearby. Ignored equal to `null_ele`.
 
 ### Output tuple:
-- `ele_split`     -- Element just before the s = s_split point.
+- `ele_split`     -- Element just before the s = `s_split` point.
 - `split_done`    -- true if lat was split, false otherwise.
 """ branch_split!
 
