@@ -1,6 +1,11 @@
 #---------------------------------------------------------------------------------------------------
 # lat.XXX dot operator overload
 
+"""
+    Base.getproperty(lat::Lat, s::Symbol)
+
+"""Base.getproperty
+
 function Base.getproperty(lat::Lat, s::Symbol)
   if s == :name; return getfield(lat, :name); end
   if s == :branch; return getfield(lat, :branch); end

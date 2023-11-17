@@ -491,11 +491,14 @@ end
 # LatticeGlobal
 
 """
-Global parameters used for tracking
-"""
+    LatticeGlobal
+
+Struct holding "global" parameters used for tracking. 
+Each Lat will store a `LatticeGlobal` in `Lat.pdict[:LatticeGlobal]`.
+""" LatticeGlobal
+
 mutable struct LatticeGlobal
   significant_length::Float64
-  other::Dict{Any,Any}                      # For user defined stuff.
 end
 
 LatticeGlobal() = LatticeGlobal(1.0e-10, Dict())

@@ -13,8 +13,8 @@ elements with that name.
 
 ### Output
 
-(String, Vector{Ele}) Dictionary where the keys are element names and the values are vectors of elements of whose
-name matches the key
+Dict(String, Vector{Ele}) dictionary where the keys are element names and the values are 
+vectors of elements of whose name matches the key
 
 ### Example
 
@@ -144,7 +144,7 @@ end
 # s_inbounds
 
 """
-Returns the equivalent inbounds s-position in the range [branch.ele[1].pdict(:s), branch.ele[end].pdict(:s)]
+Returns the equivalent inbounds s-position in the range [branch.ele[1].s, branch.ele[end].s]
 if the branch has a closed geometry. Otherwise returns s.
 This is useful since in closed geometries 
 """
