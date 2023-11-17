@@ -4,7 +4,7 @@
 """ 
     branch_insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
 
-
+"""
 
 function branch_insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
   insert!(branch, ix_ele, ele)
