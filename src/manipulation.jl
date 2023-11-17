@@ -1,6 +1,11 @@
 #-----------------------------------------------------------------------------------------
 # branch_insert_ele!
 
+""" 
+    branch_insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
+
+
+
 function branch_insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
   insert!(branch, ix_ele, ele)
   branch_bookkeeper!(branch)
@@ -12,18 +17,18 @@ end
 """
     branch_split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = null_ele)
 
-Routine to split an lattice element of a branch into two to create a branch that has an element boundary at the point s = `s_split`. 
+Routine to split an lattice element of a branch into two to create a branch that has an element
+boundary at the point s = `s_split`. 
 This routine will not split the lattice if the split would create a "runt" element with length less 
 than 3*`LatticeGlobal.significant_length`.
 
-`branch_split!` will redo the appropriate bookkeeping for lords and slaves and
-a super-lord element will be created if needed. 
+> [!NOTE]
+> `branch_split!` will redo the appropriate bookkeeping for lords and slaves and
+> a super-lord element will be created if needed. 
 
 ### Input
 - `branch`            -- Lattice branch
 - `s_split`           -- Position at which branch is to be split.
-- `add_suffix`        -- logical, optional: If True (default) add '!1' and '!2" suffixes
-                           to the split elements.
 - `choose_upstream`   -- logical, optional: If no splitting of an element is needed, that is, 
   `s_split` is at an element boundary, there can be multiple possible split points if there exist zero 
   length elements at the split point. If `choose_upsteam` = true, the split will be chosen to be 
@@ -40,7 +45,7 @@ a super-lord element will be created if needed.
 - `split_done`    -- true if lat was split, false otherwise.
 """ branch_split!
 
-function branch_split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ix_insert::Int = -1)
+function branch_split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = null_ele)
   check_if_s_in_branch_range(branch, s_split)
   # return ix_split, split_done
   ele0 = ele_at_s(branch, s_split, choose_upstream = choose_upstream, ele_neam = ele_neam)
