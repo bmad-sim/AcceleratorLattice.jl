@@ -4,7 +4,7 @@
 """
     Base.getproperty(lat::Lat, s::Symbol)
 
-"""Base.getproperty
+""" Base.getproperty
 
 function Base.getproperty(lat::Lat, s::Symbol)
   if s == :name; return getfield(lat, :name); end
