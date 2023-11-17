@@ -30,9 +30,9 @@ a super-lord element will be created if needed.
   at the maximal upstream location. If `choose_upstream` = false the split will be chosen to be the 
   downstream location. If `s_plit` is not at an element boundary, the setting of `choose_upstream` is immaterial.
   If `ele_near` is present, `choose_upstream` is ignored.
-- `ele_near`          -- Element near the point to be split. ele_neam is useful in the case where
+- `ele_near`          -- Element near the point to be split. `ele_near` is useful in the case where
   there is a patch with a negative length which can create an ambiguity as to where to do the split
-  In this case ele_neam will remove the ambiguity. Also useful to ensure where to split if there
+  In this case `ele_near` will remove the ambiguity. Also useful to ensure where to split if there
   are elements with zero length nearby. Ignored equal to `null_ele`.
 
 ### Output tuple:
