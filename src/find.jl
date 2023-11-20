@@ -7,7 +7,8 @@ bmad_regex(str::AbstractString) = occursin("%", str) || occursin("*", str)
 # ele
 
 """
-    function ele(ele::Ele, index_offset::Int, wrap::Bool = true)
+    ele(ele::Ele, index_offset::Int, wrap::Bool = true)
+    ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
 
 Returns the lattice element whose index relative to the index of the input `ele` is `index_offset`.
 Will wrap around the ends of the branch if necessary and wrap = true.
@@ -17,7 +18,8 @@ Will wrap around the ends of the branch if necessary and wrap = true.
 
 ### Output
   `Ele` in given `branch` and given element i
-"""
+""" ele
+
 function ele(ele::Ele, index_offset::Int, wrap::Bool = true)
   return ele(ele.pdict[branch], offset + ele.pdict[:ix_ele], wrap)
 end
@@ -34,7 +36,8 @@ If `wrap`
 
 ### Output
 - `Ele` in given `branch` and given element index `ix_ele
-"""
+""" ele
+
 function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
   n = length(branch.ele)
 
@@ -44,26 +47,6 @@ function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
   else
     if ix_ele < 1 || ix_ele > n; throw(BoundsError(f"element index out of range {ix_ele} in branch {branch.name}")); end
     return branch.ele[ix_ele]
-  end
-end
-
-#-----------------------------------------------------------------------------------------
-# matches_branch
-
-"""
-Returns `true`/`false` if `name` matches/does not match `branch`.
-A match can match branch.name or the branch index.
-A blank name matches all branches.
-Bmad standard wildcard characters "*" and "%" can be used.
-"""
-function matches_branch(name::AbstractString, branch::Branch)
-  if name == ""; return true; end
-
-  ix = integer(name, 0)
-  if ix > 0
-    return ix == branch.pdict[:ix_branch]
-  else
-    return str_match(name, branch.name)
   end
 end
 
@@ -247,7 +230,10 @@ end
 """
 ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
 
-Returns lattice element that overlaps a given longitudinal s-position. 
+Returns lattice element that overlaps a given longitudinal s-position. That is, `s` will be in the
+interval `[ele.s, ele.s_exit)` where `ele` is the returned element. Notice that `s` will never
+correspond to `ele.s_exit` (if `s` = `ele.s_exit` then what is actually returned is an element
+downstream from `ele`.
 
 `choose_upstream` If there is a choice of elements, which can happen if `s` corresponds to a boundary
                     point, choose the upstream element if choose_upstream is `true` and vice versa.
@@ -271,27 +257,41 @@ function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_nea
     end
 
     # Solution is n1 except in one case.
-    if !choose_upstream && branch.ele[n3].s == s; n1 = n3; end
     return branch.ele[n1]
   end
 
   # If ele_near is used
   ele = ele_near
+  if ele.branch.type == LordBranch
+    choose_upstream ? ele = ele.slave[1] : ele = ele.slave[end]
+  end
 
-  if ele.s < s || !choose_upstream && s == ele.s
+
+  if s > ele.s || (!choose_upstream && s == ele.s)
     while true
       ele2 = next_ele(ele)
-      if ele2.s > s && !choose_upstream && ele.s == s; return ele; end
-      if ele2.s > s || (choose_upstream && ele2.s == s); return ele2; end
+      if s < ele2.s && !choose_upstream && ele.s == s; return ele; end
+      if s < ele2.s || (choose_upstream && ele2.s == s); return ele2; end
       ele = ele2
     end
 
   else
     while true
       ele2 = next_ele(ele, -1)
-      if ele2.s < s && choose_upstream && ele.s == s; return ele; end
-      if ele2.s < s || (!choose_upstream && ele2.s == s); return ele2; end
+      if s > ele2.s && choose_upstream && ele.s == s; return ele; end
+      if s > ele2.s || (!choose_upstream && ele2.s == s); return ele2; end
       ele = ele2
     end
   end
 end
+
+#-----------------------------------------------------------------------------------------
+# next_ele
+
+function next_ele(ele::Ele, offset::Integer)
+  branch = ele.pdict[:branch]
+  ix_ele = mod(ele.ix_ele + offset-1, length(branch.ele)-1) + 1
+  return branch.ele[ix_ele]
+end
+
+next_ele(ele::Ele) = next_ele(ele, 1)

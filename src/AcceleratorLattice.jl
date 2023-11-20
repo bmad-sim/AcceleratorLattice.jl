@@ -14,8 +14,10 @@ module AcceleratorLattice
   include("superimpose.jl")
   include("tracking.jl")
   include("show.jl")
+  include("init_bookkeeper.jl")
   include("bookkeeper.jl")
   include("lat_construction.jl")
+  include("query.jl")
   include("find.jl")
   include("functions.jl")
 

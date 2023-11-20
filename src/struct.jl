@@ -499,6 +499,7 @@ Each Lat will store a `LatticeGlobal` in `Lat.pdict[:LatticeGlobal]`.
 
 mutable struct LatticeGlobal
   significant_length::Float64
+  pdict::Dict{Symbol,Any}
 end
 
 LatticeGlobal() = LatticeGlobal(1.0e-10, Dict())

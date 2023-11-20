@@ -65,7 +65,15 @@ To remove use kill_external_ele.
 * Do not superimpose with reference ele and superimpose ele on different sides of a patch!
 Getting the offset right can be tricky!
 
+* Superposition of a zero length element with zero offset from the ref element will happen at the upstream end of the ref element (except for the beginning element).
+
 * lat.super_lord, lat.multipass_lord, lat.governor pointers.
+
+* A multipass lord stores the list of slaves in .pdict[:slave] = Vector{Ele}. The slaves get a "!mpN" suffix where "N" is the pass index. The lord pointer is put in .pdict[:multipass_lord]
+
+* Super lord/slaves store info similar to multipass except the slave uses .pdict[:super_lord] to point to the lord and this is a Vector{Ele}. Also slaves get a "!sN" for singleton slaves and "A!B!C..." name
+
+* branch.pdict[:type] = LordBranch, TrackingBranch
 
 * info function only lists element parameters that can be set.
 

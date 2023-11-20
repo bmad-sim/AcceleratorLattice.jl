@@ -131,32 +131,3 @@ function eles_order_by_index(eles)
   return eles
 end
 
-#-----------------------------------------------------------------------------------------
-# next_ele
-
-function next_ele(ele, offset::Integer=1)
-  branch = ele.pdict[:branch]
-  ix_ele = mod(ele.ix_ele + offset-1, length(branch.ele)-1) + 1
-  return branch.ele[ix_ele]
-end
-
-#-----------------------------------------------------------------------------------------
-# s_inbounds
-
-"""
-Returns the equivalent inbounds s-position in the range [branch.ele[1].s, branch.ele[end].s]
-if the branch has a closed geometry. Otherwise returns s.
-This is useful since in closed geometries 
-"""
-function s_inbounds(branch::Branch, s::Real)
-end
-
-#-----------------------------------------------------------------------------------------
-# check_if_s_in_branch_range
-
-function check_if_s_in_branch_range(branch::Branch, s::Real)
-  if s < branch.ele[1].s || s > branch.ele[end].s
-    throw(RangeError(f"s-position ({s}) out of range [{branch.ele[1].s}], for branch ({branch.name})"))
-  end
-end
-
