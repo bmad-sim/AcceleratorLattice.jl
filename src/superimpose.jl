@@ -25,18 +25,24 @@ end
 function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleRefLocationSwitch = Center, 
            offset::Float64 = 0, ref_origin::EleRefLocationSwitch = Center, wrap::Bool = true)
 
-  # Insertion branch
-  ref_ele.branch.type == LordBranch ? branch = ref_ele.slave[1].branch : branch = ref_ele.branch
+  # Get insertion branch
   min_len = min_ele_length(branch.lat)
+  if ref_ele.branch.type == LordBranch 
+    branch = ref_ele.slave[1].branch
+    ref_ix_ele = ref_ele.slave[1].ix_ele
+  else
+    branch = ref_ele.branch
+    ref_ix_ele = ref_ele.ix_ele
+  end
 
   # Insertion of zero length element with zero offset at edge of an element.
   if super_ele.L == 0 && offset == 0 
     if ref_origin == EntranceEnd || (ref_origin == Center && ref_ele.L == 0)
-      ix_insert = max(ref_ele.ix_ele, 2)
+      ix_insert = max(ref_ix_ele, 2)
       insert_ele!(branch, super_ele, ix_insert)
       return
     elseif ref_origin == ExitEnd 
-      ix_insert = min(ref_ele.ix_ele+1, length(ref_ele.branch.ele))
+      ix_insert = min(ref_ix_ele+1, length(ref_ele.branch.ele))
       insert_ele!(branch, super_ele, ix_insert)
       return
     end
@@ -72,11 +78,21 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleRefLocationSw
   # Element that has nonzero length
   branch_len = branch.ele[end].s_exit - branch.ele[1].s
 
-  if wrap
-    if s1 < branch.ele[1].s; s1 = s1 + branch_len; end
-    if s2 > branch.ele[end].s_exit; s2 = s2 - branch_len; end
-  else
-    if s1 < branch.ele[1].s
+  if s1 < branch.ele[1].s
+    if wrap
+      s1 = s1 + branch_len
+    else
+      @ele drift = Drift(L = branch.ele[1].s - s1)
+      insert_ele!(branch, drift, 2)
+    end
+  end
+
+  if s2 > branch.ele[end].s_exit
+    if wrap
+      s2 = s2 - branch_len
+    else
+      @ele drift = Drift(L = s2 - branch.ele[end].s_exit)
+      insert_ele!(branch.ele, drift, length(branch.ele))
     end
   end
 

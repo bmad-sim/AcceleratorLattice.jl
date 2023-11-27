@@ -49,22 +49,23 @@ If not found above, get from `ele.pdict[group][s]` where `group` is the correspo
 If no corresponding element group for `s` exists, throw an error.
 """ Base.getproperty
 
-function Base.getproperty(ele::T, s::Symbol) where T <: Ele
-  if s == :pdict; return getfield(ele, :pdict); end
+function Base.getproperty(ele::T, sym::Symbol) where T <: Ele
+  if sym == :pdict; return getfield(ele, :pdict); end
   pdict = getfield(ele, :pdict)
-  if haskey(pdict, s); return pdict[s]; end                  # Does ele.pdict[s] exist?
-  if haskey(pdict[:inbox], s); return pdict[:inbox][s]; end  # Does ele.pdict[:inbox][s] exist?
+  if haskey(pdict, sym); return pdict[sym]; end                  # Does ele.pdict[sym] exist?
+  if !haskey(pdict, :inbox) error("Malformed element"); end      
+  if haskey(pdict[:inbox], sym); return pdict[:inbox][sym]; end  # Does ele.pdict[:inbox][sym] exist?
 
-  # If not found above, look for `s` as part of an ele group
-  pinfo = ele_param_info(s)
+  # If not found above, look for `sym` as part of an ele group
+  pinfo = ele_param_info(sym)
   parent = Symbol(pinfo.parent_group)
-  if !haskey(pdict, parent); error(f"Cannot find {s} in element {pdict[:name]}"); end
+  if !haskey(pdict, parent); error(f"Cannot find {sym} in element {pdict[:name]}"); end
 
   if pinfo.kind <: Vector
-    pdict[:inbox][s] = copy(getfield(pdict[parent], s))
-    return pdict[:inbox][s]
+    pdict[:inbox][sym] = copy(getfield(pdict[parent], sym))
+    return pdict[:inbox][sym]
   else
-    return ele_group_value(pdict[parent], s)
+    return ele_group_value(pdict[parent], sym)
   end
 end
 
