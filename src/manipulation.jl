@@ -26,7 +26,9 @@ than 2*`LatticeGlobal.significant_length`.
 
 > [!NOTE]
 > `split_branch!` will redo the appropriate bookkeeping for lords and slaves and
-> a super-lord element will be created if needed. 
+> a super-lord element will be created if needed (not needed for split drifts).
+> drift to be split is put in `branch.ele_saved` for possible use if a future superposition uses
+> the drift as a reference.
 
 ### Input
 - `branch`            -- Lattice branch
@@ -67,8 +69,26 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
   if s_split == ele0.s_exit; return(ele0, false); end
 
   # Element must be split cases.
-  # Split case 1: Element to be split is a super_slave. In this case no new lord is generated.
 
+  # Split case 1: Element is a drift. No super_lord issues but save this element in case
+  # later superpositions use this drift as a reference element.
+  if typeof(ele0) == Drift
+    slave2 = copy(ele0)
+    insert!(branch.ele, ele0.ix_ele+1, slave2)  # Just after ele0
+    if haskey(branch.pdict, :ele_save)
+      push!(branch.pdict[:ele_save], ele0)
+    else
+      branch.pdict[:ele_save] = Vector{Ele}([ele0])
+    end
+    branch.ele[ele0.ix_ele] = copy(ele0)
+    branch.ele[ele0.ix_ele].L = s_split - ele0.s
+    slave2.L = ele0.s_exit - s_split
+    ele0.ix_ele = -1             # Mark as not being in branch.ele array.
+    index_bookkeeper!(branch)
+    return (slave2, true)
+  end
+
+  # Split case 2: Element to be split is a super_slave. In this case no new lord is generated.
   if haskey(ele0.pdict, :super_lord)
     slave2 = copy(ele0)
     insert!(branch.ele, ele0.ix_ele+1, slave2)  # Just after ele0
@@ -88,7 +108,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
     return (slave2, true)
   end
 
-  # Split case 2: Element to be split is not a super_slave. Here create a super_lord.
+  # Split case 3: Element to be split is not a super_slave. Here create a super_lord.
   # Important for multipass and governor control that original ele0 is put in super_lord branch
   # and the copies are in the tracking branch.
 

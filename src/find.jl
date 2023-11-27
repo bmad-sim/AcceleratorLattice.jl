@@ -1,9 +1,9 @@
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # bmad_regex
 
 bmad_regex(str::AbstractString) = occursin("%", str) || occursin("*", str)
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # ele
 
 """
@@ -50,7 +50,7 @@ function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
   end
 end
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # ele_finder_base
 
 """
@@ -60,17 +60,14 @@ or
   {branch_id>>}attribute->match_str{+/-offset}
 
 To match to element lists, use the `eles` function.
-"""
+""" ele_finder_base
+
 function ele_finder_base(lat::Lat, name::Union{AbstractString,Regex})
   julia_regex = (typeof(name) == Regex)
   name = string(name)
 
   eles = Ele[]
-  if julia_regex
-    name = string(name)[3:end-1]
-  else
-    name = replace(name, "'" => "\"")
-  end
+  if !julia_regex; name = replace(name, "'" => "\""); end
 
   branch_id = ""; offset = 0
   nth_match = 1
@@ -145,7 +142,7 @@ function ele_finder_base(lat::Lat, name::Union{AbstractString,Regex})
   end
 end
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # ele_finder
 
 """
@@ -170,7 +167,8 @@ place any super_lord elements at the end of the list.
 Note: When there are multiple element names in loc_str (which will be separated by a comma or blank), 
 the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
 with who = "quad::*,sbend::*", all the quadrupoles will appear in eles(:) before all of the sbends.
-"""
+""" ele_finder
+
 function ele_finder(lat::Lat, who::Union{AbstractString,Regex})
   # Julia regex is simple
   if typeof(who) == Regex; return ele_finder_base(lat, who); end
@@ -210,7 +208,7 @@ function ele_finder(lat::Lat, who::Union{AbstractString,Regex})
   return eles
 end
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # branch_finder
 
 """
@@ -224,7 +222,7 @@ function branch_finder(lat::Lat, name::AbstractString)
   return nothing
 end
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # ele_at_s
 
 """
@@ -285,7 +283,7 @@ function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_nea
   end
 end
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # next_ele
 
 function next_ele(ele::Ele, offset::Integer)
