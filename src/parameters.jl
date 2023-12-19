@@ -160,6 +160,9 @@ ele_param_info_dict = Dict(
 #---------------------------------------------------------------------------------------------------
 # param_info
 
+"""
+""" units
+
 function units(key)
   param_info = ele_param_info(key, no_info_return = nothing)
   if param_info == nothing; return "???"; end
@@ -223,7 +226,8 @@ param_alias = Dict(
 # info
 
 """
-"""
+""" info
+
 function info(sym::Union{Symbol,String})
   if typeof(sym) == String; sym = Symbol(sym); end
   for (param, info) in ele_param_info_dict
@@ -247,7 +251,7 @@ end
 `type` will be "K", "KL", "Ks" "KsL", "B", "BL", "Bs", "BsL", "tilt", "E", "EL", "Es", "EsL", "Etilt"
 
   `str` can be symbol.
-"""
+""" multipole_type
 
 function multipole_type(str::Union{AbstractString,Symbol})
   if str isa Symbol; str = string(str); end
@@ -283,7 +287,9 @@ end
 # ele_param_info
 
 """
-Returns param_info or `default`.
+    ele_param_info(sym::Symbol; no_info_return = Error)
+
+Returns `param_info` or `default`.
 If the value `no_info_return` is `Error` (the default), an error is thrown.
 Otherwise the value of `no_info_return` is returned
 

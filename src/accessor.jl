@@ -3,11 +3,26 @@
 
 """
     Base.getproperty(lat::Lat, s::Symbol)
+    Base.getproperty(branch::Branch, s::Symbol)
+    Base.getproperty(ele::T, sym::Symbol) where T <: Ele
+
+# For Lat
 
 Redirect Lat.XXX to Lat.pdict[:XXX] . 
 Exceptions are:
   Lat.name, Lat.branch, Lat.pdict
+
+## For Branch
+
+
+### For Ele
+
+First return value if ele.pdict[s] exists ele.pdict[:inbox][s] exists.
+If not found above, get from `ele.pdict[group][s]` where `group` is the corresponding element group.
+If no corresponding element group for `s` exists, throw an error.
+
 """ Base.getproperty
+#-------------------
 
 function Base.getproperty(lat::Lat, s::Symbol)
   if s == :name; return getfield(lat, :name); end
@@ -15,7 +30,6 @@ function Base.getproperty(lat::Lat, s::Symbol)
   if s == :pdict; return getfield(lat, :pdict); end
   return getfield(lat, :pdict)[s]
 end
-
 
 function Base.setproperty!(lat::Lat, s::Symbol, value)
   if s == :name;   return setfield!(lat, :name, value); end
@@ -33,7 +47,6 @@ function Base.getproperty(branch::Branch, s::Symbol)
   return getfield(branch, :pdict)[s]
 end
 
-
 function Base.setproperty!(branch::Branch, s::Symbol, value)
   if s == :name; return setfield!(branch, :name, value); end
   if s == :ele;  return setfield!(branch, :ele, value); end
@@ -42,12 +55,6 @@ end
 
 #---------------------------------------------------------------------------------------------------
 # ele.XXX dot operator overload
-
-"""
-First return value if ele.pdict[s] exists ele.pdict[:inbox][s] exists.
-If not found above, get from `ele.pdict[group][s]` where `group` is the corresponding element group.
-If no corresponding element group for `s` exists, throw an error.
-""" Base.getproperty
 
 function Base.getproperty(ele::T, sym::Symbol) where T <: Ele
   if sym == :pdict; return getfield(ele, :pdict); end
