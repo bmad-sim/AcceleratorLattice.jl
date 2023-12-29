@@ -73,7 +73,7 @@ function E_tot_from_pc(pc::Float64, species::Species)
   return sqrt(pc^2 + mass(species)^2)
 end
 
-function pc_from_E_tot(E_tot::Float64, species::Species)
+function pc_from_E_tot(E_tot::Real, species::Species)
   return sqrt(E_tot^2 - mass(species)^2)
 end
 

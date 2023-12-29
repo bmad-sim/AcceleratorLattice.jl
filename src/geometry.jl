@@ -32,7 +32,7 @@ end
 
 function propagate_ele_geometry(::Type{Circular}, fstart::FloorPositionGroup, ele::Ele)
   bend::BendGroup = ele.BendGroup
-  (r_trans, q_trans) = ele_floor_transform(bend)
+  (r_trans, q_trans) = ele_floor_transform(bend, ele.L)
   r_floor = fstart.r_floor + rot(fstart.q_floor, r_trans)
   q_floor = rot(fstart.q_floor, q_trans)
   return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart)...)
@@ -63,9 +63,9 @@ The transformation is
   q_end = rot(q_start, dq)
 """ ele_floor_transform
 
-function ele_floor_transform(bend::BendGroup)
+function ele_floor_transform(bend::BendGroup, L)
   qa = Quat64(RotY(bend.angle))
-  r_vec = [bend.rho * cos_one(bend.angle), 0.0, bend.rho * sin(bend.angle)]
+  r_vec = [-L * sinc(bend.angle/(2*pi)) * sin(bend.angle), 0.0, L * sinc(bend.angle/pi)]
   if bend.ref_tilt == 0; return (r_vec, qa); end
 
   qt = Quat64(RotZ(-bend.ref_tilt))
@@ -76,13 +76,13 @@ end
 # QuatRotation
 
 """
-    QuatRotation(theta::Float64, phi::Float64, psi::Float64)
+    QuatRotation(theta::Real, phi::Real, psi::Real)
 
 Function to return the quaternion corresponding to a rotation parameterized
 by `theta`, `phi`, and `psi`.
 """ QuatRotation
 
-QuatRotation(theta::Float64, phi::Float64, psi::Float64) = Quat64(RotY(theta) * RotX(-phi) * RotZ(psi))
+QuatRotation(theta::Real, phi::Real, psi::Real) = Quat64(RotY(theta) * RotX(-phi) * RotZ(psi))
 
 #---------------------------------------------------------------------------------------------------
 # floor_angles

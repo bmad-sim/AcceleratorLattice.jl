@@ -85,7 +85,7 @@ end
 
 """
 NullEle lattice element type used to indicate the absence of any valid element.
-`NULL_ELE` is the instantiated element.
+`NULL_ELE` is a const NullEle element with `name` set to "null" that can be used for coding.
 """
 
 const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "null"))

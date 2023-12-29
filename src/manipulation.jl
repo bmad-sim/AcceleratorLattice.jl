@@ -1,5 +1,28 @@
-#-----------------------------------------------------------------------------------------
-# insert_ele !
+#---------------------------------------------------------------------------------------------------
+# Base.copy(ele::Ele)
+
+"""
+    Base.copy(ele::Ele)
+
+Shallow copy constructer for a lattice element. That is, `ele.pdict` is copied.
+
+Stuff like the copied ele.pdict[:BendGroup] and the original will still point to the same location but since
+a BendGroup is immutable, modifying one will not modify the other. Mutable stuff like ele.pdict[:inbox]
+will be copied to prevent modification of one to affect the other. 
+""" Base.copy(ele::Ele)
+
+function Base.copy(ele::Ele)
+  ele_copy = typeof(ele)(copy(ele.pdict))
+  for key in keys(ele.pdict)
+    if it_isimmutable(ele.pdict[key]); continue; end
+    if key == :branch; continue; end              # Branch pointer
+    ele_copy.pdict[key] = copy(ele.pdict[key])
+  end
+  return ele_copy
+end
+
+#---------------------------------------------------------------------------------------------------
+# insert_ele!
 
 """ 
     insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
@@ -13,11 +36,11 @@ function insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
   index_bookkeeper!(branch)
 end
 
-#-----------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # split_ele!
 
 """
-    split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = null_ele)
+    split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
 
 Routine to split an lattice element of a branch into two to create a branch that has an element
 boundary at the point s = `s_split`. 
@@ -42,14 +65,14 @@ than 2*`LatticeGlobal.significant_length`.
 - `ele_near`          -- Element near the point to be split. `ele_near` is useful in the case where
   there is a patch with a negative length which can create an ambiguity as to where to do the split
   In this case `ele_near` will remove the ambiguity. Also useful to ensure where to split if there
-  are elements with zero length nearby. Ignored equal to `null_ele`.
+  are elements with zero length nearby. Ignored equal to `NULL_ELE`.
 
 ### Output tuple:
 - `ele_split`     -- Element just after the s = `s_split` point.
 - `split_done`    -- true if lat was split, false otherwise.
 """ split_branch!
 
-function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = null_ele)
+function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s_split)
   ele0 = ele_at_s(branch, s_split, choose_upstream = choose_upstream, ele_near = ele_near)
 

@@ -165,7 +165,7 @@ ele_param_info_dict = Dict(
 
 function units(key)
   param_info = ele_param_info(key, no_info_return = nothing)
-  if param_info == nothing; return "???"; end
+  if param_info == nothing; return "?units?"; end
   return param_info.units
 end
 
@@ -340,11 +340,11 @@ end
 """
 Table of what element groups are associated with what element types.
 Order is important. Bookkeeping routines rely on: 
-  LengthGroup being first.
-  BendGroup after ReferenceGroup and MasterGroup.
-  BMultipoleGroup and EMultipoleGroup after MasterGroup.
-  RFGroup comes last (triggers autoscale/autophase and ReferenceGroup correction)
-"""
+ - `LengthGroup` being first (`LengthGroup` bookkeeping may be done a second time if `BendGroup` modifies `L`).
+ - `BendGroup` after `ReferenceGroup` and `MasterGroup` (in case the reference energy is changing).
+ - `BMultipoleGroup` and `EMultipoleGroup` after `MasterGroup` (in case the reference energy is changing).
+ - `RFGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
+""" ele_param_groups
 
 base_group_list = [LengthGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
@@ -368,21 +368,21 @@ ele_param_groups = Dict(
 
 
 
-ele_param_group_info = Dict(
-  AlignmentGroup        => "Element position/orientation shift.",
-  ApertureGroup         => "Vacuum chamber aperture.",
-  BendGroup             => "Bend element parameters.",
-  BMultipoleGroup       => "Magnetic multipoles.",
-  ChamberWallGroup      => "Vacuum chamber wall.",
-  ControlSlaveGroup     => "Controller or Ramper slave parameters.",
-  ControlVarGroup       => "Controller or Ramper Variables.",
-  EMultipoleGroup       => "Electric multipoles.",
-  FloorPositionGroup    => "Global floor position and orientation.",
-  LengthGroup           => "Length parameter.",
-  ReferenceGroup        => "Reference energy and species.",
-  RFGroup               => "RF parameters.",
-  StringGroup           => "Informational strings.",
-  TrackingGroup         => "Default tracking settings.",
+ele_param_group_list = Dict(
+  :AlignmentGroup        => "Element position/orientation shift.",
+  :ApertureGroup         => "Vacuum chamber aperture.",
+  :BendGroup             => "Bend element parameters.",
+  :BMultipoleGroup       => "Magnetic multipoles.",
+  :ChamberWallGroup      => "Vacuum chamber wall.",
+  :ControlSlaveGroup     => "Controller or Ramper slave parameters.",
+  :ControlVarGroup       => "Controller or Ramper Variables.",
+  :EMultipoleGroup       => "Electric multipoles.",
+  :FloorPositionGroup    => "Global floor position and orientation.",
+  :LengthGroup           => "Length parameter.",
+  :ReferenceGroup        => "Reference energy and species.",
+  :RFGroup               => "RF parameters.",
+  :StringGroup           => "Informational strings.",
+  :TrackingGroup         => "Default tracking settings.",
 )
 
 #---------------------------------------------------------------------------------------------------
@@ -398,8 +398,7 @@ end
 Table of what parameters are associated with what element types.
 """
 
-base_dict = merge(Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch]]),
-                  Dict{Symbol,Any}([v => ParamState(true)  for v in [:L, :name]]))
+base_dict = Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch, :L, :name]])
 
 ele_param_by_ele_type = Dict{DataType,Dict{Symbol,Any}}()
 for (ele_type, group_list) in ele_param_groups

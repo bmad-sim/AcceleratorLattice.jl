@@ -4,7 +4,7 @@
 """
     init_bookkeeper!(lat::Lat, superimpose::Vector{T}) where T <: Ele
     init_bookkeeper!(branch::Branch, superimpose::Vector{T}) where T <: Ele
-    init_bookkeeper!(ele::Ele, old_ele::Union{Ele,Nothing})
+    init_bookkeeper!(ele::Ele, previous_ele::Union{Ele,Nothing})
 
 Internal routine called by `expand` to do initial bookkeeping like multipass init,
 superpositions, reference energy propagation, etc. Not meant for general use.
@@ -30,10 +30,10 @@ function init_bookkeeper!(branch::Branch, superimpose::Vector{T}) where T <: Ele
 
   if branch.pdict[:type] == LordBranch; return; end
 
-  old_ele = nothing
+  previous_ele = nothing
   for ele in branch.ele
-    init_bookkeeper!(ele, old_ele)
-    old_ele = ele
+    init_bookkeeper!(ele, previous_ele)
+    previous_ele = ele
   end
 
   for ele in superimpose
@@ -42,12 +42,12 @@ function init_bookkeeper!(branch::Branch, superimpose::Vector{T}) where T <: Ele
 end
 
 #---------------------------------------------------------------------------------------------------
-# init_bookkeeper!(Ele, old_ele)
+# init_bookkeeper!(Ele, previous_ele)
 
-function init_bookkeeper!(ele::Ele, old_ele::Union{Ele,Nothing})
+function init_bookkeeper!(ele::Ele, previous_ele::Union{Ele,Nothing})
   sort_ele_inbox!(ele)
   for group in ele_param_groups[typeof(ele)]
-    init_ele_group_bookkeeper!(ele, group, old_ele)
+    init_ele_group_bookkeeper!(ele, group, previous_ele)
   end
 end
 
@@ -96,7 +96,7 @@ function init_ele_bookkeeper!(ele::Controller)
       if typeof(ele_id) == LatEleLocation
         push!(loc, ele_id)
       elseif typeof(ele_id) == String
-        append!(loc, LatEleLocation.(ele_finder(lat, ele_id)))
+        append!(loc, LatEleLocation.(eles_find(lat, ele_id)))
       else
         error(f"Control ele ID not a string nor a LatEleLocation.")
       end
@@ -196,7 +196,7 @@ end
 Transfers parameters from `inbox` dict to a particular element `group` which is  put
 in `indox` for processing.
 
-""" init_ele_group!
+""" init_ele_group_from_inbox!
 
 function init_ele_group_from_inbox!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   gsym = Symbol(group)
@@ -223,7 +223,7 @@ function init_ele_group_from_inbox!(ele::Ele, group::Type{T}) where T <: ElePara
   end
 
   # Take advantage of the fact that the group has been defined using @kwargs.
-  pdict[gsym] = eval(Meta.parse("$group($(str[3:end]))"))
+  pdict[gsym] = eval(Meta.parse("$group($(str[3:end]))"))   # "[3:" removes the beginning ", " chars.
   
 end
 
@@ -231,11 +231,11 @@ end
 # init_ele_group_bookkeeper!
 
 """
-    init_ele_group_bookkeeper!(ele::Ele, group::Type{T}, old_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
+    init_ele_group_bookkeeper!(ele::Ele, group::Type{T}, previous_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
 
 """ init_ele_group_bookkeeper!
 
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{T}, old_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
+function init_ele_group_bookkeeper!(ele::Ele, group::Type{T}, previous_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
   init_ele_group_from_inbox!(ele, group)
 end
 
@@ -243,10 +243,10 @@ end
 """
 """
 
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, old_ele::Union{Ele,Nothing})
+function init_ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   inbox = pdict[:inbox]
-  isnothing(old_ele) ? s = 0.0 : s = old_ele.pdict[:LengthGroup].s_exit
+  isnothing(previous_ele) ? s = 0.0 : s = previous_ele.pdict[:LengthGroup].s_exit
 
   if haskey(inbox, :LengthGroup) 
     L::Float64 = get(inbox[:LengthGroup], :L, 0.0)
@@ -262,13 +262,13 @@ end
 """
 If there is a reference energy change (LCavity), this will be handled when bookkeeping of the RFGroup is done.
 """
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_ele::Union{Ele,Nothing})
+function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   inbox = pdict[:inbox]
   haskey(pdict, :branch) ? branch_name = pdict[:branch].name : branch_name = "No-Associated-Branch"
 
   # BeginningEle bookkeeping
-  if isnothing(old_ele)
+  if isnothing(previous_ele)
     if !haskey(inbox, :ReferenceGroup); error(f"ReferenceGroup not set for begin_ele in branch: {branch_name}\n {ele}"); end
     rg = inbox[:ReferenceGroup]
     if !haskey(rg, :species_ref); error(f"Species not set in branch: {branch_name}"); end
@@ -292,7 +292,7 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_e
   # Not BeginningEle
   else
     if haskey(pdict, :ReferenceGroup); error(f"ReferenceGroup parameters should not be in inbox! for: {ele.name}"); end
-    old_rg = old_ele.pdict[:ReferenceGroup]
+    old_rg = previous_ele.pdict[:ReferenceGroup]
     pc           = old_rg.pc_ref_exit
     E_tot        = old_rg.E_tot_ref_exit
     time         = old_rg.time_ref_exit
@@ -309,10 +309,9 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, old_e
 end
 
 #---------------------------------------------------------------------------------------------------
-"""
-"""
 
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::Ele)
+
+function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, previous_ele::Ele)
   pdict = ele.pdict
   L = pdict[:LengthGroup].L
 
@@ -328,7 +327,9 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
   param_conflict_check(ele, bg, :e1, :e1_rect)
   param_conflict_check(ele, bg, :e2, :e2_rect)
 
-  if !haskey(bg, :bend_type) && (haskey(bg, :L_chord) || haskey(bg, :e1_rect) || haskey(bg, :e2_rect))
+  if haskey(bg, :bend_type)
+    bend_type = bf[:bend_type]
+  elseif haskey(bg, :L_chord) || haskey(bg, :e1_rect) || haskey(bg, :e2_rect)
     bend_type = RBend
   else
     bend_type = SBend
@@ -360,18 +361,18 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
   g == 0 ? rho = Inf : rho = 1.0 / g
   if haskey(bg, :L_chord)
     angle = 2 * asin(L_chord * g / 2)
-    g = 0 ? L =  L_chord : L = rho * angle
+    g == 0 ? L =  L_chord : L = rho * angle
   else
     angle = L * g
-    g = 0 ? L_chord = L : L_chord = 2 * rho * sin(angle/2) 
+    g == 0 ? L_chord = L : L_chord = 2 * rho * sin(angle/2) 
   end
 
-  g = 0 ? L_sagitta = 0.0 : L_sagitta = -rho * cos_one(angle/2)
+  g == 0 ? L_sagitta = 0.0 : L_sagitta = -rho * cos_one(angle/2)
 
-  if haskey[bg, :e1]
+  if haskey(bg, :e1)
     e1::Float64 = bg[:e1]
     e1_rect = e1 - 0.5 * angle
-  elseif haskey[bg, :e1_rect]
+  elseif haskey(bg, :e1_rect)
     e1_rect::Float64 = bg[:e1_rect]
     e1 = e1_rect + 0.5 * angle
   elseif bend_type == SBend
@@ -382,9 +383,23 @@ function init_ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, old_ele::E
     e1_rect = 0.0
   end
 
+  if haskey(bg, :e2)
+    e2::Float64 = bg[:e2]
+    e2_rect = e2 - 0.5 * angle
+  elseif haskey(bg, :e2_rect)
+    e2_rect::Float64 = bg[:e2_rect]
+    e2 = e2_rect + 0.5 * angle
+  elseif bend_type == SBend
+    e2 = 0.0
+    e2_rect = 0.5 * angle
+  else
+    e2 = -0.5 * angle
+    e2_rect = 0.0
+  end
+
   pdict[:BendGroup] = BendGroup(angle, rho, g, bend_field, L_chord, L_sagitta, 
             get(bg, :ref_tilt, 0.0), e1, e2, e1_rect, e2_rect, get(bg, :fint1, 0.5),
-            get(bg, :fint2, 0.5), get(bg, :hgap1, 0.5))
+            get(bg, :fint2, 0.5), get(bg, :hgap1, 0.0), get(bg, :hgap2, 0.0), bend_type)
   pop!(pdict[:inbox], :BendGroup)
 end
 
@@ -392,7 +407,7 @@ end
 """
 """
 
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, old_ele::Ele)
+function init_ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, previous_ele::Ele)
   pdict = ele.pdict
   inbox = pdict[:inbox]
 
@@ -458,7 +473,7 @@ end
 #---------------------------------------------------------------------------------------------------
 """
 """
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, old_ele::Ele)
+function init_ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, previous_ele::Ele)
   pdict = ele.pdict
   inbox = pdict[:inbox]
 
@@ -506,17 +521,17 @@ end
 
 """
 """
-function init_ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, old_ele::Union{Ele,Nothing})
+function init_ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   inbox = pdict[:inbox]
 
-  if isnothing(old_ele)
+  if isnothing(previous_ele)
     init_ele_group_from_inbox!(ele, FloorPositionGroup)
     fpg = Dict(k => getfield(pdict[:FloorPositionGroup], k) for k in fieldnames(FloorPositionGroup))
     fpg[:q_floor] = QuatRotation(fpg[:theta], fpg[:phi], fpg[:psi])
     pdict[:FloorPositionGroup] = FloorPositionGroup(; fpg...)
   else
     if haskey(inbox,:FloorPositionGroup); error(f"Setting floor position parameters not allowed in {ele.name}"); end
-    pdict[:FloorPositionGroup] = propagate_ele_geometry(old_ele.FloorPositionGroup, old_ele)
+    pdict[:FloorPositionGroup] = propagate_ele_geometry(previous_ele.FloorPositionGroup, previous_ele)
   end
 end

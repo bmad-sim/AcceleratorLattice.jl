@@ -62,7 +62,7 @@ Recognized beamline parameters:
 - `multipass`     Multipass line? Default is `false`.
 - `begin_ele`     Beginning element. Must be present and must be a `Marker` type. There is no default. 
                     The element parameters `species_ref` along with `pc_ref` or `E_tot_ref` must be present.
-- `end_ele`       Ending element. If present, must be a `Marker` type or null_ele. Default is a `Marker`. 
+- `end_ele`       Ending element. If present, must be a `Marker` element. Default is a simple `Marker`. 
 All parameters are optional except for `begin_ele`.
 """ beamline
 
@@ -331,7 +331,7 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
 
   init_bookkeeper!(lat, superimpose)
   init_governors!(lat, governors)
-  bookkeeper!(lat)
+  ##bookkeeper!(lat)
 
   return lat
 end

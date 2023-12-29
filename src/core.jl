@@ -56,6 +56,33 @@ rot(q1::QuatRotation, q2::QuatRotation) = q1 * q2
 field_names(x) = fieldnames(typeof(x))
 
 #---------------------------------------------------------------------------------------------------
+# it_ismutable & it_isimmutable
+
+"""
+    function it_ismutable(x)
+
+Work around for the problem that ismutable returns True for strings.
+See: https://github.com/JuliaLang/julia/issues/30210
+""" it_ismutable
+
+function it_ismutable(x)
+  if typeof(x) <: AbstractString; return false; end
+  return ismutable(x)
+end
+
+"""
+    function it_isimmutable(x)
+
+Work around for the problem that isimmutable returns True for strings.
+See: https://github.com/JuliaLang/julia/issues/30210
+""" it_isimmutable
+
+function it_isimmutable(x)
+  if typeof(x) <: AbstractString; return true; end
+  return isimmutable(x)
+end
+
+#---------------------------------------------------------------------------------------------------
 
 function integer(str::AbstractString, default::Number)
   try

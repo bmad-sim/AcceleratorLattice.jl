@@ -22,14 +22,14 @@ module AcceleratorLattice
   include("functions.jl")
 
   export memloc, beamline, @ele, @construct_ele_type, expand, ele_name, show_name, show_ele
-  export show_lat, show_branch, show_beamline
-  export InfiniteLoop, Branch, Lat, BeamLineEle
-  export BeamLineItem, BeamLine, Ele, ele_types_set
+  export show_lat, show_branch, show_beamline, get_property, bookkeeper!
+  export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!
+  export BeamLineItem, BeamLine, Ele, ele_types_set, propagate_ele_geometry, ele_floor_transform
   export branch_split!, branch_insert_ele!, branch_bookkeeper!, lat_bookkeeper!, construct_ele_type
-  export ele_finder, ele_param_groups, create_ele_vars
+  export ele_find, eles_find, branch_find, ele_param_groups, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup
-  export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup
+  export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup
   export info, ctrl, var, create_external_ele, ele_param_info
 
 end

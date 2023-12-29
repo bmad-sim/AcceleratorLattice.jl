@@ -24,20 +24,6 @@ function ele(ele::Ele, index_offset::Int, wrap::Bool = true)
   return ele(ele.pdict[branch], offset + ele.pdict[:ix_ele], wrap)
 end
 
-
-"""
-    ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
-
-Returns element in given `branch` with given `ix_ele` element index.
-
-### Input
-If `wrap`
-
-
-### Output
-- `Ele` in given `branch` and given element index `ix_ele
-""" ele
-
 function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
   n = length(branch.ele)
 
@@ -51,7 +37,7 @@ function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_finder_base
+# ele_find_base
 
 """
 Returns a vector of all lattice elements that match element `name` which is in the form:
@@ -60,9 +46,9 @@ or
   {branch_id>>}attribute->match_str{+/-offset}
 
 To match to element lists, use the `eles` function.
-""" ele_finder_base
+""" ele_find_base
 
-function ele_finder_base(lat::Lat, name::Union{AbstractString,Regex})
+function ele_find_base(lat::Lat, name::Union{AbstractString,Regex})
   julia_regex = (typeof(name) == Regex)
   name = string(name)
 
@@ -143,9 +129,11 @@ function ele_finder_base(lat::Lat, name::Union{AbstractString,Regex})
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_finder
+# eles_find
 
 """
+    function eles_find(lat::Lat, who::Union{AbstractString,Regex})
+
 Returns a vector of all lattice elements that match `who`.
 This is an extension of `ele(lat, name)` to include 
   key selection EG: "Quadrupole::<list>"
@@ -155,10 +143,11 @@ This is an extension of `ele(lat, name)` to include
 Note: negation and intersection evaluated left to right
 
 ele vector will be ordered by s-position for each branch.
-Use the eles_order_by_index function to reorder by index is desired.
+Use the `eles_order_by_index` function to reorder by index is desired.
 
+Also see `ele_find`
 
-Note: For something like loc_str = "quad::*", if order_by_index = True, the eles(:) array will
+Note: For something like `who` = `"quad::*"`, if order_by_index = True, the eles(:) array will
 be ordered by element index. If order_by_index = False, the eles(:) array will be ordered by
 s-position. This is the same as order by index except in the case where where there are super_lord elements. 
 Since super_lord elements always have a greater index (at least in branch 0), order by index will 
@@ -167,11 +156,11 @@ place any super_lord elements at the end of the list.
 Note: When there are multiple element names in loc_str (which will be separated by a comma or blank), 
 the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
 with who = "quad::*,sbend::*", all the quadrupoles will appear in eles(:) before all of the sbends.
-""" ele_finder
+""" ele_find
 
-function ele_finder(lat::Lat, who::Union{AbstractString,Regex})
+function eles_find(lat::Lat, who::Union{AbstractString,Regex})
   # Julia regex is simple
-  if typeof(who) == Regex; return ele_finder_base(lat, who); end
+  if typeof(who) == Regex; return ele_find_base(lat, who); end
 
   # Intersection
   list = str_split(who, "~&", limit = 3)
@@ -180,10 +169,10 @@ function ele_finder(lat::Lat, who::Union{AbstractString,Regex})
     throw(BmadParseError("Cannot parse: " * who))
   end
 
-  eles1 = ele_finder_base(lat, list[1])
+  eles1 = ele_find_base(lat, list[1])
   if length(list) == 1; return eles1; end
 
-  eles2 = ele_finder(lat, list[3])
+  eles2 = eles_find(lat, list[3])
   eles = []
 
   if list[2] == "&"
@@ -209,13 +198,36 @@ function ele_finder(lat::Lat, who::Union{AbstractString,Regex})
 end
 
 #---------------------------------------------------------------------------------------------------
-# branch_finder
+# ele_find
+
+"""
+    function ele_find(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
+
+Returns element specified by `who`. 
+
+- `default`   Value to return if the number of elements matching `who` is not one. If the value of `default` is `missing`, an error is thrown. 
+"""
+
+function ele_find(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
+  eles = eles_find(lat, who)
+  if length(eles) == 1; return eles[1]; end
+  if (ismissing(default))
+    if length(eles) == 0
+      error(f"Cannot find: {who} in lattice")
+    else
+      error(f"More than one element matches: {who} in lattice")
+    end
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# branch_find
 
 """
 Returns branch corresponding to name. Else returns `nothing`
 """
 
-function branch_finder(lat::Lat, name::AbstractString)
+function branch_find(lat::Lat, name::AbstractString)
   for branch in lat.branch
     if matches_branch(name, branch); return branch; end
   end
