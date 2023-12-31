@@ -248,9 +248,13 @@ end
 # multipole_type
 
 """
-`type` will be "K", "KL", "Ks" "KsL", "B", "BL", "Bs", "BsL", "tilt", "E", "EL", "Es", "EsL", "Etilt"
+    function multipole_type(str::Union{AbstractString,Symbol})
 
-  `str` can be symbol.
+returns (`type`, `order`) tuple. If `str` is a multipole parameter name like `K2L` or `Etilt`,
+`order` will be the multipole order and `type` will be one of:
+ - "K", "KL", "Ks" "KsL", "B", "BL", "Bs", "BsL", "tilt", "E", "EL", "Es", "EsL", or "Etilt"
+
+If `str` is not a valid multipole parameter name, returned will be (`nothing`, `-1`).
 """ multipole_type
 
 function multipole_type(str::Union{AbstractString,Symbol})
@@ -289,10 +293,9 @@ end
 """
     ele_param_info(sym::Symbol; no_info_return = Error)
 
-Returns `param_info` or `default`.
-If the value `no_info_return` is `Error` (the default), an error is thrown.
-Otherwise the value of `no_info_return` is returned
-
+Returns information on the element parameter `sym`.
+Returns a `ParamInfo` struct or the value of `no_info_return` if no information on `sym` is found.
+If the value of `no_info_return` is `Error` (the default), an error is thrown when `sym` is unrecognized.
 
 """ ele_param_info
 

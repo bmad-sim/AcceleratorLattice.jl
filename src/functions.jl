@@ -13,7 +13,7 @@ elements with that name.
 
 ### Output
 
-Dict(String, Vector{Ele}) dictionary where the keys are element names and the values are 
+Dict{String, Vector{Ele}} dictionary where the keys are element names and the values are 
 vectors of elements of whose name matches the key
 
 ### Example

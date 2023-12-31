@@ -331,7 +331,8 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
 
   init_bookkeeper!(lat, superimpose)
   init_governors!(lat, governors)
-  ##bookkeeper!(lat)
+
+  bookkeeper!(lat)
 
   return lat
 end
