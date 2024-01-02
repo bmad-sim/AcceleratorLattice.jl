@@ -13,14 +13,12 @@ The exception is the `this_ele_length` parameter which is reset for each element
 """ ChangedLedger
 
 @kwdef mutable struct ChangedLedger
-  this_ele_length::Bool = false
+  this_ele_length_set::Bool = false
   s_position::Bool = false
   ref_energy::Bool = false
   ref_time:: Bool = false
   floor::Bool = false
 end
-
-const AllChanged = ChangedLedger(true, true, true, true, true)
 
 #---------------------------------------------------------------------------------------------------
 # bookkeeper!(Lat)
@@ -47,16 +45,10 @@ end
 """
     Internal: function bookkeeper!(branch::Branch)
 
-Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lat)` and is not meant for general use.
+Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lat)`.
 """ bookkeeper!(branch::Branch)
 
 function bookkeeper!(branch::Branch)
-  # Set ix_ele and branch pointer for elements.
-  for (ix_ele, ele) in enumerate(branch.ele)
-    ele.pdict[:ix_ele] = ix_ele
-    ele.pdict[:branch] = branch
-  end
-
   if branch.pdict[:type] == LordBranch; return; end
 
   # Not a lord branch...
@@ -76,8 +68,7 @@ end
     Internal: bookkeeper!(ele::Ele, ..., previous_ele::Union{Ele,Nothing})
 
 Ele bookkeeping. For example, propagating the floor geometry from one element to the next. 
-These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lat)` 
-and these routines are not meant for general use.
+These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lat)`.
 
 ### Output
 
@@ -98,23 +89,44 @@ end
 """
     Internal: function index_bookkeeper!(branch::Branch)
 
-Does Element index and s-position bookkeeping for a given branch.
-""" index_bookkeeper!
+Does "quick" element index bookkeeping for a given branch.
+Used by lattice manipulation routines that need reindexing but don't need a full bookkeeping.
+""" index_and_s_bookkeeper!
 
 function index_bookkeeper!(branch::Branch)
-  ele1 = branch.ele[1]
-  if haskey(ele1.inbox, :s)
-    s_old = pop!(ele1.inbox, :s)
+  for (ix, ele) in enumerate(branch.ele)
+    ele.pdict[:ix_ele] = ix
+    ele.pdict[:ix_branch] = branch
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# s_bookkeeper!(Branch)
+
+"""
+    Internal: function s_bookkeeper!(branch::Branch)
+
+Does "quick" element s-position bookkeeping for a given branch.
+Used by lattice manipulation routines that need an s recalc but don't need a full bookkeeping.
+
+Note: Parameters in an element's inbox are not removed (unlike a full bookkeeping) so this
+routine will not interfere with a full bookkeeping.
+""" s_bookkeeper!
+
+function s_bookkeeper!(branch::Branch)
+  if branch.type == LordBranch; return; end
+
+  pdict = branch.ele[1].pdict
+  if haskey(pdict, :inbox) && haskey(pdict[:inbox], :s)
+    s_old = pdict[:inbox][:s]
     ele1.pdict[:LengthGroup] = LengthGroup(0.0_rp, s_old, s_old)
   else
     s_old = ele1.s_exit
   end
 
   for (ix, ele) in enumerate(branch.ele)
-    ele.ix_ele = ix
-    if branch.type == LordBranch; continue; end
     if ix == 1; continue; end
-    haskey(ele.inbox, :L) ? len = pop!(ele.inbox, :L) : len = ele.L
+    haskey(pdict, :inbox) && haskey(pdict[:inbox], :L) ? len = pdict[:inbox][:L] : len = ele.L
     ele1.pdict[:LengthGroup] = LengthGroup(len, s_old, s_old+len)
     s_old = s_old + len
   end
@@ -130,7 +142,7 @@ Move parameters in `ele.param[:inbox]` such that the value at `ele.param[:inbox]
 to `ele.param[:inbox][:GGG][:XXX]` where `GGG` is the element parameter group for `XXX` and `ele.param[:inbox][:GGG]`
 is a Dict (not an instance of the parameter group).
 
-This is a Low level routine used by `bookkeeper!(lat::Lat)`. Not meant for general use.
+This is a Low level routine used by `bookkeeper!(lat::Lat)`.
 """ sort_ele_inbox!
 
 function sort_ele_inbox!(ele::Union{Ele,Nothing})
@@ -141,8 +153,8 @@ function sort_ele_inbox!(ele::Union{Ele,Nothing})
   inbox = pdict[:inbox]
 
   for sym in copy(keys(inbox))  # Need copy since keys will be added to inbox.
-    # In theory, the inbox should originally not contain any parameter group keys. However, if there has been
-    # a problem, there might be some such keys so just ignore.
+    # In theory, the inbox should originally not contain any parameter group keys. However, if there 
+    # has been a problem, there might be some such keys so just ignore.
     if sym in keys(ele_param_group_list); continue; end
 
     pinfo = ele_param_info(sym, no_info_return = nothing)
@@ -161,6 +173,7 @@ function sort_ele_inbox!(ele::Union{Ele,Nothing})
 
     value = pop!(inbox, sym)
 
+    # An alias is something like hgap which gets mapped to hgap1 and hgap2
     if haskey(param_alias, sym)
       for sym2 in param_alias[sym]
         inbox[parent][sym2] = value
@@ -175,7 +188,9 @@ end
 # ele_inbox_group
 
 """
-  Internal: function ele_inbox_group
+  Internal: function ele_inbox_group(pdict, group::Symbol)
+
+  Return the the Dict `pdict[:inbox][group]` if it exists otherwise return `nothing`
 """ ele_inbox_group
 
 function ele_inbox_group(pdict, group::Symbol)
@@ -184,30 +199,79 @@ function ele_inbox_group(pdict, group::Symbol)
 end
 
 #---------------------------------------------------------------------------------------------------
-# update_ele_group!
+# function value_of_ele_param
 
 """
-  Internal: update_ele_group!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+    function value_of_ele_param (pdict, group::Symbol, param::Symbol, default)
 
-Updates an element parameter group at `ele.param[:group]` with changed parameters from `ele.param[:inbox][:group]`.
+Return:
+ - `pdict[inbox][group][param]` if it exists. If not try:
+ - `pdict[group].param` if it exists. If not return:
+ - `default`
 
-""" update_ele_group!
+Where: `pdict` is an instance of an `ele.pdict` Dict.
+""" value_of_ele_param
 
-function update_ele_group!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
-  pdict = ele.pdict
-  sg = Symbol(group)
-  gin = inbox(pdict, sg)
-  if isnothing(gin); return; end
-
-  if haskey(pdict, sg)
-    g = Dict(k => getfield(gin, k) for k in fieldnames(group))
-    g = merge(g, gin)
-  else
-    g = gin
+function value_of_ele_param(pdict, group::Symbol, param::Symbol, default)
+  if haskey(pdict, :inbox) && haskey(pdict[:inbox], group) && haskey(pdict[:inbox][group], param)
+    return pdict[inbox][group][param]
   end
 
-  eval( :(pdict[sg] = $(group)(; g)) )
+  if haskey(pdict, group); return getfield(pdict[group], param); end
+  return default
+end
+
+#---------------------------------------------------------------------------------------------------
+# param_conflict_check
+
+"""
+    param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
+
+Checks if there is a symbol conflict in `gdict`. `gdict` is a Dict o parameter sets for an element.
+A symbol conflict occurs when two keys in `gdict` are not allowed to both be simultaneously set.
+For example, `rho` and `g` for a `Bend` cannot be simultaneously set since it is not clear how
+to handle this case (since `rho` * `g` = 1 they are not independent variables).
+
+
+
+"""  param_conflict_check
+
+function param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
+  for ix1 in 1:length(syms)-1
+    for ix2 in ix1+1:length(syms)
+      if haskey(gdict, syms[ix1]) && haskey(gdict, syms[ix2])
+        error(f"{syms[ix1]} and {syms[ix2]} cannot both be sepecified for a {typeof(ele)} element: {ele.name}")
+      end
+    end
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# update_ele_group_from_inbox
+
+function update_ele_group_from_inbox(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+  pdict = ele.pdict
+  sg = Symbol(group)
+  gin = ele_inbox_group(pdict, sg)
+  if !haskey(pdict, sg); pdict[sg] = eval( :($(group)()) ); end
+  gnow = pdict[sg]
+
+  if isnothing(gin); return; end
+
+  g = Dict(k => getfield(gnow, k) for k in fieldnames(group))
+  g = merge(g, gin)
+
+  pdict[sg] = eval_str("$group")(; g...)
   pop!(pdict[:inbox], sg)
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele_group_bookkeeper!(ele::Ele, group::Type{T}, ...)
+# Bookkeeping for everything else not covered by a specific function.
+
+function ele_group_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
+                                      previous_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
+  update_ele_group_from_inbox(ele, group)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -217,26 +281,36 @@ end
 function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   lgin = ele_inbox_group(pdict, :LengthGroup)
+
+  if isnothing(previous_ele) && isnothing(lgin)
+    if !haskey(pdict, :LengthGroup)
+      pdict[:LengthGroup] = LengthGroup()
+      changed.s_position = true
+      changed.this_ele_length_set = true
+    end
+    return
+  end
+
   if !changed.s_position && isnothing(lgin); return; end
 
   if isnothing(previous_ele)
     s = 0
-    if !isnothing(lgin) && haskey(lgin, :s)
+    if haskey(lgin, :s)
       s = lgin[:s]
     elseif haskey(pdict, :LengthGroup)
       s = pdict[:LengthGroup].s
     end
   else
     s = previous_ele.s_exit
-  endif
+  end
 
   L = 0
   if !isnothing(lgin) && haskey(lgin, :L)
     L = lgin[:L]
-    changed.this_ele_length = true
+    changed.this_ele_length_set = true
   elseif haskey(pdict, :LengthGroup)
     L = pdict[:LengthGroup].L
-    changed.this_ele_length = false
+    changed.this_ele_length_set = false
   end
 
   if !isnothing(lgin); delete!(pdict[:inbox], :LengthGroup); end
@@ -256,7 +330,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
   rgin = ele_inbox_group(pdict, :ReferenceGroup)
   haskey(pdict, :ReferenceGroup) ? rgnow = pdict[:ReferenceGroup] : rgnow = nothing
   
-  if !changed.this_ele_length && !changed.ref_energy && !isnothing(rgin); return; end
+  if !changed.this_ele_length_set && !changed.ref_energy && isnothing(rgin); return; end
   changed.ref_energy = true
 
   if isnothing(previous_ele)   # implies BeginningEle
@@ -266,7 +340,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
     end
 
     if !haskey(rgin, :species_ref)
-      if isnothing(rgnow) ? error(f"Species not set for: {ele_name(ele)}") : rgin[:species_ref] = rgnow[:species_ref]
+      isnothing(rgnow) ? error(f"Species not set for: {ele_name(ele)}") : rgin[:species_ref] = rgnow[:species_ref]
     end
     rgin[:species_ref_exit] = rgin[:species_ref]
 
@@ -284,7 +358,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
     elseif haskey(rgin, :E_tot_ref)
       rgin[:pc_ref] = pc_from_E_tot(rgin[:E_tot_ref], rgin[:species_ref])
     elseif  haskey(rgin, :pc_ref)
-      rgin[:E_tot_ref] = E_tot_from_pc(rgin[:pc_ref], rgin.species_ref)
+      rgin[:E_tot_ref] = E_tot_from_pc(rgin[:pc_ref], rgin[:species_ref])
     elseif isnothing(rgnow)
         error(f"pc_ref nor E_tot_ref set for: {ele_name(ele)}")
     else
@@ -312,11 +386,11 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
   L = pdict[:LengthGroup].L
   dt = L * pc / E_tot
 
-  pdict[:ReferenceGroup] = ReferenceGroup(pc_ref = pc, pc_ref_exit = pc,
-                       E_tot_ref = E_tot, E_tot_ref_exit = E_tot, time_ref = time, time_ref_exit = time+dt, 
-                       species_ref = species, species_exit = species_exit)
+  pdict[:ReferenceGroup] = ReferenceGroup(species_ref = species, species_ref_exit = species_exit, 
+                       pc_ref = pc, pc_ref_exit = pc, E_tot_ref = E_tot, E_tot_ref_exit = E_tot, 
+                       time_ref = time, time_ref_exit = time+dt)
   if !isnothing(rgin)
-    pop!(pdict[:inbox], :ReferenceGroup)
+    delete!(pdict[:inbox], :ReferenceGroup)
     error(f"ReferenceGroup parameters cannot be set for this element: {ele_name(ele)}")
   end
 end
@@ -325,26 +399,26 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, ...)
 # FloorPositionGroup bookkeeper
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, 
+                                              changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   fpin = ele_inbox_group(pdict, :FloorPositionGroup)
-  if !changed.this_ele_length && !changed.floor && isnothing(fpin); return; end
+
+  if isnothing(previous_ele)
+    update_ele_group_from_inbox(ele, group)
+    if !isnothing(fpin); changed.floor = true; end
+    return
+  end
+
+  if !changed.this_ele_length_set && !changed.floor && isnothing(fpin)
+    if !haskey(pdict, :FloorPositionGroup); pdict[:FloorPositionGroup] = previous_ele.FloorPositionGroup; end
+    return
+  end
 
   changed.floor = true
   pdict[:FloorPositionGroup] = propagate_ele_geometry(previous_ele.FloorPositionGroup, previous_ele)
-  if haskey(inbox, :FloorPositionGroup); pop!(inbox, :FloorPositionGroup); end
+  delete!(pdict[:inbox], :FloorPositionGroup)
 end
-
-#---------------------------------------------------------------------------------------------------
-# ele_group_bookkeeper!(ele::Ele, group::Type{T}, ...)
-# Bookkeeping for everything else not covered by a specific function.
-
-function ele_group_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
-                                      previous_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
-  update_ele_group!(ele, group)
-end
-
-###+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #---------------------------------------------------------------------------------------------------
 # ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, ...)
@@ -353,93 +427,104 @@ end
 function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
   bgin = ele_inbox_group(pdict, :BendGroup)
-  L = pdict[:LengthGroup].L
+  haskey(pdict, :BendGroup) ? bgnow = pdict[:BendGroup] : bgnow = nothing
 
-  if !isnothing(bgin)
-    pdict[:LengthGroup] = BendGroup(L_chord = L)
-    return
+  if isnothing(bgin)
+    if isnothing(bgnow)
+      pdict[:BendGroup] = BendGroup()
+      return
+    end
+    if !changed.ref_energy && !changed.this_ele_length_set; return; end
+
+    if !haskey(pdict, :inbox); pdict[:inbox] = Dict{Symbol,Any}(); end
+    bgin = pdict[:inbox]
   end
 
-  bg = pdict[:inbox][:BendGroup]
-  bg[:L] = L
-  if L != 0; param_conflict_check(ele, bg, :L, :L_chord); end
-  param_conflict_check(ele, bg, :bend_field, :g, :rho, :angle)
-  param_conflict_check(ele, bg, :e1, :e1_rect)
-  param_conflict_check(ele, bg, :e2, :e2_rect)
+  if changed.this_ele_length_set; bgin[:L] = pdict[:LengthGroup].L; end
+  param_conflict_check(ele, bgin, :L, :L_chord)
+  param_conflict_check(ele, bgin, :bend_field, :g, :rho, :angle)
+  param_conflict_check(ele, bgin, :e1, :e1_rect)
+  param_conflict_check(ele, bgin, :e2, :e2_rect)
 
-  if haskey(bg, :bend_type)
-    bend_type = bf[:bend_type]
-  elseif haskey(bg, :L_chord) || haskey(bg, :e1_rect) || haskey(bg, :e2_rect)
+  if haskey(bgin, :bend_type)
+    bend_type = bgin[:bend_type]
+  elseif !isnothing(bgnow)
+    bend_type = bgnow.bend_type
+  elseif haskey(bgin, :L_chord)
     bend_type = RBend
   else
     bend_type = SBend
   end
 
-  if haskey(bg, :L_chord); L_chord::Float64 = bg[:L_chord]; end
-
-  if haskey(bg, :bend_field)
-    bend_field::Float64 = bg[:bend_field]
-    g = bend_field * charge(pdict[:ReferenceGroup].species_ref) * c_light / pdict[:ReferenceGroup].pc_ref
-    g = 0 ? rho = Inf : rho = 1 / g
-  elseif haskey(bg, :rho)
-    rho::Float64
-    g = 1.0 / rho
-  elseif haskey(bg, :angle)
-    angle::Float64 = bg[:angle]
-    if haskey(bg, :L_chord)
-      if L_chord == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
-      angle == 0 ? g = 0.0 : g = 2.0 * sin(angle/2) / L_chord
+  if haskey(bgin, :bend_field)
+    bgin[:g] = bgin[:bend_field] * charge(pdict[:ReferenceGroup].species_ref) * c_light / pdict[:ReferenceGroup].pc_ref
+  elseif haskey(bgin, :rho)
+    bgin[:g] = 1.0 / bgin[:rho]
+  elseif haskey(bgin, :angle)
+    if haskey(bgin, :L_chord)
+      if bgin[:L_chord] == 0 && bgin[:angle] != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+      bgin[:angle] == 0 ? bgin[:g] = 0.0 : bgin[:g] = 2.0 * sin(bgin[:angle]/2) / bgin[:L_chord]
     else
-      if L == 0 && angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
-      angle == 0 ? g = 0 : g = angle / L
+      if bg[:L] == 0 && bg[:angle] != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+      bg[:angle] == 0 ? bg[:g] = 0 : bg[:g] = bg[:angle] / bg[:L]
     end
-  elseif haskey(bg, :g)
-    g = bg[:g]
+  elseif !haskey(bgin, :g)
+    if isnothing(bgnow)
+      bgin[:g] = 0
+    elseif changed.ref_energy & pdict[:MasterGroup].field_master 
+      bgin[:g] = bgin[:bend_field] * charge(pdict[:ReferenceGroup].species_ref) * c_light / pdict[:ReferenceGroup].pc_ref
+    else
+      bgin[:g] = bgnow.g
+    end
   end
 
-  bend_field = g * pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
-  g == 0 ? rho = Inf : rho = 1.0 / g
-  if haskey(bg, :L_chord)
-    angle = 2 * asin(L_chord * g / 2)
-    g = 0 ? L =  L_chord : L = rho * angle
+  bgin[:bend_field] = bgin[:g] * pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
+  bgin[:g] == 0 ? bgin[:rho] = Inf : bgin[:rho] = 1.0 / bgin[:g]
+
+  if haskey(bgin, :L_chord)
+    bgin[:angle] = 2 * asin(bgin[:L_chord] * bgin[:g] / 2)
+    bgin[:g] == 0 ? bgin[:L] =  bgin[:L_chord] : bgin[:L] = bgin[:rho] * bgin[:angle]
   else
-    angle = L * g
-    g = 0 ? L_chord = L : L_chord = 2 * rho * sin(angle/2) 
+    bgin[:angle] = bgin[:L] * bgin[:g]
+    bgin[:g] == 0 ? bgin[:L_chord] = bgin[:L] : bgin[:L_chord] = 2 * bgin[:rho] * sin(bgin[:angle]/2) 
   end
 
-  g = 0 ? L_sagitta = 0.0 : L_sagitta = -rho * cos_one(angle/2)
+  bgin[:g] == 0 ? bgin[:L_sagitta] = 0.0 : bgin[:L_sagitta] = -bgin[:rho] * cos_one(bgin[:angle]/2)
 
-  if haskey[bg, :e1]
-    e1::Float64 = bg[:e1]
-    e1_rect = e1 - 0.5 * angle
-  elseif haskey[bg, :e1_rect]
-    e1_rect::Float64 = bg[:e1_rect]
-    e1 = e1_rect + 0.5 * angle
+  if !isnothing(bgnow) && bgnow.L != bgin[:L]
+    pdict[:inbox][:LengthGroup] = Dict{Symbol,Any}([:L => bgin[:L]])
+    ele_group_bookkeeper(ele, LengthGroup, changed, previous_ele)
+  end
+
+  if haskey(bgin, :e1)
+    bgin[:e1_rect] = bgin[:e1] - 0.5 * bgin[:angle]
+  elseif haskey(bgin, :e1_rect)
+    bgin[:e1] = bgin[:e1_rect] + 0.5 * bgin[:angle]
   elseif bend_type == SBend
-    e1 = 0.0
-    e1_rect = 0.5 * angle
+    bgin[:e1] = 0.0
+    bgin[:e1_rect] = 0.5 * bgin[:angle]
   else
-    e1 = -0.5 * angle
-    e1_rect = 0.0
+    bgin[:e1] = -0.5 * bgin[:angle]
+    bgin[:e1_rect] = 0.0
   end
 
-  if haskey(bg, :e2)
-    e2::Float64 = bg[:e2]
-    e2_rect = e2 - 0.5 * angle
-  elseif haskey(bg, :e2_rect)
-    e2_rect::Float64 = bg[:e2_rect]
-    e2 = e2_rect + 0.5 * angle
+  if haskey(bgin, :e2)
+    bgin[:e2_rect] = bgin[:e2] - 0.5 * bgin[:angle]
+  elseif haskey(bgin, :e2_rect)
+    bgin[:e2] = bgin[:e2_rect] + 0.5 * bgin[:angle]
   elseif bend_type == SBend
-    e2 = 0.0
-    e2_rect = 0.5 * angle
+    bgin[:e2] = 0.0
+    bgin[:e2_rect] = 0.5 * bgin[:angle]
   else
-    e2 = -0.5 * angle
-    e2_rect = 0.0
+    bgin[:e2] = -0.5 * bgin[:angle]
+    bgin[:e2_rect] = 0.0
   end
 
-  pdict[:BendGroup] = BendGroup(angle, rho, g, bend_field, L_chord, L_sagitta, 
-            get(bg, :ref_tilt, 0.0), e1, e2, e1_rect, e2_rect, get(bg, :fint1, 0.5),
-            get(bg, :fint2, 0.5), get(bg, :hgap1, 0.5))
+  pdict[:BendGroup] = BendGroup(bgin[:angle], bgin[:rho], bgin[:g], bgin[:bend_field], bgin[:L_chord], bgin[:L_sagitta],
+            value_of_ele_param(pdict, :BendGroup, :ref_tilt, 0.0), bgin[:e1], bgin[:e2], bgin[:e1_rect], bgin[:e2_rect], 
+            value_of_ele_param(pdict, :BendGroup, :fint1, 0.5), value_of_ele_param(pdict, :BendGroup, :fint2, 0.5), 
+            value_of_ele_param(pdict, :BendGroup, :hgap1, 0.0), value_of_ele_param(pdict, :BendGroup, :hgap2, 0.0),
+            bend_type)
   pop!(pdict[:inbox], :BendGroup)
 end
 
@@ -447,66 +532,104 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, ...)
 # BMultipoleGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, previous_ele::Ele)
+function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
-  inbox = pdict[:inbox]
+  bmin = ele_inbox_group(pdict, :BMulitipoleGroup)
+  if !haskey(pdict, :BMultipoleGroup); pdict[:BMultipoleGroup] = BMultipoleGroup(); end
+  bmnow = pdict[:BMultipoleGroup]
+  ff = pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
 
-  if !haskey(inbox, :BMultipoleGroup); return; end
-
-  vdict = Dict{Int,Dict{Symbol,Any}}()
-  for (p, value) in inbox[:BMultipoleGroup]
-    mstr, order = multipole_type(p)
-    haskey(vdict, order) ? push!(vdict[order], Symbol(mstr) => value) : vdict[order] = Dict{Symbol,Any}(Symbol(mstr) => value) 
-  end
-
-  for (order, v1) in vdict
-    integrated = NotSet
-    for msym in copy(keys(v1))  # copy since keys are modified in loop.
-      mstr = String(msym)
-      if mstr[1] == 'K' || mstr[1] == 'B'
-        if integrated == NotSet; integrated = occursin("L", mstr); end
-        if integrated != occursin("L", mstr)
-          error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
-        end
-        if integrated
-          msym2 = Symbol(replace(mstr, "L" => ""))
-          v1[msym2] = pop!(v1, msym)
-        end
+  # Update existing multipoles if the reference energy has changed.
+  if changed.ref_energy
+    for (ix, v) in enumerate(bmnow.vec)
+      if pdict[:MasterGroup].field_master
+        bmnow.vector[ix] = BMultipole1(v.B/ff, v.Bs/ff, v.B, v.Bs, v.tilt, v.order, v.integrated)
+      else
+        bmnow.vector[ix] = BMultipole1(v.K, v.Ks, v.K*ff, v.Ks*ff, v.tilt, v.order, v.integrated)
       end
     end
-    v1[:integrated] = integrated
-    v1[:order] = order
   end
+    
+  # If there is nothing in the inbox then nothing to be done
+  if isnothing(bmin); return; end
 
-  f = pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
-  vec = Vector{BMultipole1}()
-  for order in sort(collect(keys(vdict)))
-    v1 = vdict[order]  
- 
-    if haskey(v1, :K) && haskey(v1, :B)
-      error(f"Combining K and B multipoles for a given order not permitted: {ele_name(ele)}")
-    elseif haskey(v1, :K)
-      v1[:B] = v1[:K] * f
-    elseif haskey(v1, :B)
-      v1[:K] = v1[:B] / f
-    else
-      v1[:K] = 0.0; v1[:B] = 0.0
+  # Transfer parameters from inbox to vin_dict[order][msym] = value where msym is something like :KsL or :Etilt
+  # And integrated/not integrated will be put in vin_dict[order][:integrated] = bool or missing.
+  vin_dict = Dict{Int,Dict{Symbol,Any}}()
+  for (p, value) in bmin
+    mstr, order = multipole_type(p)
+    if !haskey(vin_dict, order); vin_dict[order] = Dict{Symbol,Any}(:integrated => missing); end
+    v = vin_dict[order]
+
+    if mstr[1] == 'K' || mstr[1] == 'B'
+      if mstr[end] == 'L'
+        mstr = mstr[1:end-1]
+        if v[:integrated] == false
+          error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
+        end
+        v[:integrated] = true
+      else
+        if v[:integrated] == true
+          error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
+          v[:integrated] = false
+        end
+      end
+
+      if mstr == "K"
+        v[:B] = value * f
+      elseif mstr == "Ks"  
+        v[:Bs] = value * f
+      elseif mstr == "B"
+        v[:K] = value / f
+      elseif mstr == "Bs"
+        v[:Ks] = value / f
+      end
     end
 
-    if :Ks in keys(v1) && :Bs in keys(v1)
-      error(f"Combining Ks and Bs multipoles for a given order not permitted: {ele_name(ele)}")
-    elseif haskey(v1, :Ks)
-      v1[:Bs] = v1[:Ks] * f
-    elseif haskey(v1, :Bs)
-      v1[:Ks] = v1[:Bs] / f
-    else
-      v1[:Ks] = 0.0; v1[:Bs] = 0.0
-    end
-
-    push!(vec, BMultipole1(; v1...))
+    v[Symbol(mstr)] = value
   end
 
-  pdict[:BMultipoleGroup] = BMultipoleGroup(vec)
+  # Combine existing multipoles into vin_dict 
+  for (ix, vnow) in enumerate(bmnow.vector)
+    if vnow.order in keys(vin_dict)
+      vin = vin_dict[order]
+      if vin[:integrated] && !vnow.integrated
+        lf = ele.L
+      elseif !vin[:integrated] && vnow.integrated
+        lf = 1 / ele.L
+      else
+        lf = 1
+      end
+      if ismissing(vin.integrated); vin[:integrated] = vnow.integrated; end
+
+      if !haskey(vin, :K)
+        vin[:K] = vnow.K * lf
+        vin[:B] = vnow.B * lf
+      end
+
+      if !haskey(vin, :Ks)
+        vin[:Ks] = vnow.Ks * lf
+        vin[:Bs] = vnow.Bs * lf
+      end
+
+      if !haskey(vin, :tilt); vin[:tilt] = vnow.tilt; end
+
+    else
+      vin_dict[vnow.order] = vnow
+    end
+  end
+
+  #Transfer vin_dict to pdict[:BMultipoleGroup]
+  resize!(bmnow.vector, length(vin_dict))
+  for (ix, order) in enumerate(sort(collect(keys(vin_dict))))
+    if type(vin_dict[order]) == BMultipole1
+      v = vin_dict[order]
+      bmnow.vector[order] = v
+    else
+      bmnow.vector[order] = BMultipole1(v[:K], v[:Ks], v[:B], v[:Bs], v[:tilt], order, v[:integrated])
+    end
+  end
+
   pop!(inbox, :BMultipoleGroup)
 end
 
@@ -514,50 +637,73 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, ...)
 # EMultipoleGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, previous_ele::Ele)
+function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
-  inbox = pdict[:inbox]
+  emin = ele_inbox_group(pdict, :EMulitipoleGroup)
+  if !haskey(pdict, :EMultipoleGroup); pdict[:EMultipoleGroup] = EMultipoleGroup(); end
+  bmnow = pdict[:EMultipoleGroup]
 
-  if !haskey(inbox, :EMultipoleGroup); return; end
+  # If there is nothing in the inbox then nothing to be done
+  if isnothing(emin); return; end
 
-  vdict = Dict{Int,Dict{Symbol,Any}}()
-  for (p, value) in inbox[:EMultipoleGroup]
+  # Transfer parameters from inbox to vin_dict[order][msym] = value where msym is something like :EsL or :Etilt
+  # And integrated/not integrated will be put in vin_dict[order][:integrated] = bool or missing.
+  vin_dict = Dict{Int,Dict{Symbol,Any}}()
+  for (p, value) in emin
     mstr, order = multipole_type(p)
-    haskey(vdict, order) ? push!(vdict[order], Symbol(mstr) => value) : 
-                             vdict[order] = Dict{Symbol,Any}(Symbol(mstr) => value) 
-  end
+    if !haskey(vin_dict, order); vin_dict[order] = Dict{Symbol,Any}(:integrated => missing); end
+    v = vin_dict[order]
 
-  for (order, v1) in vdict
-    integrated = NotSet
-    for msym in copy(keys(v1))  # copy since keys are modified in loop.
-      mstr = String(msym)
-      if mstr[1] == 'E' && mstr != "Etilt"
-        if integrated == NotSet; integrated = occursin("L", mstr); end
-        if integrated != occursin("L", mstr)
+    if mstr[1] == 'E'
+      if mstr[end] == 'L'
+        mstr = mstr[1:end-1]
+        if v[:integrated] == false
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
         end
-        if integrated
-          msym2 = Symbol(replace(mstr, "L" => ""))
-          v1[msym2] = pop!(v1, msym)
+        v[:integrated] = true
+      else
+        if v[:integrated] == true
+          error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
+          v[:integrated] = false
         end
       end
     end
-    v1[:integrated] = integrated
-    v1[:order] = order
+
+    v[Symbol(mstr)] = value
   end
 
-  f = pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
-  vec = Vector{EMultipole1}()
-  for order in sort(collect(keys(vdict)))
-    v1 = vdict[order]  
-    if !haskey(v1, :E); v1[:E] = 0.0; end
-    if !haskey(v1, :Es); v1[:Es] = 0.0; end
-    push!(vec, EMultipole1(; v1...))
+  # Combine existing multipoles into vin_dict 
+  for (ix, vnow) in enumerate(bmnow.vector)
+    if vnow.order in keys(vin_dict)
+      vin = vin_dict[order]
+      if vin[:integrated] && !vnow.integrated
+        lf = ele.L
+      elseif !vin[:integrated] && vnow.integrated
+        lf = 1 / ele.L
+      else
+        lf = 1
+      end
+      if ismissing(vin.integrated); vin[:integrated] = vnow.integrated; end
+
+      if !haskey(vin, :E);  vin[:E]  = vnow.E  * lf; end
+      if !haskey(vin, :Es); vin[:Es] = vnow.Es * lf; end
+      if !haskey(vin, :tilt); vin[:tilt] = vnow.tilt; end
+
+    else
+      vin_dict[vnow.order] = vnow
+    end
   end
 
-  pdict[:EMultipoleGroup] = EMulitipoleGroup(vec)
+  #Transfer vin_dict to pdict[:BMultipoleGroup]
+  resize!(emnow.vector, length(vin_dict))
+  for (ix, order) in enumerate(sort(collect(keys(vin_dict))))
+    if type(vin_dict[order]) == EMultipole1
+      v = vin_dict[order]
+      bmnow.vector[order] = v
+    else
+      bmnow.vector[order] = EMultipole1(v[:E], v[:Es], v[:tilt], order, v[:integrated])
+    end
+  end
+
   pop!(inbox, :EMultipoleGroup)
 end
-end
-end
-

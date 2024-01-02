@@ -208,10 +208,10 @@ Single magnetic multipole of a given order.
 See BMultipoleGroup.
 """
 @kwdef struct BMultipole1 <: EleParameterGroup  # A single multipole
-  K::Float64 = NaN          # EG: "K2", "K2l" 
-  Ks::Float64 = NaN         # EG: "K2s", "K2sl"
-  B::Float64 = NaN
-  Bs::Float64 = NaN  
+  K::Float64 = 0            # EG: "K2", "K2L" 
+  Ks::Float64 = 0           # EG: "K2s", "K2sL"
+  B::Float64 = 0
+  Bs::Float64 = 0  
   tilt::Float64 = 0
   order::Int64 = -1         # Multipole order
   integrated::Bool = false  # Also determines what stays constant with length changes.
@@ -232,8 +232,8 @@ See EMultipoleGroup.
 """ EMultipole1
 
 @kwdef struct EMultipole1 <: EleParameterGroup
-  E::Float64 = NaN            # EG: "E2", "E2l"
-  Es::Float64 = NaN           # EG: "E2s", "E2sl"
+  E::Float64 = 0              # EG: "E2", "E2L"
+  Es::Float64 = 0             # EG: "E2s", "E2sL"
   Etilt::Float64 = 0
   order::Int64 = -1           # Multipole order
   integrated::Bool = false
@@ -279,7 +279,7 @@ determined by the `field_master` setting in the MasterGroup struct.
   rho::Float64 = Inf
   g::Float64 = 0                # Note: Old Bmad dg -> K0.
   bend_field::Float64 = 0
-  L_chord::Float64 = NaN
+  L_chord::Float64 = 0
   L_sagitta::Float64 = 0
   ref_tilt::Float64 = 0
   e1::Float64 = 0

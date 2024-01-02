@@ -140,20 +140,20 @@ Base.:-(beamline::BeamLine) = reflect(beamline)
 Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.name * "_mult" * string(n), 
                           [(n > 0 ? beamline : reflect(beamline)) for i in 1:abs(n)], beamline.pdict)
                           
-Base.:*(n::Int, ele::Ele) = (if n < 0; throw(BoundsError("Negative multiplier does not make sense.")); end,
+Base.:*(n::Int, ele::Ele) = (if n < 0; error(f"BoundsError: Negative multiplier does not make sense."); end,
         BeamLine(ele.name * "_mult" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1))
 
 #-------------------------------------------------------------------------------------
 # add_beamline_ele_to_branch!
 
 """
-    add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
+    Internal: add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
                                                  info::Union{LatConstructionInfo, Nothing}  = nothing)
 
 Adds a `BeamLineEle` to a `Branch` under construction. The `info` argument passes on parameters
 from the beamline containing the `BeamLineEle`.
 
-This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
+This routine is used by the `expand` function.
 """ add_beamline_ele_to_branch!
 
 function add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
@@ -178,11 +178,11 @@ end
 # add_beamline_item_to_branch!
 
 """
-    add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
+    Internal: add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
 
 Adds a single item of a `BeamLine` line to the `Branch` under construction.
 
-This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
+Used by expand call chain and is not of general interest.
 """ add_beamline_item_to_branch!
 
 function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
@@ -191,7 +191,7 @@ function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::
   elseif item isa BeamLine 
     add_beamline_line_to_branch!(branch, item, info)
   else
-    throw(ArgumentError(f"Beamline item not recognized: {item}"))
+    error(f"ArgumentError: Beamline item not recognized: {item}")
   end
   return nothing
 end
@@ -200,16 +200,16 @@ end
 # add_beamline_line_to_branch!
 
 """
-    add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
+    Internal: add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
 
 Add the elements in a `BeamLine.line` to a `Branch` under construction.
 
-This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
+Used by the `expand` function.
 """ add_beamline_line_to_branch!
 
 function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
   info.n_loop += 1
-  if info.n_loop > 100; throw(InfiniteLoop("Infinite loop of beam lines calling beam lines detected.")); end
+  if info.n_loop > 100; error(f"InfiniteLoop: Infinite loop of beam lines calling beam lines detected."); end
 
   info = deepcopy(info)
   info.orientation_here = info.orientation_here * beamline.pdict[:orientation]
@@ -234,11 +234,11 @@ end
 # new_tracking_branch!
 
 """
-    new_tracking_branch!(lat::Lat, beamline::BeamLine)
+    Internal: new_tracking_branch!(lat::Lat, beamline::BeamLine)
 
 Adds a `BeamLine` to the lattice creating a new `Branch`.
 
-This routine is meant solely to be used in the lat_expansion call chain and is not of general interest.
+Used by the `expand` function.
 """ new_tracking_branch!
 
 function new_tracking_branch!(lat::Lat, beamline::BeamLine)
@@ -287,11 +287,11 @@ function new_lord_branch!(lat::Lat, name::AbstractString)
 end
 
 #-------------------------------------------------------------------------------------
-# lat_expansion
+# expand
 
 """
-    lat_expansion(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
-    lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}})
+    expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
+    expand(root_line::Union{BeamLine,Vector{BeamLine}})
 
 Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
 
@@ -305,10 +305,9 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 - `Lat`       `Lat` instance with expanded beamlines.
 
-""" lat_expansion
+""" expand
 
-function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}};
-            governors::Vector{T} = Vector{Ele}(), superimpose::Vector{W} = Vector{Ele}()) where {T <: Ele, W <: Ele}
+function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}}) 
   lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
 
   if root_line == nothing; root_line = root_beamline; end
@@ -329,15 +328,19 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
   new_lord_branch!(lat, "multipass_lord")
   new_lord_branch!(lat, "governor")
 
-  init_bookkeeper!(lat, superimpose)
-  init_governors!(lat, governors)
-  ##bookkeeper!(lat)
+  for branch in lat.branch
+    index_bookkeeper!(branch)
+  end
+
+  bookkeeper!(lat)
 
   return lat
 end
 
+#-------------------------------------------------------------------------------------
+# expand
+
 # expand version without lattice name argument.
-function lat_expansion(root_line::Union{BeamLine,Vector{BeamLine}}; 
-            governors::Vector{Ele} = Vector{Ele}(), superimpose::Vector{Ele} = Vector{Ele}())
-  lat_expansion("", root_line; governors = governors, superimpose = superimpose)
+function expand(root_line::Union{BeamLine,Vector{BeamLine}})
+  expand("", root_line; governors = governors, superimpose = superimpose)
 end

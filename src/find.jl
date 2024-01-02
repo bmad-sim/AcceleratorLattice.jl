@@ -28,10 +28,13 @@ function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
   n = length(branch.ele)
 
   if wrap
+    if n == 0; error(f"BoundsError: " *           # Happens with lord branch with no lord elements
+              f"Element index: {ix_ele} out of range in branch {branch.ix_branch}: {branch.name}"); end
     ix_ele = mod(ix_ele-1, n-1) + 1
     return branch.ele[ix_ele]
   else
-    if ix_ele < 1 || ix_ele > n; throw(BoundsError(f"element index out of range {ix_ele} in branch {branch.name}")); end
+    if ix_ele < 1 || ix_ele > n; error(f"BoundsError: " * 
+              f"Element index: {ix_ele} out of range in branch {branch.ix_branch}: {branch.name}"); end
     return branch.ele[ix_ele]
   end
 end
@@ -40,6 +43,8 @@ end
 # ele_find_base
 
 """
+    function ele_find_base(lat::Lat, name::Union{AbstractString,Regex})
+
 Returns a vector of all lattice elements that match element `name` which is in the form:
   {branch_id>>}ele_id{#N}{+/-offset}
 or
@@ -66,7 +71,7 @@ function ele_find_base(lat::Lat, name::Union{AbstractString,Regex})
     attrib = Meta.parse(attrib)     # Makes attrib a Symbol
 
     words = str_split(pattern, "+-")
-    if length(words) == 2 || length(words) > 3; throw(BmadParseError("Bad lattice element name: " * name)); end
+    if length(words) == 2 || length(words) > 3; error(f"ParseError: Bad lattice element name: {name}"); end
     pattern = str_unquote(words[1])
     if length(words) == 3; offset = parse(Int, words[2]*words[3]); end
 
@@ -98,7 +103,7 @@ function ele_find_base(lat::Lat, name::Union{AbstractString,Regex})
         words = words[:end-2]
       end
 
-      if length(words) != 1; throw(BmadParseError("Bad lattice element name: " * name)); end
+      if length(words) != 1; error(f"ParseError: Bad lattice element name: {name}"); end
       ele_id = words[1]
       ix_ele = str_to_int(ele_id, -1)
       if ix_ele != NaN && nth_match != 1; return eles; end
@@ -166,7 +171,7 @@ function eles_find(lat::Lat, who::Union{AbstractString,Regex})
   list = str_split(who, "~&", limit = 3)
   if length(list) == 2 || list[1] == "~" || list[1] == "&" || 
                             (length(list) == 3 && (list[3] == "~" || list[3] == "&"))
-    throw(BmadParseError("Cannot parse: " * who))
+    error(f"ParseError: Cannot parse: {who}")
   end
 
   eles1 = ele_find_base(lat, list[1])
@@ -191,7 +196,7 @@ function eles_find(lat::Lat, who::Union{AbstractString,Regex})
       if !found; push!(eles, ele1); continue; end
     end
   else
-    throw(BmadParseError("Cannot parse: " * who))
+    error(f"ParseError: Cannot parse: {who}")
   end
 
   return eles
@@ -215,7 +220,7 @@ function ele_find(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE
     if length(eles) == 0
       error(f"Cannot find: {who} in lattice")
     else
-      error(f"More than one element matches: {who} in lattice")
+      error(f"FindError: More than one element matches: {who} in lattice")
     end
   end
 end

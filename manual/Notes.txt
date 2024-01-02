@@ -1,3 +1,5 @@
+* Stuff marked "Internal" are primarily meant for internal use by AcceleratorLattice functions and are probably not of interest to the average user. Internal names are not exported with a using statement and if an internal is used, a "AcceleratorLattice." prefix must be used to access.
+
 * Unlike Fortran Bmad, Julia Bmad is entirely case sensitive.
 
 * Explain @kwdef macro for structs.

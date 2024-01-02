@@ -28,7 +28,7 @@ Quaternion(x::T) where T <: Number = Quaternion(x, [0.0, 0.0, 0.0])
 function Quaternion(aa::AxisAngle) 
   if aa.angle == 0; return UNIT_QUAT; end
   m = mag(aa.axis)
-  if m == 0; throw(RangeError("length of axis is zero.")); end
+  if m == 0; error(f"RangeError: Length of axis is zero."); end
   return Quaternion(cos(0.5*aa.angle), sin(0.5*aa.angle)*axis / m)
 end
 
