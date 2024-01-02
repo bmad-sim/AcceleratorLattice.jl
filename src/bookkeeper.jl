@@ -45,16 +45,10 @@ end
 """
     Internal: function bookkeeper!(branch::Branch)
 
-Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lat)` and is not meant for general use.
+Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lat)`.
 """ bookkeeper!(branch::Branch)
 
 function bookkeeper!(branch::Branch)
-  # Set ix_ele and branch pointer for elements.
-  for (ix_ele, ele) in enumerate(branch.ele)
-    ele.pdict[:ix_ele] = ix_ele
-    ele.pdict[:branch] = branch
-  end
-
   if branch.pdict[:type] == LordBranch; return; end
 
   # Not a lord branch...
@@ -74,8 +68,7 @@ end
     Internal: bookkeeper!(ele::Ele, ..., previous_ele::Union{Ele,Nothing})
 
 Ele bookkeeping. For example, propagating the floor geometry from one element to the next. 
-These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lat)` 
-and these routines are not meant for general use.
+These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lat)`.
 
 ### Output
 
@@ -96,23 +89,44 @@ end
 """
     Internal: function index_bookkeeper!(branch::Branch)
 
-Does Element index and s-position bookkeeping for a given branch.
-""" index_bookkeeper!
+Does "quick" element index bookkeeping for a given branch.
+Used by lattice manipulation routines that need reindexing but don't need a full bookkeeping.
+""" index_and_s_bookkeeper!
 
 function index_bookkeeper!(branch::Branch)
-  ele1 = branch.ele[1]
-  if haskey(ele1.inbox, :s)
-    s_old = pop!(ele1.inbox, :s)
+  for (ix, ele) in enumerate(branch.ele)
+    ele.pdict[:ix_ele] = ix
+    ele.pdict[:ix_branch] = branch
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# s_bookkeeper!(Branch)
+
+"""
+    Internal: function s_bookkeeper!(branch::Branch)
+
+Does "quick" element s-position bookkeeping for a given branch.
+Used by lattice manipulation routines that need an s recalc but don't need a full bookkeeping.
+
+Note: Parameters in an element's inbox are not removed (unlike a full bookkeeping) so this
+routine will not interfere with a full bookkeeping.
+""" s_bookkeeper!
+
+function s_bookkeeper!(branch::Branch)
+  if branch.type == LordBranch; return; end
+
+  pdict = branch.ele[1].pdict
+  if haskey(pdict, :inbox) && haskey(pdict[:inbox], :s)
+    s_old = pdict[:inbox][:s]
     ele1.pdict[:LengthGroup] = LengthGroup(0.0_rp, s_old, s_old)
   else
     s_old = ele1.s_exit
   end
 
   for (ix, ele) in enumerate(branch.ele)
-    ele.ix_ele = ix
-    if branch.type == LordBranch; continue; end
     if ix == 1; continue; end
-    haskey(ele.inbox, :L) ? len = pop!(ele.inbox, :L) : len = ele.L
+    haskey(pdict, :inbox) && haskey(pdict[:inbox], :L) ? len = pdict[:inbox][:L] : len = ele.L
     ele1.pdict[:LengthGroup] = LengthGroup(len, s_old, s_old+len)
     s_old = s_old + len
   end
@@ -128,7 +142,7 @@ Move parameters in `ele.param[:inbox]` such that the value at `ele.param[:inbox]
 to `ele.param[:inbox][:GGG][:XXX]` where `GGG` is the element parameter group for `XXX` and `ele.param[:inbox][:GGG]`
 is a Dict (not an instance of the parameter group).
 
-This is a Low level routine used by `bookkeeper!(lat::Lat)`. Not meant for general use.
+This is a Low level routine used by `bookkeeper!(lat::Lat)`.
 """ sort_ele_inbox!
 
 function sort_ele_inbox!(ele::Union{Ele,Nothing})
@@ -233,25 +247,31 @@ function param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
 end
 
 #---------------------------------------------------------------------------------------------------
+# update_ele_group_from_inbox
+
+function update_ele_group_from_inbox(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+  pdict = ele.pdict
+  sg = Symbol(group)
+  gin = ele_inbox_group(pdict, sg)
+  if !haskey(pdict, sg); pdict[sg] = eval( :($(group)()) ); end
+  gnow = pdict[sg]
+
+  if isnothing(gin); return; end
+
+  g = Dict(k => getfield(gnow, k) for k in fieldnames(group))
+  g = merge(g, gin)
+
+  pdict[sg] = eval_str("$group")(; g...)
+  pop!(pdict[:inbox], sg)
+end
+
+#---------------------------------------------------------------------------------------------------
 # ele_group_bookkeeper!(ele::Ele, group::Type{T}, ...)
 # Bookkeeping for everything else not covered by a specific function.
 
 function ele_group_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
                                       previous_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
-  pdict = ele.pdict
-  sg = Symbol(group)
-  gin = inbox(pdict, sg)
-  if isnothing(gin); return; end
-
-  if haskey(pdict, sg)
-    g = Dict(k => getfield(gin, k) for k in fieldnames(group))
-    g = merge(g, gin)
-  else
-    g = gin
-  end
-
-  eval( :(pdict[sg] = $(group)(; g)) )
-  pop!(pdict[:inbox], sg)
+  update_ele_group_from_inbox(ele, group)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -261,11 +281,21 @@ end
 function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   lgin = ele_inbox_group(pdict, :LengthGroup)
+
+  if isnothing(previous_ele) && isnothing(lgin)
+    if !haskey(pdict, :LengthGroup)
+      pdict[:LengthGroup] = LengthGroup()
+      changed.s_position = true
+      changed.this_ele_length_set = true
+    end
+    return
+  end
+
   if !changed.s_position && isnothing(lgin); return; end
 
   if isnothing(previous_ele)
     s = 0
-    if !isnothing(lgin) && haskey(lgin, :s)
+    if haskey(lgin, :s)
       s = lgin[:s]
     elseif haskey(pdict, :LengthGroup)
       s = pdict[:LengthGroup].s
@@ -300,7 +330,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
   rgin = ele_inbox_group(pdict, :ReferenceGroup)
   haskey(pdict, :ReferenceGroup) ? rgnow = pdict[:ReferenceGroup] : rgnow = nothing
   
-  if !changed.this_ele_length && !changed.ref_energy && !isnothing(rgin); return; end
+  if !changed.this_ele_length_set && !changed.ref_energy && isnothing(rgin); return; end
   changed.ref_energy = true
 
   if isnothing(previous_ele)   # implies BeginningEle
@@ -360,7 +390,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
                        pc_ref = pc, pc_ref_exit = pc, E_tot_ref = E_tot, E_tot_ref_exit = E_tot, 
                        time_ref = time, time_ref_exit = time+dt)
   if !isnothing(rgin)
-    pop!(pdict[:inbox], :ReferenceGroup)
+    delete!(pdict[:inbox], :ReferenceGroup)
     error(f"ReferenceGroup parameters cannot be set for this element: {ele_name(ele)}")
   end
 end
@@ -373,11 +403,21 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup},
                                               changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   fpin = ele_inbox_group(pdict, :FloorPositionGroup)
-  if !changed.this_ele_length && !changed.floor && isnothing(fpin); return; end
+
+  if isnothing(previous_ele)
+    update_ele_group_from_inbox(ele, group)
+    if !isnothing(fpin); changed.floor = true; end
+    return
+  end
+
+  if !changed.this_ele_length_set && !changed.floor && isnothing(fpin)
+    if !haskey(pdict, :FloorPositionGroup); pdict[:FloorPositionGroup] = previous_ele.FloorPositionGroup; end
+    return
+  end
 
   changed.floor = true
   pdict[:FloorPositionGroup] = propagate_ele_geometry(previous_ele.FloorPositionGroup, previous_ele)
-  if haskey(inbox, :FloorPositionGroup); pop!(inbox, :FloorPositionGroup); end
+  delete!(pdict[:inbox], :FloorPositionGroup)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -438,52 +478,53 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Change
     end
   end
 
-  bg[:bend_field] = bg[:g] * pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
-  bg[:g] == 0 ? bg[:rho] = Inf : bg[:rho] = 1.0 / bg[:g]
+  bgin[:bend_field] = bgin[:g] * pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
+  bgin[:g] == 0 ? bgin[:rho] = Inf : bgin[:rho] = 1.0 / bgin[:g]
 
   if haskey(bgin, :L_chord)
-    bg[:angle] = 2 * asin(bg[:L_chord] * bg[:g] / 2)
-    bg[:g] = 0 ? bg[:L] =  bg[:L_chord] : bg[:L] = bg[:rho] * bg[:angle]
+    bgin[:angle] = 2 * asin(bgin[:L_chord] * bgin[:g] / 2)
+    bgin[:g] == 0 ? bgin[:L] =  bgin[:L_chord] : bgin[:L] = bgin[:rho] * bgin[:angle]
   else
-    bg[:angle] = bg[:L] * bg[:g]
-    bg[:g] = 0 ? bg[:L_chord] = bg[:L] : bg[:L_chord] = 2 * bg[:rho] * sin(bg[:angle]/2) 
+    bgin[:angle] = bgin[:L] * bgin[:g]
+    bgin[:g] == 0 ? bgin[:L_chord] = bgin[:L] : bgin[:L_chord] = 2 * bgin[:rho] * sin(bgin[:angle]/2) 
   end
 
-  bg[:g] = 0 ? bg[:L_sagitta] = 0.0 : bg[:L_sagitta] = -bg[:rho] * cos_one(bg[:angle]/2)
+  bgin[:g] == 0 ? bgin[:L_sagitta] = 0.0 : bgin[:L_sagitta] = -bgin[:rho] * cos_one(bgin[:angle]/2)
 
   if !isnothing(bgnow) && bgnow.L != bgin[:L]
     pdict[:inbox][:LengthGroup] = Dict{Symbol,Any}([:L => bgin[:L]])
     ele_group_bookkeeper(ele, LengthGroup, changed, previous_ele)
   end
 
-  if haskey[bgin, :e1]
-    bg[:e1_rect] = bg[:e1] - 0.5 * bg[:angle]
-  elseif haskey[bgin, :e1_rect]
-    bg[:e1] = bg[:e1_rect] + 0.5 * bg[:angle]
+  if haskey(bgin, :e1)
+    bgin[:e1_rect] = bgin[:e1] - 0.5 * bgin[:angle]
+  elseif haskey(bgin, :e1_rect)
+    bgin[:e1] = bgin[:e1_rect] + 0.5 * bgin[:angle]
   elseif bend_type == SBend
-    bg[:e1] = 0.0
-    bg[:e1_rect] = 0.5 * bg[:angle]
+    bgin[:e1] = 0.0
+    bgin[:e1_rect] = 0.5 * bgin[:angle]
   else
-    bg[:e1] = -0.5 * bg[:angle]
-    bg[:e1_rect] = 0.0
+    bgin[:e1] = -0.5 * bgin[:angle]
+    bgin[:e1_rect] = 0.0
   end
 
-  if haskey[bgin, :e2]
-    bg[:e2_rect] = bg[:e2] - 0.5 * bg[:angle]
-  elseif haskey[bgin, :e2_rect]
-    bg[:e2] = bg[:e2_rect] + 0.5 * bg[:angle]
+  if haskey(bgin, :e2)
+    bgin[:e2_rect] = bgin[:e2] - 0.5 * bgin[:angle]
+  elseif haskey(bgin, :e2_rect)
+    bgin[:e2] = bgin[:e2_rect] + 0.5 * bgin[:angle]
   elseif bend_type == SBend
-    bg[:e2] = 0.0
-    bg[:e2_rect] = 0.5 * bg[:angle]
+    bgin[:e2] = 0.0
+    bgin[:e2_rect] = 0.5 * bgin[:angle]
   else
-    bg[:e2] = -0.5 * bg[:angle]
-    bg[:e2_rect] = 0.0
+    bgin[:e2] = -0.5 * bgin[:angle]
+    bgin[:e2_rect] = 0.0
   end
 
   pdict[:BendGroup] = BendGroup(bgin[:angle], bgin[:rho], bgin[:g], bgin[:bend_field], bgin[:L_chord], bgin[:L_sagitta],
             value_of_ele_param(pdict, :BendGroup, :ref_tilt, 0.0), bgin[:e1], bgin[:e2], bgin[:e1_rect], bgin[:e2_rect], 
             value_of_ele_param(pdict, :BendGroup, :fint1, 0.5), value_of_ele_param(pdict, :BendGroup, :fint2, 0.5), 
-            value_of_ele_param(pdict, :BendGroup, :hgap1, 0.0), value_of_ele_param(pdict, :BendGroup, :hgap2, 0.0))
+            value_of_ele_param(pdict, :BendGroup, :hgap1, 0.0), value_of_ele_param(pdict, :BendGroup, :hgap2, 0.0),
+            bend_type)
   pop!(pdict[:inbox], :BendGroup)
 end
 
@@ -502,9 +543,9 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
   if changed.ref_energy
     for (ix, v) in enumerate(bmnow.vec)
       if pdict[:MasterGroup].field_master
-        bmnow.vec(ix) = BMultipole1(v.B/ff, v.Bs/ff, v.B, v.Bs, v.tilt, v.order, v.integrated)
+        bmnow.vector[ix] = BMultipole1(v.B/ff, v.Bs/ff, v.B, v.Bs, v.tilt, v.order, v.integrated)
       else
-        bmnow.vec(ix) = BMultipole1(v.K, v.Ks, v.K*ff, v.Ks*ff, v.tilt, v.order, v.integrated)
+        bmnow.vector[ix] = BMultipole1(v.K, v.Ks, v.K*ff, v.Ks*ff, v.tilt, v.order, v.integrated)
       end
     end
   end
@@ -651,7 +692,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::
     else
       vin_dict[vnow.order] = vnow
     end
-  endif
+  end
 
   #Transfer vin_dict to pdict[:BMultipoleGroup]
   resize!(emnow.vector, length(vin_dict))
@@ -666,4 +707,3 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::
 
   pop!(inbox, :EMultipoleGroup)
 end
-

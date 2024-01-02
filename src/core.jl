@@ -2,6 +2,7 @@
 # Using
 
 ## using OffsetArrays
+using InteractiveUtils      # Defines subtypes function
 using PyFormattedStrings
 using Accessors
 using LinearAlgebra
@@ -19,6 +20,11 @@ struct SwitchError <: Exception; msg::String; end
 struct StringParseError <: Exception; msg::String; end
 
 abstract type Error end
+
+#---------------------------------------------------------------------------------------------------
+
+eval_str(str::AbstractString) = eval(Meta.parse(str))
+eval_sym(sym::Symbol) = eval_str(String(sym))
 
 #---------------------------------------------------------------------------------------------------
 

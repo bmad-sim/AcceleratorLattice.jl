@@ -14,7 +14,7 @@ end
 
 function check_if_s_in_branch_range(branch::Branch, s::Real)
   if s < branch.ele[1].s || s > branch.ele[end].s
-    throw(RangeError(f"s-position ({s}) out of range [{branch.ele[1].s}], for branch ({branch.name})"))
+    error(f"RangeError: s-position ({s}) out of range [{branch.ele[1].s}], for branch ({branch.name})")
   end
 end
 

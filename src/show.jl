@@ -129,7 +129,8 @@ If `ele` has ele.name = "q02w", ele[:ix_ele] = 7 and the element lives in branch
  &#             `7` if there is only one branch in the lattice.
  %#             `7` if fodo is branch 1.
 
-"""
+""" ele_name
+
 function ele_name(ele::Ele, template::AbstractString = "")
   if !haskey(ele.pdict, :ix_ele); return ele.name; end
   if template == ""; template = "\"@N\" (!#)"; end
@@ -193,6 +194,13 @@ ele_param_str(who; default::AbstractString = "???") = string(who)
 #---------------------------------------------------------------------------------------------------
 # Show Ele
 
+"""
+    function show_ele(io::IO, ele::Ele, docstring = false)
+
+Prints lattice element info. This function is used to extend Base.show.
+To simply print the element name use the `ele_name(ele)` function.
+""" show_ele 
+
 function show_ele(io::IO, ele::Ele, docstring = false)
   eletype = typeof(ele)
   println(io, f"Ele: {ele_name(ele)}   {eletype}")
@@ -215,14 +223,14 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       end
     end
 
-    # Print groups
+    # Print element parameter groups (does not include inbox)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
       if !(typeof(group) <: EleParameterGroup); continue; end
       show_elegroup(io, group, docstring)
     end
 
-    # Print inbox params.
+    # Finally print inbox params.
     # Bookkeeping: If inbox param has same value as corresponding grouped param, remove inbox param.
     inbox = pdict[:inbox]
     if length(inbox) > 0
@@ -243,8 +251,18 @@ function show_ele(io::IO, ele::Ele, docstring = false)
   return nothing
 end
 
+Base.show(io::IO, ele::Ele) = show_ele(io, ele, false)
+Base.show(ele::Ele, docstring::Bool) = show_ele(stdout, ele, docstring)
+Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
+
 #---------------------------------------------------------------------------------------------------
 # show_elegroup
+
+"""
+    Internal: show_elegroup(io::IO, group::T, docstring::Bool)
+
+Prints lattice element group info. Used by `show_ele`.
+""" show_elegroup
 
 function show_elegroup(io::IO, group::T, docstring::Bool) where T <: EleParameterGroup
   if docstring
@@ -255,7 +273,12 @@ function show_elegroup(io::IO, group::T, docstring::Bool) where T <: EleParamete
 end
 
 function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
-  println(io, f"  {typeof(group)}:")
+  if length(group.vec) == 0
+    println(io, f"  BMultipoleGroup: No magnetic multipoles")
+    return
+  end
+
+  println(io, f"  BMultipoleGroup:")
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
   for v in group.vec
     v.integrated ? l = "L" : l = ""
@@ -268,7 +291,12 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
 end
 
 function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
-  println(io, f"  {typeof(group)}:")
+  if length(group.vec) == 0
+    println(io, f"  EMultipoleGroup: No electric multipoles")
+    return
+  end
+
+  println(io, f"  EMultipoleGroup:")
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
   for v in group.vec
     v.integrated ? l = "L" : l = ""
@@ -278,7 +306,7 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
 end
 
 function show_elegroup(io::IO, group::Vector{ControlVar})
-  println(f"H")
+  println(f"This needs to be coded!")
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -328,11 +356,6 @@ function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
     end
   end
 end
-
-
-Base.show(io::IO, ele::Ele) = show_ele(io, ele, false)
-Base.show(ele::Ele, docstring::Bool) = show_ele(stdout, ele, docstring)
-Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
 
 #---------------------------------------------------------------------------------------------------
 # ele_print_line

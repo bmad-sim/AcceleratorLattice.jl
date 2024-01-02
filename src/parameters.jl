@@ -158,13 +158,21 @@ ele_param_info_dict = Dict(
 )
 
 #---------------------------------------------------------------------------------------------------
+
+ele_param_group_syms = Symbol.(subtypes(EleParameterGroup))
+
+#---------------------------------------------------------------------------------------------------
 # param_info
 
 """
+    function units(param::Symbol)
+
+Returns the units (EG: `m` (meters) for length parameters) for 
 """ units
 
-function units(key)
-  param_info = ele_param_info(key, no_info_return = nothing)
+function units(param::Symbol)
+  if param in ele_param_group_syms; return ""; end
+  param_info = ele_param_info(param, no_info_return = nothing)
   if param_info == nothing; return "?units?"; end
   return param_info.units
 end
@@ -172,11 +180,11 @@ end
 #---------------------------------------------------------------------------------------------------
 # units
 
-function units(key, eletype::Type{T}) where T <: Ele
+function units(param, eletype::Type{T}) where T <: Ele
   if eletype == Controller || eletype == Ramper
-    return "" 
+    return ""
   else
-    return units(key)
+    return units(param)
   end
 end
 

@@ -1,37 +1,30 @@
 #---------------------------------------------------------------------------------------------------
-# init_bookkeeper!(Lat, superimpose)
+# init_superimpose!(Lat, superimpose)
 
 """
-    init_bookkeeper!(lat::Lat, superimpose::Vector{T}) where T <: Ele
-    init_bookkeeper!(branch::Branch, superimpose::Vector{T}) where T <: Ele
+    Internal: init_superimpose!(lat::Lat, superimpose::Vector{T}) where T <: Ele
+    Internal: init_superimpose!(branch::Branch, superimpose::Vector{T}) where T <: Ele
 
-Internal routine called by `expand` to do initial bookkeeping like multipass init,
-superpositions, reference energy propagation, etc. Not meant for general use.
-""" init_bookkeeper!
+Internal routine called by `expand` to do initial bookkeeping 
+superpositions, reference energy propagation, etc.
+""" init_superimpose!
 
-function init_bookkeeper!(lat::Lat, superimpose::Vector{T}) where T <: Ele
-  init_multipass_bookkeeper!(lat)
-
+function init_superimpose!(lat::Lat, superimpose::Vector{T}) where T <: Ele
   for branch in lat.branch
-    init_bookkeeper!(branch, superimpose)
+    init_superimpose!(branch, superimpose)
   end
 end
 
 #---------------------------------------------------------------------------------------------------
-# init_bookkeeper!(Branch)
+# init_superimpose!(Branch, superimpose)
 
-function init_bookkeeper!(branch::Branch, superimpose::Vector{T}) where T <: Ele
-  # Set ix_ele and branch pointer for elements.
-  for (ix_ele, ele) in enumerate(branch.ele)
-    ele.pdict[:ix_ele] = ix_ele
-    ele.pdict[:branch] = branch
-  end
-
+function init_superimpose!(branch::Branch, superimpose::Vector{T}) where T <: Ele
   if branch.pdict[:type] == LordBranch; return; end
 
+  changed = ChangedLedger(false, true, true, true, true)
   previous_ele = nothing
   for ele in branch.ele
-    bookkeeper!(ele, previous_ele)
+    bookkeeper!(ele, changed, previous_ele)
     previous_ele = ele
   end
 
@@ -44,16 +37,15 @@ end
 # init_governors!
 
 """
-    init_governors!(lat::Lat, governors::Vector{T}) where T<: Ele
+    Internal: init_governors!(lat::Lat, governors::Vector{T}) where T<: Ele
 
 Initialize lattice controllers and girders during lattice expansion.
-Called by the `expansion` function. Not meant for general use.
+Called by the `expansion` function.
 """ init_governors!
 
 function init_governors!(lat::Lat, governors::Vector{T}) where T<: Ele
   branch = lat.governor
   branch.ele = Vector{Ele}(governors)
-  changed = ChangedLedger(false, true, true, true, true)
 
   for (ix, ele) in enumerate(branch.ele)
     ele.pdict[:ix_ele] = ix
@@ -66,10 +58,10 @@ end
 # init_ele_bookkeeper!(Controller)
 
 """
-    init_ele_bookkeeper!(ele::Controller)
-    init_ele_bookkeeper!(ele::Girder)
+    Internal: init_ele_bookkeeper!(ele::Controller)
+    Internal: init_ele_bookkeeper!(ele::Girder)
 
-Initialize `Controller` and `Girder` elements during lattice expansion. Not meant for general use.
+Initialize `Controller` and `Girder` elements during lattice expansion.
 """ init_ele_bookkeeper!
 
 function init_ele_bookkeeper!(ele::Controller)
@@ -113,9 +105,9 @@ end
 # init_multipass_bookkeeper!
 
 """
-    init_multipass_bookkeeper!(lat::Lat)
+    Internal: init_multipass_bookkeeper!(lat::Lat)
 
-Multipass initialization done during lattice expansion. Not meant for general use.
+Multipass initialization done during lattice expansion.
 """ init_multipass_bookkeeper!
 
 function init_multipass_bookkeeper!(lat::Lat)
