@@ -29,11 +29,15 @@ end
 
 Insert an element `ele` at index `ix_ele` in branch `branch`.
 All elements with indexes of `ix_ele` and higher are pushed one element down the array.
+
+Inserted is a copy which is returned.
 """ insert_ele!
 
 function insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
-  insert!(branch, ix_ele, ele)
+  ele = copy(ele)
+  insert!(branch.ele, ix_ele, ele)
   index_bookkeeper!(branch)
+  return ele
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -80,16 +84,16 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
   min_len = min_ele_length(branch.lat)
   if choose_upstream && ele0.s > s_split-min_len
     ele0 = ele_at_s(branch, ele0.s, choose_upstream = true)
-    s_split = ele0.s_exit
-  elseif !choose_upstream && ele0.s_exit < s_split+min_len
-    ele0 = ele_at_s(branch, ele0.s_exit, choose_upstream = true)
+    s_split = ele0.s_s_downstream
+  elseif !choose_upstream && ele0.s_s_downstream < s_split+min_len
+    ele0 = ele_at_s(branch, ele0.s_s_downstream, choose_upstream = true)
     s_split = ele0.s
   end
 
   # No element split cases where s_split is at an element boundary.
 
   if s_split == ele0.s; return (next_ele(ele0, -1), false); end
-  if s_split == ele0.s_exit; return(ele0, false); end
+  if s_split == ele0.s_s_downstream; return(ele0, false); end
 
   # Element must be split cases.
 
@@ -105,7 +109,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
     end
     branch.ele[ele0.ix_ele] = copy(ele0)
     branch.ele[ele0.ix_ele].L = s_split - ele0.s
-    slave2.L = ele0.s_exit - s_split
+    slave2.L = ele0.s_s_downstream - s_split
     ele0.ix_ele = -1             # Mark as not being in branch.ele array.
     index_bookkeeper!(branch)
     return (slave2, true)
@@ -116,7 +120,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
     slave2 = copy(ele0)
     insert!(branch.ele, ele0.ix_ele+1, slave2)  # Just after ele0
     ele0.L = s_split - ele0.s
-    slave2.L = ele0.s_exit - s_split
+    slave2.L = ele0.s_s_downstream - s_split
 
     # Now update the slave lists for the super lords to include the new slave.
     # Notice that the lord list of the slaves does not have to be modified.
@@ -145,7 +149,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
   slave2 = copy(slave)
   insert!(branch.ele, slave.ix_ele+1, slave2)
   slave.L = s_split - ele0.s 
-  slave2.L = ele0.s_exit - s_split
+  slave2.L = ele0.s_s_downstream - s_split
 
   sbranch = branch.lat.branch[:SuperLord]
   push!(sbranch.ele, lord)

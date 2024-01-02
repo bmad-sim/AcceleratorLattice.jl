@@ -1,14 +1,8 @@
 #---------------------------------------------------------------------------------------------------
-# bmad_regex
-
-bmad_regex(str::AbstractString) = occursin("%", str) || occursin("*", str)
-
-#---------------------------------------------------------------------------------------------------
-# ele
+# next_ele
 
 """
-    ele(ele::Ele, index_offset::Int, wrap::Bool = true)
-    ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
+    next_ele(ele::Ele, offset::Int, wrap::Bool = true)
 
 Returns the lattice element whose index relative to the index of the input `ele` is `index_offset`.
 Will wrap around the ends of the branch if necessary and wrap = true.
@@ -18,13 +12,16 @@ Will wrap around the ends of the branch if necessary and wrap = true.
 
 ### Output
   `Ele` in given `branch` and given element i
-""" ele
+""" next_ele
 
-function ele(ele::Ele, index_offset::Int, wrap::Bool = true)
-  return ele(ele.pdict[branch], offset + ele.pdict[:ix_ele], wrap)
+function next_ele(ele::Ele, offset::Int, wrap::Bool = true)
+  return find_ele(ele.pdict[branch], offset + ele.pdict[:ix_ele], wrap)
 end
 
-function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
+#---------------------------------------------------------------------------------------------------
+# find_ele
+
+function find_ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
   n = length(branch.ele)
 
   if wrap
@@ -40,10 +37,10 @@ function ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_find_base
+# find_ele_base
 
 """
-    function ele_find_base(lat::Lat, name::Union{AbstractString,Regex})
+    function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
 
 Returns a vector of all lattice elements that match element `name` which is in the form:
   {branch_id>>}ele_id{#N}{+/-offset}
@@ -51,9 +48,9 @@ or
   {branch_id>>}attribute->match_str{+/-offset}
 
 To match to element lists, use the `eles` function.
-""" ele_find_base
+""" find_ele_base
 
-function ele_find_base(lat::Lat, name::Union{AbstractString,Regex})
+function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
   julia_regex = (typeof(name) == Regex)
   name = string(name)
 
@@ -134,10 +131,10 @@ function ele_find_base(lat::Lat, name::Union{AbstractString,Regex})
 end
 
 #---------------------------------------------------------------------------------------------------
-# eles_find
+# find_eles
 
 """
-    function eles_find(lat::Lat, who::Union{AbstractString,Regex})
+    function find_eles(lat::Lat, who::Union{AbstractString,Regex})
 
 Returns a vector of all lattice elements that match `who`.
 This is an extension of `ele(lat, name)` to include 
@@ -148,9 +145,8 @@ This is an extension of `ele(lat, name)` to include
 Note: negation and intersection evaluated left to right
 
 ele vector will be ordered by s-position for each branch.
-Use the `eles_order_by_index` function to reorder by index is desired.
 
-Also see `ele_find`
+Also see `find_ele`
 
 Note: For something like `who` = `"quad::*"`, if order_by_index = True, the eles(:) array will
 be ordered by element index. If order_by_index = False, the eles(:) array will be ordered by
@@ -161,11 +157,11 @@ place any super_lord elements at the end of the list.
 Note: When there are multiple element names in loc_str (which will be separated by a comma or blank), 
 the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
 with who = "quad::*,sbend::*", all the quadrupoles will appear in eles(:) before all of the sbends.
-""" ele_find
+""" find_ele
 
-function eles_find(lat::Lat, who::Union{AbstractString,Regex})
+function find_eles(lat::Lat, who::Union{AbstractString,Regex})
   # Julia regex is simple
-  if typeof(who) == Regex; return ele_find_base(lat, who); end
+  if typeof(who) == Regex; return find_ele_base(lat, who); end
 
   # Intersection
   list = str_split(who, "~&", limit = 3)
@@ -174,10 +170,10 @@ function eles_find(lat::Lat, who::Union{AbstractString,Regex})
     error(f"ParseError: Cannot parse: {who}")
   end
 
-  eles1 = ele_find_base(lat, list[1])
+  eles1 = find_ele_base(lat, list[1])
   if length(list) == 1; return eles1; end
 
-  eles2 = eles_find(lat, list[3])
+  eles2 = find_eles(lat, list[3])
   eles = []
 
   if list[2] == "&"
@@ -203,18 +199,18 @@ function eles_find(lat::Lat, who::Union{AbstractString,Regex})
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_find
+# find_ele
 
 """
-    function ele_find(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
+    function find_ele(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
 
 Returns element specified by `who`. 
 
 - `default`   Value to return if the number of elements matching `who` is not one. If the value of `default` is `missing`, an error is thrown. 
 """
 
-function ele_find(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
-  eles = eles_find(lat, who)
+function find_ele(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
+  eles = find_eles(lat, who)
   if length(eles) == 1; return eles[1]; end
   if (ismissing(default))
     if length(eles) == 0
@@ -226,13 +222,13 @@ function ele_find(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE
 end
 
 #---------------------------------------------------------------------------------------------------
-# branch_find
+# find_branch
 
 """
 Returns branch corresponding to name. Else returns `nothing`
 """
 
-function branch_find(lat::Lat, name::AbstractString)
+function find_branch(lat::Lat, name::AbstractString)
   for branch in lat.branch
     if matches_branch(name, branch); return branch; end
   end
@@ -246,8 +242,8 @@ end
 ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
 
 Returns lattice element that overlaps a given longitudinal s-position. That is, `s` will be in the
-interval `[ele.s, ele.s_exit)` where `ele` is the returned element. Notice that `s` will never
-correspond to `ele.s_exit` (if `s` = `ele.s_exit` then what is actually returned is an element
+interval `[ele.s, ele.s_downstream)` where `ele` is the returned element. Notice that `s` will never
+correspond to `ele.s_downstream` (if `s` = `ele.s_downstream` then what is actually returned is an element
 downstream from `ele`.
 
 `choose_upstream` If there is a choice of elements, which can happen if `s` corresponds to a boundary

@@ -49,7 +49,7 @@ ele_param_info_dict = Dict(
 
   :L                  => ParamInfo(LengthGroup,    Float64,   "Element length.", "m"),
   :s                  => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position.", "m"),
-  :s_exit             => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position at exit end.", "m"),
+  :s_downstream       => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position at downstream end.", "m"),
 
   :field_master       => ParamInfo(MasterGroup,    Bool,      
                                   "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
@@ -97,7 +97,7 @@ ele_param_info_dict = Dict(
   :pc_exit            => ParamInfo(PatchGroup,     Float64,      "Reference momentum at exit end.", "eV"),
   :flexible           => ParamInfo(PatchGroup,     Bool,         "Flexible patch?"),
   :user_sets_length   => ParamInfo(PatchGroup,     Bool,         "Does Bmad calculate the patch length?"),
-  :ref_coords         => ParamInfo(PatchGroup,     EleEndLocationSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
+  :ref_coords         => ParamInfo(PatchGroup,     EleBodyEndSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
 
   :voltage            => ParamInfo(RFFieldGroup,   Float64,       "RF voltage.", "volt"),
   :gradient           => ParamInfo(RFFieldGroup,   Float64,       "RF gradient.", "volt/m"),
@@ -147,7 +147,7 @@ ele_param_info_dict = Dict(
   :psi                => ParamInfo(FloorPositionGroup, Float64,           "Floor psi angle orientation", "rad"),
 
   :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
-  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     EleRefLocationSwitch, "Reference location on reference element. Default is Center."),
+  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     EleBodyRefSwitch,     "Reference location on reference element. Default is Center."),
   :dr_girder          => ParamInfo(GirderGroup,     Vector64,             "3-vector of girder position with respect to ref ele."),
   :dtheta_girder      => ParamInfo(GirderGroup,     Float64,              "Theta angle orientation with respect to ref ele."),
   :dphi_girder        => ParamInfo(GirderGroup,     Float64,              "Phi angle orientation with respect to ref ele."),

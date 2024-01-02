@@ -78,7 +78,7 @@ function init_ele_bookkeeper!(ele::Controller)
       if typeof(ele_id) == LatEleLocation
         push!(loc, ele_id)
       elseif typeof(ele_id) == String
-        append!(loc, LatEleLocation.(eles_find(lat, ele_id)))
+        append!(loc, LatEleLocation.(find_eles(lat, ele_id)))
       else
         error(f"Control ele ID not a string nor a LatEleLocation.")
       end

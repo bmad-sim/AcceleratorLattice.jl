@@ -158,7 +158,7 @@ This routine is used by the `expand` function.
 
 function add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
                                                  info::Union{LatConstructionInfo, Nothing}  = nothing)
-  push!(branch.ele, deepcopy(bele.ele))
+  push!(branch.ele, copy(bele.ele))
   ele = branch.ele[end]
   ele.pdict[:ix_ele] = length(branch.ele)
   ele.pdict[:branch] = branch
@@ -334,6 +334,7 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
 
   init_multipass_bookkeeper!(lat)
   bookkeeper!(lat)
+  lat_sanity_check(lat)
 
   return lat
 end

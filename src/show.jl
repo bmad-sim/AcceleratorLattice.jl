@@ -2,7 +2,7 @@
 
 show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
   LengthGroup => Dict{Symbol,Symbol}(
-    :s                => :s_exit,
+    :s                => :s_downstream,
   ),
 
   FloorPositionGroup => Dict{Symbol,Symbol}(
@@ -74,17 +74,9 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
 
   TrackingGroup => Dict{Symbol,Symbol}(
     :tracking_method  => :field_calc,
-    :num_setp         => :ds_step,
+    :num_steps        => :ds_step,
   ),
 )
-
-#---------------------------------------------------------------------------------------------------
-# "To print memory location of object"
-
-function memloc(@nospecialize(x))
-   y = ccall(:jl_value_ptr, Ptr{Cvoid}, (Any,), x)
-   return repr(UInt64(y))
-end
 
 #---------------------------------------------------------------------------------------------------
 # ele_name
