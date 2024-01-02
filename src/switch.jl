@@ -35,15 +35,15 @@ in different switch groups.
 ### Example
 
 ```
-  @switch PositionSwitch UpStream Inside DownStream
+  @switch TrackLocationSwitch UpStream Inside DownStream
 ```
 
 This creates abstract types `UpStream`, `Inside`, and `DownStream`. 
-The variable `PositionSwitch` is created as the Union of the three abstract types.
+The variable `TrackLocationSwitch` is created as the Union of the three abstract types.
 
 Use examples:
 ```
-  function my_func(pos::PositionSwitch, ...) = ...   # Will match to any switch value.
+  function my_func(pos::TrackLocationSwitch, ...) = ...   # Will match to any switch value.
   function my_func2(in::Inside, ...) = ...           # Will match to Inside struct.
 ```
 
@@ -115,12 +115,13 @@ end
 @switch CavityTypeSwitch StandingWave TravelingWave
 @switch ControlSlaveTypeSwitch Delta Absolute NotSet
 @switch EleBodyLocationSwitch EntranceEnd Center ExitEnd BothEnds NoWhere EveryWhere
-@switch EleEndLocationSwitch EntranceEnd ExitEnd
-@switch EleRefLocationSwitch EntranceEnd Center ExitEnd
+@switch EleBodyEndSwitch EntranceEnd ExitEnd
+@switch EleBodyRefSwitch UpstreamEnd Center DownstreamEnd
 @switch EleGeometrySwitch Straight Circular ZeroLength PatchGeom GirderGeom CrystalGeom MirrorGeom
 @switch FieldCalcMethodSwitch FieldMap BmadStandard
 @switch InterpolationSwitch Linear Spline
-@switch PositionSwitch UpstreamEnd Inside DownstreamEnd
+@switch RefLocationSwitch UpstreamEnd Center DownstreamEnd
+@switch TrackLocationSwitch UpstreamEnd Inside DownstreamEnd
 @switch TrackingMethodSwitch RungeKutta TimeRungeKutta BmadStandard
 @switch TrackingStateSwitch PreBorn Alive NotSet Lost LostNegX LostPosX LostNegY LostPosY LostPz LostZ
 

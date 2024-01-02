@@ -158,7 +158,7 @@ This routine is used by the `expand` function.
 
 function add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
                                                  info::Union{LatConstructionInfo, Nothing}  = nothing)
-  push!(branch.ele, deepcopy(bele.ele))
+  push!(branch.ele, copy(bele.ele))
   ele = branch.ele[end]
   ele.pdict[:ix_ele] = length(branch.ele)
   ele.pdict[:branch] = branch

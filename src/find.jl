@@ -242,8 +242,8 @@ end
 ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
 
 Returns lattice element that overlaps a given longitudinal s-position. That is, `s` will be in the
-interval `[ele.s, ele.s_exit)` where `ele` is the returned element. Notice that `s` will never
-correspond to `ele.s_exit` (if `s` = `ele.s_exit` then what is actually returned is an element
+interval `[ele.s, ele.s_downstream)` where `ele` is the returned element. Notice that `s` will never
+correspond to `ele.s_downstream` (if `s` = `ele.s_downstream` then what is actually returned is an element
 downstream from `ele`.
 
 `choose_upstream` If there is a choice of elements, which can happen if `s` corresponds to a boundary

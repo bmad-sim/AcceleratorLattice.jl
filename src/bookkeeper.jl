@@ -121,7 +121,7 @@ function s_bookkeeper!(branch::Branch)
     s_old = pdict[:inbox][:s]
     ele1.pdict[:LengthGroup] = LengthGroup(0.0_rp, s_old, s_old)
   else
-    s_old = ele1.s_exit
+    s_old = ele1.s_downstream
   end
 
   for (ix, ele) in enumerate(branch.ele)
@@ -301,7 +301,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::Chan
       s = pdict[:LengthGroup].s
     end
   else
-    s = previous_ele.s_exit
+    s = previous_ele.s_downstream
   end
 
   L = 0
@@ -381,10 +381,10 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
   E_tot   = old_rg.E_tot_ref_exit
   time    = old_rg.time_ref_exit
   species = old_rg.species_ref_exit
-  species_exit = species
+  species_downstream = species
   dt = pdict[:LengthGroup].L / (c_light * pc / E_tot)
 
-  pdict[:ReferenceGroup] = ReferenceGroup(species_ref = species, species_ref_exit = species_exit, 
+  pdict[:ReferenceGroup] = ReferenceGroup(species_ref = species, species_ref_exit = species_downstream, 
                        pc_ref = pc, pc_ref_exit = pc, E_tot_ref = E_tot, E_tot_ref_exit = E_tot, 
                        time_ref = time, time_ref_exit = time+dt)
   if !isnothing(rgin)
@@ -489,9 +489,9 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Change
 
   bgin[:g] == 0 ? bgin[:L_sagitta] = 0.0 : bgin[:L_sagitta] = -bgin[:rho] * cos_one(bgin[:angle]/2)
 
-  if !isnothing(bgnow) && bgnow.L != bgin[:L]
+  if ele.L != bgin[:L]
     pdict[:inbox][:LengthGroup] = Dict{Symbol,Any}([:L => bgin[:L]])
-    ele_group_bookkeeper(ele, LengthGroup, changed, previous_ele)
+    ele_group_bookkeeper!(ele, LengthGroup, changed, previous_ele)
   end
 
   if haskey(bgin, :e1)
@@ -518,11 +518,11 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Change
     bgin[:e2_rect] = 0.0
   end
 
-  pdict[:BendGroup] = BendGroup(bgin[:angle], bgin[:rho], bgin[:g], bgin[:bend_field], bgin[:L_chord], bgin[:L_sagitta],
-            value_of_ele_param(pdict, :BendGroup, :ref_tilt, 0.0), bgin[:e1], bgin[:e2], bgin[:e1_rect], bgin[:e2_rect], 
+  pdict[:BendGroup] = BendGroup(bend_type, bgin[:angle], bgin[:rho], bgin[:g], bgin[:bend_field], 
+            bgin[:L_chord], bgin[:L_sagitta], value_of_ele_param(pdict, :BendGroup, :ref_tilt, 0.0), 
+            bgin[:e1], bgin[:e2], bgin[:e1_rect], bgin[:e2_rect], 
             value_of_ele_param(pdict, :BendGroup, :fint1, 0.5), value_of_ele_param(pdict, :BendGroup, :fint2, 0.5), 
-            value_of_ele_param(pdict, :BendGroup, :hgap1, 0.0), value_of_ele_param(pdict, :BendGroup, :hgap2, 0.0),
-            bend_type)
+            value_of_ele_param(pdict, :BendGroup, :hgap1, 0.0), value_of_ele_param(pdict, :BendGroup, :hgap2, 0.0))
   pop!(pdict[:inbox], :BendGroup)
 end
 

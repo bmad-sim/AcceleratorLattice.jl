@@ -145,7 +145,7 @@ Element length and s-positions.
 @kwdef struct LengthGroup <: EleParameterGroup
   L::Float64 = 0
   s::Float64 = 0
-  s_exit::Float64 = 0
+  s_downstream::Float64 = 0
 end
 
 """
@@ -186,7 +186,7 @@ Patch element parameters
   pc_exit::Float64 = NaN        # Reference momentum at exit end
   flexible::Bool = false
   user_sets_length::Bool = false.
-  ref_coords::EleEndLocationSwitch = ExitEnd
+  ref_coords::EleBodyEndSwitch = ExitEnd
 end
 
 """
@@ -275,6 +275,7 @@ Whether `bend_field` or `g` is held constant when the reference energy is varied
 determined by the `field_master` setting in the MasterGroup struct.
 """
 @kwdef struct BendGroup <: EleParameterGroup
+  bend_type::BendTypeSwitch = SBend    # Is e or e_rect fixed? Also is len or len_chord fixed?
   angle::Float64 = 0
   rho::Float64 = Inf
   g::Float64 = 0                # Note: Old Bmad dg -> K0.
@@ -290,7 +291,6 @@ determined by the `field_master` setting in the MasterGroup struct.
   fint2::Float64 = 0.5
   hgap1::Float64 = 0
   hgap2::Float64 = 0
-  bend_type::BendTypeSwitch = SBend    # Is e or e_rect fixed? Also is len or len_chord fixed?
 end
 
 """
@@ -320,7 +320,7 @@ end
 """
 @kwdef struct GirderGroup <: EleParameterGroup
   origin_ele::Ele = NullEle
-  origin_ele_ref_pt::EleRefLocationSwitch = Center
+  origin_ele_ref_pt::EleBodyRefSwitch = Center
   dr_girder::Vector{Float64} = [0.0, 0.0, 0.0]
   dtheta_girder::Float64 = 0.0
   dphi_girder::Float64 = 0.0
@@ -467,9 +467,9 @@ end
 
 @kwdef mutable struct Superimpose
   ele::String = ""
-  ele_origin::EleRefLocationSwitch = Center
+  ele_origin::RefLocationSwitch = Center
   ref_ele::String = ""
-  ref_origin::EleRefLocationSwitch = Center
+  ref_origin::RefLocationSwitch = Center
   offset::Float64 = 0.0
   wrap_superimpose::Bool = true
 end
