@@ -91,7 +91,7 @@ end
 
 Does "quick" element index bookkeeping for a given branch.
 Used by lattice manipulation routines that need reindexing but don't need a full bookkeeping.
-""" index_and_s_bookkeeper!
+""" index_bookkeeper!
 
 function index_bookkeeper!(branch::Branch)
   for (ix, ele) in enumerate(branch.ele)

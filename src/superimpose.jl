@@ -38,20 +38,23 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleRefLocationSw
   end
 
   L_super = get_property(super_ele, :L, 0.0)
-
+  println("Here 0")
   # Insertion of zero length element with zero offset at edge of an element.
   if L_super == 0 && offset == 0 
     if ref_origin == EntranceEnd || (ref_origin == Center && ref_ele.L == 0)
+      println("Here 1")
       ix_insert = max(ref_ix_ele, 2)
-      insert_ele!(branch, super_ele, ix_insert)
+      insert_ele!(branch, ix_insert, super_ele)
       return
     elseif ref_origin == ExitEnd 
+      println("Here 2")
       ix_insert = min(ref_ix_ele+1, length(ref_ele.branch.ele))
-      insert_ele!(branch, super_ele, ix_insert)
+      insert_ele!(branch, ix_insert, super_ele)
       return
     end
   end
 
+      println("Here 3")
   # Superposition position ends
   if branch.type == LordBranch
     if ref_origin == EntranceEnd; s1 = ref_ele.slave[1].s
@@ -72,10 +75,11 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleRefLocationSw
 
   s2 = s1 + L_super
 
+  println(f"s1: {s1}, s2: {s2}")
   # Insertion of zero length element.
   if L_super == 0
     ele_at, _ = split_ele!(branch, s1, choose_upstream = (ref_origin == ExitEnd), ele_near = ref_ele)
-    insert_ele!(branch, super_ele, ele_at.ix_ele)
+    insert_ele!(branch, ele_at.ix_ele, super_ele)
     return
   end
 
@@ -87,7 +91,7 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleRefLocationSw
       s1 = s1 + branch_len
     else
       @ele drift = Drift(L = branch.ele[1].s - s1)
-      insert_ele!(branch, drift, 2)
+      insert_ele!(branch, 2, drift)
     end
   end
 
@@ -96,7 +100,7 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleRefLocationSw
       s2 = s2 - branch_len
     else
       @ele drift = Drift(L = s2 - branch.ele[end].s_exit)
-      insert_ele!(branch.ele, drift, length(branch.ele))
+      insert_ele!(branch.ele, length(branch.ele), drift)
     end
   end
 

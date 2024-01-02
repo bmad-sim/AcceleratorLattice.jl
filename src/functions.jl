@@ -120,14 +120,3 @@ function create_unique_ele_names!(lat::Lat; suffix::AbstractString = "!#")
 
   return nothing
 end
-
-#-----------------------------------------------------------------------------------------
-# eles_order_by_index
-
-"""
-Rearranges a ele vector in order by element index.
-"""
-function eles_order_by_index(eles)
-  return eles
-end
-

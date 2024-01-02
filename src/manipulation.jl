@@ -32,7 +32,7 @@ All elements with indexes of `ix_ele` and higher are pushed one element down the
 """ insert_ele!
 
 function insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
-  insert!(branch, ix_ele, ele)
+  insert!(branch.ele, ix_ele, ele)
   index_bookkeeper!(branch)
 end
 

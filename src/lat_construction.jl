@@ -334,6 +334,7 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
 
   init_multipass_bookkeeper!(lat)
   bookkeeper!(lat)
+  lat_sanity_check(lat)
 
   return lat
 end
