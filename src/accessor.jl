@@ -120,3 +120,41 @@ function Base.setproperty!(ele::T, sym::Symbol, value) where T <: Ele
   if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
   getfield(ele, :pdict)[:inbox][sym] = value
 end
+
+#---------------------------------------------------------------------------------------------------
+# Base.getindex(branch::Vector{Branch}, ...)
+
+"""
+  Base.getindex(branch::Vector{Branch}, name::Union{Symbol,AbstractString})
+
+Match `branch[name]` to branch in `branch[]` array using the names of the branches.
+""" Base.getindex(branch::Vector{Branch}, name::Union{Symbol,AbstractString})
+
+function Base.getindex(branch::Vector{Branch}, name::Union{Symbol,AbstractString})
+  if typeof(name) == Symbol; name = String(name); end
+
+  for br in branch
+    if br.name == name; return br; end
+  end
+
+  error(f"NoBranch: No branch with name: {name}")
+end
+
+#---------------------------------------------------------------------------------------------------
+# Base.getindex(ele::Vector{Ele}, ...)
+
+"""
+  Base.getindex(ele::Vector{Ele}, name::Union{Symbol,AbstractString})
+
+Match `ele[name]` to element in `ele[]` array using the names of the elements.
+""" Base.getindex(ele::Vector{Ele}, name::Union{Symbol,AbstractString})
+
+function Base.getindex(ele::Vector{Ele}, name::Union{Symbol,AbstractString})
+  if typeof(name) == Symbol; name = String(name); end
+
+  for br in ele
+    if br.name == name; return br; end
+  end
+
+  error(f"NoEle: No element with name: {name}")
+end

@@ -59,8 +59,8 @@ macro switch(base, names...)
   # If a name is not defined, define a type with that name.
   for name in names
     if ! isdefined(@__MODULE__, name)
-      eval( :(abstract type $(name) <: Switch end) )
-      eval( :(export $(name)) )
+      eval(:(abstract type $name  <: Switch end))
+      eval(:(export $name))
     end
   end
 
@@ -76,36 +76,34 @@ macro switch(base, names...)
   if ! isdefined(@__MODULE__, :switch_list_dict)
     eval( Meta.parse("switch_list_dict = Dict()") )
   end
-  eval( Meta.parse("switch_list_dict[:$base] = $names") )
+  eval(Meta.parse("switch_list_dict[:$base] = $names"))
+  eval(:(export $base))
   return nothing
 end
 
 #---------------------------------------------------------------------------------------------------
-# function show
+# show_group
 
 """
     function show_switch(io::IO, switchval::Type{T}) where T <:Switch
 
 Given one switch value, print all possible values of the switch group.
-Called through the Base.show command.
 See `@switch` documentation for more details.
 """ show_switch
 
-function show_switch(io::IO, switchval::Type{T}) where T <:Switch
-  # Turn switchval into string since using eval on switchval causes infinite recursion.
-  vstr = string(switchval)
+function show_group(switchval::Type{T}) where T <:Switch
+  found = false
   for (key, tuple) in switch_list_dict
-    if vstr in [string(x) for x in tuple]
-      println(io, f"Switch group: {key}")
-      for t in tuple
-        println(io, f"    {t}")
-      end
+    if !(Symbol(switchval) in tuple); continue; end
+    println(f"Switch group: {key}")
+    for t in tuple
+      println(f"    {t}")
     end
+    found = true
   end
-end
 
-Base.show(io::IO, ::MIME"text/plain", switchval::Type{<:Switch}) = show_switch(stdout, switchval)
-Base.show(switchval::Type{<:Switch}) = show_switch(stdout, switchval)
+  if !found; println(f"Name not found in any switch groups: {switchval}"); end
+end
 
 #---------------------------------------------------------------------------------------------------
 

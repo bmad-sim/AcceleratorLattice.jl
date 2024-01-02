@@ -61,7 +61,7 @@ ele_param_info_dict = Dict(
   :time_ref           => ParamInfo(ReferenceGroup, Float64,   "Reference time.", "sec"),
   :pc_ref_exit        => ParamInfo(ReferenceGroup, Float64,   "Reference momentum * c at exit end.", "eV"),
   :E_tot_ref_exit     => ParamInfo(ReferenceGroup, Float64,   "Reference total energy at exit end.", "eV"),
-  :time_ref_exit      => ParamInfo(ReferenceGroup, Float64,   "Reference total energy at exit end.", "eV"),
+  :time_ref_exit      => ParamInfo(ReferenceGroup, Float64,   "Reference time at exit end.", "sec"),
 
   :angle              => ParamInfo(BendGroup,      Float64,   "Design bend angle", "rad"),
   :bend_field         => ParamInfo(BendGroup,      Float64,   "Design bend field corresponding to g bending", "T"),
@@ -158,8 +158,11 @@ ele_param_info_dict = Dict(
 )
 
 #---------------------------------------------------------------------------------------------------
+# ele_param_group_syms
+# Note: The transform to Symbol prepends "AcceleratorLattice." to the parameter group names so need to strip this.
 
-ele_param_group_syms = Symbol.(subtypes(EleParameterGroup))
+ele_param_group_syms = Symbol.(replace.(string.(subtypes(EleParameterGroup)), "AcceleratorLattice." => ""))
+
 
 #---------------------------------------------------------------------------------------------------
 # param_info

@@ -93,7 +93,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
 
   # Element must be split cases.
 
-  # Split case 1: Element is a drift. No super_lord issues but save this element in case
+  # Split case 1: Element is a drift. No super lord issues but save this element in case
   # later superpositions use this drift as a reference element.
   if typeof(ele0) == Drift
     slave2 = copy(ele0)
@@ -118,7 +118,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
     ele0.L = s_split - ele0.s
     slave2.L = ele0.s_exit - s_split
 
-    # Now update the slave lists for the super_lords to include the new slave.
+    # Now update the slave lists for the super lords to include the new slave.
     # Notice that the lord list of the slaves does not have to be modified.
     for lord in ele0.super_lord
       for (ix, slave) in enumerate(lord.slave)
@@ -147,7 +147,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
   slave.L = s_split - ele0.s 
   slave2.L = ele0.s_exit - s_split
 
-  sbranch = branch_find(branch.lat, "super_lord")
+  sbranch = branch.lat.branch[:SuperLord]
   push!(sbranch.ele, lord)
   lord.pdict[:slave] = Vector{Ele}([slave, slave2])
 

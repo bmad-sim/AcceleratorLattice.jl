@@ -2,6 +2,8 @@
 # str_split
 
 """
+    str_split(str::AbstractString, delims::AbstractString; doubleup=false, group_quotation=true, limit::Integer=0)
+
 Function to split a string and return a vector of words. 
 Included in the vector are elements of the delimiters.
 
@@ -19,7 +21,8 @@ will return
   ["a", ">", "b", ">>", "c"]
 
    •  limit: the maximum size of the result. limit=0 implies no maximum (default)
-"""
+""" str_split
+
 function str_split(str::AbstractString, delims::AbstractString; doubleup=false, group_quotation=true, limit::Integer=0)
   words = []
   this_word = ""
@@ -72,7 +75,7 @@ function str_split(str::AbstractString, delims::AbstractString; doubleup=false, 
   end
 
   if this_word != ""; push!(words, this_word); end
-  if quote_mark != ' '; error(f"ParseError: Unbalanced quotation marks in: {str}); end
+  if quote_mark != ' '; error(f"ParseError: Unbalanced quotation marks in: {str}"); end
 
   return words
 end
@@ -81,6 +84,8 @@ end
 # str_match
 
 """
+    str_match(pattern::AbstractString, who::AbstractString)
+
 Function to match a string against a regular expression using the Bmad standard wild cards. 
 The whole string is matched to by inserting "^" and "\$" at the ends of the search pattern.
 
@@ -91,7 +96,7 @@ Wild card characters are:
 To use literal "*" and "%" in a string 
 
 Output:  true/false
-"""
+""" str_match
 
 function str_match(pattern::AbstractString, who::AbstractString)
   if !occursin("*", pattern) && !occursin("%", pattern); return pattern == who; end
@@ -108,8 +113,11 @@ end
 # str_unquote
 
 """
+    str_unquote(str::AbstractString)
+
 Returns string with end quote characters (if they are the same) removed.
-"""
+""" str_unquote
+
 function str_unquote(str::AbstractString)
   if size(str,1) < 2; return str; end
   if str[1] == str[end] && str[1] in "\"'"
@@ -123,16 +131,22 @@ end
 # str_quote
 
 """
+    str_quote(str::AbstractString) 
+
 Returns string with end double-quote characters added
-"""
+""" str_quote
+
 str_quote(str::AbstractString) = '"' * str * '"'
 
 #-----------------------------------------------------------------------------------------
 # str_to_int
 
 """
+    str_to_int(str::AbstractString, default = nothing)
+
 Converts a string to an integer
-"""
+""" str_to_int
+
 function str_to_int(str::AbstractString, default = nothing)
   try
     return parse(Int, str)
