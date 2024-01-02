@@ -192,7 +192,7 @@ ele_param_str(who; default::AbstractString = "???") = string(who)
 
 
 #---------------------------------------------------------------------------------------------------
-# Show Ele
+# show_ele
 
 """
     function show_ele(io::IO, ele::Ele, docstring = false)
@@ -399,7 +399,7 @@ Base.show(io::IO, ::MIME"text/plain", lat::Lat) = Base.show(stdout, lat)
 
 function Base.show(io::IO, branch::Branch)
   g_str = ""
-  if haskey(branch.pdict, :geometry); g_str = f":geometry => {branch.pdict[:geometry]}"; end
+  if haskey(branch.pdict, :geometry); g_str = f"geometry => {branch.pdict[:geometry]}"; end
   println(io, f"Branch {branch.ix_branch}: {str_quote(branch.name)}  {g_str}")
 
   if length(branch.ele) == 0 
@@ -429,7 +429,7 @@ function Base.show(io::IO, branches::Vector{Branch})
   n = maximum([length(b.name) for b in branches]) + 4
   for branch in branches
     g_str = ""
-    if haskey(branch.pdict, :geometry); g_str = f", :geometry => {branch.pdict[:geometry]}"; end
+    if haskey(branch.pdict, :geometry); g_str = f", geometry => {branch.pdict[:geometry]}"; end
     println(io, f"{branch[:ix_branch]}: {rpad(str_quote(branch.name), n)} #Elements{lpad(length(branch.ele), 5)}{g_str}")
   end
 end

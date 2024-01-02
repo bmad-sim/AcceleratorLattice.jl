@@ -96,7 +96,7 @@ Used by lattice manipulation routines that need reindexing but don't need a full
 function index_bookkeeper!(branch::Branch)
   for (ix, ele) in enumerate(branch.ele)
     ele.pdict[:ix_ele] = ix
-    ele.pdict[:ix_branch] = branch
+    ele.pdict[:branch] = branch
   end
 end
 
@@ -382,9 +382,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
   time    = old_rg.time_ref_exit
   species = old_rg.species_ref_exit
   species_exit = species
-
-  L = pdict[:LengthGroup].L
-  dt = L * pc / E_tot
+  dt = pdict[:LengthGroup].L / (c_light * pc / E_tot)
 
   pdict[:ReferenceGroup] = ReferenceGroup(species_ref = species, species_ref_exit = species_exit, 
                        pc_ref = pc, pc_ref_exit = pc, E_tot_ref = E_tot, E_tot_ref_exit = E_tot, 
@@ -424,7 +422,7 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, ...)
 # BendGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Ele)
+function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   bgin = ele_inbox_group(pdict, :BendGroup)
   haskey(pdict, :BendGroup) ? bgnow = pdict[:BendGroup] : bgnow = nothing
@@ -532,9 +530,9 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, ...)
 # BMultipoleGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
+function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
-  bmin = ele_inbox_group(pdict, :BMulitipoleGroup)
+  bmin = ele_inbox_group(pdict, :BMultipoleGroup)
   if !haskey(pdict, :BMultipoleGroup); pdict[:BMultipoleGroup] = BMultipoleGroup(); end
   bmnow = pdict[:BMultipoleGroup]
   ff = pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
@@ -543,13 +541,13 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
   if changed.ref_energy
     for (ix, v) in enumerate(bmnow.vec)
       if pdict[:MasterGroup].field_master
-        bmnow.vector[ix] = BMultipole1(v.B/ff, v.Bs/ff, v.B, v.Bs, v.tilt, v.order, v.integrated)
+        bmnow.vec[ix] = BMultipole1(v.B/ff, v.Bs/ff, v.B, v.Bs, v.tilt, v.order, v.integrated)
       else
-        bmnow.vector[ix] = BMultipole1(v.K, v.Ks, v.K*ff, v.Ks*ff, v.tilt, v.order, v.integrated)
+        bmnow.vec[ix] = BMultipole1(v.K, v.Ks, v.K*ff, v.Ks*ff, v.tilt, v.order, v.integrated)
       end
     end
   end
-    
+
   # If there is nothing in the inbox then nothing to be done
   if isnothing(bmin); return; end
 
@@ -564,25 +562,25 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
     if mstr[1] == 'K' || mstr[1] == 'B'
       if mstr[end] == 'L'
         mstr = mstr[1:end-1]
-        if v[:integrated] == false
+        if !ismissing(v[:integrated]) && v[:integrated] == false
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
         end
         v[:integrated] = true
       else
-        if v[:integrated] == true
+        if !ismissing(v[:integrated]) && v[:integrated] == true
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
           v[:integrated] = false
         end
       end
 
       if mstr == "K"
-        v[:B] = value * f
+        v[:B] = value * ff
       elseif mstr == "Ks"  
-        v[:Bs] = value * f
+        v[:Bs] = value * ff
       elseif mstr == "B"
-        v[:K] = value / f
+        v[:K] = value / ff
       elseif mstr == "Bs"
-        v[:Ks] = value / f
+        v[:Ks] = value / ff
       end
     end
 
@@ -590,9 +588,11 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
   end
 
   # Combine existing multipoles into vin_dict 
-  for (ix, vnow) in enumerate(bmnow.vector)
+  for (ix, vnow) in enumerate(bmnow.vec)
     if vnow.order in keys(vin_dict)
       vin = vin_dict[order]
+      if ismissing(vin.integrated); vin[:integrated] = vnow.integrated; end
+
       if vin[:integrated] && !vnow.integrated
         lf = ele.L
       elseif !vin[:integrated] && vnow.integrated
@@ -600,7 +600,6 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
       else
         lf = 1
       end
-      if ismissing(vin.integrated); vin[:integrated] = vnow.integrated; end
 
       if !haskey(vin, :K)
         vin[:K] = vnow.K * lf
@@ -620,24 +619,28 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
   end
 
   #Transfer vin_dict to pdict[:BMultipoleGroup]
-  resize!(bmnow.vector, length(vin_dict))
+  resize!(bmnow.vec, length(vin_dict))
   for (ix, order) in enumerate(sort(collect(keys(vin_dict))))
-    if type(vin_dict[order]) == BMultipole1
-      v = vin_dict[order]
-      bmnow.vector[order] = v
+    v = vin_dict[order]
+    if typeof(vin_dict[order]) == BMultipole1
+      bmnow.vec[ix] = v
     else
-      bmnow.vector[order] = BMultipole1(v[:K], v[:Ks], v[:B], v[:Bs], v[:tilt], order, v[:integrated])
+      if !haskey(v, :K); v[:K] = 0.0; v[:B] = 0.0; end
+      if !haskey(v, :Ks); v[:Ks] = 0.0; v[:Bs] = 0.0; end
+      if !haskey(v, :tilt); v[:tilt] = 0.0; end
+      if ismissing(v[:integrated]); v[:integrated] = false; end
+      bmnow.vec[ix] = BMultipole1(v[:K], v[:Ks], v[:B], v[:Bs], v[:tilt], order, v[:integrated])
     end
   end
 
-  pop!(inbox, :BMultipoleGroup)
+  pop!(pdict[:inbox], :BMultipoleGroup)
 end
 
 #---------------------------------------------------------------------------------------------------
 # ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, ...)
 # EMultipoleGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
+function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
   pdict = ele.pdict
   emin = ele_inbox_group(pdict, :EMulitipoleGroup)
   if !haskey(pdict, :EMultipoleGroup); pdict[:EMultipoleGroup] = EMultipoleGroup(); end
@@ -657,12 +660,12 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::
     if mstr[1] == 'E'
       if mstr[end] == 'L'
         mstr = mstr[1:end-1]
-        if v[:integrated] == false
+        if !ismissing(v[:integrated]) && v[:integrated] == false
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
         end
         v[:integrated] = true
       else
-        if v[:integrated] == true
+        if !ismissing(v[:integrated]) && v[:integrated] == true
           error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
           v[:integrated] = false
         end
@@ -673,9 +676,11 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::
   end
 
   # Combine existing multipoles into vin_dict 
-  for (ix, vnow) in enumerate(bmnow.vector)
+  for (ix, vnow) in enumerate(bmnow.vec)
     if vnow.order in keys(vin_dict)
       vin = vin_dict[order]
+      if ismissing(vin.integrated); vin[:integrated] = vnow.integrated; end
+
       if vin[:integrated] && !vnow.integrated
         lf = ele.L
       elseif !vin[:integrated] && vnow.integrated
@@ -683,7 +688,6 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::
       else
         lf = 1
       end
-      if ismissing(vin.integrated); vin[:integrated] = vnow.integrated; end
 
       if !haskey(vin, :E);  vin[:E]  = vnow.E  * lf; end
       if !haskey(vin, :Es); vin[:Es] = vnow.Es * lf; end
@@ -695,15 +699,19 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::
   end
 
   #Transfer vin_dict to pdict[:BMultipoleGroup]
-  resize!(emnow.vector, length(vin_dict))
+  resize!(emnow.vec, length(vin_dict))
   for (ix, order) in enumerate(sort(collect(keys(vin_dict))))
-    if type(vin_dict[order]) == EMultipole1
-      v = vin_dict[order]
-      bmnow.vector[order] = v
+    v = vin_dict[order]
+    if typeof(vin_dict[order]) == EMultipole1
+      bmnow.vec[ix] = v
     else
-      bmnow.vector[order] = EMultipole1(v[:E], v[:Es], v[:tilt], order, v[:integrated])
+      if !haskey(v, :E); v[:E] = 0.0; end
+      if !haskey(v, :Es); v[:Es] = 0.0; end
+      if !haskey(v, :Etilt); v[:Etilt] = 0.0; end
+      if ismissing(v[:integrated]); v[:integrated] = false; end
+      bmnow.vec[ix] = EMultipole1(v[:E], v[:Es], v[:tilt], order, v[:integrated])
     end
   end
 
-  pop!(inbox, :EMultipoleGroup)
+  pop!(pdict[:inbox], :EMultipoleGroup)
 end

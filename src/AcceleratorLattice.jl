@@ -21,6 +21,8 @@ module AcceleratorLattice
   include("find.jl")
   include("functions.jl")
 
+  # Note: Switches are exported automatically when constructed
+
   export memloc, beamline, @ele, @construct_ele_type, expand, ele_name, show_name, show_ele
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!
@@ -32,6 +34,6 @@ module AcceleratorLattice
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup
   export GirderGroup, LCavityGroup, PatchGroup, RFFieldGroup, RFMasterGroup, ControlSlaveGroup, ControlVarGroup
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
-  export ele
+  export ele, show_group, switch_list_dict
 
 end

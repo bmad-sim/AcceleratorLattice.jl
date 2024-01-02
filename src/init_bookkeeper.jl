@@ -114,8 +114,9 @@ function init_multipass_bookkeeper!(lat::Lat)
   # Sort slaves. multipass_id is an identification tag to enable identifying the set of slaves
   # for a given lord. multipass_id is removed here since it will be no longer needed.
   mdict = Dict()
+  multipass_branch = lat.branch[:MultipassLord]
+
   for branch in lat.branch
-    if branch.name == "multipass_lord"; global multipass_branch = branch; end
     for ele in branch.ele
       id = ele.pdict[:multipass_id]
       delete!(ele.pdict, :multipass_id)

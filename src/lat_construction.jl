@@ -324,14 +324,15 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
 
   # Lord branches
 
-  new_lord_branch!(lat, "super_lord")
-  new_lord_branch!(lat, "multipass_lord")
-  new_lord_branch!(lat, "governor")
+  new_lord_branch!(lat, "SuperLord")
+  new_lord_branch!(lat, "MultipassLord")
+  new_lord_branch!(lat, "Governor")
 
   for branch in lat.branch
     index_bookkeeper!(branch)
   end
 
+  init_multipass_bookkeeper!(lat)
   bookkeeper!(lat)
 
   return lat
