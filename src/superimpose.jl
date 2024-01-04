@@ -17,7 +17,7 @@ Thus, a positive `offset` will displace the superposition location downstream if
 a normal orientation and vice versa for a reversed orientation.
 
 For zero length elements with zero `offset`, the superposition location is at the entrance end of `ref_ele` 
-except if `ele_origin` is set to `ExitEnd` in which case the location is at the exit end.
+except if `ele_origin` is set to `DownstreamEnd` in which case the location is at the exit end.
 
 The superimposed element will inherit the orientation of the `ref_ele`.
 
@@ -45,46 +45,47 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
   end
 
   L_super = get_property(super_ele, :L, 0.0)
+  offset = offset * ref_ele.orientation
+  machine_ref_origin = machine_location(ref_origin, ref_ele.orientation)  # Convert from entrance/exit to up/dowstream
+  machine_ele_origin = machine_location(ele_origin, ref_ele.orientation)
 
   # Insertion of zero length element with zero offset at edge of an element.
   if L_super == 0 && offset == 0 
-    if ref_origin == EntranceEnd || (ref_origin == Center && ref_ele.L == 0)
+    if machine_ref_origin == UpstreamEnd || (machine_ref_origin == Center && ref_ele.L == 0)
       ix_insert = max(ref_ix_ele, 2)
-      insert_ele!(branch, ix_insert, super_ele)
+      insert!(branch, ix_insert, super_ele)
       return
-    elseif ref_origin == ExitEnd 
+    elseif machine_ref_origin == DownstreamEnd 
       ix_insert = min(ref_ix_ele+1, length(ref_ele.branch.ele))
-      insert_ele!(branch, ix_insert, super_ele)
+      insert!(branch, ix_insert, super_ele)
       return
     end
   end
 
-      println("Here 3")
   # Superposition position ends
   if branch.type == LordBranch
-    if ref_origin == EntranceEnd; s1 = ref_ele.slave[1].s
-    elseif ref_origin == Center;  s1 = 0.5 * (ref_ele.slave[1].s + ref_ele.slave[end].s_downstream)
+    if machine_ref_origin == UpstreamEnd; s1 = ref_ele.slave[1].s
+    elseif machine_ref_origin == Center;  s1 = 0.5 * (ref_ele.slave[1].s + ref_ele.slave[end].s_downstream)
     else;                         s1 = ref_ele.slave[end].s_downstream
     end
   else    # Not a lord branch
-    if ref_origin == EntranceEnd; s1 = ref_ele.s
-    elseif ref_origin == Center;  s1 = 0.5 * (ref_ele.s + ref_ele.s_downstream)
+    if machine_ref_origin == UpstreamEnd; s1 = ref_ele.s
+    elseif machine_ref_origin == Center;  s1 = 0.5 * (ref_ele.s + ref_ele.s_downstream)
     else;                         s1 = ref_ele.s_downstream
     end
   end
 
-  if ele_origin == EntranceEnd; s1 = s1 + offset
-  elseif ele_origin == Center;  s1 = s1 + offset - 0.5 * L_super
+  if machine_ele_origin == UpstreamEnd; s1 = s1 + offset
+  elseif machine_ele_origin == Center;  s1 = s1 + offset - 0.5 * L_super
   else;                         s1 = s1 + offset - L_super
   end
 
   s2 = s1 + L_super
 
-  println(f"s1: {s1}, s2: {s2}")
   # Insertion of zero length element.
   if L_super == 0
-    ele_at, _ = split_ele!(branch, s1, choose_upstream = (ref_origin == ExitEnd), ele_near = ref_ele)
-    insert_ele!(branch, ele_at.ix_ele, super_ele)
+    ele_at, _ = split!(branch, s1, choose_upstream = (machine_ref_origin == DownstreamEnd), ele_near = ref_ele)
+    insert!(branch, ele_at.ix_ele, super_ele)
     return
   end
 
@@ -96,7 +97,7 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
       s1 = s1 + branch_len
     else
       @ele drift = Drift(L = branch.ele[1].s - s1)
-      insert_ele!(branch, 2, drift)
+      insert!(branch, 2, drift)
     end
   end
 
@@ -105,7 +106,7 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
       s2 = s2 - branch_len
     else
       @ele drift = Drift(L = s2 - branch.ele[end].s_downstream)
-      insert_ele!(branch.ele, length(branch.ele), drift)
+      insert!(branch.ele, length(branch.ele), drift)
     end
   end
 
@@ -133,6 +134,6 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
   end
 
   # Choose_upstream is set to minimize number of elements in superposition region
-  ele1, _ = split_ele(branch, s1, choose_upstream = false)
-  ele2, _ = split_ele(branch, s2, choose_upstream = true)
+  ele1, _ = split!(branch, s1, choose_upstream = false)
+  ele2, _ = split!(branch, s2, choose_upstream = true)
 end

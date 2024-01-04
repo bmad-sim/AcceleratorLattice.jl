@@ -14,8 +14,8 @@ Will wrap around the ends of the branch if necessary and wrap = true.
   `Ele` in given `branch` and given element i
 """ next_ele
 
-function next_ele(ele::Ele, offset::Int, wrap::Bool = true)
-  return find_ele(ele.pdict[branch], offset + ele.pdict[:ix_ele], wrap)
+function next_ele(ele::Ele, i_offset::Int, wrap::Bool = true)
+  return find_ele(ele.pdict[:branch], i_offset + ele.pdict[:ix_ele], wrap = wrap)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -225,39 +225,48 @@ end
 # find_branch
 
 """
-Returns branch corresponding to name. Else returns `nothing`
+Returns branch corresponding to name. Else returns `NULL_BRANCH`
 """
 
 function find_branch(lat::Lat, name::AbstractString)
   for branch in lat.branch
     if matches_branch(name, branch); return branch; end
   end
-  return nothing
+  return NULL_BRANCH
 end
 
 #---------------------------------------------------------------------------------------------------
 # ele_at_s
 
 """
-ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
+    ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near::ELE = NULL_ELE)
 
 Returns lattice element that overlaps a given longitudinal s-position. That is, `s` will be in the
 interval `[ele.s, ele.s_downstream)` where `ele` is the returned element. Notice that `s` will never
 correspond to `ele.s_downstream` (if `s` = `ele.s_downstream` then what is actually returned is an element
 downstream from `ele`.
 
-`choose_upstream` If there is a choice of elements, which can happen if `s` corresponds to a boundary
-                    point, choose the upstream element if choose_upstream is `true` and vice versa.
+## Input
 
-`ele_near`        ...
+ - `branch`          Branch to search.
+ - `s`               Longitudinal position to match to.
+ - `choose_upstream` If there is a choice of elements, which can happen if `s` corresponds to a boundary
+                     point, choose the upstream element if choose_upstream is `true` and vice versa.
+ - `ele_near`        If there are elements with negative drift lengths (generally this will  be a
+                     `drift` or `patch` element), there might be multiple solutions. If `ele_near`
+                     is specified, this routine will choose the solution nearest `ele_near`.
+
+## Return
+
+ - Returns element that overlaps the given `s` position.
 
 """ ele_at_s
 
-function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near = nothing)
+function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s)
 
   # If ele_near is not set
-  if ele_near == nothing
+  if is_null(ele_near)
     n1 = 1
     n3 = branch.ele[end].ix_ele
 
@@ -268,7 +277,11 @@ function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_nea
     end
 
     # Solution is n1 except in one case.
-    return branch.ele[n1]
+    if !choose_upstream && branch.ele[n2].s == s
+      return branch.ele[n1]
+    else
+      return branch.ele[n1]
+    end
   end
 
   # If ele_near is used

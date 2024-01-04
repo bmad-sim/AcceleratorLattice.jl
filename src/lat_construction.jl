@@ -2,7 +2,7 @@
 # lat_construction.jl: Routines to construct a lattice.
 #-
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # branch
 
 """
@@ -26,7 +26,7 @@ function branch(lat::Lat, who::AbstractString)
   return nothing
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # BeamLineItem
 
 """
@@ -40,7 +40,7 @@ BeamLineItem(x::Ele) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :ori
 BeamLineItem(x::BeamLine) = BeamLine(x.name, x.line, deepcopy(x.pdict))
 BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.pdict))
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # beamline
 
 """
@@ -80,7 +80,7 @@ function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: B
   return bline
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # Base.reverse
 
 """
@@ -113,7 +113,7 @@ function Base.reverse(beamline::BeamLine)
   return bl
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # beamline reflection and repetition
 
 """
@@ -140,10 +140,12 @@ Base.:-(beamline::BeamLine) = reflect(beamline)
 Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.name * "_mult" * string(n), 
                           [(n > 0 ? beamline : reflect(beamline)) for i in 1:abs(n)], beamline.pdict)
                           
-Base.:*(n::Int, ele::Ele) = (if n < 0; error(f"BoundsError: Negative multiplier does not make sense."); end,
-        BeamLine(ele.name * "_mult" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1))
+function Base.:*(n::Int, ele::Ele)
+  if n < 0; error(f"BoundsError: Negative multiplier does not make sense."); end
+  BeamLine(ele.name * "_mult" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1)
+end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # add_beamline_ele_to_branch!
 
 """
@@ -174,7 +176,7 @@ function add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle,
   return nothing
 end
 
-#-------------------------------------------------------------------------------------#--------------------
+#---------------------------------------------------------------------------------------------------
 # add_beamline_item_to_branch!
 
 """
@@ -196,7 +198,7 @@ function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::
   return nothing
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # add_beamline_line_to_branch!
 
 """
@@ -230,7 +232,7 @@ function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::
   return nothing
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # new_tracking_branch!
 
 """
@@ -286,7 +288,7 @@ function new_lord_branch!(lat::Lat, name::AbstractString)
   return branch
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # expand
 
 """
@@ -310,7 +312,7 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}}) 
   lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
 
-  if root_line == nothing; root_line = root_beamline; end
+  if isnothing(root_line); root_line = root_beamline; end
   
   if root_line isa BeamLine
     new_tracking_branch!(lat, root_line)
@@ -339,10 +341,10 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
   return lat
 end
 
-#-------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
 # expand
 
 # expand version without lattice name argument.
 function expand(root_line::Union{BeamLine,Vector{BeamLine}})
-  expand("", root_line; governors = governors, superimpose = superimpose)
+  expand("", root_line)
 end

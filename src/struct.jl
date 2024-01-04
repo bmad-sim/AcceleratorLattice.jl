@@ -1,17 +1,58 @@
 #---------------------------------------------------------------------------------------------------
-# Base abstract types
+# BeamLineItem
 
-"Abstract type that represents a Ele or sub BeamLine contained in a beamline."
+"""
+    abstract type BeamLineItem
+
+Abstract type for stuff that can be in a beam line. Subtypes are:
+
+    BeamLine
+    BeamLineEle
+    Branch
+    Ele
+""" BeamLineItem
+
 abstract type BeamLineItem end
 
-"Abstract lattice element from which all lattice elements inherit."
+#---------------------------------------------------------------------------------------------------
+# Ele
+
+"""
+    abstract type Ele <: BeamLineItem end
+
+Abstract type from which all concrete lattice element types inherit.
+
+All concreate lattice element types are constructed using the `@construct_ele_type` macro.
+
+All concreate lattice element types have a single field:
+
+    pdict :: Dict{Symbol, Any}
+""" Ele
+ 
 abstract type Ele <: BeamLineItem end
 
 "Single element or vector of elemements."
 Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 
 #---------------------------------------------------------------------------------------------------
-# Ele
+# construct_ele_type
+
+"""
+    macro construct_ele_type(type_name)
+
+Constructor for element types. Also exports the name.
+""" construct_ele_type
+
+macro construct_ele_type(type_name)
+  eval( Meta.parse("mutable struct $type_name <: Ele; pdict::Dict{Symbol,Any}; end") )
+  str_type =  String("$type_name")
+  eval( Meta.parse("export $str_type") )
+  push!(ele_types_set, eval(Meta.parse("$str_type")))
+  return nothing
+end
+
+#---------------------------------------------------------------------------------------------------
+# Stuff used by construct_ele_type
 
 ele_types_set = Set()
 
@@ -24,7 +65,7 @@ macro ele(expr)
   return esc(expr)   # This will call the constructor below
 end
 
-"""Constructor called by `ele` macro."""
+# Constructor called by `ele` macro.
 
 function (::Type{T})(; kwargs...) where T <: Ele
   ele = T(Dict{Symbol,Any}())
@@ -33,15 +74,9 @@ function (::Type{T})(; kwargs...) where T <: Ele
   return ele
 end
 
-"""Constructor for element types. Also exports the name.""" construct_ele_type
 
-macro construct_ele_type(ele_type)
-  eval( Meta.parse("mutable struct $ele_type <: Ele; pdict::Dict{Symbol,Any}; end") )
-  str_type =  String("$ele_type")
-  eval( Meta.parse("export $str_type") )
-  push!(ele_types_set, eval(Meta.parse("$str_type")))
-  return nothing
-end
+#---------------------------------------------------------------------------------------------------
+# Construct ele types
 
 @construct_ele_type ACKicker
 @construct_ele_type BeamBeam
@@ -86,9 +121,9 @@ end
 """
 NullEle lattice element type used to indicate the absence of any valid element.
 `NULL_ELE` is a const NullEle element with `name` set to "null" that can be used for coding.
-"""
+""" NULL_ELE
 
-const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "null"))
+const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL"))
 
 #---------------------------------------------------------------------------------------------------
 # LatEleLocation
@@ -98,9 +133,9 @@ const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "null"))
 
 Element location within a lattice.
 
-# Components
-  `ix_ele`        Element index in branch.ele[] array.
-  `ix_branch`     Branch index of branch containing the element in lat.branch[] array.
+## Components
+    ix_ele::Int64        Element index in branch.ele[] array.
+    ix_branch::Int64     Branch index of branch containing the element in lat.branch[] array.
 """ LatEleLocation
 
 struct LatEleLocation
@@ -115,33 +150,20 @@ Return corresponding `LatEleLocation` struct.
 LatEleLocation(ele::Ele) = LatEleLocation(ele.ix_ele, ele.branch.ix_branch)
 
 #---------------------------------------------------------------------------------------------------
-# Element traits
-
-"General thick multipole. Returns a Bool."
-function thick_multipole_ele(ele::Ele)
-  ele <: Union{Drift, Quadrupole, Sextupole, Octupole} ? (return true) : (return false)
-end
-
-"Geometry type. Returns a EleGeometrySwitch"
-function ele_geometry(ele::Ele)
-  if ele isa Bend; return Circular; end
-  if ele isa Patch; return PatchLike; end
-  if typeof(ele) <: Union{Marker, Mask, Multipole}; return ZeroLength; end
-  if ele isa Girder; return GirderLike; end
-  return Straight
-end
-
-#---------------------------------------------------------------------------------------------------
 # Element groups
 
 """
-Base type for all element parameter groups
-"""
+    abstract type EleParameterGroup
+
+Base type for all element parameter groups.
+""" EleParameterGroup
+
 abstract type EleParameterGroup end
 
 """
 Element length and s-positions.
 """
+
 @kwdef struct LengthGroup <: EleParameterGroup
   L::Float64 = 0
   s::Float64 = 0
@@ -149,12 +171,15 @@ Element length and s-positions.
 end
 
 """
-Field_master logical.
+    struct MasterGroup <: EleParameterGroup
 
-The `field_master` setting matters when there is a change in reference energy.
+## Components
+
+ - `field_master::Bool`  The `field_master` setting matters when there is a change in reference energy.
 In this case, if `field_master` = true, B-multipoles and BendGroup `bend_field` will be held constant
 and K-multipols and bend `g` will be varied. Vice versa when `field_master = false.
-"""
+""" MasterGroup
+
 @kwdef struct MasterGroup <: EleParameterGroup
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
 end
@@ -457,7 +482,7 @@ function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, x_knot::Vector64, y
   return ControlSlaveKnot(eles = eles, slave_parameter = parameter, x_knot = x_knot, y_knot = y_knot, type = type)
 end
 
-#function ctrl(custom::Type{Custom}, func::Function; eles = nothing, parameter = nothing)
+#function ctrl(custom::Type{Custom}, func::Function; eles = [], parameter = nothing)
 #  if typeof(eles) == String; eles = [eles]; end
 #  cs = ControlSlaveFunction(eles = eles, slave_parameter = parameter, func = func, type = Custom)
 #end
@@ -481,11 +506,34 @@ end
 #---------------------------------------------------------------------------------------------------
 # Branch
 
+"""
+    mutable struct Branch <: BeamLineItem
+
+Lattice branch structure. 
+
+## Fields
+
+    name::String
+    ele::Vector{Ele}
+    pdict::Dict{Symbol,Any}
+
+## Notes
+The constant NULL_BRANCH is defined as a placeholder for signaling the absense of a branch.
+The test is_null(branch) will test if a branch is a NULL_BRANCH.
+""" Branch
+
 mutable struct Branch <: BeamLineItem
   name::String
   ele::Vector{Ele}
   pdict::Dict{Symbol,Any}
 end
+
+""" 
+The constant NULL_BRANCH is defined as a placeholder for signaling the absense of a branch.
+The test is_null(branch) will test if a branch is a NULL_BRANCH.
+""" NULL_BRANCH
+
+const NULL_BRANCH = Branch("NULL", Vector{Ele}(), Dict{Symbol,Any}(:ix_branch => -1))
 
 #---------------------------------------------------------------------------------------------------
 # LatticeGlobal

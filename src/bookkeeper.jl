@@ -53,7 +53,7 @@ function bookkeeper!(branch::Branch)
 
   # Not a lord branch...
   changed = ChangedLedger()
-  previous_ele = nothing
+  previous_ele = NULL_ELE
 
   for (ix, ele) in enumerate(branch.ele)
     bookkeeper!(ele, changed, previous_ele) 
@@ -65,7 +65,7 @@ end
 # bookkeeper!(Ele)
 
 """
-    Internal: bookkeeper!(ele::Ele, ..., previous_ele::Union{Ele,Nothing})
+    Internal: bookkeeper!(ele::Ele, ..., previous_ele::Ele)
 
 Ele bookkeeping. For example, propagating the floor geometry from one element to the next. 
 These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lat)`.
@@ -73,10 +73,10 @@ These low level routines (there are several with this signature) are called via 
 ### Output
 
 - `ele`           -- Element to do bookkeeping on.
-- `previous_ele`  -- Element in the branch before `ele`. Will be `Nothing` if this is the first branch element.
+- `previous_ele`  -- Element in the branch before `ele`. Will be `NULL_ELE` if this is the first branch element.
 """ bookkeeper!(ele::Ele)
 
-function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
+function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
   sort_ele_inbox!(ele)
   for group in ele_param_groups[typeof(ele)]
     ele_group_bookkeeper!(ele, group, changed, previous_ele)
@@ -136,7 +136,7 @@ end
 # sort_ele_inbox!
 
 """
-  Internal: sort_ele_inbox!(ele::Union{Ele,Nothing})
+  Internal: sort_ele_inbox!(ele::Ele)
 
 Move parameters in `ele.param[:inbox]` such that the value at `ele.param[:inbox][:XXX]` is transfered 
 to `ele.param[:inbox][:GGG][:XXX]` where `GGG` is the element parameter group for `XXX` and `ele.param[:inbox][:GGG]`
@@ -145,8 +145,8 @@ is a Dict (not an instance of the parameter group).
 This is a Low level routine used by `bookkeeper!(lat::Lat)`.
 """ sort_ele_inbox!
 
-function sort_ele_inbox!(ele::Union{Ele,Nothing})
-  if isnothing(ele); return; end
+function sort_ele_inbox!(ele::Ele)
+  if is_null(ele); return; end
 
   pdict = ele.pdict
   if !haskey(pdict, :inbox); return; end
@@ -270,7 +270,7 @@ end
 # Bookkeeping for everything else not covered by a specific function.
 
 function ele_group_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
-                                      previous_ele::Union{Ele,Nothing}) where T <: EleParameterGroup
+                                      previous_ele::Ele) where T <: EleParameterGroup
   update_ele_group_from_inbox(ele, group)
 end
 
@@ -278,11 +278,11 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, ...)
 # Low level LengthGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
   lgin = ele_inbox_group(pdict, :LengthGroup)
 
-  if isnothing(previous_ele) && isnothing(lgin)
+  if is_null(previous_ele) && isnothing(lgin)
     if !haskey(pdict, :LengthGroup)
       pdict[:LengthGroup] = LengthGroup()
       changed.s_position = true
@@ -293,7 +293,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::Chan
 
   if !changed.s_position && isnothing(lgin); return; end
 
-  if isnothing(previous_ele)
+  if is_null(previous_ele)
     s = 0
     if haskey(lgin, :s)
       s = lgin[:s]
@@ -325,7 +325,7 @@ end
 # Note: RF reference bookkeeping, which is complicated and needs information from other structures, 
 # is handled by the RFGroup bookkeeping code. So this routine simply ignores this complication.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
   rgin = ele_inbox_group(pdict, :ReferenceGroup)
   haskey(pdict, :ReferenceGroup) ? rgnow = pdict[:ReferenceGroup] : rgnow = nothing
@@ -333,7 +333,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
   if !changed.this_ele_length_set && !changed.ref_energy && isnothing(rgin); return; end
   changed.ref_energy = true
 
-  if isnothing(previous_ele)   # implies BeginningEle
+  if is_null(previous_ele)   # implies BeginningEle
     # rgin must exist in this case
     if isnothing(rgin) && isnothing(rgnow)
       error(f"Reference parameters not set for element: {ele_name(ele)}")
@@ -398,11 +398,11 @@ end
 # FloorPositionGroup bookkeeper
 
 function ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, 
-                                              changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
+                                              changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
   fpin = ele_inbox_group(pdict, :FloorPositionGroup)
 
-  if isnothing(previous_ele)
+  if is_null(previous_ele)
     update_ele_group_from_inbox(ele, group)
     if !isnothing(fpin); changed.floor = true; end
     return
@@ -422,7 +422,7 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, ...)
 # BendGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
   bgin = ele_inbox_group(pdict, :BendGroup)
   haskey(pdict, :BendGroup) ? bgnow = pdict[:BendGroup] : bgnow = nothing
@@ -530,7 +530,7 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, ...)
 # BMultipoleGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
   bmin = ele_inbox_group(pdict, :BMultipoleGroup)
   if !haskey(pdict, :BMultipoleGroup); pdict[:BMultipoleGroup] = BMultipoleGroup(); end
@@ -640,7 +640,7 @@ end
 # ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, ...)
 # EMultipoleGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::ChangedLedger, previous_ele::Union{Ele,Nothing})
+function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
   pdict = ele.pdict
   emin = ele_inbox_group(pdict, :EMulitipoleGroup)
   if !haskey(pdict, :EMultipoleGroup); pdict[:EMultipoleGroup] = EMultipoleGroup(); end

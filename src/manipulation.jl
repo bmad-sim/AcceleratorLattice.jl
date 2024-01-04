@@ -1,4 +1,40 @@
 #---------------------------------------------------------------------------------------------------
+# Base.copy(lat::Lat)
+
+"""
+    Base.copy(lat::Lat)
+
+Shallow copy constructer for a lattice. 
+""" Base.copy(lat::Lat)
+
+function Base.copy(lat::Lat)
+  lat_copy = Lat(lat.name, copy(lat.branch), copy(lat.pdict))
+  for ix in 1:length(lat.branch)
+    lat_copy.branch[ix] = copy(lat.branch[ix])
+    lat_copy.branch[ix].lat => lat_copy
+  end
+  return lat_copy
+end
+
+#---------------------------------------------------------------------------------------------------
+# Base.copy(branch::Branch)
+
+"""
+    Base.copy(branch::Branch)
+
+Shallow copy constructer for a lattice branch. 
+""" Base.copy(branch::Branch)
+
+function Base.copy(branch::Branch)
+  branch_copy = Branch(branch.name, copy(branch.ele), copy(branch.pdict))
+  for ix in 1:length(branch.ele)
+    branch_copy.ele[ix] = copy(branch.ele[ix])
+    branch_copy.ele[ix].branch => branch_copy
+  end
+  return branch_copy
+end
+
+#---------------------------------------------------------------------------------------------------
 # Base.copy(ele::Ele)
 
 """
@@ -22,18 +58,18 @@ function Base.copy(ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# insert_ele!
+# Base.insert!(branch::Branch, ...)
 
 """ 
-    insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
+    Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
 
 Insert an element `ele` at index `ix_ele` in branch `branch`.
 All elements with indexes of `ix_ele` and higher are pushed one element down the array.
 
 Inserted is a copy which is returned.
-""" insert_ele!
+""" Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
 
-function insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
+function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
   ele = copy(ele)
   insert!(branch.ele, ix_ele, ele)
   index_bookkeeper!(branch)
@@ -41,10 +77,10 @@ function insert_ele!(branch::Branch, ix_ele::Int, ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# split_ele!
+# split!
 
 """
-    split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
+    split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
 
 Routine to split an lattice element of a branch into two to create a branch that has an element
 boundary at the point s = `s_split`. 
@@ -64,7 +100,7 @@ than 2*`LatticeGlobal.significant_length`.
   `s_split` is at an element boundary, there can be multiple possible split points if there exist zero 
   length elements at the split point. If `choose_upsteam` = true, the split will be chosen to be 
   at the maximal upstream location. If `choose_upstream` = false the split will be chosen to be the 
-  downstream location. If `s_plit` is not at an element boundary, the setting of `choose_upstream` is immaterial.
+  downstream location. If `s_split` is not at an element boundary, the setting of `choose_upstream` is immaterial.
   If `ele_near` is present, `choose_upstream` is ignored.
 - `ele_near`          -- Element near the point to be split. `ele_near` is useful in the case where
   there is a patch with a negative length which can create an ambiguity as to where to do the split
@@ -74,9 +110,9 @@ than 2*`LatticeGlobal.significant_length`.
 ### Output tuple:
 - `ele_split`     -- Element just after the s = `s_split` point.
 - `split_done`    -- true if lat was split, false otherwise.
-""" split_branch!
+""" split!(branch::Branch)
 
-function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
+function split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s_split)
   ele0 = ele_at_s(branch, s_split, choose_upstream = choose_upstream, ele_near = ele_near)
 
@@ -84,16 +120,16 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
   min_len = min_ele_length(branch.lat)
   if choose_upstream && ele0.s > s_split-min_len
     ele0 = ele_at_s(branch, ele0.s, choose_upstream = true)
-    s_split = ele0.s_s_downstream
-  elseif !choose_upstream && ele0.s_s_downstream < s_split+min_len
-    ele0 = ele_at_s(branch, ele0.s_s_downstream, choose_upstream = true)
+    s_split = ele0.s_downstream
+  elseif !choose_upstream && ele0.s_downstream < s_split+min_len
+    ele0 = ele_at_s(branch, ele0.s_downstream, choose_upstream = true)
     s_split = ele0.s
   end
 
   # No element split cases where s_split is at an element boundary.
 
   if s_split == ele0.s; return (next_ele(ele0, -1), false); end
-  if s_split == ele0.s_s_downstream; return(ele0, false); end
+  if s_split == ele0.s_downstream; return(ele0, false); end
 
   # Element must be split cases.
 
@@ -109,7 +145,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
     end
     branch.ele[ele0.ix_ele] = copy(ele0)
     branch.ele[ele0.ix_ele].L = s_split - ele0.s
-    slave2.L = ele0.s_s_downstream - s_split
+    slave2.L = ele0.s_downstream - s_split
     ele0.ix_ele = -1             # Mark as not being in branch.ele array.
     index_bookkeeper!(branch)
     return (slave2, true)
@@ -120,7 +156,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
     slave2 = copy(ele0)
     insert!(branch.ele, ele0.ix_ele+1, slave2)  # Just after ele0
     ele0.L = s_split - ele0.s
-    slave2.L = ele0.s_s_downstream - s_split
+    slave2.L = ele0.s_downstream - s_split
 
     # Now update the slave lists for the super lords to include the new slave.
     # Notice that the lord list of the slaves does not have to be modified.
@@ -149,7 +185,7 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
   slave2 = copy(slave)
   insert!(branch.ele, slave.ix_ele+1, slave2)
   slave.L = s_split - ele0.s 
-  slave2.L = ele0.s_s_downstream - s_split
+  slave2.L = ele0.s_downstream - s_split
 
   sbranch = branch.lat.branch[:SuperLord]
   push!(sbranch.ele, lord)
@@ -157,4 +193,6 @@ function split_ele!(branch::Branch, s_split::Real; choose_upstream::Bool = true,
 
   index_bookkeeper!(branch)
   index_bookkeeper!(sbranch)
+
+  return slave, true
 end
