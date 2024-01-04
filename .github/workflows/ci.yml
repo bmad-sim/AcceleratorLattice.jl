@@ -13,7 +13,10 @@ jobs:
   create-pull-request:
     runs-on: Ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: gh pr create -B main -H ${{ github.ref_name }} --title "${{ github.ref_name }}" --body "${{ github.event.head_commit.message }}"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DCS_PUSH }}
+
+# secrets.DCS_PUSH allows the PR.yml workflow to be triggered by this workflow. Documentation at:
+#		https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs

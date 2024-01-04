@@ -1,3 +1,7 @@
+* If an element is inserted in multiple places in the lattice, or for multipass lord/slave and super lord/slave pairs, the corresponding elements in the lattice are shallow copies of one another (a copy at the ele.pdict level is made but all pdict parameters are not copied). Since all element parameter group structs are immutable, even though elements may only be shallow copies of one another, it is not possible for changes to parameters a parameter group for one element to affect the values of the corresponding parameter in any other element. For example, changing the value of multipole K1 in one element will not affect the K1 of any other element. 
+
+The reason for doing a shallow copy, instead of a deep copy, is to save on memory in case large amounts of the same data have to be associated with multiple elements. A common example is the storage of magnetic or electric field tables. In such a case, it may be possible for changes to one element affecting other elements. 
+
 * NaNs for x_limit / y_limit mean there is no limit. Also used for patch parameters E_tot_offset, E_tot_exit, and pc_exit.
 
 * Stuff marked "Internal" are primarily meant for internal use by AcceleratorLattice functions and are probably not of interest to the average user. Internal names are not exported with a using statement and if an internal is used, a "AcceleratorLattice." prefix must be used to access.

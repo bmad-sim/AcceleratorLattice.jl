@@ -14,7 +14,8 @@ end
 
 """
 The `axis` vector is not necessarily normalized.
-"""
+""" AxisAngle
+
 struct AxisAngle
   angle::Float64
   axis::Vector{Float64}
@@ -53,20 +54,11 @@ function Quaternion(m::Matrix{T}) where T <: Number
   end
 end
 
-doq(q1::Quaternion, q2::Quaternion) = q1.q0 + q2.q0 + dot(q1.vec, q2.vec)
-inv(q::Quaternion) = Quaternion(q.q0/
-
-conj(q::AbstractQuaternion) = typeof(q)(q.q0, -q.vec)
-
-#---------------------------------------------------------------------------------------------------
-
-
-
 #---------------------------------------------------------------------------------------------------
 
 """
 It is not assumed that the quaternion is normalized
-"""
+""" RotMat
 
 function RotMat(q::Quaternion)
   sq1 = q.q0 * q.q0

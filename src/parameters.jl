@@ -176,7 +176,7 @@ Returns the units (EG: `m` (meters) for length parameters) for
 function units(param::Symbol)
   if param in ele_param_group_syms; return ""; end
   param_info = ele_param_info(param, no_info_return = nothing)
-  if param_info == nothing; return "?units?"; end
+  if isnothing(param_info); return "?units?"; end
   return param_info.units
 end
 
@@ -196,7 +196,7 @@ end
 
 function description(key)
   param_info = ele_param_info(key)
-  if param_info == nothing; return "???"; end
+  if isnothing(param_info); return "???"; end
   return param_info.description
 end
 
@@ -274,10 +274,10 @@ function multipole_type(str::Union{AbstractString,Symbol})
 
   if length(str) > 4 && str[1:4] == "tilt"
     order = tryparse(UInt64, str[5:end]) 
-    order == nothing ? (return nothing, -1) : (return "tilt", Int64(order))
+    isnothing(order) ? (return nothing, -1) : (return "tilt", Int64(order))
   elseif length(str) > 5 && str[1:5] == "Etilt"
     order = tryparse(UInt64, str[6:end]) 
-    order == nothing ? (return nothing, -1) : (return "Etilt", Int64(order))
+    isnothing(order) ? (return nothing, -1) : (return "Etilt", Int64(order))
   end
 
   if str[end-1:end] == "sL"
@@ -295,7 +295,7 @@ function multipole_type(str::Union{AbstractString,Symbol})
   end
 
   order = tryparse(UInt64, str) 
-  order == nothing ? (return nothing, -1) : (return out_str, Int64(order))
+  isnothing(order) ? (return nothing, -1) : (return out_str, Int64(order))
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -320,7 +320,7 @@ function ele_param_info(sym::Symbol; no_info_return = Error)
 
   # Must be a multipole
   n = length(mtype)
-  if mtype == nothing; return nothing; end
+  if isnothing(mtype); return nothing; end
   if n == 4 && mtype[1:4] == "tilt";  return ParamInfo(BMultipoleGroup, Float64, f"Magnetic multipole tilt for order {order}", "rad"); end
   if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Float64, f"Electric multipole tilt for order {order}", "rad"); end
 
@@ -430,7 +430,7 @@ function has_param(type::Union{T,Type{T}}, sym::Symbol) where T <: Ele
   if typeof(type) != DataType; type = typeof(type); end
   if haskey(ele_param_by_ele_type[type], sym); return true; end
   # Rule: If BMultipoleGroup is in ele then EMultipoleGroup is in ele. (Is this really wise?)
-  if BMultipoleGroup in ele_param_groups[type] && multipole_type(sym)[1] != nothing; return true; end
+  if BMultipoleGroup in ele_param_groups[type] && !isnothing(multipole_type(sym)[1]); return true; end
   return false
 end
 
@@ -445,7 +445,7 @@ function is_settable(ele::T, sym::Symbol) where T <: Ele
   if haskey(ele_param_by_ele_type[typeof(ele)], sym); return ele_param_by_ele_type[typeof(ele)][sym].settable; end
 
   pinfo = ele_param_info(sym)
-  if pinfo == nothing; error(f"No info on: {sym}"); end
+  if isnothing(pinfo); error(f"No info on: {sym}"); end
 
   return true
 end
@@ -464,7 +464,7 @@ function multipole!(mgroup, order; insert = nothing)
   if order < 0; return nothing; end
   ix = multipole_index(mgroup.vec, order)
 
-  if insert == nothing
+  if isnothing(insert)
     if ix > length(mgroup.vec) || order != mgroup.vec[ix].n; return nothing; end
     return mgroup.vec[ix]
   end
@@ -547,7 +547,7 @@ end
 function ele_group_value(group::BMultipoleGroup, sym::Symbol)
   (mtype, order) = multipole_type(sym)
   mul = multipole(group, order)
-  if mul == nothing; return 0.0::Float64; end
+  if isnothing(mul); return 0.0::Float64; end
 
   if mtype == "K" || mtype == "KL";         value = mul.K
   elseif mtype == "Ks" || mtype == "KsL";   value = mul.Ks
@@ -560,7 +560,7 @@ end
 function ele_group_value(group::EMultipoleGroup, sym::Symbol)
   (mtype, order) = multipole_type(sym)
   mul = multipole(group, order)
-  if mul == nothing; return 0.0::Float64; end
+  if isnothing(mul); return 0.0::Float64; end
 
   if mtype == "E" || mtype == "EL";         value = mul.E
   elseif mtype == "Es" || mtype == "EsL";   value = mul.Es

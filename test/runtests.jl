@@ -1,20 +1,13 @@
-using AcceleratorLattice
-using Test
+using AcceleratorLattice, Test
 
-qf = latele(Quadrupole, "qf", l = 0.6, k1 = 0.3)
-d  = latele(Drift, "d", l = 0.4)
-qd = latele(Quadrupole, "qd", l = 0.6, k1 = -0.3)
+@testset "AcceleratorLattice" begin
+  t0 = time()
 
-ln1 = beamline("ln1", [qf, d])
-ln2 = beamline("ln2", [qd, d, qd], multipass = true)
-ln  = beamline("fodo", [-2*ln1, ln2, reverse(qf), reverse(ln2), reverse(beamline("sub", [qd, ln1]))])
-root_beamline = ln
+  @testset "Find" begin
+    println("##### Testing FindTest.jl...")
+    t = @elapsed include("FindTest.jl")
+    println("##### done (took $t seconds).")
+  end
 
-lat = lat_expansion([ln, ln2], "mylat")
-
-#-----------------------------
-
-@testset "AcceleratorLattice.jl" begin
-  @test 2 == 2
-  @test 2 ≈ 3 atol = 2
+  println("##### Running all AcceleratorLattice tests took $(time() - t0) seconds.")
 end
