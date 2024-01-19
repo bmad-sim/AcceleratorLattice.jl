@@ -1,6 +1,8 @@
 name: PR
 on:
   pull_request:
+  # Run on manual trigger
+  workflow_dispatch:
 
 concurrency:
   # Skip intermediate builds: always.

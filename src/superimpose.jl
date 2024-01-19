@@ -112,8 +112,8 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
 
   # Splits locations are adjusted to avoid elements with length below the minimum.
   # And super_lord length will be adjusted accordingly.
-  ele1 = ele_at_s(branch, s1, choose_upstream = false, ele_near = ref_ele)
-  ele2 = ele_at_s(branch, s2, choose_upstream = true, ele_near = ref_ele)
+  ele1 = ele_at_s(branch, s1, false, ele_near = ref_ele)
+  ele2 = ele_at_s(branch, s2, true, ele_near = ref_ele)
 
   min_len = min_ele_length(branch.lat)
 
@@ -134,6 +134,6 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
   end
 
   # Choose_upstream is set to minimize number of elements in superposition region
-  ele1, _ = split!(branch, s1, choose_upstream = false)
-  ele2, _ = split!(branch, s2, choose_upstream = true)
+  ele1, _ = split!(branch, s1, false)
+  ele2, _ = split!(branch, s2, true)
 end
