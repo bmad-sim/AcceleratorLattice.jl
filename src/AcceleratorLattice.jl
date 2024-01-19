@@ -18,6 +18,7 @@ module AcceleratorLattice
   include("init_bookkeeper.jl")
   include("bookkeeper.jl")
   include("lat_construction.jl")
+  include("input_output.jl")
   include("query.jl")
   include("find.jl")
   include("external_ele.jl")

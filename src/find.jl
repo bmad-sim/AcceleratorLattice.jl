@@ -15,13 +15,24 @@ Will wrap around the ends of the branch if necessary and wrap = true.
 """ next_ele
 
 function next_ele(ele::Ele, i_offset::Int, wrap::Bool = true)
-  return find_ele(ele.pdict[:branch], i_offset + ele.pdict[:ix_ele], wrap = wrap)
+  return ele_at_index(ele.pdict[:branch], i_offset + ele.pdict[:ix_ele], wrap = wrap)
 end
 
 #---------------------------------------------------------------------------------------------------
-# find_ele
+# next_ele
 
-function find_ele(branch::Branch, ix_ele::Int; wrap::Bool = true)
+function next_ele(ele::Ele, offset::Integer)
+  branch = ele.pdict[:branch]
+  ix_ele = mod(ele.ix_ele + offset-1, length(branch.ele)-1) + 1
+  return branch.ele[ix_ele]
+end
+
+next_ele(ele::Ele) = next_ele(ele, 1)
+
+#---------------------------------------------------------------------------------------------------
+# ele_at_index
+
+function ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true)
   n = length(branch.ele)
 
   if wrap
@@ -239,12 +250,10 @@ end
 # ele_at_s
 
 """
-    ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near::ELE = NULL_ELE)
+    ele_at_s(branch::Branch, s::Real, choose_upstream::Bool; ele_near::ELE = NULL_ELE)
 
 Returns lattice element that overlaps a given longitudinal s-position. That is, `s` will be in the
-interval `[ele.s, ele.s_downstream)` where `ele` is the returned element. Notice that `s` will never
-correspond to `ele.s_downstream` (if `s` = `ele.s_downstream` then what is actually returned is an element
-downstream from `ele`.
+interval `[ele.s, ele.s_downstream]` where `ele` is the returned element.
 
 ## Input
 
@@ -262,7 +271,7 @@ downstream from `ele`.
 
 """ ele_at_s
 
-function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
+function ele_at_s(branch::Branch, s::Real, choose_upstream::Bool; ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s)
 
   # If ele_near is not set
@@ -277,8 +286,8 @@ function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_nea
     end
 
     # Solution is n1 except in one case.
-    if !choose_upstream && branch.ele[n2].s == s
-      return branch.ele[n1]
+    if !choose_upstream && branch.ele[n3].s == s
+      return branch.ele[n3]
     else
       return branch.ele[n1]
     end
@@ -308,14 +317,3 @@ function ele_at_s(branch::Branch, s::Real; choose_upstream::Bool = true, ele_nea
     end
   end
 end
-
-#---------------------------------------------------------------------------------------------------
-# next_ele
-
-function next_ele(ele::Ele, offset::Integer)
-  branch = ele.pdict[:branch]
-  ix_ele = mod(ele.ix_ele + offset-1, length(branch.ele)-1) + 1
-  return branch.ele[ix_ele]
-end
-
-next_ele(ele::Ele) = next_ele(ele, 1)

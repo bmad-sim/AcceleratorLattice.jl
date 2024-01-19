@@ -1,0 +1,89 @@
+\chapter{Constructing a Lattice}
+\label{c:construct-lat}
+
+%---------------------------------------------------------------------------------------------------
+\section{Switches}
+\label{s:switch}
+
+A \vn{switch} is like an enumerated value except that 
+
+
+A \vn{switch} is a switch category identifier name, conventionally with the word \vn{Switch} at the end, 
+with a set of possible values. Switches are like enums without the associated integer. 
+The advantage of switches is that a given switch value can be used for different switch groups. 
+
+For example, 
+
+How to create switches...
+
+
+
+
+
+%---------------------------------------------------------------------------------------------------
+\section{Defining a Lattice Element}
+\label{s:ele.def}
+
+The \julia language itself is used as the basis for constructing lattices. Other simulation programs
+have similarly utilized the underlying programming language for constructing lattices\cite{merlin++,xsuite},
+but this is in marked contrast to such programs as MAD\cite{mad}, Elegant\cite{elegant}, and the 
+original \bmad\cite{bmad-orig}. 
+
+Chapter~\sref{c:ele} gives a list of elements defined by \Bmad. Elements are defined using the \vn{@ele}
+macro. The general syntax is:
+\begin{example}
+  @ele eleName = eleType(param1 = val1, param2 = val2, ...)
+\end{example}
+where \vn{eleName} is the name of the element, \vn{eleType} is the type of element, \vn{param1}, \vn{param2},
+etc. are parameter names and \vn{val1}, \vn{val2}, etc. are the parameter values.
+Example:
+\begin{example}
+  @ele qf = Quadrupole(len = 0.6, K1 = 0.370)
+\end{example}
+The \vn{@ele} macro will construct a \julia variable with the name \vn{eleName}. Additionally the element
+that this variable references will also hold \vn{eleName} as the name of the element.
+
+To copy an element use the \vn{deepcopy} constructor.
+
+%---------------------------------------------------------------------------------------------------
+\section{Defining a Lattice Element Type}
+\label{s:ele.type}
+
+All lattice element types like \vn{Quadrupole}, \vn{Marker}, etc. are subtypes of the abstract type
+\vn{Ele}. To construct a new type, use the \vn{\@construct_ele_type} macro. Example:
+\begin{example}
+  @construct_ele_type MyEleType
+\end{example}
+
+%---------------------------------------------------------------------------------------------------
+\section{Lattice Element Internals}
+\label{s:ele.inside}
+
+All element types have a single component called \vn{pdict} (``parameter dict'') which is of
+type \vn{Dict\{Symbol,Any\}}. Using a \vn{Dict} has advantages and disadvantages. The advantage is
+that an element is not restricted as to what can be stored in it. The disadvantage is that it is not
+type stable (\sref{s:type.stable}). This is generally acceptable when lattices are constructed but
+is undesirable during tracking. To regain type stability during tracking, element parameters are
+put into immutable structs called \vn{element parameter} groups 
+and these structs are stored in \vn{pdict}. During tracking, the tracking
+code can access element parameters via the struct which makes the code type stable as will be illustrated below.
+
+The \vn{element parameter} group structures are all subtypes of the abstract type \vn{EleParameterGroup}.
+For example, the \vn{LengthGroup} holds the length and s-positions of the element:
+\begin{example}
+  @kwdef struct LengthGroup <: EleParameterGroup
+    L::Float64 = 0
+    s::Float64 = 0
+    s_downstream::Float64 = 0
+  end
+\end{example}
+The \vn{\@kwdef} macro automatically defines a keyword-based constructor for \vn{LengthGroup}. 
+When a parameter group is stored in an element's \vn{pdict}, the key will be the symbol associated
+with the struct which in this case is \vn{:LengthGroup}. For example, an element's length can be
+accessed via \vn{ele.pdict[:LengthGroup].L}. 
+
+
+\etcetc...
+
+
+

@@ -3,9 +3,15 @@ using AcceleratorLattice, Test
 @testset "AcceleratorLattice" begin
   t0 = time()
 
-  @testset "Find" begin
-    println("##### Testing FindTest.jl...")
-    t = @elapsed include("FindTest.jl")
+  @testset "find_test" begin
+    println("##### Testing find_test.jl...")
+    t = @elapsed include("find_test.jl")
+    println("##### done (took $t seconds).")
+  end
+
+  @testset "lat_construction_test" begin
+    println("##### Testing lat_construction_test.jl...")
+    t = @elapsed include("lat_construction_test.jl")
     println("##### done (took $t seconds).")
   end
 

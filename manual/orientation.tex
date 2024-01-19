@@ -27,3 +27,33 @@ More information and download instructions are readily available on GitHub:
 \begin{example}
   \url{\detokenize{https://github.com/bmad-sim}}
 \end{example}
+
+%---------------------------------------------------------------------------------------------------
+\section{Type Stability}
+\label{s:type.stable}
+
+There is a large amount of information on ``\vn{type stability}'' in Julia so this section will just 
+be a short introduction to the subject and the interested reader is urged consult the Julia manual 
+as well as the numerous internet articles.
+
+Code is type stable when the Julia compiler can figure out what the type of a variable is at compile
+time. For type unstable code, the compiler must add extra stuff to the compiled code to handle the
+varias cases that arise when a variable has differing types. For example, with the code
+\begin{example}
+  a = b * c
+\end{example}
+the compiled multiplication code will different if \vn{b} and \vn{c} are strings versus integers versus reals, etc.
+If the compiler knows the types of \vn{b} and \vn{c}, the execution speed of this code will be much
+faster since the compiled code does not have to make any tests as to what the type of \vn{b} and \vn{c}
+are. 
+
+It is for this for this reason that ``strongly typed'' languages like C/C++ or Fortran are fast since
+the type of all variables must be  declared in the code. A language like Python is slower since 
+it is hard for the compiler to infer a variable's type. Julia is in between. Julia can be as fast as
+a strongly typed language but only if the programmer takes care to ensure the code is type stable.
+How to write code that is type stable is beyond the scope of this introduction and the reader should
+consult the literature.
+
+It is important to keep in mind that for code that even without type stability executes quickly and 
+will not be executed often, it may not be important that the code be type stable. Indeed,
+type stability can come at the price of flexibility and so adherence to type stability is not always warranted.

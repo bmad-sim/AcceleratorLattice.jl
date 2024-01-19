@@ -227,23 +227,23 @@ end
 """
     param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
 
-Checks if there is a symbol conflict in `gdict`. `gdict` is a Dict o parameter sets for an element.
+Checks if there is a symbol conflict in `gdict`. `gdict` is a Dict of parameter sets for an element.
 A symbol conflict occurs when two keys in `gdict` are not allowed to both be simultaneously set.
 For example, `rho` and `g` for a `Bend` cannot be simultaneously set since it is not clear how
 to handle this case (since `rho` * `g` = 1 they are not independent variables).
 
-
-
+Returns an array of the names of the parameters present. 
 """  param_conflict_check
 
 function param_conflict_check(ele::Ele, gdict::Dict{Symbol, Any}, syms...)
-  for ix1 in 1:length(syms)-1
-    for ix2 in ix1+1:length(syms)
-      if haskey(gdict, syms[ix1]) && haskey(gdict, syms[ix2])
-        error(f"{syms[ix1]} and {syms[ix2]} cannot both be sepecified for a {typeof(ele)} element: {ele.name}")
-      end
-    end
+  sym_in = []
+
+  for sym in syms
+    if haskey(gdict, sym); push!(sym_in, sym); end
   end
+  if length(sym_in) > 1; error(f"Conflict: {s[1]} and {s[2]} cannot both " * 
+                                    f"be specified for a {typeof(ele)} element: {ele.name}"); end
+  return sym_in
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -439,10 +439,16 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Change
   end
 
   if changed.this_ele_length_set; bgin[:L] = pdict[:LengthGroup].L; end
-  param_conflict_check(ele, bgin, :L, :L_chord)
-  param_conflict_check(ele, bgin, :bend_field, :g, :rho, :angle)
+  sym1 = param_conflict_check(ele, bgin, :L, :L_chord)
+  sym2 = param_conflict_check(ele, bgin, :bend_field, :g, :rho)
   param_conflict_check(ele, bgin, :e1, :e1_rect)
   param_conflict_check(ele, bgin, :e2, :e2_rect)
+
+  if haskey(bgin, :angle) && length(sym1) + length(sym2) == 2; error(f"Conflict: {sym1[1]} " *
+                 f"{sym2[1]} cannot both be specified for a Bend element: {ele.name}"); end
+
+  if haskey(bgin, :L_sagitta); error(f"DependentParam: L_sagitta is a dependent parameter and " *
+                                                     f"is not settable for: {ele_name(ele)}"); end
 
   if haskey(bgin, :bend_type)
     bend_type = bgin[:bend_type]
@@ -454,35 +460,41 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Change
     bend_type = SBend
   end
 
-  if haskey(bgin, :bend_field)
-    bgin[:g] = bgin[:bend_field] * charge(pdict[:ReferenceGroup].species_ref) * c_light / pdict[:ReferenceGroup].pc_ref
-  elseif haskey(bgin, :rho)
-    bgin[:g] = 1.0 / bgin[:rho]
+  B_rho = pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
+
+  if haskey(bgin, :bend_field); bgin[:g] = bgin[:bend_field] / B_rho; end
+  if haskey(bgin, :rho); bgin[:g] = 1.0 / bgin[:rho]; end
+
+  if  haskey(bgin, :angle) && haskey(bgin, :g)
+    bgin[:L] = bgin[:g] * bgin[:L]
+  elseif haskey(bgin, :angle) && haskey(bgin, :L_chord)
+    if bgin[:L_chord] == 0 && bgin[:angle] != 0; 
+                        error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+    bgin[:angle] == 0 ? bgin[:g] = 0.0 : bgin[:g] = 2.0 * sin(bgin[:angle]/2) / bgin[:L_chord]
+    bgin[:L] = bgin[:angle] * bgin[:g]
   elseif haskey(bgin, :angle)
-    if haskey(bgin, :L_chord)
-      if bgin[:L_chord] == 0 && bgin[:angle] != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
-      bgin[:angle] == 0 ? bgin[:g] = 0.0 : bgin[:g] = 2.0 * sin(bgin[:angle]/2) / bgin[:L_chord]
-    else
-      if bg[:L] == 0 && bg[:angle] != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
-      bg[:angle] == 0 ? bg[:g] = 0 : bg[:g] = bg[:angle] / bg[:L]
-    end
+    if !haskey(bgin, :L); bgin[:L] = pdict[:LengthGroup].L; end
+    if bgin[:L] == 0 && bgin[:angle] != 0; 
+                        error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+    bgin[:angle] == 0 ? bgin[:g] = 0 : bgin[:g] = bgin[:angle] / bgin[:L]
   elseif !haskey(bgin, :g)
     if isnothing(bgnow)
       bgin[:g] = 0
     elseif changed.ref_energy & pdict[:MasterGroup].field_master 
-      bgin[:g] = bgin[:bend_field] * charge(pdict[:ReferenceGroup].species_ref) * c_light / pdict[:ReferenceGroup].pc_ref
+      bgin[:g] = bgin[:bend_field] / B_rho
     else
       bgin[:g] = bgnow.g
     end
   end
 
-  bgin[:bend_field] = bgin[:g] * pdict[:ReferenceGroup].pc_ref / (c_light * charge(pdict[:ReferenceGroup].species_ref))
+  bgin[:bend_field] = bgin[:g] * B_rho
   bgin[:g] == 0 ? bgin[:rho] = Inf : bgin[:rho] = 1.0 / bgin[:g]
 
   if haskey(bgin, :L_chord)
     bgin[:angle] = 2 * asin(bgin[:L_chord] * bgin[:g] / 2)
     bgin[:g] == 0 ? bgin[:L] =  bgin[:L_chord] : bgin[:L] = bgin[:rho] * bgin[:angle]
   else
+    if !haskey(bgin, :L); bgin[:L] = pdict[:LengthGroup].L; end
     bgin[:angle] = bgin[:L] * bgin[:g]
     bgin[:g] == 0 ? bgin[:L_chord] = bgin[:L] : bgin[:L_chord] = 2 * bgin[:rho] * sin(bgin[:angle]/2) 
   end
