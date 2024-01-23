@@ -30,7 +30,7 @@ module AcceleratorLattice
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!
   export BeamLineItem, BeamLine, Ele, ele_types_set, propagate_ele_geometry, ele_floor_transform
-  export split!, construct_ele_type, LatEleLocation, ele_at_s
+  export split!, construct_ele_type, LatEleLocation, ele_at_s, QuatN, Quat64
   export find_ele, find_eles, next_ele, find_branch, ele_param_groups, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup

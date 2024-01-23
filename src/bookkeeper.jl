@@ -363,10 +363,10 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
     if isnothing(mtype) || mtype == "tilt"; continue; end
     mul = multipole!(BMultipoleGroup, order)
 
-    if     mtype[1:2] = "Kn"; mul.Bn = mul.Kn * ff
-    elseif mtype[1:2] = "Ks"; mul.Bs = mul.Ks * ff
-    elseif mtype[1:2] = "Bn"; mul.Kn = mul.Bn / ff
-    elseif mtype[1:2] = "Bs"; mul.Ks = mul.Bs / ff
+    if     mtype[1:2] == "Kn"; mul.Bn = mul.Kn * ff
+    elseif mtype[1:2] == "Ks"; mul.Bs = mul.Ks * ff
+    elseif mtype[1:2] == "Bn"; mul.Kn = mul.Bn / ff
+    elseif mtype[1:2] == "Bs"; mul.Ks = mul.Bs / ff
     end
 
     if mtype[end] == 'L'
@@ -438,7 +438,7 @@ end
 Has any parameter in `group` changed since the last bookkeeping?
 """
 
-function has_changed(ele::Ele, group::EleParamGroup)
+function has_changed(ele::Ele, group::EleParameterGroup)
   for param in keys(ele.changed)
     info = ele_param_info(param, no_info_return = nothing)
     if isnothing(info); continue; end
@@ -455,7 +455,7 @@ end
 Clear any parameter as having been changed that is associated with `group`.
 """
 
-function clear_changed!(ele::Ele, group::EleParamGroup)
+function clear_changed!(ele::Ele, group::EleParameterGroup)
   for param in keys(ele.changed)
     info = ele_param_info(param, no_info_return = nothing)
     if isnothing(info) || info.parent_group != group; continue; end
@@ -471,7 +471,7 @@ Reinstate values for parameters associated with `group`.
 This is used to try to back out of changes that cause an error.
 """
 
-function reinstate_changed!(ele::Ele, group::EleParamGroup)
+function reinstate_changed!(ele::Ele, group::EleParameterGroup)
   for param in keys(ele.changed)
     info = ele_param_info(param, no_info_return = nothing)
     if isnothing(info) || info.parent_group != group; continue; end

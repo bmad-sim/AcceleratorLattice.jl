@@ -67,11 +67,11 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   parent = Symbol(pinfo.parent_group)
   if !haskey(pdict, parent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
   if pinfo.kind <: Vector
-    pdict[:changed][sym] = getfield(pdict[parent], sym)
+    pdict[:changed][sym] = getfield(pdict[parent], pinfo.struct_sym)
   end
 
   # 
-  return get_ele_group_param(pdict[parent], sym)
+  return get_ele_group_param(pdict[parent], pinfo.struct_sym)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
   pinfo = ele_param_info(sym, ele)
   if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
   getfield(ele, :pdict)[:changed][sym] = get_ele_group_param(pdict[parent], sym)
-  set_ele_group_param(pinfo.parent, sym)
+  set_ele_group_param(pinfo.parent, pinfo.struct_sym)
 end
 
 #---------------------------------------------------------------------------------------------------

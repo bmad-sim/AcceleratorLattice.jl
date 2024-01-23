@@ -149,7 +149,7 @@ ele_param_info_dict = Dict(
   :q_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "Quaternion orientation.", "", :q),
   :theta_floor        => ParamInfo(FloorPositionGroup, Number,            "Floor theta angle orientation", "rad", :theta),
   :phi_floor          => ParamInfo(FloorPositionGroup, Number,            "Floor phi angle orientation", "rad", :phi),
-  :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Floor psi angle orientation", "rad":psi),
+  :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Floor psi angle orientation", "rad", :psi),
 
   :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(GirderGroup,     EleBodyRefSwitch,     "Reference location on reference element. Default is Center."),
@@ -158,8 +158,8 @@ ele_param_info_dict = Dict(
   :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),
   :dpsi_girder        => ParamInfo(GirderGroup,     Number,               "Psi angle orientation with respect to ref ele.", "rad", :dpsi),
 
-  :ks                 => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m")
-  :ks_field           => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T")
+  :ks                 => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
+  :ks_field           => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
 
   :control            => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
   :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
@@ -186,7 +186,7 @@ Returns the units (EG: `m` (meters) for length parameters) for
 """ units
 
 function units(param::Symbol)
-  if param in ele_param_group_syms; return ""; end
+  if param ∉ ele_param_group_syms; return ""; end
   param_info = ele_param_info(param, no_info_return = nothing)
   if isnothing(param_info); return "?units?"; end
   return param_info.units
@@ -248,7 +248,7 @@ function info(sym::Union{Symbol,String})
       if info.units != ""; println(f"  Units:           {info.units}"); end
       println(f"  Description:     {info.description}")
       return 
-   end
+    end
   end
 
   println(f"No information found on: {sym}")
@@ -284,7 +284,7 @@ function multipole_type(str::Union{AbstractString,Symbol}; group::Union{BMultipo
   elseif group == EMultipoleGroup
     if str[1:2] ∉ Set(["En", "Es"]); return (nothing, -1); end
   else
-    if str[1:2] ∉ Set(["Kn", "Ks", "Bn", "Bs" "En", "Es"]); return (nothing, -1); end
+    if str[1:2] ∉ Set(["Kn", "Ks", "Bn", "Bs", "En", "Es"]); return (nothing, -1); end
   end
 
   if str[end] == 'L'
@@ -328,25 +328,31 @@ function ele_param_info(sym::Symbol; no_info_return = Error)
   mtype[2] == "s" ? str = "Skew," : str = "Normal (non-skew)"
   insym = Symbol(mtype[1:2])
 
-  mtype[end] == 'L'
+  if mtype[end] == 'L'
     str = str * " length-integrated,"
     order = order - 1
   end
 
   if mtype[1] == 'K'
-    if order == -1; units = "";
-    else           units = f"1/m^{order+1}"; end
+    if order == -1; units = ""
+    else;           units = f"1/m^{order+1}"
+    end
+
     return ParamInfo(BMultipoleGroup, Number, f"{str}, momentum-normalized magnetic multipole.", units, insym)
 
   elseif mtype[1] == 'B'
-    if order == -1;    units = "T*m";
+    if order == -1;    units = "T*m"
     elseif order == 0; units = "T"
-    else               units = f"T/m^{order}"; end
+    else;              units = f"T/m^{order}"
+    end
+
     return ParamInfo(BMultipoleGroup, Number, f"{str} magnetic field multipole.", units, insym)
 
   elseif mtype[1] == 'E'
-    if order == -1; units = "V";
-    else            units = f"V/m^{order+1}"; end
+    if order == -1; units = "V"
+    else;           units = f"V/m^{order+1}"
+    end
+
     return ParamInfo(EMultipoleGroup, Number, f"{str} electric field multipole.", units, insym) 
   end
 end
@@ -392,7 +398,9 @@ function set_integrated!(ele::Ele, group::BMultipoleGroup, order::Int, integrate
     mul.Bn = mul.Bn * L
     mul.Bs = mul.Bs * L
   else
-    if L == 0; error(f"Cannot convert from integrated multipole to non-integrated for element of zero length: {ele_name(ele)}")
+    if L == 0
+      error(f"Cannot convert from integrated multipole to non-integrated for element of zero length: {ele_name(ele)}")
+    end
     mul.Kn = mul.Kn / L
     mul.Ks = mul.Ks / L
     mul.Bn = mul.Bn / L
@@ -412,7 +420,9 @@ function set_integrated!(ele::Ele, group::EMultipoleGroup, order::Int, integrate
     mul.En = mul.En * L
     mul.Es = mul.Es * L
   else
-    if L == 0; error(f"Cannot convert from integrated multipole to non-integrated for element of zero length: {ele_name(ele)}")
+    if L == 0
+      error(f"Cannot convert from integrated multipole to non-integrated for element of zero length: {ele_name(ele)}")
+    end
     mul.En = mul.En / L
     mul.Es = mul.Es / L
   end
@@ -631,7 +641,7 @@ function set_ele_group_param!(group::T, sym::Symbol, value) where T <: EleParame
   return setfield!(group, sym, value)
 end
 
-function set_ele_group_param(group::union{BMultipoleGroup, EMultipoleGroup}, sym::Symbol)
+function set_ele_group_param(group::Union{BMultipoleGroup, EMultipoleGroup}, sym::Symbol)
   (mtype, order) = multipole_type(sym)
   mul = multipole!(group, order, insert = true)
   return setfield!(mul, Symbol(mtype[1:2]), value)

@@ -205,10 +205,12 @@ end
 Position and orientation in global coordinates.
 The FloorPositionGroup in a lattice element gives the coordinates at the entrance end of an element
 ignoring misalignments.
+
+Note: Rotations.jl is currently not compatible with using dual numbers so `q` is defined with `Float64`.
 """
 @kwdef mutable struct FloorPositionGroup <: EleParameterGroup
   r::Vector{Number} = [0.0, 0.0, 0.0]            # (x,y,z) in Global coords
-  q::QuatN = QuatN(1.0, 0.0, 0.0, 0.0)                 # Quaternion orientation
+  q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)         # Quaternion orientation.
   theta::Number = 0.0
   phi::Number = 0.0
   psi::Number = 0.0
@@ -524,7 +526,7 @@ end
   ele_origin::RefLocationSwitch = Center
   ref_ele::String = ""
   ref_origin::RefLocationSwitch = Center
-  offset::::Number = 0.0
+  offset::Number = 0.0
   wrap_superimpose::Bool = true
 end
 

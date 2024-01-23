@@ -28,6 +28,7 @@ eval_str(str::AbstractString) = eval(Meta.parse(str))
 #---------------------------------------------------------------------------------------------------
 
 QuatN = QuatRotation{Number}
+Quat64 = QuatRotation{Float64}
 
 #---------------------------------------------------------------------------------------------------
 # The Rotation.jl package displays the 3x3 rotation matrix with 
