@@ -80,9 +80,9 @@ These low level routines (there are several with this signature) are called via 
 function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
   for group in ele_param_groups[typeof(ele)]
     try
-      ele_group_bookkeeper!(ele, group, changed, previous_ele)
+      elegroup_bookkeeper!(ele, group, changed, previous_ele)
     catch er
-      reinstate_changed(ele, group)    # Try to undo the dammage.
+      reinstate_changed!(ele, group)    # Try to undo the dammage.
       rethrow(er)
     end
   end
@@ -152,18 +152,19 @@ function param_conflict_check(ele::Ele, syms...)
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_group_bookkeeper!(ele::Ele, group::Type{T}, ...)
-# Bookkeeping for everything else not covered by a specific function.
+# elegroup_bookkeeper!(ele::Ele, group::Type{T}, ...)
+# Essentially no bookkeeping is needed for groups not covered by a specific method.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
+function elegroup_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
                                       previous_ele::Ele) where T <: EleParameterGroup
+  clear_changed!(ele, group)
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, ...)
+# elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, ...)
 # Low level LengthGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, previous_ele::Ele)
+function elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, previous_ele::Ele)
   lg = ele.LengthGroup
   cdict = ele.changed
 
@@ -190,20 +191,20 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::Chan
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, ...)
+# elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, ...)
 # ReferenceGroup bookkeeping
 
 # Note: RF reference bookkeeping, which is complicated and needs information from other structures, 
 # is handled by the RFGroup bookkeeping code. So this routine simply ignores this complication.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Ele)
+function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Ele)
   rg = ele.ReferenceGroup
   cdict = ele.changed
 
   if has_changed(ele, ReferenceGroup); changed.ref_group = true; end
 
   if is_null(previous_ele)   # implies BeginningEle
-    if rg.species == Species("NotSet"); error(f"Species not set for: {ele_name(ele)}"); end
+    if rg.species_ref == Species("NotSet"); error(f"Species not set for: {ele_name(ele)}"); end
     rg.species_ref_exit = rg.species_ref
 
     rg.time_ref_exit = rg.time_ref
@@ -221,14 +222,14 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
     rg.pc_ref_exit = rg.pc_ref
     rg.E_tot_ref_exit = rg.E_tot_ref
 
-    clear_changed(ele, ReferenceGroup)
+    clear_changed!(ele, ReferenceGroup)
     return
   end
 
   # Propagate from previous ele
 
-  if !changed.this_ele_length && !changed.ref_energy; return; end
-  changed.ref_energy = true
+  if !changed.this_ele_length && !changed.ref_group; return; end
+  changed.ref_group = true
 
   rg.species_ref      = previous_ele.species_ref_exit
   rg.species_ref_exit = rg.species_ref
@@ -243,14 +244,14 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::C
     error(f"ReferenceGroup parameters cannot be set for this element: {ele_name(ele)}")
   end
 
-  clear_changed(ele, ReferenceGroup)
+  clear_changed!(ele, ReferenceGroup)
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, ...)
+# elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, ...)
 # FloorPositionGroup bookkeeper
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, 
+function elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, 
                                               changed::ChangedLedger, previous_ele::Ele)
   fpg = ele.FloorPositionGroup
   cdict = ele.changed
@@ -264,14 +265,14 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup},
   end
 
   fpg = propagate_ele_geometry(previous_ele.FloorPositionGroup, previous_ele)
-  clear_changed(ele, FloorPositionGroup)
+  clear_changed!(ele, FloorPositionGroup)
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, ...)
+# elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, ...)
 # BendGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Ele)
+function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Ele)
   bg = ele.BendGroup
   cdict = ele.changed
 
@@ -298,7 +299,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Change
     bg.angle == 0 ? bg.g = 0.0 : bg.g = 2.0 * sin(bg.angle/2) / bg.L_chord
     L = bg.angle * bg.g
   elseif haskey(cdict, :angle)
-    if !changed.this_ele_length; L = ele.L; end
+    L = ele.L
     if L == 0 && bg.angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
     bg.angle == 0 ? bg.g = 0 : bg.g = bg.angle / L
   elseif changed.this_ele_length
@@ -321,14 +322,14 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Change
 
   if ele.L != L
     ele.L = L
-    ele_group_bookkeeper!(ele, LengthGroup, changed, previous_ele)
+    elegroup_bookkeeper!(ele, LengthGroup, changed, previous_ele)
   end
 
   if haskey(cdict, :e1)
     bg.e1_rect = bg.e1 - 0.5 * bg.angle
   elseif haskey(cdict, :e1_rect)
     bg.e1 = bg.e1_rect + 0.5 * bg.angle
-  elseif bend_type == SBend
+  elseif bg.bend_type == SBend
     bg.e1_rect = bg.e1 + 0.5 * bg.angle
   else
     bg.e1 = bg.e1_rect - 0.5 * bg.angle
@@ -338,20 +339,20 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Change
     bg.e2_rect = bg.e2 - 0.5 * bg.angle
   elseif haskey(cdict, :e2_rect)
     bg.e2 = bg.e2_rect + 0.5 * bg.angle
-  elseif bend_type == SBend
+  elseif bg.bend_type == SBend
     bg.e2_rect = bg.e2 + 0.5 * bg.angle
   else
     bg.e2 = bg.e2_rect - 0.5 * bg.angle
   end
 
-  clear_changed(ele, BendGroup)
+  clear_changed!(ele, BendGroup)
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, ...)
+# elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, ...)
 # BMultipoleGroup bookkeeping.
 
-function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
+function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
   bmg = ele.BMultipoleGroup
   cdict = ele.changed
   if !has_changed(ele, BMultipoleGroup) && !changed.this_ele_length && !changed.ref_group; return; end
@@ -361,24 +362,12 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
   for param in keys(cdict)
     (mtype, order) = multipole_type(param, BMultipoleGroup)
     if isnothing(mtype) || mtype == "tilt"; continue; end
-    mul = multipole!(BMultipoleGroup, order)
+    mul = multipole!(bmg, order)
 
     if     mtype[1:2] == "Kn"; mul.Bn = mul.Kn * ff
     elseif mtype[1:2] == "Ks"; mul.Bs = mul.Ks * ff
     elseif mtype[1:2] == "Bn"; mul.Kn = mul.Bn / ff
     elseif mtype[1:2] == "Bs"; mul.Ks = mul.Bs / ff
-    end
-
-    if mtype[end] == 'L'
-      if !ismissing(mul.integrated) && mul.integrated == false
-        error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
-      end
-      mul.integrated = true
-    else
-      if !ismissing(mul.integrated) && mul.integrated == true
-        error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
-        mul.integrated = false
-      end
     end
   end    
 
@@ -397,38 +386,7 @@ function ele_group_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::
     end
   end
 
-  clear_changed(ele, BMultipoleGroup)
-end
-
-#---------------------------------------------------------------------------------------------------
-# ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, ...)
-# EMultipoleGroup bookkeeping.
-
-function ele_group_bookkeeper!(ele::Ele, group::Type{EMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
-  emg = ele.EMultipoleGroup
-  cdict = ele.changed
-  if !has_changed(ele, EMultipoleGroup) && !changed.this_ele_length && !changed.ref_group; return; end
-
-  ff = ele.pc_ref / (c_light * charge(ele.species_ref))
-
-  for param in keys(cdict)
-    (mtype, order) = multipole_type(param, EMultipoleGroup)
-    if isnothing(mtype) || mtype == "Etilt"; continue; end
-
-    if mtype[end] == 'L'
-      if !ismissing(mul.integrated) && mul.integrated == false
-        error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
-      end
-      mul.integrated = true
-    else
-      if !ismissing(mul.integrated) && mul.integrated == true
-        error(f"Combining integrated and non-integrated multipole values for a given order not permitted: {ele_name(ele)}")
-        mul.integrated = false
-      end
-    end
-  end
-
-  clear_changed(ele, EMultipoleGroup)
+  clear_changed!(ele, BMultipoleGroup)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -438,9 +396,9 @@ end
 Has any parameter in `group` changed since the last bookkeeping?
 """
 
-function has_changed(ele::Ele, group::EleParameterGroup)
+function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   for param in keys(ele.changed)
-    info = ele_param_info(param, no_info_return = nothing)
+    info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info); continue; end
     if info.parent_group == group; return true; end
   end
@@ -455,9 +413,9 @@ end
 Clear any parameter as having been changed that is associated with `group`.
 """
 
-function clear_changed!(ele::Ele, group::EleParameterGroup)
+function clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   for param in keys(ele.changed)
-    info = ele_param_info(param, no_info_return = nothing)
+    info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info) || info.parent_group != group; continue; end
     pop!(ele.changed, param)
   end
@@ -471,9 +429,9 @@ Reinstate values for parameters associated with `group`.
 This is used to try to back out of changes that cause an error.
 """
 
-function reinstate_changed!(ele::Ele, group::EleParameterGroup)
+function reinstate_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   for param in keys(ele.changed)
-    info = ele_param_info(param, no_info_return = nothing)
+    info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info) || info.parent_group != group; continue; end
     Base.setproperty(ele, param, ele.changed[param])
   end

@@ -41,26 +41,32 @@ Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
     macro construct_ele_type(type_name)
 
 Constructor for element types. Example:
-    @ele q1 = Quadrupole(L = 0.2, K1 = 0.67, ...)
-Result: The variable `q1` is a `Quadrupole` with the argument values put the the appropriate place.
-
-Note: All element parameter groups associated with the element type will be constructed. Thus, in the
-above example,`q1` above will have `q1.LengthGroup` (equivalent to `q1.pdict[:LengthGroup]`) created.
+    @construct_ele_type Drift
+Result: Drift struct is defined.
 """ construct_ele_type
-
 macro construct_ele_type(type_name)
   eval( Meta.parse("mutable struct $type_name <: Ele; pdict::Dict{Symbol,Any}; end") )
-  str_type =  String("$type_name")
+  str_type = String("$type_name")
   eval( Meta.parse("export $str_type") )
   push!(ele_types_set, eval(Meta.parse("$str_type")))
   return nothing
 end
 
-#---------------------------------------------------------------------------------------------------
-# Stuff used by construct_ele_type
-
 ele_types_set = Set()  # Global list of element types.
 
+#---------------------------------------------------------------------------------------------------
+# @ele macro
+
+"""
+    macro construct_ele_type(type_name)
+
+Element constructor Example:
+    @ele q1 = Quadrupole(L = 0.2, Ks1 = 0.67, ...)
+Result: The variable `q1` is a `Quadrupole` with the argument values put the the appropriate place.
+
+Note: All element parameter groups associated with the element type will be constructed. Thus, in the
+above example,`q1` above will have `q1.LengthGroup` (equivalent to `q1.pdict[:LengthGroup]`) created.
+"""
 macro ele(expr)
   if expr.head != :(=); error("Missing equals sign '=' after element name. " * 
                                "Expecting something like: \"q1 = Quadrupole(...)\""); end
@@ -72,24 +78,28 @@ macro ele(expr)
   return esc(expr)   # This will call the constructor below
 end
 
-# Constructor called by `ele` macro.
+# Functions called by `ele` macro.
 
 function (::Type{T})(; kwargs...) where T <: Ele
   ele = T(Dict{Symbol,Any}())
-  init_param_groups_in_ele(ele, kwargs)
-  ele.pdict[:changed] = Dict{Symbol,Any}(kwargs)
-  ele.pdict[:name] = pop!(ele.pdict[:changed], :name)
-  return ele
-end
-
-#
-
-function init_param_groups_in_ele(ele::Ele, kwargs...)
   pdict = ele.pdict
-  pdict[:changed] = Dict{Symbol,Any}
+  pdict[:changed] = Dict{Symbol,Any}()
+
+  # Setup parameter groups.
   for group in ele_param_groups[typeof(ele)]
     pdict[Symbol(group)] = group()
   end
+
+  # Put name in first in case there are errors and the ele name needs to be printed.
+  pdict[:name] = kwargs[:name]
+
+  # Put parameters in parameter groups and changed area
+  for (sym, val) in kwargs
+    if sym == :name; continue; end
+    Base.setproperty!(ele, sym, val)
+  end
+
+  return ele
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -209,7 +219,7 @@ ignoring misalignments.
 Note: Rotations.jl is currently not compatible with using dual numbers so `q` is defined with `Float64`.
 """
 @kwdef mutable struct FloorPositionGroup <: EleParameterGroup
-  r::Vector{Number} = [0.0, 0.0, 0.0]            # (x,y,z) in Global coords
+  r::Vector = [0.0, 0.0, 0.0]                    # (x,y,z) in Global coords
   q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)         # Quaternion orientation.
   theta::Number = 0.0
   phi::Number = 0.0
@@ -220,7 +230,7 @@ end
 Patch element parameters
 """
 @kwdef mutable struct PatchGroup <: EleParameterGroup
-  offset::Vector{Number} = [0.0, 0.0, 0.0]    # [x, y, z] offsets
+  offset::Vector = [0.0, 0.0, 0.0]            # [x, y, z] offsets
   t_offset::Number = 0.0                      # Time offset
   x_pitch::Number = 0.0                       # x pitch
   y_pitch::Number = 0.0                       # y pitch
@@ -298,8 +308,8 @@ Orientation of an element (specifically, orientation of the body coordinates) wi
 laboratory coordinates.
 """
 @kwdef mutable struct AlignmentGroup <: EleParameterGroup
-  offset::Vector{Number} = [0.0, 0.0, 0.0]       # [x, y, z] offsets
-  offset_tot::Vector{Number} = [0.0, 0.0, 0.0]   # [x, y, z] offsets including Girder misalignment.
+  offset::Vector = [0.0, 0.0, 0.0]       # [x, y, z] offsets
+  offset_tot::Vector = [0.0, 0.0, 0.0]   # [x, y, z] offsets including Girder misalignment.
   x_pitch::Number = 0                    # x pitch
   x_pitch_tot::Number = 0                # x pitch including Girder misalignment.
   y_pitch::Number = 0                    # y pitch
@@ -342,8 +352,8 @@ end
 Vacuum chamber aperture.
 """
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
-  x_limit::Vector{Number} = [NaN, NaN]
-  y_limit::Vector{Number} = [NaN, NaN]
+  x_limit::Vector = [NaN, NaN]
+  y_limit::Vector = [NaN, NaN]
   aperture_type::ApertureTypeSwitch = Elliptical
   aperture_at::EleBodyLocationSwitch = EntranceEnd
   offset_moves_aperture::Bool = true
@@ -367,7 +377,7 @@ Girder parameters.
 @kwdef mutable struct GirderGroup <: EleParameterGroup
   origin_ele::Ele = NullEle
   origin_ele_ref_pt::EleBodyRefSwitch = Center
-  dr::Vector{Number} = [0.0, 0.0, 0.0]
+  dr::Vector = [0.0, 0.0, 0.0]
   dtheta::Number = 0.0
   dphi::Number = 0.0
   dpsi::Number = 0.0
@@ -478,8 +488,8 @@ end
   eles = []                  # Strings, and/or LatEleLocations
   ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
   slave_parameter = nothing
-  x_knot::Vector{Number} = Vector{Number}()
-  y_knot::Vector{Number} = Vector{Number}()
+  x_knot::Vector = Vector()
+  y_knot::Vector = Vector()
   interpolation::InterpolationSwitch = Spline
   value::Number = 0.0
   type::ControlSlaveTypeSwitch = NotSet
@@ -507,8 +517,8 @@ function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, expr::AbstractStrin
   return ControlSlaveExpression(eles = eles, slave_parameter = parameter, exp_str = expr, type = type)
 end
 
-function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, x_knot::Vector{Number}, 
-                                                      y_knot::Vector{Number}, interpolation = Spline)
+function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, x_knot::Vector, 
+                                                      y_knot::Vector, interpolation = Spline)
   if typeof(eles) == String; eles = [eles]; end
   return ControlSlaveKnot(eles = eles, slave_parameter = parameter, x_knot = x_knot, y_knot = y_knot, type = type)
 end

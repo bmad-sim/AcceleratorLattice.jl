@@ -108,7 +108,9 @@ Tokens are two character strings:
         else the token is replaced the same as "!#".
   "%#" is replaced by `ix_ele` if the element is in branch 1 else the token is replaced the same as "!#".
 
-If the `template` is blank (""), the `template` is taken to be "\"@N\" (!#)"
+If the `template` is blank (""), the `template` is taken to be "\"@N\" (!#)".
+
+If the element is not associated with a lattice, just the element name is returned.
 
 ### Examples:
 
@@ -270,14 +272,14 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
   end
 
   println(io, f"  BMultipoleGroup:")
-  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"Kn/Bn\",24)}{lpad(\"Ks/Bs\",24)}")
+  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}")
   for v in group.vec
     ol = f"{v.order}"
-    if v.integrated; ol = ol * "L"; end
+    if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
     uk = units(Symbol(f"Kn{ol}"));  ub = units(Symbol(f"Bn{ol}"))
     println(io, f"{lpad(v.order,9)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
-                         f"{lpad(v.Kn,24)}{lpad(v.Ks,24)}    Kn{ol} Ks{ol} ({uk})")
-    println(io, " "^44 * f"{lpad(v.Bn,24)}{lpad(v.Bs,24)}    Bn{ol} Bs{ol} ({ub})")
+                         f"{lpad(v.Kn,24)}  Kn{ol}{lpad(v.Ks,24)}  Ks{ol} ({uk})")
+    println(io, " "^44 * f"{lpad(v.Bn,24)}  Bn{ol}{lpad(v.Bs,24)}  Bs{ol} ({ub})")
   end
 end
 
@@ -291,7 +293,7 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
   println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"En\",24)}{lpad(\"Es\",24)}")
   for v in group.vec
     ol = f"{v.order}"
-    if v.integrated; ol = ol * "L"; end
+    if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
     ue = units(Symbol(f"En{ol}"))
     println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.En,24)}{lpad(v.Es,24)}    En{ol}  Es{ol} ({ue})")
   end
@@ -310,7 +312,7 @@ function show_elegroup_with_doc(io::IO, group::T) where T <: EleParameterGroup
   println(io, f"  {gtype}:")
 
   for field in fieldnames(gtype)
-    kstr = rpad(string(field), nn)
+    kstr = rpad(full_field_name(field, gtype), nn)
     vstr = ele_param_str(Base.getproperty(group, field))
     ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
   end
@@ -322,17 +324,17 @@ end
 function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
   gtype = typeof(group)
   gtype in keys(show_column2) ? col2 = show_column2[gtype] : col2 = Dict{Symbol,Symbol}()
-  nn = max(18, maximum(length.(fieldnames(gtype))))
+  nn = max(20, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
 
   for field in fieldnames(gtype)
     if field in values(col2); continue; end
     if field in keys(col2)
-      kstr = rpad(string(field), nn)
+      kstr = rpad(full_field_name(field, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field))
       str = f"    {kstr} {vstr} {units(field)}"
       field2 = col2[field]
-      kstr = rpad(string(field2), nn)
+      kstr = rpad(full_field_name(field2, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field2))
       str2 = f"    {kstr} {vstr} {units(field2)}"
       if length(str) > 50 || length(str2) > 50
@@ -342,11 +344,33 @@ function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
         println(io, f"{rpad(str,50)}{str2}")
       end
     else
-      kstr = rpad(string(field), nn)
+      kstr = rpad(full_field_name(field, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field))
       println(io, f"    {kstr} {vstr} {units(field)}")
     end
   end
+end
+
+#---------------------------------------------------------------------------------------------------
+# full_field_name
+
+"""
+For fields where the user name is different (EG: `r_floor` and `r` in a FloorPositionGroup), 
+return the string `struct_name (user_name)` (EG: `r (r_floor)`).
+""" full_field_name
+
+function full_field_name(field, group::Type{T}) where T <: EleParameterGroup
+  if field ∉ keys(struct_sym_to_user_sym); return String(field); end
+
+  for sym in struct_sym_to_user_sym[field]
+    info = ele_param_info(sym)
+    if !has_parent_group(info, group); continue; end
+    if info.parent_group != group; continue; end
+    if sym == field; break; end
+    return f"{field} ({sym})"
+  end
+
+  return String(field)
 end
 
 #---------------------------------------------------------------------------------------------------

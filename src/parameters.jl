@@ -15,19 +15,19 @@ itself is considered to be a Pointer as well as its components.
 abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
-  parent_group::T where T <: Union{DataType,Union}  # Use the parent_group function to get the parent group.
+  parent_group::T where T <: Union{DataType,Vector}  # Use the parent_group function to get the parent group.
   kind::Union{T, Union} where T <: DataType         # Something like ApertureTypeSwitch is a Union.
   description::String = ""
   units::String = ""
   struct_sym::Symbol                                # Symbol associated with parent struct.
+  user_sym::Symbol                                  # Symbol used to construct elements.
 end
 
 # Used for constructing the ele_param_info_dict.
 
-ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String) = 
-                                                    ParamInfo(parent, kind, description, "", :SameAsKey)
-ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String, units::String) = 
-                                                    ParamInfo(parent, kind, description, units, :SameAsKey)
+ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :SameAsKey, :X)
+ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :SameAsKey, :X)
+ParamInfo(parent, kind, description, units, struct_sym) = ParamInfo(parent, kind, description, units, struct_sym, :X)
 
 #---------------------------------------------------------------------------------------------------
 # ele_param_info_dict
@@ -39,8 +39,6 @@ ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, descripti
 Dictionary of parameter types. Keys are user names (which can be different from corresponding group name). 
 EG: theta_floor user name corresponds to theta in the FloorPositionGroup.
 """ ele_param_info_dict
-
-ap_union = Union{AlignmentGroup,PatchGroup}   # Only used locally
 
 ele_param_info_dict = Dict(
   :name               => ParamInfo(Nothing,        String,    "Name of the element."),
@@ -87,10 +85,10 @@ ele_param_info_dict = Dict(
   :hgap2              => ParamInfo(BendGroup,      Number,    "Bend exit edge pole gap height.", "m"),
   :bend_type          => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
 
-  :offset             => ParamInfo(ap_union,       Vector{Number}, "3-Vector of [x, y, z] element offsets.", "m"),
-  :x_pitch            => ParamInfo(ap_union,       Number,         "X-pitch element orientation.", "rad"),
-  :y_pitch            => ParamInfo(ap_union,       Number,         "Y-pitch element orientation.", "rad"),
-  :tilt               => ParamInfo(ap_union,       Number,         "Element tilt.", "rad"),
+  :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "3-Vector of [x, y, z] element offsets.", "m"),
+  :x_pitch  => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-pitch element orientation.", "rad"),
+  :y_pitch  => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-pitch element orientation.", "rad"),
+  :tilt     => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Element tilt.", "rad"),
 
   :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "Offset including Girder orientation.", "m"),
   :x_pitch_tot        => ParamInfo(AlignmentGroup, Number,         "X-pitch element orientation including Girder orientation.", "rad"),
@@ -167,29 +165,64 @@ ele_param_info_dict = Dict(
 
 for (key, info) in ele_param_info_dict
   if info.struct_sym == :SameAsKey; info.struct_sym = key; end
+  info.user_sym = key
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_param_group_syms
+# has_parent_group
+
+function has_parent_group(pinfo::ParamInfo, group::Type{T}) where T <: EleParameterGroup
+  if typeof(pinfo.parent_group) <: Vector
+    return group in pinfo.parent_group
+  else
+    return group == pinfo.parent_group
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# struct_sym_to_user_sym
+
+"""
+Map struct symbol to user symbol(s). Example: `:r` => `[:r_floor]`.
+A vector is used since the struct symbol maps to multiple user symbols.
+This mapping only covers stuff in ele_param_info_dict so this mapping does not, for example, cover multipoles.
+""" struct_sym_to_user_sym
+
+struct_sym_to_user_sym = Dict{Symbol,Any}()
+
+for (param, info) in ele_param_info_dict
+  if info.struct_sym in keys(struct_sym_to_user_sym)
+    push!(struct_sym_to_user_sym[info.struct_sym], param)
+  else
+    struct_sym_to_user_sym[info.struct_sym] = [param]
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele_param_group_list
 # Note: The transform to Symbol prepends "AcceleratorLattice." to the parameter group names so need to strip this.
 
-ele_param_group_syms = Symbol.(replace.(string.(subtypes(EleParameterGroup)), "AcceleratorLattice." => ""))
+"""
+Symbol list of ele parameter groups.
+""" ele_param_group_list
+
+ele_param_group_list = Symbol.(replace.(string.(subtypes(EleParameterGroup)), "AcceleratorLattice." => ""))
 
 
 #---------------------------------------------------------------------------------------------------
-# param_info
+# units
 
 """
     function units(param::Symbol)
 
-Returns the units (EG: `m` (meters) for length parameters) for 
+Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
+`param` may correspond to either a user symbol or struct symbol.
 """ units
 
 function units(param::Symbol)
-  if param ∉ ele_param_group_syms; return ""; end
-  param_info = ele_param_info(param, no_info_return = nothing)
-  if isnothing(param_info); return "?units?"; end
-  return param_info.units
+  info = ele_param_info(param, throw_error = false, include_struct_syms = true)
+  if isnothing(info); (return "?units?"); end
+  return info.units
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -267,9 +300,10 @@ returns (`type`, `order`) tuple. If `str` is a multipole parameter name like `Kn
 If `str` is not a valid multipole parameter name, returned will be (`nothing`, `-1`).
 """ multipole_type
 
-function multipole_type(str::Union{AbstractString,Symbol}; group::Union{BMultipoleGroup,EMultipoleGroup,Nothing})
+function multipole_type(str::Union{AbstractString,Symbol},
+                     group::Type{T} = Nothing) where T <: Union{BMultipoleGroup,EMultipoleGroup,Nothing}
   if str isa Symbol; str = string(str); end
-  if length(str) < 3 ; return; end
+  if length(str) < 3 ; (return nothing, -1); end
 
   if length(str) > 4 && str[1:4] == "tilt" && group != EMultipoleGroup
     order = tryparse(UInt64, str[5:end]) 
@@ -298,32 +332,44 @@ function multipole_type(str::Union{AbstractString,Symbol}; group::Union{BMultipo
   isnothing(order) ? (return nothing, -1) : (return str, Int64(order))
 end
 
+#
+
+function multipole_type(str::Union{AbstractString,Symbol})
+  return multipole_type(str, Nothing)
+end
+
 #---------------------------------------------------------------------------------------------------
 # ele_param_info
 
 """
-    ele_param_info(sym::Symbol; no_info_return = Error)
+    ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
 
 Returns information on the element parameter `sym`.
-Returns a `ParamInfo` struct or the value of `no_info_return` if no information on `sym` is found.
-If the value of `no_info_return` is `Error` (the default), an error is thrown when `sym` is unrecognized.
+Returns a `ParamInfo` struct. If no information on `sym` is found, an error is thrown
+or `nothing` is returned.
+""" ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
 
-""" ele_param_info(sym::Symbol; no_info_return = Error)
+function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+  if haskey(ele_param_info_dict, sym); (return ele_param_info_dict[sym]); end
+  if include_struct_syms && sym in keys(struct_sym_to_user_sym)
+    return ele_param_info_dict[struct_sym_to_user_sym[sym][1]]
+  end
 
-function ele_param_info(sym::Symbol; no_info_return = Error)
-  if haskey(ele_param_info_dict, sym); return ele_param_info_dict[sym]; end
-
-  # Must be a multipole
+  # Hopefully is a multipole. Otherwise unrecognized.
   (mtype, order) = multipole_type(sym)
   if isnothing(mtype)
-    if no_info_return == Error; error(f"Unrecognized element parameter: {sym}"); end
-    return no_info_return
+    if throw_error; error(f"Unrecognized element parameter: {sym}"); end
+    return nothing
   end
 
   n = length(mtype)
   if isnothing(mtype); return nothing; end
-  if n == 4 && mtype[1:4] == "tilt";  return ParamInfo(BMultipoleGroup, Number, f"Magnetic multipole tilt for order {order}", "rad", :tilt); end
-  if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Number, f"Electric multipole tilt for order {order}", "rad", :tilt); end
+  if n == 4 && mtype[1:4] == "tilt"
+    return ParamInfo(BMultipoleGroup, Number, f"Magnetic multipole tilt for order {order}", "rad", :tilt, sym)
+  end
+  if n == 5 && mtype[1:5] == "Etilt"
+    return ParamInfo(EMultipoleGroup, Number, f"Electric multipole tilt for order {order}", "rad", :tilt, sym)
+  end
 
   mtype[2] == "s" ? str = "Skew," : str = "Normal (non-skew)"
   insym = Symbol(mtype[1:2])
@@ -338,7 +384,7 @@ function ele_param_info(sym::Symbol; no_info_return = Error)
     else;           units = f"1/m^{order+1}"
     end
 
-    return ParamInfo(BMultipoleGroup, Number, f"{str}, momentum-normalized magnetic multipole.", units, insym)
+    return ParamInfo(BMultipoleGroup, Number, f"{str}, momentum-normalized magnetic multipole.", units, insym, sym)
 
   elseif mtype[1] == 'B'
     if order == -1;    units = "T*m"
@@ -346,33 +392,43 @@ function ele_param_info(sym::Symbol; no_info_return = Error)
     else;              units = f"T/m^{order}"
     end
 
-    return ParamInfo(BMultipoleGroup, Number, f"{str} magnetic field multipole.", units, insym)
+    return ParamInfo(BMultipoleGroup, Number, f"{str} magnetic field multipole.", units, insym, sym)
 
   elseif mtype[1] == 'E'
     if order == -1; units = "V"
     else;           units = f"V/m^{order+1}"
     end
 
-    return ParamInfo(EMultipoleGroup, Number, f"{str} electric field multipole.", units, insym) 
+    return ParamInfo(EMultipoleGroup, Number, f"{str} electric field multipole.", units, insym, sym) 
   end
 end
 
 #
 
 """
-    ele_param_info(sym::Symbol, ele::Ele; no_info_return = Error)
+    ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
 
 Returns information on the element parameter `sym`.
-Returns a `ParamInfo` struct or the value of `no_info_return` if 
-`sym` is not a parameter of `ele`.
-If the value of `no_info_return` is `Error` (the default), an error is thrown when `sym` is unrecognized.
+Returns a `ParamInfo` struct. If no information on `sym` is found or `sym` is not a parameter of `ele`, 
+an error is thrown or `nothing` is returned.
+""" ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
 
-""" ele_param_info(sym::Symbol, ele::Ele; no_info_return = Error)
+function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
+  param_info = ele_param_info(sym, throw_error = throw_error)
 
-function ele_param_info(sym::Symbol, ele::Ele; no_info_return = Error)
-  param_info = ele_param_info(sym, no_info_return)
-  if param_info.parent != Nothing && param_info.parent ∉ ele_param_groups(typeof(ele))
+  if typeof(param_info.parent_group) <: Vector
+    for parent in param_info.parent_group
+      if parent in ele_param_groups[typeof(ele)]
+        param_info.parent_group = parent
+        return param_info
+      end
+    end
+    
     error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")
+
+  else
+    if param_info.parent_group in ele_param_groups[typeof(ele)]; return param_info; end
+    error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")   
   end
 end
 
@@ -546,12 +602,18 @@ function multipole!(mgroup, order; insert::Bool = false)
   ix = multipole_index(mgroup.vec, order)
 
   if !insert
-    if ix > length(mgroup.vec) || order != mgroup.vec[ix].n; return nothing; end
+    if ix > length(mgroup.vec) || order != mgroup.vec[ix].order; return nothing; end
     return mgroup.vec[ix]
   end
 
-  if ix > length(mgroup.vec) || mgroup.vec[ix].n != order
-    insert!(mgroup.vec, ix, eltype(vec)())
+
+  if ix > length(mgroup.vec) 
+    ix = length(mgroup.vec) + 1
+    insert!(mgroup.vec, ix, eltype(mgroup.vec)())
+    mgroup.vec[ix].order = order
+  elseif mgroup.vec[ix].order != order
+    insert!(mgroup.vec, ix, eltype(mgroup.vec)())
+    mgroup.vec[ix].order = order
   end
 
   return mgroup.vec[ix]
@@ -576,7 +638,7 @@ function multipole_index(vec, order)
   if length(vec) == 0; return 1; end
 
   for ix in 1:length(vec)
-    if vec[ix].n >= order; return ix; end
+    if vec[ix].order >= order; return ix; end
   end
   return length(vec) + 1
 end  
@@ -605,47 +667,6 @@ branch_param = Dict(
   :live_branch => ParamInfo(Nothing, Bool,              "Used by programs to turn on/off tracking in a branch."),
   :ref_species => ParamInfo(Species, String,            "Reference tracking species."),
 )
-
-#---------------------------------------------------------------------------------------------------
-# get_ele_group_param
-
-"""
- - `sym`    User symbol (not struct symbol).
-
-This function assumes that `sym` is known to be in the group.
-This function will return dependent values. EG: integrated multipole value even if stored value is not integrated.
-""" get_ele_group_param
-
-function get_ele_group_param(group::T, sym::Symbol) where T <: EleParameterGroup
-  return getfield(group, sym)
-end
-
-function get_ele_group_param(group::Union{BMultipoleGroup, EMultipoleGroup}, sym::Symbol)
-  (mtype, order) = multipole_type(sym)
-  mul = multipole!(group, order)
-  if isnothing(mul); return 0.0::Float64; end
-  return getfield!(mul, Symbol(mtype[1:2]))
-end
-
-#---------------------------------------------------------------------------------------------------
-# set_ele_group_param!
-
-"""
- - `sym`    User symbol (not struct_symbol).
-
-This function assumes that `sym` is known to be in the group.
-This function will return dependent values. EG: integrated multipole value even if stored value is not integrated.
-""" set_ele_group_param
-
-function set_ele_group_param!(group::T, sym::Symbol, value) where T <: EleParameterGroup
-  return setfield!(group, sym, value)
-end
-
-function set_ele_group_param(group::Union{BMultipoleGroup, EMultipoleGroup}, sym::Symbol)
-  (mtype, order) = multipole_type(sym)
-  mul = multipole!(group, order, insert = true)
-  return setfield!(mul, Symbol(mtype[1:2]), value)
-end
 
 #---------------------------------------------------------------------------------------------------
 # Bases.copy(x::T) where {T <: EleParameterGroup} 

@@ -133,11 +133,11 @@ The transformation is
 """ ele_floor_transform
 
 function ele_floor_transform(bend::BendGroup, L)
-  qa = QuatN(RotY(bend.angle))
+  qa = Quat64(RotY(bend.angle))
   r_vec = [-L * sinc(bend.angle/(2*pi)) * sin(bend.angle), 0.0, L * sinc(bend.angle/pi)]
   if bend.ref_tilt == 0; return (r_vec, qa); end
 
-  qt = QuatN(RotZ(-bend.ref_tilt))
+  qt = Quat64(RotZ(-bend.ref_tilt))
   return (rot(qt, r_vec), qt * qa * inv(qt))
 end
 
@@ -151,13 +151,13 @@ Function to return the quaternion corresponding to a rotation parameterized
 by `theta`, `phi`, and `psi`.
 """ QuatRotation
 
-QuatRotation(theta::Real, phi::Real, psi::Real) = QuatN(RotY(theta) * RotX(-phi) * RotZ(psi))
+QuatRotation(theta::Real, phi::Real, psi::Real) = Quat64(RotY(theta) * RotX(-phi) * RotZ(psi))
 
 #---------------------------------------------------------------------------------------------------
 # floor_angles
 
 """
-    floor_angles(q::QuatN, floor0::FloorPositionGroup = FloorPositionGroup())
+    floor_angles(q::Quat64, floor0::FloorPositionGroup = FloorPositionGroup())
 
 Function to construct the angles that define the orientation of an element
 in the global "floor" coordinates from the quaternion.
@@ -171,7 +171,7 @@ Input:
 
 """ floor_angles
 
-function floor_angles(q::QuatN, f0::FloorPositionGroup = FloorPositionGroup())
+function floor_angles(q::Quat64, f0::FloorPositionGroup = FloorPositionGroup())
   m = RotMatrix(q)
   # Special case where cos(phi) is close to zero.
   if abs(m[1,3]) + abs(m[3,3]) < 1e-12

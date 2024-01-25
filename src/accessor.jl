@@ -66,12 +66,14 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   pinfo = ele_param_info(sym)
   parent = Symbol(pinfo.parent_group)
   if !haskey(pdict, parent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
+
+  # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
   if pinfo.kind <: Vector
     pdict[:changed][sym] = getfield(pdict[parent], pinfo.struct_sym)
   end
 
-  # 
-  return get_ele_group_param(pdict[parent], pinfo.struct_sym)
+  #
+  return get_elegroup_param(ele, pdict[parent], pinfo)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -100,7 +102,9 @@ end
     Base.setproperty!(branch::Branch, sym::Symbol, value)
     Base.setproperty!(ele::Ele, sym::Symbol, value)
 
-Overloads the dot struct component selection operator so something like `lat.XXX = ...` sets the appropriate component in the `lat` variable. See the Base.getproperty for documentation on what the appropriate property is.
+Overloads the dot struct component selection operator so something like `lat.XXX = ...` 
+sets the appropriate component in the `lat` variable. 
+See the Base.getproperty for documentation on what the appropriate property is.
 """ Base.setproperty!
 
 function Base.setproperty!(lat::Lat, sym::Symbol, value)
@@ -120,8 +124,8 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
   if haskey(pdict, sym); return pdict[sym]; end
   pinfo = ele_param_info(sym, ele)
   if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
-  getfield(ele, :pdict)[:changed][sym] = get_ele_group_param(pdict[parent], sym)
-  set_ele_group_param(pinfo.parent, pinfo.struct_sym)
+  getfield(ele, :pdict)[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(pinfo.parent_group)], pinfo)
+  set_elegroup_param!(ele, pdict[Symbol(pinfo.parent_group)], pinfo, value)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -161,3 +165,68 @@ function Base.getindex(ele::Vector{Ele}, name::Union{Symbol,AbstractString})
 
   error(f"NoEle: No element with name: {name}")
 end
+
+#---------------------------------------------------------------------------------------------------
+# get_elegroup_param
+
+"""
+    Internal: get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
+    Internal: get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
+
+Internal function used by Base.getproperty.
+
+This function will return dependent values. EG: integrated multipole value even if stored value is not integrated.
+""" get_elegroup_param
+
+function get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
+  return getfield(group, pinfo.struct_sym)
+end
+
+function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
+  (mtype, order) = multipole_type(pinfo.user_sym)
+  mul = multipole!(group, order)
+  if isnothing(mul); return 0.0::Float64; end
+
+  val =  getfield(mul, pinfo.struct_sym)
+  if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
+    if (mtype[end] == 'L') && !mul.integrated
+      return val * ele.L
+    elseif (mtype[end] != 'L') && mul.integrated
+      if ele.L == 0; error(f"Cannot compute non-integrated multipole value {pinfo.user_sym} for integrated multipole" *
+                           f" of element with zero length: {ele_name(ele)}"); end
+      return val / ele.L
+    end
+  end
+
+  return val
+end
+
+#---------------------------------------------------------------------------------------------------
+# set_elegroup_param!
+
+"""
+    Internal: set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo, value)
+
+""" set_elegroup_param
+
+function set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo, value)
+  return setfield!(group, pinfo.struct_sym, value)
+end
+
+function set_elegroup_param!(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo, value)
+  (mtype, order) = multipole_type(pinfo.user_sym)
+  mul = multipole!(group, order, insert = true)
+
+  if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
+    if isnothing(mul.integrated)
+      mul.integrated = (mtype[end] == 'L')
+    elseif (mtype[end] == 'L') != mul.integrated
+      error(f"Cannot set non-integrated multipole value for integrated multipole and " * 
+            f"vice versa for {pinfo.user_sym} in {ele_name(ele)}.\n" *
+            f"Use set_integrated to change integrated status.")
+    end
+  end
+
+  return setfield!(mul, pinfo.struct_sym, value)
+end
+
