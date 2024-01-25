@@ -6,7 +6,7 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
   ),
 
   FloorPositionGroup => Dict{Symbol,Symbol}(
-    :r_floor          => :q_floor,
+    :r                => :q,
     :phi              => :psi,
   ),
 
@@ -53,8 +53,8 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
 
   GirderGroup => Dict{Symbol,Symbol}(
     :origin_ele       => :origin_ele_ref_pt,
-    :dtheta_dgirder   => :dr_girder,
-    :dphi_girder      => :dpsi_girder,
+    :dtheta           => :dr,
+    :dphi             => :dpsi,
   ),
 
   RFFieldGroup => Dict{Symbol,Symbol}(
@@ -108,7 +108,9 @@ Tokens are two character strings:
         else the token is replaced the same as "!#".
   "%#" is replaced by `ix_ele` if the element is in branch 1 else the token is replaced the same as "!#".
 
-If the `template` is blank (""), the `template` is taken to be "\"@N\" (!#)"
+If the `template` is blank (""), the `template` is taken to be "\"@N\" (!#)".
+
+If the element is not associated with a lattice, just the element name is returned.
 
 ### Examples:
 
@@ -200,10 +202,10 @@ function show_ele(io::IO, ele::Ele, docstring = false)
 
   pdict = ele.pdict
   if length(pdict) > 0   # Need test since will bomb on zero length dict
-    # Print non-group, non-inbox parameters first.
+    # Print non-group, non-changed parameters first.
     for key in sort(collect(keys(pdict)))
       val = pdict[key]
-      if typeof(val) <: EleParameterGroup || key == :inbox; continue; end
+      if typeof(val) <: EleParameterGroup || key == :changed; continue; end
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
       kstr = rpad(string(key), nn2)
@@ -215,22 +217,21 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       end
     end
 
-    # Print element parameter groups (does not include inbox)
+    # Print element parameter groups (does not include changed)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
       if !(typeof(group) <: EleParameterGroup); continue; end
       show_elegroup(io, group, docstring)
     end
 
-    # Finally print inbox params.
-    # Bookkeeping: If inbox param has same value as corresponding grouped param, remove inbox param.
-    inbox = pdict[:inbox]
-    if length(inbox) > 0
-      println(io, "  inbox:")
-      for (key, value) in inbox
+    # Finally print changed params.
+    changed = pdict[:changed]
+    if length(changed) > 0
+      println(io, "  changed:")
+      for (key, value) in changed
         nn2 = max(nn, length(string(key)))
         kstr = rpad(string(key), nn2)
-        vstr = ele_param_str(inbox, key)
+        vstr = ele_param_str(changed, key)
         if docstring
           ele_print_line(io, f"    {kstr} {vstr} {units(key, eletype)}", description(key, eletype))
         else
@@ -271,14 +272,14 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
   end
 
   println(io, f"  BMultipoleGroup:")
-  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"K/B\",24)}{lpad(\"Ks/Bs\",24)}")
+  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}")
   for v in group.vec
-    v.integrated ? l = "L" : l = ""
-    nl = f"{v.order}{l}";          nsl = f"{v.order}s{l}"
-    uk = units(Symbol(f"K{nl}"));  ub = units(Symbol(f"B{nl}"))
+    ol = f"{v.order}"
+    if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
+    uk = units(Symbol(f"Kn{ol}"));  ub = units(Symbol(f"Bn{ol}"))
     println(io, f"{lpad(v.order,9)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
-                         f"{lpad(v.K,24)}{lpad(v.Ks,24)}    K{nl} K{nsl} ({uk})")
-    println(io, " "^44 * f"{lpad(v.B,24)}{lpad(v.Bs,24)}    B{nl} B{nsl} ({ub})")
+                         f"{lpad(v.Kn,24)}  Kn{ol}{lpad(v.Ks,24)}  Ks{ol} ({uk})")
+    println(io, " "^44 * f"{lpad(v.Bn,24)}  Bn{ol}{lpad(v.Bs,24)}  Bs{ol} ({ub})")
   end
 end
 
@@ -289,11 +290,12 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
   end
 
   println(io, f"  EMultipoleGroup:")
-  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"E\",24)}{lpad(\"Es\",24)}")
+  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"En\",24)}{lpad(\"Es\",24)}")
   for v in group.vec
-    v.integrated ? l = "L" : l = ""
-    n = v.order
-    println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.E,24)}{lpad(v.Es,24)}    E{n}{l}  E{n}s{l}")
+    ol = f"{v.order}"
+    if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
+    ue = units(Symbol(f"En{ol}"))
+    println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.En,24)}{lpad(v.Es,24)}    En{ol}  Es{ol} ({ue})")
   end
 end
 
@@ -310,7 +312,7 @@ function show_elegroup_with_doc(io::IO, group::T) where T <: EleParameterGroup
   println(io, f"  {gtype}:")
 
   for field in fieldnames(gtype)
-    kstr = rpad(string(field), nn)
+    kstr = rpad(full_field_name(field, gtype), nn)
     vstr = ele_param_str(Base.getproperty(group, field))
     ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
   end
@@ -322,17 +324,17 @@ end
 function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
   gtype = typeof(group)
   gtype in keys(show_column2) ? col2 = show_column2[gtype] : col2 = Dict{Symbol,Symbol}()
-  nn = max(18, maximum(length.(fieldnames(gtype))))
+  nn = max(20, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
 
   for field in fieldnames(gtype)
     if field in values(col2); continue; end
     if field in keys(col2)
-      kstr = rpad(string(field), nn)
+      kstr = rpad(full_field_name(field, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field))
       str = f"    {kstr} {vstr} {units(field)}"
       field2 = col2[field]
-      kstr = rpad(string(field2), nn)
+      kstr = rpad(full_field_name(field2, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field2))
       str2 = f"    {kstr} {vstr} {units(field2)}"
       if length(str) > 50 || length(str2) > 50
@@ -342,11 +344,33 @@ function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
         println(io, f"{rpad(str,50)}{str2}")
       end
     else
-      kstr = rpad(string(field), nn)
+      kstr = rpad(full_field_name(field, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field))
       println(io, f"    {kstr} {vstr} {units(field)}")
     end
   end
+end
+
+#---------------------------------------------------------------------------------------------------
+# full_field_name
+
+"""
+For fields where the user name is different (EG: `r_floor` and `r` in a FloorPositionGroup), 
+return the string `struct_name (user_name)` (EG: `r (r_floor)`).
+""" full_field_name
+
+function full_field_name(field, group::Type{T}) where T <: EleParameterGroup
+  if field ∉ keys(struct_sym_to_user_sym); return String(field); end
+
+  for sym in struct_sym_to_user_sym[field]
+    info = ele_param_info(sym)
+    if !has_parent_group(info, group); continue; end
+    if info.parent_group != group; continue; end
+    if sym == field; break; end
+    return f"{field} ({sym})"
+  end
+
+  return String(field)
 end
 
 #---------------------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 #---------------------------------------------------------------------------------------------------
-# Base.getproperty for lat.XXX, branch.XXX, ele.XXX dot operator overload
+# Base.getproperty(lat::Lat, sym::Symbol) for lat.XXX dot operator overload
 
 """
     Base.getproperty(lat::Lat, sym::Symbol)
@@ -17,7 +17,7 @@ function Base.getproperty(lat::Lat, sym::Symbol)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Base.getproperty for branch.XXX dot operator overload
+# Base.getproperty(branch::Branch, sym::Symbol) for branch.XXX dot operator overload
 
 """
     Base.getproperty(branch::Branch, sym::Symbol)
@@ -35,54 +35,58 @@ function Base.getproperty(branch::Branch, sym::Symbol)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Base.getproperty for ele.XXX dot operator overload
+# Base.getproperty(ele::Ele, sym::Symbol) for ele.XXX dot operator overload
 
 """
-    Base.getproperty(ele::T, sym::Symbol) where T <: Ele
+    Base.getproperty(ele::Ele, sym::Symbol) 
 
 Overloads the dot struct component selection operator.
 
 Algorithm for what to return for `ele.XXX`:
   1. If `XXX` is `pdict`, return `ele.pdict`.
   1. If `ele.pdict[:XXX]` exists, return `ele.pdict[:XXX]`.
-  1. If `ele.pdict[:inbox][:XXX]` exists, return this.
-  1. If `XXX` is a component of the Element group `GGG`, return `ele.pdict[:GGG].XXX`. In this case, `XXX` must have been registered as a component of `GGG` (see the manual for details). Exception: If `XXX` is an array, create `ele.pdict[:inbox][:XXX]` and return that. This exception is necessary due to how something like `ele.pdict[:GGG].XXX[2] = ...` is evaluated. If no corresponding element group for `sym` exists, throw an error.
+  1. If `XXX` is a *registered* component of the Element group `GGG`, return `ele.pdict[:GGG].XXX`. 
   1. If none of the above, throw an error.
 
+Exceptions: Something like `ele.K2L` is handled specially since storage for this parameter may
+not exist (parameter is stored in `ele.pdict[BMultipoleGroup].vec(N).K2` where `N` is some integer).
+
+Also: If `XXX` corresponds to a vector, create `ele.changed[:XXX]` to signal that the vector may have 
+been modified. This is necessary due to how something like `ele.pdict[:GGG].XXX[2] = ...` is evaluated.
+
 Also see: `get_property`
-""" Base.getproperty(ele::T, sym::Symbol) where T <: Ele
+""" Base.getproperty(ele::Ele, sym::Symbol)
 
-function Base.getproperty(ele::T, sym::Symbol) where T <: Ele
+function Base.getproperty(ele::Ele, sym::Symbol)
   if sym == :pdict; return getfield(ele, :pdict); end
-  pdict = getfield(ele, :pdict)
-  if haskey(pdict, sym); return pdict[sym]; end                  # Does ele.pdict[sym] exist?
-  if !haskey(pdict, :inbox) error("Malformed element"); end      
-  if haskey(pdict[:inbox], sym); return pdict[:inbox][sym]; end  # Does ele.pdict[:inbox][sym] exist?
+  pdict::Dict{Symbol,Any} = getfield(ele, :pdict)
+  if haskey(pdict, sym); return pdict[sym]; end                  # Does ele.pdict[sym] exist?    
 
-  # If not found above, look for `sym` as part of an ele group
+  # Look for `sym` as part of an ele group
   pinfo = ele_param_info(sym)
   parent = Symbol(pinfo.parent_group)
-  if !haskey(pdict, parent); error(f"Cannot find {sym} in element {pdict[:name]}"); end
+  if !haskey(pdict, parent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
 
+  # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
   if pinfo.kind <: Vector
-    pdict[:inbox][sym] = copy(getfield(pdict[parent], sym))
-    return pdict[:inbox][sym]
-  else
-    return ele_group_value(pdict[parent], sym)
+    pdict[:changed][sym] = getfield(pdict[parent], pinfo.struct_sym)
   end
+
+  #
+  return get_elegroup_param(ele, pdict[parent], pinfo)
 end
 
 #---------------------------------------------------------------------------------------------------
-# get_property
+# Base.get(ele::Ele, sym::Symbol, default)
 
 """
-    get_property(ele::T, sym::Symbol, default)
+    Base.get(ele::Ele, sym::Symbol, default)
 
 Element accessor with default. Useful for elements that are not part of a lattice.
 
-""" get_property
+""" Base.get_prop(ele::Ele, sym::Symbol, default)
 
-function get_property(ele::Ele, sym::Symbol, default)
+function Base.get(ele::Ele, sym::Symbol, default)
   try
     return Base.getproperty(ele, sym)
   catch
@@ -96,9 +100,11 @@ end
 """
     Base.setproperty!(lat::Lat, sym::Symbol, value)
     Base.setproperty!(branch::Branch, sym::Symbol, value)
-    Base.setproperty!(ele::T, sym::Symbol, value) where T <: Ele
+    Base.setproperty!(ele::Ele, sym::Symbol, value)
 
-Overloads the dot struct component selection operator so something like `lat.XXX = ...` sets the appropriate component in the `lat` variable. See the Base.getproperty for documentation on what the appropriate property is.
+Overloads the dot struct component selection operator so something like `lat.XXX = ...` 
+sets the appropriate component in the `lat` variable. 
+See the Base.getproperty for documentation on what the appropriate property is.
 """ Base.setproperty!
 
 function Base.setproperty!(lat::Lat, sym::Symbol, value)
@@ -113,12 +119,13 @@ function Base.setproperty!(branch::Branch, sym::Symbol, value)
   getfield(branch, :pdict)[sym] = value
 end
 
-function Base.setproperty!(ele::T, sym::Symbol, value) where T <: Ele
-  # :name is special since it is not associated with an element group.
-  if isa_eleparametergroup(sym) || sym == :name; getfield(ele, :pdict)[sym] = value; return; end
-  if !has_param(ele, sym); error(f"Not a registered parameter: {sym}. For element: {ele.name} of type {typeof(ele)}."); end
+function Base.setproperty!(ele::Ele, sym::Symbol, value)
+  pdict::Dict{Symbol,Any} = ele.pdict
+  if haskey(pdict, sym); return pdict[sym]; end
+  pinfo = ele_param_info(sym, ele)
   if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
-  getfield(ele, :pdict)[:inbox][sym] = value
+  getfield(ele, :pdict)[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(pinfo.parent_group)], pinfo)
+  set_elegroup_param!(ele, pdict[Symbol(pinfo.parent_group)], pinfo, value)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -158,3 +165,68 @@ function Base.getindex(ele::Vector{Ele}, name::Union{Symbol,AbstractString})
 
   error(f"NoEle: No element with name: {name}")
 end
+
+#---------------------------------------------------------------------------------------------------
+# get_elegroup_param
+
+"""
+    Internal: get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
+    Internal: get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
+
+Internal function used by Base.getproperty.
+
+This function will return dependent values. EG: integrated multipole value even if stored value is not integrated.
+""" get_elegroup_param
+
+function get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
+  return getfield(group, pinfo.struct_sym)
+end
+
+function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
+  (mtype, order) = multipole_type(pinfo.user_sym)
+  mul = multipole!(group, order)
+  if isnothing(mul); return 0.0::Float64; end
+
+  val =  getfield(mul, pinfo.struct_sym)
+  if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
+    if (mtype[end] == 'L') && !mul.integrated
+      return val * ele.L
+    elseif (mtype[end] != 'L') && mul.integrated
+      if ele.L == 0; error(f"Cannot compute non-integrated multipole value {pinfo.user_sym} for integrated multipole" *
+                           f" of element with zero length: {ele_name(ele)}"); end
+      return val / ele.L
+    end
+  end
+
+  return val
+end
+
+#---------------------------------------------------------------------------------------------------
+# set_elegroup_param!
+
+"""
+    Internal: set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo, value)
+
+""" set_elegroup_param
+
+function set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo, value)
+  return setfield!(group, pinfo.struct_sym, value)
+end
+
+function set_elegroup_param!(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo, value)
+  (mtype, order) = multipole_type(pinfo.user_sym)
+  mul = multipole!(group, order, insert = true)
+
+  if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
+    if isnothing(mul.integrated)
+      mul.integrated = (mtype[end] == 'L')
+    elseif (mtype[end] == 'L') != mul.integrated
+      error(f"Cannot set non-integrated multipole value for integrated multipole and " * 
+            f"vice versa for {pinfo.user_sym} in {ele_name(ele)}.\n" *
+            f"Use set_integrated to change integrated status.")
+    end
+  end
+
+  return setfield!(mul, pinfo.struct_sym, value)
+end
+

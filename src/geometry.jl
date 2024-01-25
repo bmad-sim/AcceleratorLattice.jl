@@ -95,15 +95,15 @@ function propagate_ele_geometry(::Type{ZeroLength}, fstart::FloorPositionGroup, 
 end
 
 function propagate_ele_geometry(::Type{Straight}, fstart::FloorPositionGroup, ele::Ele)
-  r_floor = fstart.r_floor + rot(fstart.q_floor, [0.0, 0.0, ele.L])
-  return FloorPositionGroup(r_floor, fstart.q_floor, fstart.theta, fstart.phi, fstart.psi)
+  r_floor = fstart.r + rot(fstart.q, [0.0, 0.0, ele.L])
+  return FloorPositionGroup(r_floor, fstart.q, fstart.theta, fstart.phi, fstart.psi)
 end
 
 function propagate_ele_geometry(::Type{Circular}, fstart::FloorPositionGroup, ele::Ele)
   bend::BendGroup = ele.BendGroup
   (r_trans, q_trans) = ele_floor_transform(bend, ele.L)
-  r_floor = fstart.r_floor + rot(fstart.q_floor, r_trans)
-  q_floor = rot(fstart.q_floor, q_trans)
+  r_floor = fstart.r + rot(fstart.q, r_trans)
+  q_floor = rot(fstart.q, q_trans)
   return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart)...)
 end
 

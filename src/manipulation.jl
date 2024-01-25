@@ -40,11 +40,10 @@ end
 """
     Base.copy(ele::Ele)
 
-Shallow copy constructer for a lattice element. That is, `ele.pdict` is copied.
+Shallow copy constructer for a lattice element to the level of `ele.XXX`. 
+For all standard element parameter groups this is equivalent to a deep copy.
+Custom
 
-Stuff like the copied ele.pdict[:BendGroup] and the original will still point to the same location but since
-a BendGroup is immutable, modifying one will not modify the other. Mutable stuff like ele.pdict[:inbox]
-will be copied to prevent modification of one to affect the other. 
 """ Base.copy(ele::Ele)
 
 function Base.copy(ele::Ele)

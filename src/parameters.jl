@@ -2,7 +2,7 @@
 # ParamInfo
 
 """
-Possible `kind` values: String, Int64, Float64, Vector64, Bool, Pointer, etc.
+Possible `kind` values: String, Int64, Number, Vector{Number}, Bool, Pointer, etc.
 
 A Switch is a variable that has only a finite number of values.
 Generally, a Switch will either be an enum or something that has a finite number of integer states.
@@ -15,27 +15,30 @@ itself is considered to be a Pointer as well as its components.
 abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
-  parent_group::T where T <: Union{DataType,Union}  # Use the parent_group function to get the parent group.
+  parent_group::T where T <: Union{DataType,Vector}  # Use the parent_group function to get the parent group.
   kind::Union{T, Union} where T <: DataType         # Something like ApertureTypeSwitch is a Union.
   description::String = ""
   units::String = ""
-  private::Bool = false
+  struct_sym::Symbol                                # Symbol associated with parent struct.
+  user_sym::Symbol                                  # Symbol used to construct elements.
 end
 
-ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String) = 
-                                                    ParamInfo(parent, kind, description, "", false)
-ParamInfo(parent::Union{DataType,Union}, kind::Union{DataType, Union}, description::String, units::String) = 
-                                                    ParamInfo(parent, kind, description, units, false)
+# Used for constructing the ele_param_info_dict.
+
+ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :SameAsKey, :X)
+ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :SameAsKey, :X)
+ParamInfo(parent, kind, description, units, struct_sym) = ParamInfo(parent, kind, description, units, struct_sym, :X)
 
 #---------------------------------------------------------------------------------------------------
 # ele_param_info_dict
 
-"""
-Dictionary of parameter types. Keys are inbox names (which can be different from group names. 
-EG: theta_floor inbox name corresponds to theta in the FloorPositionGroup.
-""" ele_param_info_dict
+# Note: ":SameAsKey" will get replaced by the key (user name) below so that, for example, 
+# ele_param_info_dict[:field_master].struct_sym will have the value :field_master.
 
-ap_union = Union{AlignmentGroup,PatchGroup}   # Only used locally
+"""
+Dictionary of parameter types. Keys are user names (which can be different from corresponding group name). 
+EG: theta_floor user name corresponds to theta in the FloorPositionGroup.
+""" ele_param_info_dict
 
 ele_param_info_dict = Dict(
   :name               => ParamInfo(Nothing,        String,    "Name of the element."),
@@ -47,81 +50,81 @@ ele_param_info_dict = Dict(
   :alias              => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
   :description        => ParamInfo(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
 
-  :L                  => ParamInfo(LengthGroup,    Float64,   "Element length.", "m"),
-  :s                  => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position.", "m"),
-  :s_downstream       => ParamInfo(LengthGroup,    Float64,   "Longitudinal s-position at downstream end.", "m"),
+  :L                  => ParamInfo(LengthGroup,    Number,    "Element length.", "m"),
+  :s                  => ParamInfo(LengthGroup,    Number,    "Longitudinal s-position.", "m"),
+  :s_downstream       => ParamInfo(LengthGroup,    Number,    "Longitudinal s-position at downstream end.", "m"),
 
   :field_master       => ParamInfo(MasterGroup,    Bool,      
                                   "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
 
   :species_ref        => ParamInfo(ReferenceGroup, Species,   "Reference species."),
   :species_ref_exit   => ParamInfo(ReferenceGroup, Species,   "Reference species at exit end."),
-  :pc_ref             => ParamInfo(ReferenceGroup, Float64,   "Reference momentum * c.", "eV"),
-  :E_tot_ref          => ParamInfo(ReferenceGroup, Float64,   "Reference total energy.", "eV"),
-  :time_ref           => ParamInfo(ReferenceGroup, Float64,   "Reference time.", "sec"),
-  :pc_ref_exit        => ParamInfo(ReferenceGroup, Float64,   "Reference momentum * c at exit end.", "eV"),
-  :E_tot_ref_exit     => ParamInfo(ReferenceGroup, Float64,   "Reference total energy at exit end.", "eV"),
-  :time_ref_exit      => ParamInfo(ReferenceGroup, Float64,   "Reference time at exit end.", "sec"),
+  :pc_ref             => ParamInfo(ReferenceGroup, Number,    "Reference momentum * c.", "eV"),
+  :E_tot_ref          => ParamInfo(ReferenceGroup, Number,    "Reference total energy.", "eV"),
+  :time_ref           => ParamInfo(ReferenceGroup, Number,    "Reference time.", "sec"),
+  :pc_ref_exit        => ParamInfo(ReferenceGroup, Number,    "Reference momentum * c at exit end.", "eV"),
+  :E_tot_ref_exit     => ParamInfo(ReferenceGroup, Number,    "Reference total energy at exit end.", "eV"),
+  :time_ref_exit      => ParamInfo(ReferenceGroup, Number,    "Reference time at exit end.", "sec"),
 
-  :angle              => ParamInfo(BendGroup,      Float64,   "Design bend angle", "rad"),
-  :bend_field         => ParamInfo(BendGroup,      Float64,   "Design bend field corresponding to g bending", "T"),
-  :rho                => ParamInfo(BendGroup,      Float64,   "Design bend radius", "m"),
-  :g                  => ParamInfo(BendGroup,      Float64,   "Design bend strength (1/rho)", "1/m"),
-  :e1                 => ParamInfo(BendGroup,      Float64,   "Bend entrance face angle.", "rad"),
-  :e2                 => ParamInfo(BendGroup,      Float64,   "Bend exit face angle.", "rad"),
-  :e1_rect            => ParamInfo(BendGroup,      Float64,   "bend entrance face angles relative to a rectangular geometry.", "rad"),
-  :e2_rect            => ParamInfo(BendGroup,      Float64,   "bend exit face angles relative to a rectangular geometry.", "rad"),
-  :L_chord            => ParamInfo(BendGroup,      Float64,   "Bend chord length.", "m"),
-  :L_sagitta          => ParamInfo(BendGroup,      Float64,   "Bend sagitta length.", "m"),
-  :ref_tilt           => ParamInfo(BendGroup,      Float64,   "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :fint               => ParamInfo(BendGroup,      Float64,   "Used to set fint1 and fint2 both at once.", ""),
-  :fint1              => ParamInfo(BendGroup,      Float64,   "Bend entrance edge field integral.", ""),
-  :fint2              => ParamInfo(BendGroup,      Float64,   "Bend exit edge field integral.", ""),
-  :hgap               => ParamInfo(BendGroup,      Float64,   "Used to set hgap1 and hgap2 both at once.", ""),
-  :hgap1              => ParamInfo(BendGroup,      Float64,   "Bend entrance edge pole gap height.", "m"),
-  :hgap2              => ParamInfo(BendGroup,      Float64,   "Bend exit edge pole gap height.", "m"),
+  :angle              => ParamInfo(BendGroup,      Number,    "Design bend angle", "rad"),
+  :bend_field         => ParamInfo(BendGroup,      Number,    "Design bend field corresponding to g bending", "T"),
+  :rho                => ParamInfo(BendGroup,      Number,    "Design bend radius", "m"),
+  :g                  => ParamInfo(BendGroup,      Number,    "Design bend strength (1/rho)", "1/m"),
+  :e1                 => ParamInfo(BendGroup,      Number,    "Bend entrance face angle.", "rad"),
+  :e2                 => ParamInfo(BendGroup,      Number,    "Bend exit face angle.", "rad"),
+  :e1_rect            => ParamInfo(BendGroup,      Number,    "bend entrance face angles relative to a rectangular geometry.", "rad"),
+  :e2_rect            => ParamInfo(BendGroup,      Number,    "bend exit face angles relative to a rectangular geometry.", "rad"),
+  :L_chord            => ParamInfo(BendGroup,      Number,    "Bend chord length.", "m"),
+  :L_sagitta          => ParamInfo(BendGroup,      Number,    "Bend sagitta length.", "m"),
+  :ref_tilt           => ParamInfo(BendGroup,      Number,    "Bend reference orbit rotation around the upstream z-axis", "rad"),
+  :fint               => ParamInfo(BendGroup,      Number,    "Used to set fint1 and fint2 both at once.", ""),
+  :fint1              => ParamInfo(BendGroup,      Number,    "Bend entrance edge field integral.", ""),
+  :fint2              => ParamInfo(BendGroup,      Number,    "Bend exit edge field integral.", ""),
+  :hgap               => ParamInfo(BendGroup,      Number,    "Used to set hgap1 and hgap2 both at once.", ""),
+  :hgap1              => ParamInfo(BendGroup,      Number,    "Bend entrance edge pole gap height.", "m"),
+  :hgap2              => ParamInfo(BendGroup,      Number,    "Bend exit edge pole gap height.", "m"),
   :bend_type          => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
 
-  :offset             => ParamInfo(ap_union,       Vector64,     "3-Vector of [x, y, z] element offsets.", "m"),
-  :x_pitch            => ParamInfo(ap_union,       Float64,      "X-pitch element orientation.", "rad"),
-  :y_pitch            => ParamInfo(ap_union,       Float64,      "Y-pitch element orientation.", "rad"),
-  :tilt               => ParamInfo(ap_union,       Float64,      "Element tilt.", "rad"),
+  :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "3-Vector of [x, y, z] element offsets.", "m"),
+  :x_pitch  => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-pitch element orientation.", "rad"),
+  :y_pitch  => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-pitch element orientation.", "rad"),
+  :tilt     => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Element tilt.", "rad"),
 
-  :offset_tot         => ParamInfo(AlignmentGroup, Vector64,     "Offset including Girder orientation.", "m"),
-  :x_pitch_tot        => ParamInfo(AlignmentGroup, Float64,      "X-pitch element orientation including Girder orientation.", "rad"),
-  :y_pitch_tot        => ParamInfo(AlignmentGroup, Float64,      "Y-pitch element orientation including Girder orientation.", "rad"),
-  :tilt_tot           => ParamInfo(AlignmentGroup, Float64,      "Element tilt including Girder orientation.", "rad"),
+  :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "Offset including Girder orientation.", "m"),
+  :x_pitch_tot        => ParamInfo(AlignmentGroup, Number,         "X-pitch element orientation including Girder orientation.", "rad"),
+  :y_pitch_tot        => ParamInfo(AlignmentGroup, Number,         "Y-pitch element orientation including Girder orientation.", "rad"),
+  :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Element tilt including Girder orientation.", "rad"),
 
-  :E_tot_offset       => ParamInfo(PatchGroup,     Float64,      "Reference energy offset.", "eV"),
-  :E_tot_exit         => ParamInfo(PatchGroup,     Float64,      "Reference energy at exit end.", "eV"),
-  :pc_exit            => ParamInfo(PatchGroup,     Float64,      "Reference momentum at exit end.", "eV"),
-  :flexible           => ParamInfo(PatchGroup,     Bool,         "Flexible patch?"),
-  :user_sets_length   => ParamInfo(PatchGroup,     Bool,         "Does Bmad calculate the patch length?"),
+  :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
+  :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
+  :pc_exit            => ParamInfo(PatchGroup,     Number,         "Reference momentum at exit end.", "eV"),
+  :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
+  :user_sets_length   => ParamInfo(PatchGroup,     Bool,           "Does Bmad calculate the patch length?"),
   :ref_coords         => ParamInfo(PatchGroup,     EleBodyEndSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
 
-  :voltage            => ParamInfo(RFFieldGroup,   Float64,       "RF voltage.", "volt"),
-  :gradient           => ParamInfo(RFFieldGroup,   Float64,       "RF gradient.", "volt/m"),
-  :phase              => ParamInfo(RFFieldGroup,   Float64,       "RF phase.", "rad"),
+  :voltage            => ParamInfo(RFFieldGroup,   Number,        "RF voltage.", "volt"),
+  :gradient           => ParamInfo(RFFieldGroup,   Number,        "RF gradient.", "volt/m"),
+  :phase              => ParamInfo(RFFieldGroup,   Number,        "RF phase.", "rad"),
 
-  :auto_amp           => ParamInfo(RFGroup,        Float64,   
+  :auto_amp           => ParamInfo(RFGroup,        Number,    
                                   "Correction to the voltage/gradient calculated by the auto scale code.", ""),
-  :auto_phase         => ParamInfo(RFGroup,        Float64,       "Correction RF phase calculated by the auto scale code.", "rad"),
-  :multipass_phase    => ParamInfo(RFGroup,        Float64,   
+  :auto_phase         => ParamInfo(RFGroup,        Number,        "Correction RF phase calculated by the auto scale code.", "rad"),
+  :multipass_phase    => ParamInfo(RFGroup,        Number,    
                                   "RF phase which can differ from multipass element to multipass element.", "rad"),
-  :frequency          => ParamInfo(RFGroup,        Float64,          "RF frequency.", "Hz"),
-  :harmon             => ParamInfo(RFGroup,        Float64,          "RF frequency harmonic number.", ""),
+  :frequency          => ParamInfo(RFGroup,        Number,           "RF frequency.", "Hz"),
+  :harmon             => ParamInfo(RFGroup,        Number,           "RF frequency harmonic number.", ""),
   :cavity_type        => ParamInfo(RFGroup,        CavityTypeSwitch, "Type of cavity."),
   :n_cell             => ParamInfo(RFGroup,        Int64,            "Number of RF cells."),
 
-  :voltage_ref        => ParamInfo(LCavityGroup,   Float64,       "Reference RF voltage.", "volt"),
-  :voltage_err        => ParamInfo(LCavityGroup,   Float64,       "RF voltage error.", "volt"),
-  :voltage_tot        => ParamInfo(LCavityGroup,   Float64,       "Actual RF voltage (ref + err).", "volt"),
-  :gradient_ref       => ParamInfo(LCavityGroup,   Float64,       "Reference RF gradient.", "volt/m"),
-  :gradient_err       => ParamInfo(LCavityGroup,   Float64,       "RF gradient error.", "volt/m"),
-  :gradient_tot       => ParamInfo(LCavityGroup,   Float64,       "Actual RF gradient (ref + err).", "volt/m"),
-  :phase_ref          => ParamInfo(LCavityGroup,   Float64,       "Reference RF phase.", "rad"),
-  :phase_err          => ParamInfo(LCavityGroup,   Float64,       "RF phase error.", "rad"),
-  :phase_tot          => ParamInfo(LCavityGroup,   Float64,       "Actual RF phase. (ref + err)", "rad"),
+  :voltage_ref        => ParamInfo(LCavityGroup,   Number,        "Reference RF voltage.", "volt"),
+  :voltage_err        => ParamInfo(LCavityGroup,   Number,        "RF voltage error.", "volt"),
+  :voltage_tot        => ParamInfo(LCavityGroup,   Number,        "Actual RF voltage (ref + err).", "volt"),
+  :gradient_ref       => ParamInfo(LCavityGroup,   Number,        "Reference RF gradient.", "volt/m"),
+  :gradient_err       => ParamInfo(LCavityGroup,   Number,        "RF gradient error.", "volt/m"),
+  :gradient_tot       => ParamInfo(LCavityGroup,   Number,        "Actual RF gradient (ref + err).", "volt/m"),
+  :phase_ref          => ParamInfo(LCavityGroup,   Number,        "Reference RF phase.", "rad"),
+  :phase_err          => ParamInfo(LCavityGroup,   Number,        "RF phase error.", "rad"),
+  :phase_tot          => ParamInfo(LCavityGroup,   Number,        "Actual RF phase. (ref + err)", "rad"),
 
   :voltage_master     => ParamInfo(RFMasterGroup,  Bool,          "Voltage or gradient is constant with length changes?"),
   :do_auto_amp        => ParamInfo(RFMasterGroup,  Bool,          "Autoscale voltage/gradient?"),
@@ -131,53 +134,95 @@ ele_param_info_dict = Dict(
   :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
   :field_calc         => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
   :num_steps          => ParamInfo(TrackingGroup,  Int64,                 "Nominal number of tracking steps."),
-  :ds_step            => ParamInfo(TrackingGroup,  Float64,               "Nominal distance between tracking steps.", "m"),
+  :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
   :aperture_type      => ParamInfo(ApertureGroup,  ApertureTypeSwitch,    "Type of aperture. Default is Elliptical."),
   :aperture_at        => ParamInfo(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is. Default is EntranceEnd."),
   :offset_moves_aperture 
                       => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
-  :x_limit            => ParamInfo(ApertureGroup,  Vector64,              "2-Vector of horizontal aperture limits.", "m"),
-  :y_limit            => ParamInfo(ApertureGroup,  Vector64,              "2-Vector of vertical aperture limits.", "m"),
+  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of horizontal aperture limits.", "m"),
+  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of vertical aperture limits.", "m"),
 
-  :r_floor            => ParamInfo(FloorPositionGroup, Vector64,          "3-vector of floor position.", "m"),
-  :q_floor            => ParamInfo(FloorPositionGroup, Vector64,          "Quaternion orientation.", ""),
-  :theta              => ParamInfo(FloorPositionGroup, Float64,           "Floor theta angle orientation", "rad"),
-  :phi                => ParamInfo(FloorPositionGroup, Float64,           "Floor phi angle orientation", "rad"),
-  :psi                => ParamInfo(FloorPositionGroup, Float64,           "Floor psi angle orientation", "rad"),
+  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "3-vector of floor position.", "m", :r),
+  :q_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "Quaternion orientation.", "", :q),
+  :theta_floor        => ParamInfo(FloorPositionGroup, Number,            "Floor theta angle orientation", "rad", :theta),
+  :phi_floor          => ParamInfo(FloorPositionGroup, Number,            "Floor phi angle orientation", "rad", :phi),
+  :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Floor psi angle orientation", "rad", :psi),
 
   :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(GirderGroup,     EleBodyRefSwitch,     "Reference location on reference element. Default is Center."),
-  :dr_girder          => ParamInfo(GirderGroup,     Vector64,             "3-vector of girder position with respect to ref ele."),
-  :dtheta_girder      => ParamInfo(GirderGroup,     Float64,              "Theta angle orientation with respect to ref ele."),
-  :dphi_girder        => ParamInfo(GirderGroup,     Float64,              "Phi angle orientation with respect to ref ele."),
-  :dpsi_girder        => ParamInfo(GirderGroup,     Float64,              "Psi angle orientation with respect to ref ele."),
+  :dr_girder          => ParamInfo(GirderGroup,     Vector{Number},       "3-vector of girder position with respect to ref ele.", "m", :dr),
+  :dtheta_girder      => ParamInfo(GirderGroup,     Number,               "Theta angle orientation with respect to ref ele.", "rad", :dtheta),
+  :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),
+  :dpsi_girder        => ParamInfo(GirderGroup,     Number,               "Psi angle orientation with respect to ref ele.", "rad", :dpsi),
+
+  :ks                 => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
+  :ks_field           => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
 
   :control            => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
   :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
 )
 
+for (key, info) in ele_param_info_dict
+  if info.struct_sym == :SameAsKey; info.struct_sym = key; end
+  info.user_sym = key
+end
+
 #---------------------------------------------------------------------------------------------------
-# ele_param_group_syms
+# has_parent_group
+
+function has_parent_group(pinfo::ParamInfo, group::Type{T}) where T <: EleParameterGroup
+  if typeof(pinfo.parent_group) <: Vector
+    return group in pinfo.parent_group
+  else
+    return group == pinfo.parent_group
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# struct_sym_to_user_sym
+
+"""
+Map struct symbol to user symbol(s). Example: `:r` => `[:r_floor]`.
+A vector is used since the struct symbol maps to multiple user symbols.
+This mapping only covers stuff in ele_param_info_dict so this mapping does not, for example, cover multipoles.
+""" struct_sym_to_user_sym
+
+struct_sym_to_user_sym = Dict{Symbol,Any}()
+
+for (param, info) in ele_param_info_dict
+  if info.struct_sym in keys(struct_sym_to_user_sym)
+    push!(struct_sym_to_user_sym[info.struct_sym], param)
+  else
+    struct_sym_to_user_sym[info.struct_sym] = [param]
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele_param_group_list
 # Note: The transform to Symbol prepends "AcceleratorLattice." to the parameter group names so need to strip this.
 
-ele_param_group_syms = Symbol.(replace.(string.(subtypes(EleParameterGroup)), "AcceleratorLattice." => ""))
+"""
+Symbol list of ele parameter groups.
+""" ele_param_group_list
+
+ele_param_group_list = Symbol.(replace.(string.(subtypes(EleParameterGroup)), "AcceleratorLattice." => ""))
 
 
 #---------------------------------------------------------------------------------------------------
-# param_info
+# units
 
 """
     function units(param::Symbol)
 
-Returns the units (EG: `m` (meters) for length parameters) for 
+Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
+`param` may correspond to either a user symbol or struct symbol.
 """ units
 
 function units(param::Symbol)
-  if param in ele_param_group_syms; return ""; end
-  param_info = ele_param_info(param, no_info_return = nothing)
-  if isnothing(param_info); return "?units?"; end
-  return param_info.units
+  info = ele_param_info(param, throw_error = false, include_struct_syms = true)
+  if isnothing(info); (return "?units?"); end
+  return info.units
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -209,19 +254,6 @@ function description(key, eletype::Type{T}) where T <: Ele
 end
 
 #---------------------------------------------------------------------------------------------------
-# parent_group
-
-function parent_group(info::ParamInfo, ele::Ele)
-  if typeof(info.parent_group) == DataType; return info.parent_group; end
-
-  if info.parent_group == Union{AlignmentGroup,PatchGroup}
-    typeof(ele) == Patch ? (return PatchGroup) : (return AlignmentGroup)
-  end
-
-  error("??? Error in parent_group. Please report this error!")
-end
-
-#---------------------------------------------------------------------------------------------------
 # param_alias
 
 """
@@ -237,7 +269,7 @@ param_alias = Dict(
 # info
 
 """
-""" info
+""" info(sym::Union{Symbol,String})
 
 function info(sym::Union{Symbol,String})
   if typeof(sym) == String; sym = Symbol(sym); end
@@ -249,7 +281,7 @@ function info(sym::Union{Symbol,String})
       if info.units != ""; println(f"  Units:           {info.units}"); end
       println(f"  Description:     {info.description}")
       return 
-   end
+    end
   end
 
   println(f"No information found on: {sym}")
@@ -259,93 +291,199 @@ end
 # multipole_type
 
 """
-    function multipole_type(str::Union{AbstractString,Symbol})
+    function multipole_type(str::Union{AbstractString,Symbol}; group::Union{BMultipoleGroup,EMultipoleGroup,Nothing})
 
-returns (`type`, `order`) tuple. If `str` is a multipole parameter name like `K2L` or `Etilt`,
+returns (`type`, `order`) tuple. If `str` is a multipole parameter name like `Kn2L` or `Etilt`,
 `order` will be the multipole order and `type` will be one of:
- - "K", "KL", "Ks" "KsL", "B", "BL", "Bs", "BsL", "tilt", "E", "EL", "Es", "EsL", or "Etilt"
+ - "Kn", "KnL", "Ks" "KsL", "Bn", "BnL", "Bs", "BsL", "tilt", "En", "EnL", "Es", "EsL", or "Etilt"
 
 If `str` is not a valid multipole parameter name, returned will be (`nothing`, `-1`).
 """ multipole_type
 
-function multipole_type(str::Union{AbstractString,Symbol})
+function multipole_type(str::Union{AbstractString,Symbol},
+                     group::Type{T} = Nothing) where T <: Union{BMultipoleGroup,EMultipoleGroup,Nothing}
   if str isa Symbol; str = string(str); end
-  if length(str) < 2 || !any(str[1] .== ['K', 'B', 'E', 't']); return (nothing, -1); end
+  if length(str) < 3 ; (return nothing, -1); end
 
-  if length(str) > 4 && str[1:4] == "tilt"
+  if length(str) > 4 && str[1:4] == "tilt" && group != EMultipoleGroup
     order = tryparse(UInt64, str[5:end]) 
     isnothing(order) ? (return nothing, -1) : (return "tilt", Int64(order))
-  elseif length(str) > 5 && str[1:5] == "Etilt"
+  elseif length(str) > 5 && str[1:5] == "Etilt" && group != BMultipoleGroup
     order = tryparse(UInt64, str[6:end]) 
     isnothing(order) ? (return nothing, -1) : (return "Etilt", Int64(order))
   end
 
-  if str[end-1:end] == "sL"
-    out_str = str[1] * str[end-1:end]
-    str = str[2:end-2]
-  elseif str[end] == 'L'
-    out_str = str[1] * str[end]
-    str = str[2:end-1]
-  elseif str[end] == 's'
-    out_str = str[1] * str[end]
-    str = str[2:end-1]
+  if group == BMultipoleGroup
+    if str[1:2] ∉ Set(["Kn", "Ks", "Bn", "Bs"]); return (nothing, -1); end
+  elseif group == EMultipoleGroup
+    if str[1:2] ∉ Set(["En", "Es"]); return (nothing, -1); end
   else
-    out_str = str[1:1]
-    str = str[2:end]
+    if str[1:2] ∉ Set(["Kn", "Ks", "Bn", "Bs", "En", "Es"]); return (nothing, -1); end
   end
 
-  order = tryparse(UInt64, str) 
-  isnothing(order) ? (return nothing, -1) : (return out_str, Int64(order))
+  if str[end] == 'L'
+    order = tryparse(UInt64, str[3:end-1]) 
+    str = str[1:2] * 'L'
+  else
+    order = tryparse(UInt64, str[3:end]) 
+    str = str[1:2]
+  end
+
+  isnothing(order) ? (return nothing, -1) : (return str, Int64(order))
+end
+
+#
+
+function multipole_type(str::Union{AbstractString,Symbol})
+  return multipole_type(str, Nothing)
 end
 
 #---------------------------------------------------------------------------------------------------
 # ele_param_info
 
 """
-    ele_param_info(sym::Symbol; no_info_return = Error)
+    ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
 
 Returns information on the element parameter `sym`.
-Returns a `ParamInfo` struct or the value of `no_info_return` if no information on `sym` is found.
-If the value of `no_info_return` is `Error` (the default), an error is thrown when `sym` is unrecognized.
+Returns a `ParamInfo` struct. If no information on `sym` is found, an error is thrown
+or `nothing` is returned.
+""" ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
 
-""" ele_param_info
-
-function ele_param_info(sym::Symbol; no_info_return = Error)
-  if haskey(ele_param_info_dict, sym); return ele_param_info_dict[sym]; end
-  (mtype, order) = multipole_type(sym)
-  if isnothing(mtype)
-    if no_info_return == Error; error(f"Unrecognized element parameter: {sym}"); end
-    return no_info_return
+function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+  if haskey(ele_param_info_dict, sym); (return ele_param_info_dict[sym]); end
+  if include_struct_syms && sym in keys(struct_sym_to_user_sym)
+    return ele_param_info_dict[struct_sym_to_user_sym[sym][1]]
   end
 
-  # Must be a multipole
+  # Hopefully is a multipole. Otherwise unrecognized.
+  (mtype, order) = multipole_type(sym)
+  if isnothing(mtype)
+    if throw_error; error(f"Unrecognized element parameter: {sym}"); end
+    return nothing
+  end
+
   n = length(mtype)
   if isnothing(mtype); return nothing; end
-  if n == 4 && mtype[1:4] == "tilt";  return ParamInfo(BMultipoleGroup, Float64, f"Magnetic multipole tilt for order {order}", "rad"); end
-  if n == 5 && mtype[1:5] == "Etilt"; return ParamInfo(EMultipoleGroup, Float64, f"Electric multipole tilt for order {order}", "rad"); end
+  if n == 4 && mtype[1:4] == "tilt"
+    return ParamInfo(BMultipoleGroup, Number, f"Magnetic multipole tilt for order {order}", "rad", :tilt, sym)
+  end
+  if n == 5 && mtype[1:5] == "Etilt"
+    return ParamInfo(EMultipoleGroup, Number, f"Electric multipole tilt for order {order}", "rad", :tilt, sym)
+  end
 
-  occursin("s", mtype) ? str = "Skew," : str = "Normal (non-skew)"
-  if occursin("L", mtype)
+  mtype[2] == "s" ? str = "Skew," : str = "Normal (non-skew)"
+  insym = Symbol(mtype[1:2])
+
+  if mtype[end] == 'L'
     str = str * " length-integrated,"
     order = order - 1
   end
 
-  if mtype[1:1] == "K"
-    if order == -1; units = "";
-    else           units = f"1/m^{order+1}"; end
-    return ParamInfo(BMultipoleGroup, Float64, f"{str}, momentum-normalized magnetic multipole.", units)
+  if mtype[1] == 'K'
+    if order == -1; units = ""
+    else;           units = f"1/m^{order+1}"
+    end
 
-  elseif mtype[1:1] == "B"
-    if order == -1;    units = "T*m";
+    return ParamInfo(BMultipoleGroup, Number, f"{str}, momentum-normalized magnetic multipole.", units, insym, sym)
+
+  elseif mtype[1] == 'B'
+    if order == -1;    units = "T*m"
     elseif order == 0; units = "T"
-    else               units = f"T/m^{order}"; end
-    return ParamInfo(BMultipoleGroup, Float64, f"{str} magnetic field multipole.", units)
+    else;              units = f"T/m^{order}"
+    end
 
-  elseif mtype[1:1] == "E"
-    if order == -1; units = "V";
-    else            units = f"V/m^{order+1}"; end
-    return ParamInfo(EMultipoleGroup, Float64, f"{str} electric field multipole.", units) 
+    return ParamInfo(BMultipoleGroup, Number, f"{str} magnetic field multipole.", units, insym, sym)
+
+  elseif mtype[1] == 'E'
+    if order == -1; units = "V"
+    else;           units = f"V/m^{order+1}"
+    end
+
+    return ParamInfo(EMultipoleGroup, Number, f"{str} electric field multipole.", units, insym, sym) 
   end
+end
+
+#
+
+"""
+    ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
+
+Returns information on the element parameter `sym`.
+Returns a `ParamInfo` struct. If no information on `sym` is found or `sym` is not a parameter of `ele`, 
+an error is thrown or `nothing` is returned.
+""" ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
+
+function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
+  param_info = ele_param_info(sym, throw_error = throw_error)
+
+  if typeof(param_info.parent_group) <: Vector
+    for parent in param_info.parent_group
+      if parent in ele_param_groups[typeof(ele)]
+        param_info.parent_group = parent
+        return param_info
+      end
+    end
+    
+    error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")
+
+  else
+    if param_info.parent_group in ele_param_groups[typeof(ele)]; return param_info; end
+    error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")   
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# set_integrated!
+
+"""
+Set whether multipoles values correspond to integrated or non-integrated.
+The existing multipole values will be translated appropriately.
+
+If there are no multipoles corresponding to `order`, nothing is done.
+"""
+
+function set_integrated!(ele::Ele, group::BMultipoleGroup, order::Int, integrated::Bool)
+  mul = multipole!(BMultipoleGroup, order)
+  if isnothing(mul); return; end
+  if integrated == mul.integrated; return; end
+
+  L = ele.L
+  if integrated
+    mul.Kn = mul.Kn * L
+    mul.Ks = mul.Ks * L
+    mul.Bn = mul.Bn * L
+    mul.Bs = mul.Bs * L
+  else
+    if L == 0
+      error(f"Cannot convert from integrated multipole to non-integrated for element of zero length: {ele_name(ele)}")
+    end
+    mul.Kn = mul.Kn / L
+    mul.Ks = mul.Ks / L
+    mul.Bn = mul.Bn / L
+    mul.Bs = mul.Bs / L
+  end
+
+  mul.integrated = integrated
+end
+
+function set_integrated!(ele::Ele, group::EMultipoleGroup, order::Int, integrated::Bool)
+  mul = multipole!(EMultipoleGroup, order)
+  if isnothing(mul); return; end
+  if integrated == mul.integrated; return; end
+
+  L = ele.L
+  if integrated
+    mul.En = mul.En * L
+    mul.Es = mul.Es * L
+  else
+    if L == 0
+      error(f"Cannot convert from integrated multipole to non-integrated for element of zero length: {ele_name(ele)}")
+    end
+    mul.En = mul.En / L
+    mul.Es = mul.Es / L
+  end
+
+  mul.integrated = integrated
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -379,8 +517,6 @@ ele_param_groups = Dict(
     Sextupole      => general_group_list,
   )
 )
-
-
 
 ele_param_group_list = Dict(
   :AlignmentGroup        => "Element position/orientation shift.",
@@ -454,29 +590,30 @@ end
 # multipole!
 
 """
+    multipole!(mgroup, order; insert::Bool = false)
 
 Finds multipole of a given order.
 
 Returns `nothing` if `vec` array does not contain element with n = `order` and `insert` = `nothing`.
 """ multipole!
 
-function multipole!(mgroup, order; insert = nothing)
+function multipole!(mgroup, order; insert::Bool = false)
   if order < 0; return nothing; end
   ix = multipole_index(mgroup.vec, order)
 
-  if isnothing(insert)
-    if ix > length(mgroup.vec) || order != mgroup.vec[ix].n; return nothing; end
+  if !insert
+    if ix > length(mgroup.vec) || order != mgroup.vec[ix].order; return nothing; end
     return mgroup.vec[ix]
   end
 
-  if ix > length(mgroup.vec) || mgroup.vec[ix].n != order
-    vec = mgroup.vec
-    insert!(vec, ix, insert)
-    if typeof(mgroup) == BMultipoleGroup 
-      mgroup = BMultipoleGroup(vec)
-    else
-      mgroup = EMultipoleGroup(vec)
-    end
+
+  if ix > length(mgroup.vec) 
+    ix = length(mgroup.vec) + 1
+    insert!(mgroup.vec, ix, eltype(mgroup.vec)())
+    mgroup.vec[ix].order = order
+  elseif mgroup.vec[ix].order != order
+    insert!(mgroup.vec, ix, eltype(mgroup.vec)())
+    mgroup.vec[ix].order = order
   end
 
   return mgroup.vec[ix]
@@ -501,7 +638,7 @@ function multipole_index(vec, order)
   if length(vec) == 0; return 1; end
 
   for ix in 1:length(vec)
-    if vec[ix].n >= order; return ix; end
+    if vec[ix].order >= order; return ix; end
   end
   return length(vec) + 1
 end  
@@ -532,63 +669,12 @@ branch_param = Dict(
 )
 
 #---------------------------------------------------------------------------------------------------
-# ele_group_value
+# Bases.copy(x::T) where {T <: EleParameterGroup} 
 
 """
-This function assumes that `sym` is known to be in the group.
-This function will return dependent values. EG: integrated multipole value even if stored value is not integrated.
-""" ele_group_value
-
-function ele_group_value(group::T, sym::Symbol) where T <: EleParameterGroup
-  return getfield(group, sym)
-end
-
-
-function ele_group_value(group::BMultipoleGroup, sym::Symbol)
-  (mtype, order) = multipole_type(sym)
-  mul = multipole(group, order)
-  if isnothing(mul); return 0.0::Float64; end
-
-  if mtype == "K" || mtype == "KL";         value = mul.K
-  elseif mtype == "Ks" || mtype == "KsL";   value = mul.Ks
-  elseif mtype == "B"  || mtype == "BL";    value = mul.B
-  elseif mtype == "Bs" || mtype == "BsL";   value = mul.Bs
-  elseif mtype == "tilt";                   value = mul.tilt
-  end  
-end
-
-function ele_group_value(group::EMultipoleGroup, sym::Symbol)
-  (mtype, order) = multipole_type(sym)
-  mul = multipole(group, order)
-  if isnothing(mul); return 0.0::Float64; end
-
-  if mtype == "E" || mtype == "EL";         value = mul.E
-  elseif mtype == "Es" || mtype == "EsL";   value = mul.Es
-  elseif mtype == "Etilt";                   value = mul.tilt
-  end  
-end
-
-#---------------------------------------------------------------------------------------------------
-# isa_eleparametergroup
-
-function isa_eleparametergroup(sym::Symbol)
-  try
-    global val = eval(sym)
-  catch
-    return false
-  end
-
-  if typeof(val) != DataType; return; end
-  return val <: EleParameterGroup
-end
-
-#---------------------------------------------------------------------------------------------------
-
-
-"""
-Dictionary of parameters in the Lat.pdict dict.
+Copy for a normal element parameter group is equivalent to a deep copy.
+The only reason not to have copy != deepcopy is when the group has a lot of data. Think field table.
 """
 
-lat_param = Dict(
-)
+Base.copy(x::T) where {T <: EleParameterGroup} = T([deepcopy(getfield(x, k)) for k ∈ fieldnames(T)]...)
 
