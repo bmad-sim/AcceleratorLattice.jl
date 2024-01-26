@@ -24,15 +24,17 @@ abstract type Pointer end
 end
 
 # Used for constructing the ele_param_info_dict.
+# ":XXX" indicates that the struct_sym will be the same as the key in ele_param_info_dict.
+# And ":Z" is always replaced by the key in ele_param_info_dict.
 
-ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :SameAsKey, :X)
-ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :SameAsKey, :X)
-ParamInfo(parent, kind, description, units, struct_sym) = ParamInfo(parent, kind, description, units, struct_sym, :X)
+ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :XXX, :Z)
+ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :XXX, :Z)
+ParamInfo(parent, kind, description, units, struct_sym) = ParamInfo(parent, kind, description, units, struct_sym, :Z)
 
 #---------------------------------------------------------------------------------------------------
 # ele_param_info_dict
 
-# Note: ":SameAsKey" will get replaced by the key (user name) below so that, for example, 
+# Note: ":XXX" will get replaced by the key (user name) below so that, for example, 
 # ele_param_info_dict[:field_master].struct_sym will have the value :field_master.
 
 """
@@ -159,12 +161,12 @@ ele_param_info_dict = Dict(
   :ks                 => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
   :ks_field           => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
 
-  :control            => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
+  :slave              => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
   :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
 )
 
 for (key, info) in ele_param_info_dict
-  if info.struct_sym == :SameAsKey; info.struct_sym = key; end
+  if info.struct_sym == :XXX; info.struct_sym = key; end
   info.user_sym = key
 end
 
@@ -300,6 +302,11 @@ returns (`type`, `order`) tuple. If `str` is a multipole parameter name like `Kn
 If `str` is not a valid multipole parameter name, returned will be (`nothing`, `-1`).
 """ multipole_type
 
+function multipole_type(str::Union{AbstractString,Symbol})
+  return multipole_type(str, Nothing)
+end
+
+
 function multipole_type(str::Union{AbstractString,Symbol},
                      group::Type{T} = Nothing) where T <: Union{BMultipoleGroup,EMultipoleGroup,Nothing}
   if str isa Symbol; str = string(str); end
@@ -330,12 +337,6 @@ function multipole_type(str::Union{AbstractString,Symbol},
   end
 
   isnothing(order) ? (return nothing, -1) : (return str, Int64(order))
-end
-
-#
-
-function multipole_type(str::Union{AbstractString,Symbol})
-  return multipole_type(str, Nothing)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -507,6 +508,7 @@ ele_param_groups = Dict(
   Dict(
     BeginningEle   => base_group_list,
     Bend           => vcat(general_group_list, BendGroup),
+    Controller     => [ControlVarGroup, ControlSlaveGroup],
     Drift          => base_group_list,
     LCavity        => vcat(general_group_list, RFMasterGroup, LCavityGroup, RFGroup),
     Marker         => base_group_list,

@@ -505,7 +505,7 @@ end
 end
 
 @kwdef mutable struct ControlSlaveGroup  <: EleParameterGroup
-  slaves::Vector{ControlSlave} = Vector{ControlSlave}()
+  slave::Vector{ControlSlave} = Vector{ControlSlave}()
 end
 
 function var(sym::Symbol, val::Number = 0.0, old::Number = NaN) 
