@@ -1,5 +1,4 @@
 module AcceleratorLattice
-
   include("core.jl")
   include("quaternion.jl")
   include("AtomicAndPhysicalConstants.jl")
@@ -39,5 +38,4 @@ module AcceleratorLattice
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
   export struct_sym_to_user_sym, multipole!, index, integer
-
 end
