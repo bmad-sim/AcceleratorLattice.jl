@@ -3,30 +3,6 @@
 #-
 
 #---------------------------------------------------------------------------------------------------
-# branch
-
-"""
-    branch(lat::Lat, ix::Int)
-    branch(lat::Lat, who::AbstractString) 
-
-Returns the branch in `lat` with index `ix` or name that matches `who`.
-
-Returns `nothing` if no branch can be matched.
-""" branch
-
-function branch(lat::Lat, ix::Int) 
-  if ix < 1 || ix > length(lat.branch); return nothing; end
-  return lat.branch[ix]
-end
-
-function branch(lat::Lat, who::AbstractString) 
-  for branch in lat.branch
-    if branch.name == who; return branch; end
-  end
-  return nothing
-end
-
-#---------------------------------------------------------------------------------------------------
 # BeamLineItem
 
 """
@@ -278,12 +254,12 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   return nothing
 end
 
-function new_lord_branch!(lat::Lat, name::AbstractString)
+function new_lord_branch!(lat::Lat, name::AbstractString, branch_type::Type{T}) where T <: BranchType
   push!(lat.branch, Branch(name, Vector{Ele}(), Dict{Symbol,Any}()))
   branch = lat.branch[end]
   branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
-  branch.pdict[:type] = LordBranch
+  branch.pdict[:type] = branch_type
   lat.pdict[Symbol(name)] = branch
   return branch
 end
@@ -326,12 +302,12 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
 
   # Lord branches
 
-  new_lord_branch!(lat, "SuperLord")
-  new_lord_branch!(lat, "MultipassLord")
-  new_lord_branch!(lat, "Governor")
+  new_lord_branch!(lat, "SuperLord", SuperLordBranch)
+  new_lord_branch!(lat, "MultipassLord", MultipassLordBranch)
+  new_lord_branch!(lat, "Governor", GovernorBranch)
 
   for branch in lat.branch
-    index_bookkeeper!(branch)
+    index_and_s_bookkeeper!(branch)
   end
 
   init_multipass_bookkeeper!(lat)

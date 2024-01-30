@@ -92,17 +92,17 @@ end
 function integer(str::AbstractString, default::Number)
   try
     ix = parse(Int, str)
-    return Int64(ix)
+    return ix
   catch
-    return Int64(default)
+    return default
   end
 end
 
 function float(str::AbstractString, default::Number)
   try
     flt = parse(Float, str)
-    return Float64(ix)
+    return ix
   catch
-    return Float64(default)
+    return default
   end
 end

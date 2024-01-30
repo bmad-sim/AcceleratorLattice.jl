@@ -43,10 +43,13 @@ EG: theta_floor user name corresponds to theta in the FloorPositionGroup.
 """ ele_param_info_dict
 
 ele_param_info_dict = Dict(
-  :name               => ParamInfo(Nothing,        String,    "Name of the element."),
-  :ix_ele             => ParamInfo(Nothing,        Int64,     "Index of element in containing branch.ele[] array."),
-  :orientation        => ParamInfo(Nothing,        Int64,     "Longitudinal orientation of element. May be +1 or -1."),
-  :branch             => ParamInfo(Nothing,        Pointer,   "Pointer to branch element is in."),
+  :name               => ParamInfo(Nothing,        String,      "Name of the element."),
+  :ix_ele             => ParamInfo(Nothing,        Int64,       "Index of element in containing branch.ele[] array."),
+  :orientation        => ParamInfo(Nothing,        Int64,       "Longitudinal orientation of element. May be +1 or -1."),
+  :branch             => ParamInfo(Nothing,        Branch,      "Pointer to branch element is in."),
+  :multipass_lord     => ParamInfo(Nothing,        Ele,         "Element's multipass_lord. Will not be present if no lord exists."),
+  :super_lord         => ParamInfo(Nothing,        Vector{Ele}, "Array of element's super_lords. Will not be present if no lords exist."),
+  :slave              => ParamInfo(Nothing,        Vector{Ele}, "Array of slaves of element. Will not be present if no slaves exist."),
 
   :type               => ParamInfo(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
   :alias              => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
@@ -307,8 +310,8 @@ function multipole_type(str::Union{AbstractString,Symbol})
 end
 
 
-function multipole_type(str::Union{AbstractString,Symbol},
-                     group::Type{T} = Nothing) where T <: Union{BMultipoleGroup,EMultipoleGroup,Nothing}
+function multipole_type(str::Union{AbstractString,Symbol}, group::Type{T}) where T <:
+                                                    Union{BMultipoleGroup,EMultipoleGroup,Nothing}
   if str isa Symbol; str = string(str); end
   if length(str) < 3 ; (return nothing, -1); end
 

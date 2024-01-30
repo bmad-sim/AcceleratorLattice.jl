@@ -233,17 +233,27 @@ function find_ele(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE
 end
 
 #---------------------------------------------------------------------------------------------------
-# find_branch
+# branch
 
 """
-Returns branch corresponding to name. Else returns `NULL_BRANCH`
-"""
+    branch(lat::Lat, ix::Int)
+    branch(lat::Lat, who::AbstractString) 
 
-function find_branch(lat::Lat, name::AbstractString)
+Returns the branch in `lat` with index `ix` or name that matches `who`.
+
+Returns `nothing` if no branch can be matched.
+""" branch
+
+function branch(lat::Lat, ix::Int) 
+  if ix < 1 || ix > length(lat.branch); error(f"Branch index {ix} out of bounds."); end
+  return lat.branch[ix]
+end
+
+function branch(lat::Lat, who::AbstractString) 
   for branch in lat.branch
-    if matches_branch(name, branch); return branch; end
+    if branch.name == who; return branch; end
   end
-  return NULL_BRANCH
+  error(f"Cannot find branch with name {name} in lattice.")
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -295,7 +305,7 @@ function ele_at_s(branch::Branch, s::Real, choose_upstream::Bool; ele_near::Ele 
 
   # If ele_near is used
   ele = ele_near
-  if ele.branch.type == LordBranch
+  if ele.branch.type <: LordBranch
     choose_upstream ? ele = ele.slave[1] : ele = ele.slave[end]
   end
 

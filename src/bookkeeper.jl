@@ -33,7 +33,12 @@ This routine needs to be called after any lattice changes and before any trackin
 """ bookkeeper!(lat::Lat)
 
 function bookkeeper!(lat::Lat)
+  # Lord bookkeeping
+
+
+  # Tracking branch bookkeeping
   for (ix, branch) in enumerate(lat.branch)
+    if branch.type != TrackingBranch; continue; end
     branch.pdict[:ix_branch] = ix
     bookkeeper!(branch)
   end
@@ -89,40 +94,28 @@ function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# index_bookkeeper!(Branch)
+# index_and_s_bookkeeper!(Branch)
 
 """
-    Internal: function index_bookkeeper!(branch::Branch)
+    Internal: function index_and_s_bookkeeper!(branch::Branch)
 
-Does "quick" element index bookkeeping for a given branch.
+Does "quick" element index and s-position bookkeeping for a given branch.
 Used by lattice manipulation routines that need reindexing but don't need a full bookkeeping.
-""" index_bookkeeper!
+""" index_and_s_bookkeeper!
 
-function index_bookkeeper!(branch::Branch)
+function index_and_s_bookkeeper!(branch::Branch)
   for (ix, ele) in enumerate(branch.ele)
     ele.pdict[:ix_ele] = ix
     ele.pdict[:branch] = branch
   end
-end
 
-#---------------------------------------------------------------------------------------------------
-# s_bookkeeper!(Branch)
-
-"""
-    Internal: function s_bookkeeper!(branch::Branch)
-
-Does "quick" element s-position bookkeeping for a given branch.
-Used by lattice manipulation routines that need an s recalc but don't need a full bookkeeping.
-""" s_bookkeeper!
-
-function s_bookkeeper!(branch::Branch)
-  if branch.type == LordBranch; return; end
-  s_old = branch.ele[1].s
+  if branch.type <: LordBranch; return; end
+  s_now = branch.ele[1].s
 
   for (ix, ele) in enumerate(branch.ele)
-    ele.s = s_old
-    ele.s_downstream = s_old + ele.L
-    s_old = ele.s_downstream
+    set_param!(ele, :s, s_now)
+    s_now = s_now + ele.L
+    set_param!(ele, :s_downstream, s_now)
   end
 end
 

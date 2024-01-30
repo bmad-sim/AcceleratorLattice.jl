@@ -37,14 +37,14 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
 
   # Get insertion branch
   branch = ref_ele.branch
-  if branch.type == LordBranch 
+  if branch.type <: LordBranch 
     branch = ref_ele.slave[1].branch
     ref_ix_ele = ref_ele.slave[1].ix_ele
   else
     ref_ix_ele = ref_ele.ix_ele
   end
 
-  L_super = get_property(super_ele, :L, 0.0)
+  L_super = super_ele.L
   offset = offset * ref_ele.orientation
   machine_ref_origin = machine_location(ref_origin, ref_ele.orientation)  # Convert from entrance/exit to up/dowstream
   machine_ele_origin = machine_location(ele_origin, ref_ele.orientation)
@@ -63,7 +63,7 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
   end
 
   # Superposition position ends
-  if branch.type == LordBranch
+  if branch.type <: LordBranch
     if machine_ref_origin == UpstreamEnd; s1 = ref_ele.slave[1].s
     elseif machine_ref_origin == Center;  s1 = 0.5 * (ref_ele.slave[1].s + ref_ele.slave[end].s_downstream)
     else;                         s1 = ref_ele.slave[end].s_downstream

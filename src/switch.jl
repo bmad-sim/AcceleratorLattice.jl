@@ -140,7 +140,6 @@ end
 @switch BendTypeSwitch SBend RBend
 @switch BoolSwitch False NotSet True
 @switch BranchGeometrySwitch Open Closed
-@switch BranchTypeSwitch TrackingBranch LordBranch 
 @switch CavityTypeSwitch StandingWave TravelingWave
 @switch ControlSlaveTypeSwitch Delta Absolute NotSet
 @switch EleBodyLocationSwitch EntranceEnd Center ExitEnd BothEnds NoWhere EveryWhere
