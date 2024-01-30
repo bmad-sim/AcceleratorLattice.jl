@@ -142,6 +142,17 @@ end
 #---------------------------------------------------------------------------------------------------
 # ele_param_str
 
+"""
+    Internal: ele_param_str(pdict::Dict, key; default::AbstractString = "???")
+    Internal: ele_param_str(vec_var::Vector{ControlVar}; default::AbstractString = "???")
+    Internal: ele_param_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
+    Internal: ... and others too numerous to mention ...
+
+Routine to take a set of parameters and values and form a string with this information.
+used by the `show` routines for showing element, branch, and lat info.
+""" ele_param_str
+
+
 function ele_param_str(pdict::Dict, key; default::AbstractString = "???")
   who = get(pdict, key, nothing)
   return ele_param_str(who, default = default)
@@ -312,7 +323,7 @@ function show_elegroup_with_doc(io::IO, group::T) where T <: EleParameterGroup
   println(io, f"  {gtype}:")
 
   for field in fieldnames(gtype)
-    kstr = rpad(full_field_name(field, gtype), nn)
+    kstr = rpad(full_parameter_name(field, gtype), nn)
     vstr = ele_param_str(Base.getproperty(group, field))
     ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
   end
@@ -330,11 +341,11 @@ function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
   for field in fieldnames(gtype)
     if field in values(col2); continue; end
     if field in keys(col2)
-      kstr = rpad(full_field_name(field, gtype), nn)
+      kstr = rpad(full_parameter_name(field, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field))
       str = f"    {kstr} {vstr} {units(field)}"
       field2 = col2[field]
-      kstr = rpad(full_field_name(field2, gtype), nn)
+      kstr = rpad(full_parameter_name(field2, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field2))
       str2 = f"    {kstr} {vstr} {units(field2)}"
       if length(str) > 50 || length(str2) > 50
@@ -344,7 +355,7 @@ function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
         println(io, f"{rpad(str,50)}{str2}")
       end
     else
-      kstr = rpad(full_field_name(field, gtype), nn)
+      kstr = rpad(full_parameter_name(field, gtype), nn)
       vstr = ele_param_str(Base.getproperty(group, field))
       println(io, f"    {kstr} {vstr} {units(field)}")
     end
@@ -352,14 +363,14 @@ function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
 end
 
 #---------------------------------------------------------------------------------------------------
-# full_field_name
+# full_parameter_name
 
 """
 For fields where the user name is different (EG: `r_floor` and `r` in a FloorPositionGroup), 
 return the string `struct_name (user_name)` (EG: `r (r_floor)`).
-""" full_field_name
+""" full_parameter_name
 
-function full_field_name(field, group::Type{T}) where T <: EleParameterGroup
+function full_parameter_name(field, group::Type{T}) where T <: EleParameterGroup
   if field ∉ keys(struct_sym_to_user_sym); return String(field); end
 
   for sym in struct_sym_to_user_sym[field]
@@ -426,8 +437,11 @@ function Base.show(io::IO, branch::Branch)
       end_str = ""
       if haskey(ele.pdict, :orientation)
         s_str = ele_param_str(ele, :s, default = "    "*"-"^7, format = "11.6f")
-        end_str = f"{ele.L:14.6f}{s_str}" *
-             f"  {ele_param_str(ele.pdict, :multipass_lord, default = \"\")}{ele_param_str(ele.pdict, :slave, default = \"\")}"
+        s_down_str = ele_param_str(ele, :s_downstream, default = "    "*"-"^7, format = "11.6f")
+        end_str = f"{ele.L:14.6f}{s_str} -> {s_down_str}"
+        if haskey(ele.pdict, :multipass_lord); end_str = end_str * f"  {ele_param_str(ele.pdict, :multipass_lord, default = \"\")}"; end
+        if haskey(ele.pdict, :super_lord);  end_str = end_str * f"  {ele_param_str(ele.pdict, :super_lord, default = \"\")}"; end
+        if haskey(ele.pdict, :slave); end_str = end_str * f"  {ele_param_str(ele.pdict, :slave, default = \"\")}"; end
         if ele.pdict[:orientation] == -1; end_str = end_str * "  orientation = -1"; end
       end
       println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" * end_str)                    

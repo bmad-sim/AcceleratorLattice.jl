@@ -54,7 +54,7 @@ not exist (parameter is stored in `ele.pdict[BMultipoleGroup].vec(N).K2` where `
 Also: If `XXX` corresponds to a vector, create `ele.changed[:XXX]` to signal that the vector may have 
 been modified. This is necessary due to how something like `ele.pdict[:GGG].XXX[2] = ...` is evaluated.
 
-Also see: `get_property`
+Also see: `get_elegroup_param`
 """ Base.getproperty(ele::Ele, sym::Symbol)
 
 function Base.getproperty(ele::Ele, sym::Symbol)
@@ -121,7 +121,7 @@ end
 
 function Base.setproperty!(ele::Ele, sym::Symbol, value)
   pdict::Dict{Symbol,Any} = ele.pdict
-  if haskey(pdict, sym); return pdict[sym]; end
+  if haskey(pdict, sym); pdict[sym] = value; return pdict[sym]; end
   pinfo = ele_param_info(sym, ele)
   if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
   getfield(ele, :pdict)[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(pinfo.parent_group)], pinfo)
@@ -175,7 +175,8 @@ end
 
 Internal function used by Base.getproperty.
 
-This function will return dependent values. EG: integrated multipole value even if stored value is not integrated.
+This function will return dependent values. 
+EG: integrated multipole value even if stored value is not integrated.
 """ get_elegroup_param
 
 function get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
@@ -192,8 +193,8 @@ function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGr
     if (mtype[end] == 'L') && !mul.integrated
       return val * ele.L
     elseif (mtype[end] != 'L') && mul.integrated
-      if ele.L == 0; error(f"Cannot compute non-integrated multipole value {pinfo.user_sym} for integrated multipole" *
-                           f" of element with zero length: {ele_name(ele)}"); end
+      if ele.L == 0; error(f"Cannot compute non-integrated multipole value {pinfo.user_sym} for" *
+                           f" integrated multipole of element with zero length: {ele_name(ele)}"); end
       return val / ele.L
     end
   end
@@ -230,3 +231,18 @@ function set_elegroup_param!(ele::Ele, group::Union{BMultipoleGroup, EMultipoleG
   return setfield!(mul, pinfo.struct_sym, value)
 end
 
+#---------------------------------------------------------------------------------------------------
+# set_param!
+
+"""
+  Set ele parameter without recording the set by adding to `ele.pdict[:changed]`.
+  Useful for bookkeeper routines to avoid double bookkeeping.
+  Note: Does not check if parameter is officially settable.
+"""
+
+function set_param!(ele::Ele, sym::Symbol, value)
+  pdict::Dict{Symbol,Any} = ele.pdict
+  if haskey(pdict, sym); pdict[sym] = value; return; end
+  pinfo = ele_param_info(sym, ele)
+  set_elegroup_param!(ele, pdict[Symbol(pinfo.parent_group)], pinfo, value)
+end

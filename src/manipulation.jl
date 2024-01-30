@@ -71,7 +71,7 @@ Inserted is a copy which is returned.
 function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
   ele = copy(ele)
   insert!(branch.ele, ix_ele, ele)
-  index_bookkeeper!(branch)
+  index_and_s_bookkeeper!(branch)
   return ele
 end
 
@@ -80,6 +80,7 @@ end
 
 """
     split!(branch::Branch, s_split::Real, choose_upstream::Bool; ele_near::Ele = NULL_ELE)
+    split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
 
 Routine to split an lattice element of a branch into two to create a branch that has an element
 boundary at the point s = `s_split`. 
@@ -91,6 +92,7 @@ than 2*`LatticeGlobal.significant_length`.
 > a super-lord element will be created if needed (not needed for split drifts).
 > drift to be split is put in `branch.ele_saved` for possible use if a future superposition uses
 > the drift as a reference.
+> `bookkeeper!` needs to be called after splitting.
 
 ### Input
 - `branch`            -- Lattice branch
@@ -129,12 +131,13 @@ function split!(branch::Branch, s_split::Real, choose_upstream::Bool; ele_near::
   if s_split == ele0.s; return (next_ele(ele0, -1), false); end
   if s_split == ele0.s_downstream; return(ele0, false); end
 
-  # Element must be split cases.
+  # An element is split cases:
 
   # Split case 1: Element is a drift. No super lord issues but save this element in case
   # later superpositions use this drift as a reference element.
   if typeof(ele0) == Drift
     slave2 = copy(ele0)
+    slave2.name = ele0.name * "!0"    # To include ele in name setting below
     insert!(branch.ele, ele0.ix_ele+1, slave2)  # Just after ele0
     if haskey(branch.pdict, :ele_save)
       push!(branch.pdict[:ele_save], ele0)
@@ -143,9 +146,25 @@ function split!(branch::Branch, s_split::Real, choose_upstream::Bool; ele_near::
     end
     branch.ele[ele0.ix_ele] = copy(ele0)
     branch.ele[ele0.ix_ele].L = s_split - ele0.s
+    branch.ele[ele0.ix_ele].name = ele0.name * "!0"
     slave2.L = ele0.s_downstream - s_split
     ele0.ix_ele = -1             # Mark as not being in branch.ele array.
-    index_bookkeeper!(branch)
+    index_and_s_bookkeeper!(branch)
+
+    # Set names of all split drifts in branch
+    drift_index = Dict{String, Int}()
+    for ele in branch.ele
+      if typeof(ele) != Drift; continue; end
+      ix = index(ele.name, "!")
+      # Avoid name mangling something like "d!mp1" so check if integer after "!".
+      if ix == 0 || isnan(integer(ele.name[ix+1:end], NaN)); continue; end
+      if ele.name[1:ix-1] in keys(drift_index)
+        drift_index[ele.name[1:ix-1]] += 1
+      else
+        drift_index[ele.name[1:ix-1]] = 1
+      end
+      ele.name = ele.name[1:ix] * string(drift_index[ele.name[1:ix-1]])
+    end
     return (slave2, true)
   end
 
@@ -165,7 +184,10 @@ function split!(branch::Branch, s_split::Real, choose_upstream::Bool; ele_near::
         break
       end
     end
-    index_bookkeeper!(branch)
+    index_and_s_bookkeeper!(branch)
+    for lord in ele0.super_lord
+      set_super_slave_name!(lord)
+    end
     return (slave2, true)
   end
 
@@ -189,8 +211,39 @@ function split!(branch::Branch, s_split::Real, choose_upstream::Bool; ele_near::
   push!(sbranch.ele, lord)
   lord.pdict[:slave] = Vector{Ele}([slave, slave2])
 
-  index_bookkeeper!(branch)
-  index_bookkeeper!(sbranch)
+  index_and_s_bookkeeper!(branch)
+  index_and_s_bookkeeper!(sbranch)
+  set_super_slave_name!(lord)
 
   return slave, true
+end
+
+function split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
+  return split!(branch, s_split, choose_upstream; ele_near = ele_near)
+end
+
+#---------------------------------------------------------------------------------------------------
+# set_super_slave_name!
+
+"""
+    Internal: set_super_slave_name!(ele::Ele)
+
+`ele` can be either a super_slave or a super_lord (in which case all the super_slaves of the lord
+have their name set.
+"""
+
+function set_super_slave_name!(ele::Ele)
+  if ele.branch.type <: LordBranch
+    for slave in ele.slave
+      set_super_slave_name!(slave)
+    end
+    return
+  end
+
+  name = ""
+  for lord in ele.super_lord
+    ix = findfirst(item -> item === ele, lord.slave)
+    name = name * "!!" * lord.name * "!s" * string(ix)
+  end
+  ele.name = name[3:end]
 end

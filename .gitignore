@@ -9,4 +9,6 @@ docs/build/
 /Manifest.toml
 .DS_Store
 .vscode
+test.jl
+z.jl
 *~

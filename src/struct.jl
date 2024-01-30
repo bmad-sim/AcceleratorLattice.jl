@@ -469,7 +469,7 @@ Controller
 end
 
 @kwdef mutable struct ControlVarGroup <: EleParameterGroup
-  vars::Vector{ControlVar} = Vector{ControlVar}()
+  variable::Vector{ControlVar} = Vector{ControlVar}()
 end
 
 abstract type ControlSlave end
@@ -504,9 +504,10 @@ end
   type::ControlSlaveTypeSwitch = NotSet
 end
 
-@kwdef mutable struct ControlSlaveGroup  <: EleParameterGroup
-  slaves::Vector{ControlSlave} = Vector{ControlSlave}()
+mutable struct ControlSlaveGroup  <: EleParameterGroup
+  slave::Vector{T} where T <: ControlSlave
 end
+ControlSlaveGroup() = ControlSlaveGroup(Vector{ControlSlave}())
 
 function var(sym::Symbol, val::Number = 0.0, old::Number = NaN) 
   isnan(old) ? (return ControlVar(sym, val, val)) : (return ControlVar(sym, val, old))
@@ -575,6 +576,17 @@ The test is_null(branch) will test if a branch is a NULL_BRANCH.
 """ NULL_BRANCH
 
 const NULL_BRANCH = Branch("NULL", Vector{Ele}(), Dict{Symbol,Any}(:ix_branch => -1))
+
+#---------------------------------------------------------------------------------------------------
+# Branch types
+
+abstract type BranchType end
+abstract type LordBranch <: BranchType end
+abstract type TrackingBranch <: BranchType end
+
+struct MultipassLordBranch <: LordBranch; end
+struct SuperLordBranch <: LordBranch; end
+struct GovernorBranch <: LordBranch; end
 
 #---------------------------------------------------------------------------------------------------
 # LatticeGlobal

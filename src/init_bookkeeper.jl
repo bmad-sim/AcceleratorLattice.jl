@@ -34,22 +34,22 @@ function init_superimpose!(branch::Branch, superimpose::Vector{T}) where T <: El
 end
 
 #---------------------------------------------------------------------------------------------------
-# init_governors!
+# add_governor!
 
 """
-    Internal: init_governors!(lat::Lat, governors::Vector{T}) where T<: Ele
+    add_governor!(lat::Lat, governor::Union{T, Vector{T}}) where T <: Ele
 
-Initialize lattice controllers and girders during lattice expansion.
-Called by the `expansion` function.
-""" init_governors!
+Initialize lattice controllers and girders.
+""" add_governors!
 
-function init_governors!(lat::Lat, governors::Vector{T}) where T<: Ele
-  branch = lat.governor
-  branch.ele = Vector{Ele}(governors)
+function add_governor!(lat::Lat, governor::Union{T, Vector{T}}) where T <: Ele
+  if !(typeof(governor) <: Vector); governor = [governor]; end
+  gbranch = branch(lat, "Governor")
+  gbranch.ele = vcat(gbranch.ele, governor)
 
-  for (ix, ele) in enumerate(branch.ele)
+  for (ix, ele) in enumerate(gbranch.ele)
     ele.pdict[:ix_ele] = ix
-    ele.pdict[:branch] = branch
+    ele.pdict[:branch] = gbranch
     # ...
   end
 end
@@ -91,14 +91,6 @@ function init_ele_bookkeeper!(ele::Controller)
     pdict[:inbox][var.name] = var.value
     var.value = var.old_value
   end
-end
-
-#---------------------------------------------------------------------------------------------------
-# init_ele_bookkeeper!(Girder)
-
-function init_ele_bookkeeper!(ele::Girder)
-
-
 end
 
 #---------------------------------------------------------------------------------------------------
