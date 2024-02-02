@@ -431,7 +431,8 @@ function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
     error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")
 
   else
-    if param_info.parent_group in ele_param_groups[typeof(ele)]; return param_info; end
+    if param_info.parent_group in ele_param_groups[typeof(ele)] || 
+                                        param_info.parent_group == Nothing; return param_info; end
     error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")   
   end
 end

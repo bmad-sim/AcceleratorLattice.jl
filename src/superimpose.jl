@@ -84,7 +84,7 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
 
   # Insertion of zero length element.
   if L_super == 0
-    ele_at, _ = split!(branch, s1, choose_upstream = (machine_ref_origin == DownstreamEnd), ele_near = ref_ele)
+    ele_at, _ = split!(branch, s1, choose_downstream = (machine_ref_origin != DownstreamEnd), ele_near = ref_ele)
     insert!(branch, ele_at.ix_ele, super_ele)
     return
   end
@@ -133,7 +133,7 @@ function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch
     super_ele.L = super_ele.L + ele2.s_downstream - s2
   end
 
-  # Choose_upstream is set to minimize number of elements in superposition region
-  ele1, _ = split!(branch, s1, false)
-  ele2, _ = split!(branch, s2, true)
+  # choose_downstream is set to minimize number of elements in superposition region
+  ele1, _ = split!(branch, s1, true)
+  ele2, _ = split!(branch, s2, false)
 end

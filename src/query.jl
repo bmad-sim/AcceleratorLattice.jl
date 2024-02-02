@@ -15,7 +15,12 @@ function lat_sanity_check(lat::Lat)
     for (ie, ele) in enumerate(branch.ele)
       if ie != ele.ix_ele; error(f"SanityCheck: Ele {ele.name} in branch {ib} with"*
                                       f" element index: {ie} has ele.ix_ele set to {ele.ix_ele}"); end
+
       if branch !== ele.branch; error(f"SanityCheck: Ele {ele_name(ele)} has ele.branch not pointing to parient branch."); end
+
+      if branch.type == TrackingBranch
+        if !haskey(ele.pdict, :orientation) error(f"SanityCheck: Ele {ele_name(ele)} does not have orientation attribute."); end
+      end
     end
   end
 

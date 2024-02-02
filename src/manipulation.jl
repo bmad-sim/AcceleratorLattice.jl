@@ -60,18 +60,31 @@ end
 # Base.insert!(branch::Branch, ...)
 
 """ 
-    Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
+    Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
 
 Insert an element `ele` at index `ix_ele` in branch `branch`.
 All elements with indexes of `ix_ele` and higher are pushed one element down the array.
 
-Inserted is a copy which is returned.
+Inserted is a (shallow) copy of `ele` and this copy is returned.
+
+ - `adjust_orientation`  If `true`, and the `branch.type` is a `TrackingBranch`, the orientation 
+attribute of `ele` is adjusted to match the neighboring elements.
+
 """ Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
 
-function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
+function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
   ele = copy(ele)
   insert!(branch.ele, ix_ele, ele)
   index_and_s_bookkeeper!(branch)
+
+  if adjust_orientation && branch.type == TrackingBranch && length(branch.ele) > 1
+    if ix_ele == 1
+      ele.pdict[:orientation] = branch.ele[2].orientation
+    else
+      ele.pdict[:orientation] = branch.ele[ele.ix_ele-1].orientation
+    end
+  end
+
   return ele
 end
 
@@ -79,8 +92,8 @@ end
 # split!
 
 """
-    split!(branch::Branch, s_split::Real, choose_upstream::Bool; ele_near::Ele = NULL_ELE)
-    split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
+    split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near::Ele = NULL_ELE)
+    split!(branch::Branch, s_split::Real; choose_downstream::Bool = true, ele_near::Ele = NULL_ELE)
 
 Routine to split an lattice element of a branch into two to create a branch that has an element
 boundary at the point s = `s_split`. 
@@ -97,11 +110,11 @@ than 2*`LatticeGlobal.significant_length`.
 ### Input
 - `branch`            -- Lattice branch
 - `s_split`           -- Position at which branch is to be split.
-- `choose_upstream`   -- logical, optional: If no splitting of an element is needed, that is, 
+- `choose_downstream` -- logical, optional: If no splitting of an element is needed, that is, 
   `s_split` is at an element boundary, there can be multiple possible split points if there exist zero 
-  length elements at the split point. If `choose_upsteam` = true, the split will be chosen to be 
-  at the maximal upstream location. If `choose_upstream` = false the split will be chosen to be the 
-  downstream location. If `s_split` is not at an element boundary, the setting of `choose_upstream` is immaterial.
+  length elements at the split point. If `choose_downstream` = true, the split will be chosen to be 
+  at the maximal downstream location. If `choose_downstream` = false the split will be chosen to be the 
+  upstream location. If `s_split` is not at an element boundary, the setting of `choose_downstream` is immaterial.
 - `ele_near`          -- Element near the point to be split. `ele_near` is useful in the case where
   there is a patch with a negative length which can create an ambiguity as to where to do the split
   In this case `ele_near` will remove the ambiguity. Also useful to ensure where to split if there
@@ -112,24 +125,24 @@ than 2*`LatticeGlobal.significant_length`.
 - `split_done`    -- true if lat was split, false otherwise.
 """ split!(branch::Branch)
 
-function split!(branch::Branch, s_split::Real, choose_upstream::Bool; ele_near::Ele = NULL_ELE)
+function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s_split)
-  ele0 = ele_at_s(branch, s_split, choose_upstream, ele_near = ele_near)
+  ele0 = ele_at_s(branch, s_split, choose_downstream, ele_near = ele_near)
 
   # Make sure split does create an element that is less than min_len in length.
   min_len = min_ele_length(branch.lat)
-  if choose_upstream && ele0.s > s_split-min_len
+  if !choose_downstream && ele0.s > s_split-min_len
     ele0 = ele_at_s(branch, ele0.s, true)
     s_split = ele0.s_downstream
-  elseif !choose_upstream && ele0.s_downstream < s_split+min_len
+  elseif choose_downstream && ele0.s_downstream < s_split+min_len
     ele0 = ele_at_s(branch, ele0.s_downstream, true)
     s_split = ele0.s
   end
 
   # No element split cases where s_split is at an element boundary.
 
-  if s_split == ele0.s; return (next_ele(ele0, -1), false); end
-  if s_split == ele0.s_downstream; return(ele0, false); end
+  if s_split == ele0.s; return (ele0, false); end
+  if s_split == ele0.s_downstream; return (next_ele(ele0), false); end
 
   # An element is split cases:
 
@@ -215,11 +228,11 @@ function split!(branch::Branch, s_split::Real, choose_upstream::Bool; ele_near::
   index_and_s_bookkeeper!(sbranch)
   set_super_slave_name!(lord)
 
-  return slave, true
+  return slave2, true
 end
 
-function split!(branch::Branch, s_split::Real; choose_upstream::Bool = true, ele_near::Ele = NULL_ELE)
-  return split!(branch, s_split, choose_upstream; ele_near = ele_near)
+function split!(branch::Branch, s_split::Real; choose_downstream::Bool = true, ele_near::Ele = NULL_ELE)
+  return split!(branch, s_split, choose_downstream; ele_near = ele_near)
 end
 
 #---------------------------------------------------------------------------------------------------
