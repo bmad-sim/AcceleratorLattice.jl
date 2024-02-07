@@ -1,4 +1,37 @@
+#---------------------------------------------------------------------------------------------------
+
+QuatN = QuatRotation{Number}
+Quat64 = QuatRotation{Float64}
+
 abstract type AbstractQuaternion end
+
+#---------------------------------------------------------------------------------------------------
+# The Rotation.jl package displays the 3x3 rotation matrix with 
+# the show command which is not what is wanted.
+
+function Base.show(io::IO, ::MIME"text/plain", q::QuatRotation{T}) where T
+  println(io, typeof(q))
+  println(io, f"  ({q.q.s}, {q.q.v1}, {q.q.v2}, {q.q.v3})")
+end
+
+function Base.show(io::IO, q::QuatRotation{T}) where T
+  print(io, f"({q.q.s}, {q.q.v1}, {q.q.v2}, {q.q.v3})")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", a::AngleAxis{T}) where T
+  println(io, typeof(a))
+  println(io, f"  ({a.theta}, {a.axis_x}, {a.axis_y}, {a.axis_z})")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", rv::RotationVec{T}) where T
+  println(io, typeof(rv))
+  println(io, f"  ({rv.sx}, {rv.sy}, {rv.sz})")
+end
+
+rot(q::QuatRotation, v::Vector) = Vector(q * v)
+rot(q1::QuatRotation, q2::QuatRotation) = q1 * q2
+
+#---------------------------------------------------------------------------------------------------
 
 struct Quaternion <: AbstractQuaternion
   q0::Float64
@@ -90,4 +123,50 @@ function RotMat(q::Quaternion)
 end
 
 #---------------------------------------------------------------------------------------------------
+# quat_angles
 
+"""
+    quat_angles(q; angles0 = [0.0, 0.0, 0.0])
+
+Returns angles `theta`, `phi`, `psi` corresponding to quaternion `q`.
+
+ - `angles0`   `angles0` is used so that the returned angles (which are ambiguous up to factors of pi), 
+are  "close" to `angles0`. This is used when `angles0` corresponds to the orientation of some 
+initial quaternion  `q0` and `q` is "close" to `q0` (for example, `q` and `q0` are the quaternions
+for orientations at the ends of a bend element).
+""" quat_angles
+
+function quat_angles(q; angles0 = [0.0, 0.0, 0.0])
+  s00 = q.q.s * q.q.s
+  s11 = q.q.v1 * q.q.v1
+  s22 = q.q.v2 * q.q.v2
+  s33 = q.q.v3 * q.q.v3
+  s12 = q.q.v1 * q.q.v2
+
+  w13 = 2.0 * (s13 * s20)
+  w33 = s00 - s11 - s22 + s33
+
+  # Only theta at +/- psi is well defined here so this is rather arbitrary
+  if abs(w13) + abs(w33) < 1e-12
+    if w23 > 0; return angles0[1], pi/2, atan(-w31, w11) - angles0[1]
+    else;       return angles0[1], -pi/2, atan(w21, w11) + angles0[1]
+    end
+  end
+
+  # Normal case
+  theta = atan(w13, w33)
+  phi = atan(w23, norm([w13 + w33]))
+  psi = atan(w21, w22)
+
+  if angles0 == [0.0, 0.0, 0.0]; return mod(theta, 2pi), phi, psi; end
+
+  diff1 = [modulo2(theta-angles0[1], pi), modulo2(phi-angles0[2], pi), modulo2(psi-angles0[3], pi)]
+  diff2 = [modulo2(pi+theta-angles0[1], pi), modulo2(pi-phi-angles0[2], pi), modulo2(pi+psi-angles0[3], pi)]
+  if norm(diff1) < norm(diff2)
+    return diff1 + angles0
+  else
+    return diff2 + angles0
+  end
+end
+
+#---------------------------------------------------------------------------------------------------

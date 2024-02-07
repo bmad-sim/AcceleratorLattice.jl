@@ -518,11 +518,11 @@ end
 # abstract_dict
 
 
-abstract_dict = Dict{DataType,String}(
+abstract_dict = Dict{Any,String}(
   BeamLineItem      => "Base type for items that can be in a BeamLine.",
   Ele               => "Base type for lattice elements.",
   EleParameterGroup => "Base type for lattice element parameter groups.",
   ControlSlave      => "Base type for Controller control structs.",
   AbstractLat       => "Base type for the Lat struct.",
-  Switch            => "Base type for switch group values. switch_list_dict will show all switches.",
+  Enum              => "Base type for switch group values.",
 )

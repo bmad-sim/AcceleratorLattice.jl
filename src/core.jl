@@ -1,14 +1,53 @@
 #---------------------------------------------------------------------------------------------------
-# Using
+# enumit
 
-## using OffsetArrays
-using InteractiveUtils      # Defines subtypes function
-using PyFormattedStrings
-using Accessors
-using LinearAlgebra
-using Rotations
+"""
+    enumit(str::AbstractString)
 
-import Base.Cartesian.lreplace
+Makes list into a enum group and exports the names
+""" enumit
+
+macro enumit(str::AbstractString)
+  eval( Meta.parse("@enum $str") )
+  str2 = join(split(str), ',')
+  eval( Meta.parse("export $str2") )
+end
+
+@enumit("ApertureTypeSwitch Rectangular Elliptical")
+@enumit("BendTypeSwitch SBend RBend")
+@enumit("BodyLocationSwitch EntranceEnd BCenter ExitEnd BothEnds NoWhere EveryWhere")
+@enumit("BoolSwitch False NotSet True")
+@enumit("BranchGeometrySwitch Open Closed")
+@enumit("CavityTypeSwitch StandingWave TravelingWave")
+@enumit("ControlSlaveTypeSwitch Delta Absolute null")
+@enumit("FieldCalcMethodSwitch FieldMap FieldStandard")
+@enumit("InterpolationSwitch Linear Spline")
+@enumit("StreamLocationSwitch UpstreamEnd Center Inside DownstreamEnd")
+@enumit("TrackingMethodSwitch RungeKutta TimeRungeKutta TrackingStandard")
+@enumit("TrackingStateSwitch PreBorn Alive PreTrack Lost LostNegX LostPosX LostNegY LostPosY LostPz LostZ")
+
+#---------------------------------------------------------------------------------------------------
+# holly_type
+
+"""
+    holly_type(str::AbstractString)
+
+Makes an abstract type from the first word and makes concrete types that inherit from the abstract type
+from the other words in the string.
+""" holly_type
+
+macro holly_type(str::AbstractString)
+  tlist = split(str)
+  eval( Meta.parse("abstract type $(tlist[1]) end") )
+  str2 = join(tlist, ',')
+  eval( Meta.parse("export $str2") )
+
+  for tp in tlist[2:end]
+    eval( Meta.parse("struct $tp <: $(tlist[1]); end") )
+  end
+end
+
+@holly_type("EleGeometrySwitch Straight Circular ZeroLength PatchGeom GirderGeom CrystalGeom MirrorGeom")
 
 #---------------------------------------------------------------------------------------------------
 # Exceptions
@@ -24,37 +63,6 @@ abstract type Error end
 #---------------------------------------------------------------------------------------------------
 
 eval_str(str::AbstractString) = eval(Meta.parse(str))
-
-#---------------------------------------------------------------------------------------------------
-
-QuatN = QuatRotation{Number}
-Quat64 = QuatRotation{Float64}
-
-#---------------------------------------------------------------------------------------------------
-# The Rotation.jl package displays the 3x3 rotation matrix with 
-# the show command which is not what is wanted.
-
-function Base.show(io::IO, ::MIME"text/plain", q::QuatRotation{T}) where T
-  println(io, typeof(q))
-  println(io, f"  ({q.q.s}, {q.q.v1}, {q.q.v2}, {q.q.v3})")
-end
-
-function Base.show(io::IO, q::QuatRotation{T}) where T
-  print(io, f"({q.q.s}, {q.q.v1}, {q.q.v2}, {q.q.v3})")
-end
-
-function Base.show(io::IO, ::MIME"text/plain", a::AngleAxis{T}) where T
-  println(io, typeof(a))
-  println(io, f"  ({a.theta}, {a.axis_x}, {a.axis_y}, {a.axis_z})")
-end
-
-function Base.show(io::IO, ::MIME"text/plain", rv::RotationVec{T}) where T
-  println(io, typeof(rv))
-  println(io, f"  ({rv.sx}, {rv.sy}, {rv.sz})")
-end
-
-rot(q::QuatRotation, v::Vector) = Vector(q * v)
-rot(q1::QuatRotation, q2::QuatRotation) = q1 * q2
 
 #---------------------------------------------------------------------------------------------------
 

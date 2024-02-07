@@ -253,7 +253,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup},
   if !changed.floor_position; return; end
 
   if is_null(previous_ele)
-    quat_angles(fpg.q, fpg)
+    fpg.theta, fpg.phi, fpg.psi = quat_angles(fpg.q, fpg)
     return
   end
 
