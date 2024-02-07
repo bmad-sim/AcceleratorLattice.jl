@@ -240,7 +240,7 @@ Patch element parameters
   pc_exit::Number = NaN                       # Reference momentum at exit end
   flexible::Bool = false
   user_sets_length::Bool = false
-  ref_coords::EleBodyEndSwitch = ExitEnd
+  ref_coords::BodyLocationSwitch = ExitEnd
 end
 
 """
@@ -355,7 +355,7 @@ Vacuum chamber aperture.
   x_limit::Vector = [NaN, NaN]
   y_limit::Vector = [NaN, NaN]
   aperture_type::ApertureTypeSwitch = Elliptical
-  aperture_at::EleBodyLocationSwitch = EntranceEnd
+  aperture_at::BodyLocationSwitch = EntranceEnd
   offset_moves_aperture::Bool = true
 end
 
@@ -376,7 +376,7 @@ Girder parameters.
 """
 @kwdef mutable struct GirderGroup <: EleParameterGroup
   origin_ele::Ele = NullEle
-  origin_ele_ref_pt::EleBodyRefSwitch = Center
+  origin_ele_ref_pt::StreamLocationSwitch = Center
   dr::Vector = [0.0, 0.0, 0.0]
   dtheta::Number = 0.0
   dphi::Number = 0.0
@@ -445,8 +445,8 @@ end
 Sets the nominal values for tracking prameters.
 """
 @kwdef mutable struct TrackingGroup <: EleParameterGroup
-  tracking_method::TrackingMethodSwitch = BmadStandard
-  field_calc::FieldCalcMethodSwitch = BmadStandard
+  tracking_method::TrackingMethodSwitch = TrackingStandard
+  field_calc::FieldCalcMethodSwitch = FieldStandard
   num_steps::Int64 = -1
   ds_step::Number = NaN
 end
@@ -528,22 +528,6 @@ end
 #  if typeof(eles) == String; eles = [eles]; end
 #  cs = ControlSlaveFunction(eles = eles, slave_parameter = parameter, func = func, type = Custom)
 #end
-
-#---------------------------------------------------------------------------------------------------
-# Superposition
-
-@kwdef mutable struct Superimpose
-  ele::String = ""
-  ele_origin::RefLocationSwitch = Center
-  ref_ele::String = ""
-  ref_origin::RefLocationSwitch = Center
-  offset::Number = 0.0
-  wrap_superimpose::Bool = true
-end
-
-function Superimpose(list::Vector{Superimpose}; kwargs...)
-  push!(list, Superimpose(kwargs))
-end
 
 #---------------------------------------------------------------------------------------------------
 # Branch

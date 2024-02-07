@@ -1,29 +1,69 @@
 #---------------------------------------------------------------------------------------------------
-# lat_sanity_check
+# machine_location
 
 """
-    lat_sanity_check(lat::Lat)
+    machine_location(loc::BodyLocationSwitch, orientation::Int)
 
-Does some self consistency checks on a lattice and throws an error if there is a problem.
-""" lat_sanity_check
+Given a location with respect to an element's `local` orientation,
+along with the element's orientation with respect to machine coordinates, 
+return the equivalent location in machine coordinates.
 
-function lat_sanity_check(lat::Lat)
-  for (ib, branch) in enumerate(lat.branch)
-    if ib != branch.ix_branch; error(f"SanityCheck: Branch with branch index: {ib} has branch.ix_branch set to {branch.ix_branch}"); end
-    if lat !== branch.lat; error(f"SanityCheck: Branch {ib} has branch.lat not pointing to parient lat."); end
+The reverse function is body_location.
 
-    for (ie, ele) in enumerate(branch.ele)
-      if ie != ele.ix_ele; error(f"SanityCheck: Ele {ele.name} in branch {ib} with"*
-                                      f" element index: {ie} has ele.ix_ele set to {ele.ix_ele}"); end
+### Input
 
-      if branch !== ele.branch; error(f"SanityCheck: Ele {ele_name(ele)} has ele.branch not pointing to parient branch."); end
+ - `loc`          Possible values: `EntranceEnd`, `Center`, `ExitEnd`
+ - `orientation`  Possible values: -1 or +1.
 
-      if branch.type == TrackingBranch
-        if !haskey(ele.pdict, :orientation) error(f"SanityCheck: Ele {ele_name(ele)} does not have orientation attribute."); end
-      end
-    end
+### Output
+
+ - Returns: `UpstreamEnd`, `Center`, or `DownstreamEnd` (a `StreamLocationSwitch` value).
+""" machine_location
+
+function machine_location(loc::BodyLocationSwitch, orientation::Int)
+  if loc == Center; return Center; end
+
+  if loc == EntranceEnd
+    orientation == 1 ? (return UpstreamEnd) : return DownstreamEnd
+  elseif loc == ExitEnd
+    orientation == 1 ? (return DownstreamEnd) : return UpstreamEnd
+  else
+    error(f"ConfusedError: Should not be here! Please report this!")
   end
+end
 
+#---------------------------------------------------------------------------------------------------
+# body_location
+
+"""
+    body_location(loc::StreamLocationSwitch, orientation::Int)
+
+Given an element location with respect to machine coordinates,
+along with the element's orientation with respect to machine coordinates, 
+return the equivalent location with respect to the element's `local` orientation.
+
+The reverse function is machine_location.
+
+### Input
+
+ - `loc`          Possible values: `UpstreamEnd`, `Center`, or `DownstreamEnd` (a `StreamLocationSwitch` value).
+ - `orientation`  Possible values: -1 or +1.
+
+### Output
+
+ - Returns: `EntrancEnd`, `Center`, `ExitEnd` (a `BodyLocationSwitch` value).
+""" body_location
+
+function body_location(loc::StreamLocationSwitch, orientation::Int)
+  if loc == Center; return Center; end
+
+  if loc == UpstreamEnd
+    orientation == 1 ? (return EntranceEnd) : return ExitEnd
+  elseif loc == DownstreamEnd
+    orientation == 1 ? (return ExitEnd) : return EntranceEnd
+  else
+    error(f"ConfusedError: Should not be here! Please report this!")
+  end
 end
 
 #---------------------------------------------------------------------------------------------------

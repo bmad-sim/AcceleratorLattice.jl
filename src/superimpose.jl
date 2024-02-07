@@ -2,10 +2,10 @@
 # superimpose!
 
 """
-    function superimpose!(super_ele::Ele, ref_ele::Vector{Ele}; ele_origin::EleBodyRefSwitch = Center, 
-                      offset::Real = 0, ref_origin::EleBodyRefSwitch = Center, wrap::Bool = true)
-    function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch = Center, 
-           offset::Real = 0, ref_origin::EleBodyRefSwitch = Center, wrap::Bool = true)
+    function superimpose!(super_ele::Ele, ref_ele::Vector{Ele}; ele_origin::BodyLocationSwitch = Center, 
+                      offset::Real = 0, ref_origin::BodyLocationSwitch = Center, wrap::Bool = true)
+    function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::BodyLocationSwitch = Center, 
+           offset::Real = 0, ref_origin::BodyLocationSwitch = Center, wrap::Bool = true)
 
 - `wrap`   Only relavent if the superimposed element has an end that extends beyond the 
 starting or ending edge of the branch. If true (default), wrap the element around the
@@ -23,8 +23,8 @@ The superimposed element will inherit the orientation of the `ref_ele`.
 
 """ superimpose!
 
-function superimpose!(super_ele::Ele, ref_ele::Vector{Ele}; ele_origin::EleBodyRefSwitch = Center, 
-                      offset::Real = 0, ref_origin::EleBodyRefSwitch = Center, wrap::Bool = true)
+function superimpose!(super_ele::Ele, ref_ele::Vector{Ele}; ele_origin::BodyLocationSwitch = Center, 
+                      offset::Real = 0, ref_origin::BodyLocationSwitch = Center, wrap::Bool = true)
   for ref in ref_ele
     superimpose!(super_ele, ref, ele_origin = ele_origin, offset = offset, ref_origin = ref_origin, wrap = wrap)  
   end
@@ -32,8 +32,8 @@ end
 
 #-----------
 
-function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::EleBodyRefSwitch = Center, 
-           offset::Real = 0, ref_origin::EleBodyRefSwitch = Center, wrap::Bool = true)
+function superimpose!(super_ele::Ele, ref_ele::Ele; ele_origin::BodyLocationSwitch = Center, 
+           offset::Real = 0, ref_origin::BodyLocationSwitch = Center, wrap::Bool = true)
 
   # Get insertion branch
   branch = ref_ele.branch

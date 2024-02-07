@@ -1,11 +1,20 @@
 module AcceleratorLattice
+
+  ## using OffsetArrays
+  using InteractiveUtils      # Defines subtypes function
+  using PyFormattedStrings
+  using Accessors
+  using LinearAlgebra
+  using Rotations
+
+  import Base.Cartesian.lreplace
+
   include("core.jl")
   include("quaternion.jl")
   include("AtomicAndPhysicalConstants.jl")
   include("math_base.jl")
-  include("utilities.jl")
-  include("switch.jl")
   include("struct.jl")
+  include("utilities.jl")
   include("string.jl")
   include("parameters.jl")
   include("accessor.jl")
@@ -37,5 +46,6 @@ module AcceleratorLattice
   export GirderGroup, LCavityGroup, PatchGroup, RFFieldGroup, RFMasterGroup, ControlSlaveGroup, ControlVarGroup
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
-  export struct_sym_to_user_sym, multipole!, index, integer
-end
+  export struct_sym_to_user_sym, multipole!, index, integer, quat_angles
+
+end # module

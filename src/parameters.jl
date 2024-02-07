@@ -105,7 +105,7 @@ ele_param_info_dict = Dict(
   :pc_exit            => ParamInfo(PatchGroup,     Number,         "Reference momentum at exit end.", "eV"),
   :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
   :user_sets_length   => ParamInfo(PatchGroup,     Bool,           "Does Bmad calculate the patch length?"),
-  :ref_coords         => ParamInfo(PatchGroup,     EleBodyEndSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
+  :ref_coords         => ParamInfo(PatchGroup,     BodyLocationSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
 
   :voltage            => ParamInfo(RFFieldGroup,   Number,        "RF voltage.", "volt"),
   :gradient           => ParamInfo(RFFieldGroup,   Number,        "RF gradient.", "volt/m"),
@@ -142,7 +142,7 @@ ele_param_info_dict = Dict(
   :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
   :aperture_type      => ParamInfo(ApertureGroup,  ApertureTypeSwitch,    "Type of aperture. Default is Elliptical."),
-  :aperture_at        => ParamInfo(ApertureGroup,  EleBodyLocationSwitch, "Where the aperture is. Default is EntranceEnd."),
+  :aperture_at        => ParamInfo(ApertureGroup,  BodyLocationSwitch, "Where the aperture is. Default is EntranceEnd."),
   :offset_moves_aperture 
                       => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
   :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of horizontal aperture limits.", "m"),
@@ -155,7 +155,7 @@ ele_param_info_dict = Dict(
   :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Floor psi angle orientation", "rad", :psi),
 
   :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
-  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     EleBodyRefSwitch,     "Reference location on reference element. Default is Center."),
+  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     StreamLocationSwitch,     "Reference location on reference element. Default is Center."),
   :dr_girder          => ParamInfo(GirderGroup,     Vector{Number},       "3-vector of girder position with respect to ref ele.", "m", :dr),
   :dtheta_girder      => ParamInfo(GirderGroup,     Number,               "Theta angle orientation with respect to ref ele.", "rad", :dtheta),
   :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),
@@ -668,7 +668,7 @@ branch_param = Dict(
   :ix_branch   => ParamInfo(Nothing, Int64,             "Index of branch in containing lat .branch[] array"),
   :geometry    => ParamInfo(Nothing, EleGeometrySwitch, "Open or closed Geometry"),
   :lat         => ParamInfo(Nothing, Pointer,           "Pointer to lattice containing the branch."),
-  :type        => ParamInfo(Nothing, Switch,            "Either LordBranch or TrackingBranch BranchType enums."),
+  :type        => ParamInfo(Nothing, BranchType,        "Either LordBranch or TrackingBranch BranchType enums."),
   :from_ele    => ParamInfo(Nothing, Pointer,           "Element that forks to this branch."),
   :live_branch => ParamInfo(Nothing, Bool,              "Used by programs to turn on/off tracking in a branch."),
   :ref_species => ParamInfo(Species, String,            "Reference tracking species."),
