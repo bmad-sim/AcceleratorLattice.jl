@@ -34,7 +34,7 @@ module AcceleratorLattice
   # Note: Switches and element types are exported automatically when constructed
 
   export QuatRotation, QuatN, Quat64
-  export memloc, beamline, @ele, @construct_ele_type, expand, ele_name, show_name, show_ele
+  export memloc, beamline, @ele, @eles, @construct_ele_type, expand, ele_name, show_name, show_ele
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!, set_param!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, ele_types_set, propagate_ele_geometry, ele_floor_transform
