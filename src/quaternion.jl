@@ -109,17 +109,17 @@ function RotMat(q::Quaternion)
 
   tmp1 = q.vec[1] * q.vec[2]
   tmp2 = q.vec[3] * q.q0
-  rmat[2,1] = 2.0_rp * (tmp1 + tmp2) * invs
-  rmat[1,2] = 2.0_rp * (tmp1 - tmp2) * invs
+  rmat[2,1] = 2 * (tmp1 + tmp2) * invs
+  rmat[1,2] = 2 * (tmp1 - tmp2) * invs
 
   tmp1 = q.vec[1] * q.vec[3]
   tmp2 = q.vec[2] * q.q0
-  rmat[3,1] = 2.0_rp * (tmp1 - tmp2) * invs
-  rmat[1,3] = 2.0_rp * (tmp1 + tmp2) * invs
+  rmat[3,1] = 2 * (tmp1 - tmp2) * invs
+  rmat[1,3] = 2 * (tmp1 + tmp2) * invs
   tmp1 = q.vec[2] * q.vec[3]
   tmp2 = q.vec[1] * q.q0
-  rmat[3,2] = 2.0_rp * (tmp1 + tmp2) * invs
-  rmat[2,3] = 2.0_rp * (tmp1 - tmp2) * invs
+  rmat[3,2] = 2 * (tmp1 + tmp2) * invs
+  rmat[2,3] = 2 * (tmp1 - tmp2) * invs
 end
 
 #---------------------------------------------------------------------------------------------------

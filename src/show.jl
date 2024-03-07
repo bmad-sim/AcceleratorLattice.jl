@@ -459,8 +459,10 @@ function Base.show(io::IO, branches::Vector{Branch})
   n = maximum([length(b.name) for b in branches]) + 4
   for branch in branches
     g_str = ""
-    if haskey(branch.pdict, :geometry); g_str = f", geometry => {branch.pdict[:geometry]}"; end
-    println(io, f"{branch[:ix_branch]}: {rpad(str_quote(branch.name), n)} #Elements{lpad(length(branch.ele), 5)}{g_str}")
+    if haskey(branch.pdict, :geometry)
+      g_str = f", length = {branch.ele[end].s_downstream:16.9f}, geometry => {branch.pdict[:geometry]}"
+    end
+    println(io, f"Branch {branch.ix_branch}: {rpad(str_quote(branch.name), n)} {lpad(length(branch.ele), 5)} Ele{g_str}")
   end
 end
 
