@@ -55,10 +55,10 @@ end
 ele_types_set = Set()  # Global list of element types.
 
 #---------------------------------------------------------------------------------------------------
-# @ele macro
+# @ele/@eles macros
 
 """
-    macro construct_ele_type(type_name)
+    macro ele(expr)
 
 Element constructor Example:
     @ele q1 = Quadrupole(L = 0.2, Ks1 = 0.67, ...)
@@ -76,6 +76,32 @@ macro ele(expr)
   ### end
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
   return esc(expr)   # This will call the constructor below
+end
+
+"""
+    macro eles(block)
+
+Constructs elements for all elements on each line in a block. Equivalent to applying the 
+@ele macro to each line.
+
+### Example:
+```
+@eles begin
+q1 = Quadrupole(L = 0.2, Ks1 = 0.67)
+q2 = Quadrupole(L = 0.6, Kn1 = -0.3)
+
+d = Drift(L = 0.2)
+end
+```
+"""
+macro eles(block)
+  block.head == :block || error("@eles must be followed by a block!")
+  eles = filter(x -> !(x isa LineNumberNode), block.args)
+  for ele in eles
+    name = ele.args[1]
+    insert!(ele.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
+  end
+  return esc(block)
 end
 
 # Functions called by `ele` macro.
