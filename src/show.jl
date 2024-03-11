@@ -1,4 +1,25 @@
 #---------------------------------------------------------------------------------------------------
+# show_column2
+
+"""
+    show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}
+
+Dict used by the `show(::ele)` command which contains the information as to what to put in the
+second column when displaying the elements of an element parameter group using the two column format.
+
+Example `show_column2` key/value pair:
+```julia
+  FloorPositionGroup => Dict{Symbol,Symbol}(
+    :r                => :q,
+    :phi              => :psi,
+  )
+```
+In this example, when printing the `FloorPositionGroup`, in the line showing the `.r` component,
+the `.r` component will be in the first column and the `.q` component will be in the
+second column.
+
+When defining custom parameter groups, key/value pairs can be added to `show_column2` as needed.
+""" show_column2
 
 show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
   LengthGroup => Dict{Symbol,Symbol}(
