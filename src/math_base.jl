@@ -1,26 +1,4 @@
 #---------------------------------------------------------------------------------------------------
-# vector
-
-"""
-Return a vector version of `this`.
-That is: 
-  returns `this` if `this` is a vector.
-  returns the vector version of `this` if `this` is a `Tuple`. 
-  returns `[this]` if `this` is a scaler.
-""" vector
-
-function vector(this)
-  if this isa Vector; return this; end
-  if this isa Tuple; return [this...]; end
-  return [this]
-end
-
-#---------------------------------------------------------------------------------------------------
-# magnitude of vector
-
-mag(v::Vector{T}) where T <: Number = sqrt(sum(v .* v))
-
-#---------------------------------------------------------------------------------------------------
 # Misc
 
 "NaI stands for NotAnInteger. Technically equal to -1234567890123456789."
