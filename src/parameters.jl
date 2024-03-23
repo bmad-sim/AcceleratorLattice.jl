@@ -45,49 +45,49 @@ EG: theta_floor user name corresponds to theta in the FloorPositionGroup.
 ele_param_info_dict = Dict(
   :name               => ParamInfo(Nothing,        String,      "Name of the element."),
   :ix_ele             => ParamInfo(Nothing,        Int64,       "Index of element in containing branch.ele[] array."),
-  :orientation        => ParamInfo(Nothing,        Int64,       "Longitudinal orientation of element. May be +1 or -1."),
   :branch             => ParamInfo(Nothing,        Branch,      "Pointer to branch element is in."),
   :multipass_lord     => ParamInfo(Nothing,        Ele,         "Element's multipass_lord. Will not be present if no lord exists."),
-  :super_lord         => ParamInfo(Nothing,        Vector{Ele}, "Array of element's super_lords. Will not be present if no lords exist."),
-  :slave              => ParamInfo(Nothing,        Vector{Ele}, "Array of slaves of element. Will not be present if no slaves exist."),
+  :super_lords        => ParamInfo(Nothing,        Vector{Ele}, "Array of element's super_lords. Will not be present if no lords exist."),
+  :slaves             => ParamInfo(Nothing,        Vector{Ele}, "Array of slaves of element. Will not be present if no slaves exist."),
 
-  :type               => ParamInfo(StringGroup,    String,    "Type of element. Set by User and ignored the code."),
-  :alias              => ParamInfo(StringGroup,    String,    "Alias name. Set by User and ignored by the code."),
-  :description        => ParamInfo(StringGroup,    String,    "Descriptive info. Set by User and ignored by the code."),
+  :type               => ParamInfo(StringGroup,    String,      "Type of element. Set by User and ignored the code."),
+  :alias              => ParamInfo(StringGroup,    String,      "Alias name. Set by User and ignored by the code."),
+  :description        => ParamInfo(StringGroup,    String,      "Descriptive info. Set by User and ignored by the code."),
 
-  :L                  => ParamInfo(LengthGroup,    Number,    "Element length.", "m"),
-  :s                  => ParamInfo(LengthGroup,    Number,    "Longitudinal s-position.", "m"),
-  :s_downstream       => ParamInfo(LengthGroup,    Number,    "Longitudinal s-position at downstream end.", "m"),
+  :L                  => ParamInfo(LengthGroup,    Number,      "Element length.", "m"),
+  :orientation        => ParamInfo(LengthGroup,    Int64,       "Longitudinal orientation of element. May be +1 or -1."),
+  :s                  => ParamInfo(LengthGroup,    Number,      "Longitudinal s-position.", "m"),
+  :s_downstream       => ParamInfo(LengthGroup,    Number,      "Longitudinal s-position at downstream end.", "m"),
 
   :field_master       => ParamInfo(MasterGroup,    Bool,      
                                   "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
 
-  :species_ref        => ParamInfo(ReferenceGroup, Species,   "Reference species."),
-  :species_ref_exit   => ParamInfo(ReferenceGroup, Species,   "Reference species at exit end."),
-  :pc_ref             => ParamInfo(ReferenceGroup, Number,    "Reference momentum * c.", "eV"),
-  :E_tot_ref          => ParamInfo(ReferenceGroup, Number,    "Reference total energy.", "eV"),
-  :time_ref           => ParamInfo(ReferenceGroup, Number,    "Reference time.", "sec"),
-  :pc_ref_exit        => ParamInfo(ReferenceGroup, Number,    "Reference momentum * c at exit end.", "eV"),
-  :E_tot_ref_exit     => ParamInfo(ReferenceGroup, Number,    "Reference total energy at exit end.", "eV"),
-  :time_ref_exit      => ParamInfo(ReferenceGroup, Number,    "Reference time at exit end.", "sec"),
+  :species_ref        => ParamInfo(ReferenceGroup, Species,     "Reference species."),
+  :species_ref_exit   => ParamInfo(ReferenceGroup, Species,     "Reference species at exit end."),
+  :pc_ref             => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c.", "eV"),
+  :E_tot_ref          => ParamInfo(ReferenceGroup, Number,      "Reference total energy.", "eV"),
+  :time_ref           => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
+  :pc_ref_exit        => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c at exit end.", "eV"),
+  :E_tot_ref_exit     => ParamInfo(ReferenceGroup, Number,      "Reference total energy at exit end.", "eV"),
+  :time_ref_exit      => ParamInfo(ReferenceGroup, Number,      "Reference time at exit end.", "sec"),
 
-  :angle              => ParamInfo(BendGroup,      Number,    "Design bend angle", "rad"),
-  :bend_field         => ParamInfo(BendGroup,      Number,    "Design bend field corresponding to g bending", "T"),
-  :rho                => ParamInfo(BendGroup,      Number,    "Design bend radius", "m"),
-  :g                  => ParamInfo(BendGroup,      Number,    "Design bend strength (1/rho)", "1/m"),
-  :e1                 => ParamInfo(BendGroup,      Number,    "Bend entrance face angle.", "rad"),
-  :e2                 => ParamInfo(BendGroup,      Number,    "Bend exit face angle.", "rad"),
-  :e1_rect            => ParamInfo(BendGroup,      Number,    "bend entrance face angles relative to a rectangular geometry.", "rad"),
-  :e2_rect            => ParamInfo(BendGroup,      Number,    "bend exit face angles relative to a rectangular geometry.", "rad"),
-  :L_chord            => ParamInfo(BendGroup,      Number,    "Bend chord length.", "m"),
-  :L_sagitta          => ParamInfo(BendGroup,      Number,    "Bend sagitta length.", "m"),
-  :ref_tilt           => ParamInfo(BendGroup,      Number,    "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :fint               => ParamInfo(BendGroup,      Number,    "Used to set fint1 and fint2 both at once.", ""),
-  :fint1              => ParamInfo(BendGroup,      Number,    "Bend entrance edge field integral.", ""),
-  :fint2              => ParamInfo(BendGroup,      Number,    "Bend exit edge field integral.", ""),
-  :hgap               => ParamInfo(BendGroup,      Number,    "Used to set hgap1 and hgap2 both at once.", ""),
-  :hgap1              => ParamInfo(BendGroup,      Number,    "Bend entrance edge pole gap height.", "m"),
-  :hgap2              => ParamInfo(BendGroup,      Number,    "Bend exit edge pole gap height.", "m"),
+  :angle              => ParamInfo(BendGroup,      Number,      "Design bend angle", "rad"),
+  :bend_field         => ParamInfo(BendGroup,      Number,      "Design bend field corresponding to g bending", "T"),
+  :rho                => ParamInfo(BendGroup,      Number,      "Design bend radius", "m"),
+  :g                  => ParamInfo(BendGroup,      Number,       "Design bend strength (1/rho)", "1/m"),
+  :e1                 => ParamInfo(BendGroup,      Number,      "Bend entrance face angle.", "rad"),
+  :e2                 => ParamInfo(BendGroup,      Number,      "Bend exit face angle.", "rad"),
+  :e1_rect            => ParamInfo(BendGroup,      Number,      "Bend entrance face angles relative to a rectangular geometry.", "rad"),
+  :e2_rect            => ParamInfo(BendGroup,      Number,      "Bend exit face angles relative to a rectangular geometry.", "rad"),
+  :L_chord            => ParamInfo(BendGroup,      Number,      "Bend chord length.", "m"),
+  :L_sagitta          => ParamInfo(BendGroup,      Number,      "Bend sagitta length.", "m"),
+  :ref_tilt           => ParamInfo(BendGroup,      Number,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
+  :fint               => ParamInfo(BendGroup,      Number,      "Used to set fint1 and fint2 both at once.", ""),
+  :fint1              => ParamInfo(BendGroup,      Number,      "Bend entrance edge field integral.", ""),
+  :fint2              => ParamInfo(BendGroup,      Number,      "Bend exit edge field integral.", ""),
+  :hgap               => ParamInfo(BendGroup,      Number,      "Used to set hgap1 and hgap2 both at once.", ""),
+  :hgap1              => ParamInfo(BendGroup,      Number,      "Bend entrance edge pole gap height.", "m"),
+  :hgap2              => ParamInfo(BendGroup,      Number,      "Bend exit edge pole gap height.", "m"),
   :bend_type          => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
 
   :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "3-Vector of [x, y, z] element offsets.", "m"),
@@ -166,6 +166,9 @@ ele_param_info_dict = Dict(
 
   :slave              => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
   :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
+
+  :slave_status       => ParamInfo(LordSlaveGroup,  SlaveStatusSwitch,     "Slave status."),
+  :lord_status        => ParamInfo(LordSlaveGroup,  LordStatusSwitch,      "Lord status."),
 )
 
 for (key, info) in ele_param_info_dict
@@ -503,7 +506,7 @@ Order is important. Bookkeeping routines rely on:
  - `RFGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
 """ ele_param_groups
 
-base_group_list = [LengthGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
+base_group_list = [LengthGroup, LordSlaveGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 general_group_list = vcat(base_group_list, alignment_group_list, multipole_group_list)
@@ -521,6 +524,7 @@ ele_param_groups = Dict(
     Quadrupole     => general_group_list,
     RFCavity       => vcat(general_group_list, RFMasterGroup, RFFieldGroup, RFGroup),
     Sextupole      => general_group_list,
+    UnionEle       => vcat(base_group_list, alignment_group_list),
   )
 )
 

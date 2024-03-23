@@ -31,19 +31,25 @@ All concreate lattice element types have a single field:
  
 abstract type Ele <: BeamLineItem end
 
+#---------------------------------------------------------------------------------------------------
+# Eles
+
 "Single element or vector of elemements."
 Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
+
+Base.collect(x::T) where T <: Ele = [x]
 
 #---------------------------------------------------------------------------------------------------
 # construct_ele_type
 
 """
-    macro construct_ele_type(type_name)
+    macro construct_ele_type(type_name) -> nothing
 
 Constructor for element types. Example:
     @construct_ele_type Drift
 Result: Drift struct is defined.
 """ construct_ele_type
+
 macro construct_ele_type(type_name)
   eval( Meta.parse("mutable struct $type_name <: Ele; pdict::Dict{Symbol,Any}; end") )
   str_type = String("$type_name")
@@ -169,6 +175,7 @@ end
 @construct_ele_type Taylor
 @construct_ele_type ThickMultipole
 @construct_ele_type Undulator
+@construct_ele_type UnionEle
 @construct_ele_type Wiggler
 
 """
@@ -221,6 +228,7 @@ Element length and s-positions.
   L = 0.0::Number
   s = 0.0::Number
   s_downstream::Number = 0.0
+  orientation::Int64 = 1
 end
 
 """
@@ -235,6 +243,11 @@ and K-multipols and bend `g` will be varied. Vice versa when `field_master = fal
 
 @kwdef mutable struct MasterGroup <: EleParameterGroup
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
+end
+
+@kwdef mutable struct LordSlaveGroup <: EleParameterGroup
+  lord_status::LordStatusSwitch = NotALord
+  slave_status::SlaveStatusSwitch = NotASlave
 end
 
 """
@@ -631,7 +644,7 @@ end
 # BeamLine
 # Rule: pdict Dict of BeamLineEle and BeamLine always define :orientation and :multipass keys.
 # Rule: All instances a given Ele in beamlines are identical so that the User can easily 
-# make a Change to all. At lattice expansion, deepcopyies of Eles will be done.
+# make a Change to all. When the lattice is expanded, deepcopyies of Eles will be done.
 
 # Why wrap a Ele within a BeamLineEle? This allows multiple instances in a beamline of the same 
 # identical Ele with some having orientation reversed or within multipass regions and some not.

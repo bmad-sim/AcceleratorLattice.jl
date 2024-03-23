@@ -37,6 +37,8 @@ The reason for doing a shallow copy, instead of a deep copy, is to save on memor
 * "Lattice" bookkeeping triggered by user (or optimizer).
 * Drifts are temporarily put in branch.ele_saved for superposition.
 
+* MultipassLord elements do not have orientation, s, nor s_downstream parameters but does have a LengthGroup
+
 * Lattice bookkeeping can be bypassed by setting the element group parameter directly.
 
 * Old Bmad roll is "tilt" in new bmad.
@@ -83,6 +85,8 @@ To remove use kill_external_ele.
 Getting the offset right can be tricky!
 
 * Superposition of a zero length element with zero offset from the ref element will happen at the upstream end of the ref element (except for the beginning element).
+
+* Superposition and Containers. Containers can be oriented (just like other elements) and contained lords can be oriented with respect to the containers. Bend elements are not allowed.
 
 * lat.super_lord, lat.multipass_lord, lat.governor pointers.
 

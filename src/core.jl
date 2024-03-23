@@ -22,6 +22,8 @@ end
 @enumit("ControlSlaveTypeSwitch Delta Absolute null")
 @enumit("FieldCalcMethodSwitch FieldMap FieldStandard")
 @enumit("InterpolationSwitch Linear Spline")
+@enumit("LordStatusSwitch NotALord SuperLord MultipassLord Governor") 
+@enumit("SlaveStatusSwitch NotASlave SuperSlave MultipassSlave")
 @enumit("StreamLocationSwitch UpstreamEnd Center Inside DownstreamEnd")
 @enumit("TrackingMethodSwitch RungeKutta TimeRungeKutta TrackingStandard")
 @enumit("TrackingStateSwitch PreBorn Alive PreTrack Lost LostNegX LostPosX LostNegY LostPosY LostPz LostZ")

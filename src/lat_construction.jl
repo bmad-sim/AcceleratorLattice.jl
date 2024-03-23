@@ -141,12 +141,12 @@ function add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle,
   ele.pdict[:ix_ele] = length(branch.ele)
   ele.pdict[:branch] = branch
   if info isa LatConstructionInfo
-    ele.pdict[:orientation] = bele.pdict[:orientation] * info.orientation_here
+    ele.pdict[:LengthGroup].orientation = bele.pdict[:orientation] * info.orientation_here
     ele.pdict[:multipass_id] = copy(info.multipass_id)
     if length(ele.pdict[:multipass_id]) > 0; push!(ele.pdict[:multipass_id], 
                                               ele.name * ":" * string(bele.pdict[:ix_beamline])); end
   else
-    ele.pdict[:orientation] = +1
+    ele.pdict[:LengthGroup].orientation = +1
     ele.pdict[:multipass_id] = []
   end
   return nothing
@@ -249,8 +249,8 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   end
 
   # Beginning and end elements inherit orientation from neighbor elements.
-  branch.ele[1].pdict[:orientation] = branch.ele[2].pdict[:orientation]
-  branch.ele[end].pdict[:orientation] = branch.ele[end-1].pdict[:orientation]
+  branch.ele[1].pdict[:LengthGroup].orientation = branch.ele[2].pdict[:LengthGroup].orientation
+  branch.ele[end].pdict[:LengthGroup].orientation = branch.ele[end-1].pdict[:LengthGroup].orientation
   return nothing
 end
 

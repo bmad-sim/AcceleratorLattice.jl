@@ -22,7 +22,12 @@ When defining custom parameter groups, key/value pairs can be added to `show_col
 """ show_column2
 
 show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
+  LordSlaveGroup => Dict{Symbol,Symbol}(
+    :lord_status      => :slave_status,
+  ),
+
   LengthGroup => Dict{Symbol,Symbol}(
+    :L                => :orientation,
     :s                => :s_downstream,
   ),
 
@@ -456,14 +461,17 @@ function Base.show(io::IO, branch::Branch)
     n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
     for ele in branch.ele
       end_str = ""
-      if haskey(ele.pdict, :orientation)
+      if branch.type == MultipassLordBranch
+        end_str = f"{ele.L:12.6f}"
+        if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_str(ele.pdict, :slaves, default = \"\")}"; end
+      elseif haskey(ele.pdict, :LengthGroup)
         s_str = ele_param_str(ele, :s, default = "    "*"-"^7, format = "11.6f")
         s_down_str = ele_param_str(ele, :s_downstream, default = "    "*"-"^7, format = "11.6f")
-        end_str = f"{ele.L:14.6f}{s_str} -> {s_down_str}"
+        end_str = f"{ele.L:12.6f}{s_str} -> {s_down_str}"
         if haskey(ele.pdict, :multipass_lord); end_str = end_str * f"  {ele_param_str(ele.pdict, :multipass_lord, default = \"\")}"; end
-        if haskey(ele.pdict, :super_lord);  end_str = end_str * f"  {ele_param_str(ele.pdict, :super_lord, default = \"\")}"; end
-        if haskey(ele.pdict, :slave); end_str = end_str * f"  {ele_param_str(ele.pdict, :slave, default = \"\")}"; end
-        if ele.pdict[:orientation] == -1; end_str = end_str * "  orientation = -1"; end
+        if haskey(ele.pdict, :super_lords);  end_str = end_str * f"  {ele_param_str(ele.pdict, :super_lords, default = \"\")}"; end
+        if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_str(ele.pdict, :slaves, default = \"\")}"; end
+        if ele.orientation == -1; end_str = end_str * "  orientation = -1"; end
       end
       println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" * end_str)                    
     end

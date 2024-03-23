@@ -4,16 +4,16 @@
 """
     machine_location(loc::BodyLocationSwitch, orientation::Int)
 
-Given a location with respect to an element's `local` orientation,
-along with the element's orientation with respect to machine coordinates, 
+Given a location with respect to an element's `local` orientation and the element's `orientation`,
 return the equivalent location in machine coordinates.
 
 The reverse function is body_location.
 
 ### Input
 
- - `loc`          Possible values: `EntranceEnd`, `Center`, `ExitEnd`
- - `orientation`  Possible values: -1 or +1.
+ - `loc`          Location with respect to an element's `local` orientation.
+                     Possible values: `EntranceEnd`, `BCenter`, or `ExitEnd`
+ - `orientation`  Element orientation. Possible values: -1 or +1.
 
 ### Output
 
@@ -21,14 +21,14 @@ The reverse function is body_location.
 """ machine_location
 
 function machine_location(loc::BodyLocationSwitch, orientation::Int)
-  if loc == Center; return Center; end
+  if loc == BCenter; return Center; end
 
   if loc == EntranceEnd
     orientation == 1 ? (return UpstreamEnd) : return DownstreamEnd
   elseif loc == ExitEnd
     orientation == 1 ? (return DownstreamEnd) : return UpstreamEnd
   else
-    error(f"ConfusedError: Should not be here! Please report this!")
+    error(f"loc argument values limited to `EntranceEnd`, `BCenter`,  or `ExitEnd`. Not: {loc}")
   end
 end
 
