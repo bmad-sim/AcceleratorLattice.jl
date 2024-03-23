@@ -79,9 +79,9 @@ function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation 
 
   if adjust_orientation && branch.type == TrackingBranch && length(branch.ele) > 1
     if ix_ele == 1
-      ele.pdict[:orientation] = branch.ele[2].orientation
+      ele.pdict[:LengthGroup].orientation = branch.ele[2].orientation
     else
-      ele.pdict[:orientation] = branch.ele[ele.ix_ele-1].orientation
+      ele.pdict[:LengthGroup].orientation = branch.ele[ele.ix_ele-1].orientation
     end
   end
 
@@ -182,7 +182,7 @@ function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near
   end
 
   # Split case 2: Element to be split is a super_slave. In this case no new lord is generated.
-  if haskey(ele0.pdict, :super_lord)
+  if haskey(ele0.pdict, :super_lords)
     slave2 = copy(ele0)
     insert!(branch.ele, ele0.ix_ele+1, slave2)  # Just after ele0
     ele0.L = s_split - ele0.s
@@ -190,16 +190,16 @@ function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near
 
     # Now update the slave lists for the super lords to include the new slave.
     # Notice that the lord list of the slaves does not have to be modified.
-    for lord in ele0.super_lord
-      for (ix, slave) in enumerate(lord.slave)
+    for lord in ele0.super_lords
+      for (ix, slave) in enumerate(lord.slaves)
         if !(slave === ele0) continue; end
-        insert!(lord.slave, ix+1, slave2)
+        insert!(lord.slaves, ix+1, slave2)
         break
       end
     end
     index_and_s_bookkeeper!(branch)
-    for lord in ele0.super_lord
-      set_super_slave_name!(lord)
+    for lord in ele0.super_lords
+      set_super_slave_names!(lord)
     end
     return (slave2, true)
   end
@@ -212,7 +212,8 @@ function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near
 
   slave = copy(ele0)
   pop!(slave.pdict, :multipass_lord, nothing)
-  slave.pdict[:super_lord] = Vector{Ele}([lord])
+  slave.pdict[:super_lords] = Vector{Ele}([lord])
+  slave.slave_status = SuperSlave
 
   branch.ele[slave.ix_ele] = slave
   slave2 = copy(slave)
@@ -222,11 +223,12 @@ function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near
 
   sbranch = branch.lat.branch[:SuperLord]
   push!(sbranch.ele, lord)
-  lord.pdict[:slave] = Vector{Ele}([slave, slave2])
+  lord.pdict[:slaves] = Vector{Ele}([slave, slave2])
+  lord.lord_status = SuperLord
 
   index_and_s_bookkeeper!(branch)
   index_and_s_bookkeeper!(sbranch)
-  set_super_slave_name!(lord)
+  set_super_slave_names!(lord)
 
   return slave2, true
 end
@@ -236,27 +238,39 @@ function split!(branch::Branch, s_split::Real; choose_downstream::Bool = true, e
 end
 
 #---------------------------------------------------------------------------------------------------
-# set_super_slave_name!
+# set_super_slave_names!
 
 """
-    Internal: set_super_slave_name!(ele::Ele)
+    Internal: set_super_slave_names!(lord::Ele) -> nothing
 
-`ele` can be either a super_slave or a super_lord (in which case all the super_slaves of the lord
-have their name set.
+`lord` is a super_lord and all of the slaves of this lord will have their name set.
 """
 
-function set_super_slave_name!(ele::Ele)
-  if ele.branch.type <: LordBranch
-    for slave in ele.slave
-      set_super_slave_name!(slave)
+function set_super_slave_names!(lord::Ele)
+  if lord.lord_status != SuperLord; error(f"Argument is not a SuperLord: {ele_name(lord)}"); end
+
+  name_dict = Dict{String,Int}()
+  for slave in lord.slaves
+    if length(slave.super_lords) == 1
+      slave.name = lord.name
+    else
+      slave.name = ""
+      for this_lord in slave.super_lords
+        slave.name = slave.name * "!" * this_lord.name
+      end
+      slave.name = slave.name[2:end]
     end
-    return
+
+    name_dict[slave.name] = get(name_dict, slave.name, 0) + 1
   end
 
-  name = ""
-  for lord in ele.super_lord
-    ix = findfirst(item -> item === ele, lord.slave)
-    name = name * "!!" * lord.name * "!s" * string(ix)
+  index_dict = Dict{String,Int}()
+  for slave in lord.slaves
+    if name_dict[slave.name] == 1
+      slave.name = slave.name * "!s"
+    else
+      index_dict[slave.name] = get(index_dict, slave.name, 0) + 1
+      slave.name = slave.name * "!s" * string(index_dict[slave.name])
+    end
   end
-  ele.name = name[3:end]
 end

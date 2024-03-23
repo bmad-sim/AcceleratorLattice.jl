@@ -19,7 +19,7 @@ function lat_sanity_check(lat::Lat)
       if branch !== ele.branch; error(f"SanityCheck: Ele {ele_name(ele)} has ele.branch not pointing to parient branch."); end
 
       if branch.type == TrackingBranch
-        if !haskey(ele.pdict, :orientation) error(f"SanityCheck: Ele {ele_name(ele)} does not have orientation attribute."); end
+        if !haskey(ele.pdict, :LengthGroup) error(f"Sanity check: Ele {ele_name(ele)} does not have a LengthGroup group."); end
       end
     end
   end

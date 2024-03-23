@@ -128,11 +128,11 @@ function init_multipass_bookkeeper!(lat::Lat)
     delete!(lord.pdict, :multipass_id)
     lord.pdict[:branch] = multipass_branch
     lord.pdict[:ix_ele] = length(multipass_branch.ele)
-    lord.pdict[:slave] = Vector{Ele}()
+    lord.pdict[:slaves] = Vector{Ele}()
     for (ix, ele) in enumerate(val)
       ele.name = ele.name * "!mp" * string(ix)
       ele.pdict[:multipass_lord] = lord
-      push!(lord.pdict[:slave], ele)
+      push!(lord.pdict[:slaves], ele)
     end
   end
 end

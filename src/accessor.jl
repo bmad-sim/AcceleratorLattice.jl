@@ -124,8 +124,16 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
   if haskey(pdict, sym); pdict[sym] = value; return pdict[sym]; end
   pinfo = ele_param_info(sym, ele)
   if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
-  getfield(ele, :pdict)[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(pinfo.parent_group)], pinfo)
-  set_elegroup_param!(ele, pdict[Symbol(pinfo.parent_group)], pinfo, value)
+
+  parent = pinfo.parent_group
+  # All parameters that do not have a parent ( EG: super_lord) are not "normal" and setting 
+  # them does not have to be recorded in pdict[:changed]. 
+  if parent == Nothing
+    pdict[sym] = value
+  else
+    pdict[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(parent)], pinfo)
+    set_elegroup_param!(ele, pdict[Symbol(parent)], pinfo, value)
+  end
 end
 
 #---------------------------------------------------------------------------------------------------

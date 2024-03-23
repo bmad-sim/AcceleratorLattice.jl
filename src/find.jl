@@ -1,35 +1,4 @@
 #---------------------------------------------------------------------------------------------------
-# next_ele
-
-"""
-    next_ele(ele::Ele, offset::Int, wrap::Bool = true)
-
-Returns the lattice element whose index relative to the index of the input `ele` is `index_offset`.
-Will wrap around the ends of the branch if necessary and wrap = true.
-
-### Input
-
-
-### Output
-  `Ele` in given `branch` and given element i
-""" next_ele
-
-function next_ele(ele::Ele, i_offset::Int, wrap::Bool = true)
-  return ele_at_index(ele.pdict[:branch], i_offset + ele.pdict[:ix_ele], wrap = wrap)
-end
-
-#---------------------------------------------------------------------------------------------------
-# next_ele
-
-function next_ele(ele::Ele, offset::Integer)
-  branch = ele.pdict[:branch]
-  ix_ele = mod(ele.ix_ele + offset-1, length(branch.ele)-1) + 1
-  return branch.ele[ix_ele]
-end
-
-next_ele(ele::Ele) = next_ele(ele, 1)
-
-#---------------------------------------------------------------------------------------------------
 # ele_at_index
 
 function ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true)
@@ -260,10 +229,11 @@ end
 # ele_at_s
 
 """
-    ele_at_s(branch::Branch, s::Real, choose_downstream::Bool; ele_near::ELE = NULL_ELE)
+    ele_at_s(branch::Branch, s::Real, choose_downstream::Bool; ele_near::ELE = NULL_ELE) -> ele::Ele
 
 Returns lattice element that overlaps a given longitudinal s-position. That is, `s` will be in the
-interval `[ele.s, ele.s_downstream]` where `ele` is the returned element.
+half-open interval `[ele.s, ele.s_downstream)` (or the point `ele.s` if `ele` has zero length) where 
+`ele` is the returned element.
 
 ## Input
 
@@ -306,7 +276,7 @@ function ele_at_s(branch::Branch, s::Real, choose_downstream::Bool; ele_near::El
   # If ele_near is used
   ele = ele_near
   if ele.branch.type <: LordBranch
-    choose_downstream ? ele = ele.slave[end] : ele = ele.slave[1]
+    choose_downstream ? ele = ele.slaves[end] : ele = ele.slaves[1]
   end
 
 
