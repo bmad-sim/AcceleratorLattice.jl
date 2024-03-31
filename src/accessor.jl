@@ -191,10 +191,12 @@ function get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo
   return getfield(group, pinfo.struct_sym)
 end
 
+#-
+
 function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
-  (mtype, order) = multipole_type(pinfo.user_sym)
+  (mtype, order, mgroup) = multipole_type(pinfo.user_sym)
   mul = multipole!(group, order)
-  if isnothing(mul); return 0.0::Float64; end
+  if isnothing(mgroup) || group != mgroup; return 0.0::Float64; end
 
   val =  getfield(mul, pinfo.struct_sym)
   if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
@@ -223,7 +225,7 @@ function set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInf
 end
 
 function set_elegroup_param!(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo, value)
-  (mtype, order) = multipole_type(pinfo.user_sym)
+  (mtype, order, mgroup) = multipole_type(pinfo.user_sym)
   mul = multipole!(group, order, insert = true)
 
   if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'

@@ -1,7 +1,19 @@
-\chapter{Overview and Introduction}
+\chapter{Introduction, Overview, and Concepts}
+
+This chapter is an overview of, and an introduction to, the \accellat package which is part of the
+greater \bmadjl ecosystem of toolkits  and programs for accelerator simulations. With \accellat,
+lattices, which can be used to describe such
+things as LINACs, storage rings, X-ray beam lines,
+can be constructed and manipulated. Tracking and lattice analysis (for example, calculating
+closed orbits and Twiss functions) is left to other packages in the \bmadjl ecosystem.
+
+The \julia language itself is used as the basis for constructing lattices. Other simulation programs
+have similarly utilized the underlying programming language for constructing lattices\cite{merlin++,xsuite},
+but this is in marked contrast to such programs as MAD\cite{mad}, Elegant\cite{elegant}, and
+\bmad\cite{sagan:bmad2006}. 
 
 %---------------------------------------------------------------------------------------------------
-\section{acknowledgements}
+\section{Acknowledgements}
 
 It is my pleasure to express appreciation to people who have contributed to this effort, and without
 whom, \bmadjl would only be a shadow of what it is today: 
@@ -17,105 +29,94 @@ Georg Hoffstaetter,
 Juan Pablo Gonzalez-Aguilera,
 Scott Berg,
 Dan Abell,
-Laurent Deniau,
+Laurent Deniau, and
 Hugo Slepicka
 
+%---------------------------------------------------------------------------
+\section{Lattice Elements}
+\label{s:element.def}
+
+The basic building block used to describe an accelerator is the lattice \vn{element}. An
+element can be a physical thing that particles travel ``through'' like a bending magnet, a
+quadrupole or a Bragg crystal, or something like a \vn{marker} element (\sref{s:mark}) that is used
+to mark a particular point in the machine.  Besides physical elements, there are \vn{controller}
+elements that can be used for parameter control of other elements.
+
+Lattice elements are structs that inherit from the abstract type \vn{Lat}.
+
+Chapter~\sref{c:elements} lists the complete set of different element types that \bmad knows about.
 
 
-%---------------------------------------------------------------------------------------------------
-\section{What is Bmad?}
 
-The original Bmad was developed as a subroutine
-library ("toolkit") for charged--particle and X-Ray simulations in accelerators and storage rings and 
-has served as the calculational engine
-for many accelerator simulation programs including the \tao program which is widely used in the
-accelerator community. \bmad has
-been developed at the Cornell Laboratory for Accelerator-based ScienceS and Education (CLASSE) and
-has been in use since 1996.
-Eventually in 2023, the organic growth of Bmad --- leading to the code not being as well structured
-as it should be --- pushed the decision that the code needed to be
-refactored. On top of this was the realization that, while the modern Fortran object-orientated
-language that \bmad was written in was a reasonable choice from a purely technical standpoint, 
-the Fortran community had atrophied to the point where Fortran compiler maintenance was severely 
-affected. The choice was made to use the \julia language for the rewrite.
+In a lattice \vn{branch} (\sref{s:branch.def}), The ordered array of elements are assigned an 
+\vn{ element index}
+starting from one. The first element is called \vn{beginning_ele} (\sref{s:begin.ele}).
+This element is always included in every \vn{branch} \sref{s:branch.def} and is used as a
+marker for the beginning of the \vn{branch}.  Additionally, every branch will have a final
+marker element (\sref{s:mark}) named \vn{end_ele}.
 
-The name ``\bmad" thus has several meanings. Originally, the term only referred to the \bmad
-toolkit. As time went on, and \bmad was used in more and more programs, the term \bmad was
-applied to mean the whole ecosystem of toolkit plus programs. Finally, there is the refactored \julia
-\bmad. This \bmad is more akin to \bmad-the-ecosystem as
-opposed to \bmad-the-toolkit in that \bmad-the-Julia is used both for constructing lattices
-(like \bmad-the-toolkit) and for simulation work without an intermediate program interfacing in between.
+%---------------------------------------------------------------------------
+\section{Lattice Branches}
+\label{s:branch.def}
 
-%---------------------------------------------------------------------------------------------------
-\section{History}
+The next level up from an \vn{element} is the \vn{branch}. A 
+\vn{branch} contains an ordered sequence of lattice elements that a particle will travel through. A
+branch can represent a LINAC, X-Ray beam line, storage ring or anything else that can be represented
+as a simple ordered list of elements.
 
-\bmad (Otherwise known as ``Baby MAD" or ``Better MAD" or just plain ``Be MAD!") was originally created as
-a subroutine
-library for charged--particle and X-Ray simulations in accelerators and storage rings. \bmad has
-been developed at the Cornell Laboratory for Accelerator-based ScienceS and Education (CLASSE) and
-has been in use since 1996.
+Chapter~\sref{c:sequence} shows how a \vn{branch} can be defined using \vn{line}s.
 
-Prior to the development of \bmad, simulation programs at Cornell were written almost from scratch
-to perform calculations that were beyond the capability of existing, generally available software.
-This practice was inefficient, leading to much duplication of effort. Since the development of
-simulation programs was time consuming, needed calculations where not being done. As a response, the
-\bmad subroutine library, using an object oriented approach and written in modern object-oriented
-Fortran, were developed. The aim of the \bmad project was to:
-\begin{Itemize}
-\item Cut down on the time needed to develop programs.
-\item Cut down on programming errors.
-\item Provide a simple mechanism for lattice function calculations
-from within control system programs.
-\item Provide a flexible and powerful lattice input format.
-\item Standardize sharing of lattice information between 
-programs.
-\end{Itemize}
+Branches can be interconnected using \vn{fork} elements (\sref{s:fork}). This
+is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
+X-ray beam line. A \vn{branch} from which other \vn{branches} fork but is not forked to by any
+other \vn{branch} is called a \vn{root} branch. A branch that is forked to by some other branch
+is called a \vn{downstream} branch.
 
-\bmad can be used to study both single and multi--particle beam dynamics as well as X-rays.  Over
-the years, \bmad modules have been developed for simulating a wide variety of phenomena including
-intra beam scattering (IBS), coherent synchrotron radiation (CSR), Wakefields, Touschek scattering,
-higher order mode (HOM) resonances, etc., etc.  \bmad has various tracking algorithms including
-Runge--Kutta and symplectic (Lie algebraic) integration. Wakefields, and radiation excitation and
-damping can be simulated. \bmad has routines for calculating transfer matrices, emittances, Twiss
-parameters, dispersion, coupling, etc. The elements that \bmad knows about include quadrupoles, RF
-cavities (both storage ring and LINAC accelerating types), solenoids, dipole bends, Bragg crystals
-etc.  In addition, elements can be defined to control the attributes of other elements. This can be
-used to simulate the ``girder'' which physically support components in the accelerator or to easily
-simulate the action of control room ``knobs'' that gang together, say, the current going through a
-set of quadrupoles.
+There are two types of \vn{branches}: \vn{LordBranches} and \vn{TrackingBranches}, Branches whose \vn{Branch.type} are set to \vn{LordBranch}
+hol
 
-%---------------------------------------------------------------------------------------------------
-\section{Why Julia?}
+%---------------------------------------------------------------------------
+\section{Lattice}
+\label{s:lattice.def}
 
-The choice of \julia as the basis for the new \bmad was not an easy one. Other possibilities included
-C++ \cite{}, Python \cite{}, a combination of Python and C/C++, etc. If the \bmad refactoring
-project had been started before 2023 the choice probably would have been Python/C/C++. But in
-2023 \julia development was mature enough, and the advantages of \julia over the alternatives was
-large enough, so that the decision was made to use \julia.
+A \vn{lattice} (\sref{s:lattice.def}), has an array of \vn{branches}. Each \vn{branch} in this array
+has a name an is assigned an index starting from one. 
+Additionally, each \vn{branch} is assigned a name which is the
+\vn{line} that defines the branch (\sref{s:use}).
 
-* Short history of \julia
+A \vn{lattice} contains an array of \vn{branches} that can be interconnected together to describe an entire machine
+complex. A \vn{lattice} can include such things as transfer lines, dump lines, x-ray beam lines,
+colliding beam storage rings, etc. All of which can be connected together to form a coherent whole. In
+addition, a lattice may contain \vn{controller elements} (Table~\ref{t:control.classes}) which can
+simulate such things as magnet power supplies and lattice element mechanical support structures.
 
-* \julia was constructed for simulations/large data handling.
+Branches can be interconnected using \vn{fork} and \vn{photon_fork} elements (\sref{s:fork}). This
+is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
+X-ray beam line. The \vn{branch} from which other \vn{branches} fork but is not forked to by any
+other \vn{branch} is called a \vn{root} branch.
 
-* Very active community (not Fortran)
+A lattice may contain multiple \vn{root} \vn{branches}. For example, a pair of intersecting storage
+rings will generally have two \vn{root} branches, one for each ring. The \vn{use} statement
+(\sref{s:use}) in a lattice file will list the \vn{root} \vn{branches} of a lattice. To connect
+together lattice elements that are physically shared between branches, for example, the interaction
+region in colliding beam machines, \vn{multipass} lines (\sref{s:multipass}) can be used.
 
-But what is the compelling reason for using \julia? First of all, \julia is a scripting language which
-means that it is 
-like Python. 
-
-%---------------------------------------------------------------------------------------------------
-\section{Manual Organization}
-
-As a consequence of \bmad being a software library, this manual serves two masters: The
-programmer who wants to develop applications and needs to know about the inner workings of
-\bmad, and the user who simply needs to know about the \bmad standard input format and
-about the physics behind the various calculations that \bmad performs.
-
-To this end, this manual is divided into XXX parts. 
-
-Errors and omissions are a fact of life for any
-reference work and comments from you, dear reader, are therefore most welcome. Please send
-any missives (or chocolates, or any other kind of sustenance) to:
+The root branches of a lattice are defined by the \vn{use} (\sref{s:use}) statement. To further
+define such things as dump lines, x-ray beam lines, transfer lines, etc., that branch off from a
+root branch, a forking element is used.  \vn{Fork} elements can define where the particle beam can
+branch off, say to a beam dump. \vn{photon_fork} elements can define the source point for X-ray
+beams.  Example:
 \begin{example}
-  David Sagan <dcs16@cornell.edu>
+  erl: line = (..., dump, ...)               ! Define the root branch 
+  use, erl
+  dump: fork, to_line = d_line               ! Define the fork point
+  d_line: line = (..., q3d, ...)             ! Define the branch line
 \end{example}
+
+Like the root branch \bmad always automatically creates an element with \vn{element index} 0 at the
+beginning of each branch called \vn{beginning}. The longitudinal \vn{s} position of an element in a
+branch is determined by the distance from the beginning of the branch.
+
+Branches are named after the line that defines the \vn{branch}. In the above example, the branch
+line would be named \vn{d_line}. The root branch, by default, is called after the name in the
+\vn{use} statement (\sref{s:use}).

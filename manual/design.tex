@@ -1,0 +1,57 @@
+\chapter{Design Decisions}
+\label{c:design}
+
+This chapter discusses some of the design decisions that were made in the planning of \accellat.
+Hopefully this information will be useful as \accellat is developed in the future.
+The design of \accellat is heavily influenced by the decades of experience constructing and maintaining
+\bmad --- both in terms of what works and what has not worked. 
+
+First a clarification. The name \bmad can be used in two senses. There is \bmad the software toolkit
+that can be used to create simulation programs. But \bmad can also be used to refer to the 
+ecosystem of toolkit and \bmad based programs that have been developed over the years --- the
+most heavily used program being Tao. In the discussion below, \bmad generally refers to the toolkit
+since it is the toolkit that defines the syntax for \bmad lattice files.
+
+\paragraph{Bmad history:}
+To understand \accellat it helps to understand some of the history of \bmad. The \bmad toolkit 
+started out as a modest project for calculating Twiss parameters and closed orbits within online control
+programs for the Cornell CESR storage ring. As such, the lattice structure was simply an array
+of elements. That is, multiple branches could not be instantiated. And tracking was very simple ---
+there was only one tracking method, symplecticity was ignored and ultra-relativistic and 
+paraxial approximations were used. 
+\bmad has come a long way from the early days but design decisions made early on still haunt the \bmad
+toolkit. 
+
+\paragraph{Separation of tracking and lattice description:} 
+One of the first \accellat design decisions was to separate, as much as
+possible, particle tracking and lattice description. 
+This decision was inspired by the PTC code of Etienne Forest.
+The fact that \bmad did not make this separation complicated \bmad's lattice element structure,
+the \vn{ele_struct}, 
+to the extent that the \vn{ele_struct} is the most complicated structure in all of \bmad. And
+having complicated structures is an impediment to code sustainability.
+The lack of a separation in \bmad also made bookkeeping more complicated in cases where, for example, 
+Twiss parameters were to be calculated under differing conditions (EG varing initial 
+particle positions) but the \vn{ele_struct} can only hold Twiss parameters for one specific
+condition.
+
+\paragraph{Lattice branches:}
+The organization of the lattice into branches with each branch having an array of elements has
+worked very well with \bmad and so is used with \accellat. The relatively minor difference is
+that with \accellat the organization of the branches is more logical with multiple lord branches
+with each lord branch containing only one type of lord.
+
+\paragraph{Type stability:}
+Type stability is {\em not} a major concern with \accellat. The reason being that compared to
+the time needed for tracking and track analysis, lattice instantiation
+and manipulation is only a minor player. And for tracking, an interface layer can be
+used to translate lattice parameters to a type stable form. Of much greater importance is
+flexibility of the code to accomodate changing needs and software sustainability.
+
+\paragraph{Lattice element structure:}
+All lattice element structs are very simple: They contain a single Dict and all element information
+is stored within this Dict. This makes adding custom information to an element simple. 
+
+Within an element Dict, for the most part parameters are grouped into ``element group'' structs. A flattened structure
+without the element group structs would simplify things and this would be the correct strategy
+if the number of parameters for a given element type was not as large as it is. 
