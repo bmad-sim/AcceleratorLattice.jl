@@ -4,7 +4,7 @@ Compatible with Bmad.
 This is a long term project currently under development.
 
 ## State of the Software
-2023/11/16: Can construct simple lattices so tracking code development can begin. 
+Can construct simple lattices so tracking code development can begin. 
 But bookkeeping is incomplete so the lattice is not usable for simulations.
 
 ## Installing
