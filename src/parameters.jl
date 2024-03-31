@@ -82,10 +82,10 @@ ele_param_info_dict = Dict(
   :L_chord            => ParamInfo(BendGroup,      Number,      "Bend chord length.", "m"),
   :L_sagitta          => ParamInfo(BendGroup,      Number,      "Bend sagitta length.", "m"),
   :ref_tilt           => ParamInfo(BendGroup,      Number,      "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :fint               => ParamInfo(BendGroup,      Number,      "Used to set fint1 and fint2 both at once.", ""),
+  :fint               => ParamInfo(Nothing,        Number,      "Used to set fint1 and fint2 both at once.", ""),
   :fint1              => ParamInfo(BendGroup,      Number,      "Bend entrance edge field integral.", ""),
   :fint2              => ParamInfo(BendGroup,      Number,      "Bend exit edge field integral.", ""),
-  :hgap               => ParamInfo(BendGroup,      Number,      "Used to set hgap1 and hgap2 both at once.", ""),
+  :hgap               => ParamInfo(Nothing,        Number,      "Used to set hgap1 and hgap2 both at once.", ""),
   :hgap1              => ParamInfo(BendGroup,      Number,      "Bend entrance edge pole gap height.", "m"),
   :hgap2              => ParamInfo(BendGroup,      Number,      "Bend exit edge pole gap height.", "m"),
   :bend_type          => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
@@ -134,7 +134,7 @@ ele_param_info_dict = Dict(
   :voltage_master     => ParamInfo(RFMasterGroup,  Bool,          "Voltage or gradient is constant with length changes?"),
   :do_auto_amp        => ParamInfo(RFMasterGroup,  Bool,          "Autoscale voltage/gradient?"),
   :do_auto_phase      => ParamInfo(RFMasterGroup,  Bool,          "Autoscale phase?"),
-  :do_auto_scale      => ParamInfo(RFMasterGroup,  Bool,          "Used to set do_auto_amp and do_auto_phase both at once."),
+  :do_auto_scale      => ParamInfo(Nothing,        Bool,          "Used to set do_auto_amp and do_auto_phase both at once.", ""),
 
   :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
   :field_calc         => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
@@ -148,11 +148,11 @@ ele_param_info_dict = Dict(
   :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of horizontal aperture limits.", "m"),
   :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of vertical aperture limits.", "m"),
 
-  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "3-vector of floor position.", "m", :r),
-  :q_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "Quaternion orientation.", "", :q),
-  :theta_floor        => ParamInfo(FloorPositionGroup, Number,            "Floor theta angle orientation", "rad", :theta),
-  :phi_floor          => ParamInfo(FloorPositionGroup, Number,            "Floor phi angle orientation", "rad", :phi),
-  :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Floor psi angle orientation", "rad", :psi),
+  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "3-vector of element floor position.", "m", :r),
+  :q_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "Element quaternion orientation.", "", :q),
+  :theta_floor        => ParamInfo(FloorPositionGroup, Number,            "Element floor theta angle orientation", "rad", :theta),
+  :phi_floor          => ParamInfo(FloorPositionGroup, Number,            "Element floor phi angle orientation", "rad", :phi),
+  :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Element floor psi angle orientation", "rad", :psi),
 
   :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(GirderGroup,     StreamLocationSwitch,     "Reference location on reference element. Default is Center."),
@@ -221,7 +221,8 @@ ele_param_group_list = Symbol.(replace.(string.(subtypes(EleParameterGroup)), "A
 # units
 
 """
-    function units(param::Symbol)
+    units(param::Symbol) -> units::String
+    units(param::Symbol, eletype::Type{T}) where T <: Ele -> units::String
 
 Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
 `param` may correspond to either a user symbol or struct symbol.
@@ -233,10 +234,9 @@ function units(param::Symbol)
   return info.units
 end
 
-#---------------------------------------------------------------------------------------------------
-# units
+#-
 
-function units(param, eletype::Type{T}) where T <: Ele
+function units(param::Symbol, eletype::Type{T}) where T <: Ele
   if eletype == Controller || eletype == Ramper
     return ""
   else
@@ -262,115 +262,67 @@ function description(key, eletype::Type{T}) where T <: Ele
 end
 
 #---------------------------------------------------------------------------------------------------
-# param_alias
-
-"""
-An alias is something like `hgap` which gets mapped to `hgap1` and `hgap2`
-"""
-param_alias = Dict(
-  :hgap           => [:hgap1, :hgap2],
-  :fint           => [:fint1, :fint2],
-  :do_auto_scale  => [:do_auto_amp, :do_auto_phase]
-)
-
-#---------------------------------------------------------------------------------------------------
-# info
-
-"""
-""" info(sym::Union{Symbol,String})
-
-function info(sym::Union{Symbol,String})
-  if typeof(sym) == String; sym = Symbol(sym); end
-  for (param, info) in ele_param_info_dict
-    if sym == param
-      println(f"  Element parameter:       {param}")
-      println(f"  Element group:   {info.parent_group}")
-      println(f"  Parameter type:  {info.kind}")
-      if info.units != ""; println(f"  Units:           {info.units}"); end
-      println(f"  Description:     {info.description}")
-      return 
-    end
-  end
-
-  println(f"No information found on: {sym}")
-end
-
-#---------------------------------------------------------------------------------------------------
 # multipole_type
 
 """
-    function multipole_type(str::Union{AbstractString,Symbol}; group::Union{BMultipoleGroup,EMultipoleGroup,Nothing})
+    function multipole_type(sym::Symbol) -> (type::String, order::Int, group::Type{T}
+    function multipole_type(str::AbstractString}) -> (type::String, order::Int, group::Type{T}
+                                   where T <: Union{BMultipoleGroup,EMultipoleGroup,Nothing}
 
-returns (`type`, `order`) tuple. If `str` is a multipole parameter name like `Kn2L` or `Etilt`,
+If `str` is a multipole parameter name like `Kn2L` or `Etilt`,
 `order` will be the multipole order and `type` will be one of:
  - "Kn", "KnL", "Ks" "KsL", "Bn", "BnL", "Bs", "BsL", "tilt", "En", "EnL", "Es", "EsL", or "Etilt"
 
-If `str` is not a valid multipole parameter name, returned will be (`nothing`, `-1`).
+If `str` is not a valid multipole parameter name, returned will be `("", -1, Nothing)`.
 """ multipole_type
 
-function multipole_type(str::Union{AbstractString,Symbol})
-  return multipole_type(str, Nothing)
-end
+function multipole_type(str::AbstractString) 
+  isbad = ("", -1, Nothing)
+  if length(str) < 3 ; isbad; end
 
-
-function multipole_type(str::Union{AbstractString,Symbol}, group::Type{T}) where T <:
-                                                    Union{BMultipoleGroup,EMultipoleGroup,Nothing}
-  if str isa Symbol; str = string(str); end
-  if length(str) < 3 ; (return nothing, -1); end
-
-  if length(str) > 4 && str[1:4] == "tilt" && group != EMultipoleGroup
-    order = tryparse(UInt64, str[5:end]) 
-    isnothing(order) ? (return nothing, -1) : (return "tilt", Int64(order))
-  elseif length(str) > 5 && str[1:5] == "Etilt" && group != BMultipoleGroup
-    order = tryparse(UInt64, str[6:end]) 
-    isnothing(order) ? (return nothing, -1) : (return "Etilt", Int64(order))
+  if length(str) > 4 && str[1:4] == "tilt"
+    order = tryparse(Int64, str[5:end]) 
+    isnothing(order) || order < 0 ? (return isbad) : return ("tilt", order, BMultipoleGroup)
+  elseif length(str) > 5 && str[1:5] == "Etilt"
+    order = tryparse(Int64, str[6:end]) 
+    isnothing(order) || order < 0 ? (return isbad) : return ("Etilt", order, EMultipoleGroup)
   end
 
-  if group == BMultipoleGroup
-    if str[1:2] ∉ Set(["Kn", "Ks", "Bn", "Bs"]); return (nothing, -1); end
-  elseif group == EMultipoleGroup
-    if str[1:2] ∉ Set(["En", "Es"]); return (nothing, -1); end
+  if str[1:2] in Set(["Kn", "Ks", "Bn", "Bs"])
+    group = BMultipoleGroup
+  elseif str[1:2] in Set(["En", "Es"])
+    group = EMultipoleGroup
   else
-    if str[1:2] ∉ Set(["Kn", "Ks", "Bn", "Bs", "En", "Es"]); return (nothing, -1); end
+    return isbad
   end
 
   if str[end] == 'L'
-    order = tryparse(UInt64, str[3:end-1]) 
+    order = tryparse(Int64, str[3:end-1]) 
     str = str[1:2] * 'L'
   else
-    order = tryparse(UInt64, str[3:end]) 
+    order = tryparse(Int64, str[3:end]) 
     str = str[1:2]
   end
 
-  isnothing(order) ? (return nothing, -1) : (return str, Int64(order))
+  isnothing(order) || order < 0 ? (return is_bad) : return (str, order, group)
 end
 
+!-
+
+multipole_type(sym::Symbol) = multipole_type(string(sym))
+
 #---------------------------------------------------------------------------------------------------
-# ele_param_info
+# multipole_param_info
 
 """
-    ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
 
-Returns information on the element parameter `sym`.
-Returns a `ParamInfo` struct. If no information on `sym` is found, an error is thrown
-or `nothing` is returned.
-""" ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+""" multipole_param_info
 
-function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
-  if haskey(ele_param_info_dict, sym); (return ele_param_info_dict[sym]); end
-  if include_struct_syms && sym in keys(struct_sym_to_user_sym)
-    return ele_param_info_dict[struct_sym_to_user_sym[sym][1]]
-  end
-
-  # Hopefully is a multipole. Otherwise unrecognized.
-  (mtype, order) = multipole_type(sym)
-  if isnothing(mtype)
-    if throw_error; error(f"Unrecognized element parameter: {sym}"); end
-    return nothing
-  end
+function multipole_param_info(sym::Symbol)
+  (mtype, order, group) = multipole_type(sym)
+  if group == Nothing; return nothing; end
 
   n = length(mtype)
-  if isnothing(mtype); return nothing; end
   if n == 4 && mtype[1:4] == "tilt"
     return ParamInfo(BMultipoleGroup, Number, f"Magnetic multipole tilt for order {order}", "rad", :tilt, sym)
   end
@@ -410,7 +362,34 @@ function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = f
   end
 end
 
-#
+!-
+
+multipole_param_info(str::AbstractString) = multipole_param_info(Symbol(str))
+
+#---------------------------------------------------------------------------------------------------
+# ele_param_info
+
+"""
+    ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+
+Returns information on the element parameter `sym`.
+Returns a `ParamInfo` struct. If no information on `sym` is found, an error is thrown
+or `nothing` is returned.
+""" ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+
+function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+  if haskey(ele_param_info_dict, sym); (return ele_param_info_dict[sym]); end
+  if include_struct_syms && sym in keys(struct_sym_to_user_sym)
+    return ele_param_info_dict[struct_sym_to_user_sym[sym][1]]
+  end
+
+  # Is a multipole? Otherwise unrecognized.
+  info = multipole_param_info(sym)
+  if isnothing(info) && throw_error; error(f"Unrecognized element parameter: {sym}"); end
+  return info
+end
+
+#-
 
 """
     ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
@@ -584,8 +563,8 @@ end
 # is_settable
 
 """
-
-"""
+    is_settable(ele::T, sym::Symbol) where T <: Ele -> Bool
+""" is_settable
 
 function is_settable(ele::T, sym::Symbol) where T <: Ele
   if haskey(ele_param_by_ele_type[typeof(ele)], sym); return ele_param_by_ele_type[typeof(ele)][sym].settable; end
@@ -600,7 +579,7 @@ end
 # multipole!
 
 """
-    multipole!(mgroup, order; insert::Bool = false)
+    multipole!(mgroup, order; insert::Bool = false) -> 
 
 Finds multipole of a given order.
 

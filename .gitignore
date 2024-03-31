@@ -1,9 +1,10 @@
-manual/bmad.lof
-manual/bmad.log
-manual/bmad.lot
-manual/bmad-test*
-manual/bmad.out
-manual/bmad.toc
+manual/AcceleratorLattice.lof
+manual/AcceleratorLattice.log
+manual/AcceleratorLattice.lot
+manual/AcceleratorLattice.out
+manual/AcceleratorLattice.toc
+manual/AcceleratorLattice.pdf
+manual/AcceleratorLattice.idx
 manual/*.aux
 docs/build/
 /Manifest.toml

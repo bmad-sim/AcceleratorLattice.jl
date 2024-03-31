@@ -353,8 +353,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
   ff = ele.pc_ref / (c_light * charge(ele.species_ref))
 
   for param in keys(cdict)
-    (mtype, order) = multipole_type(param, BMultipoleGroup)
-    if isnothing(mtype) || mtype == "tilt"; continue; end
+    (mtype, order, group) = multipole_type(param)
+    if isnothing(group) || group != BMultipoleGroup || mtype == "tilt"; continue; end
     mul = multipole!(bmg, order)
 
     if     mtype[1:2] == "Kn"; mul.Bn = mul.Kn * ff

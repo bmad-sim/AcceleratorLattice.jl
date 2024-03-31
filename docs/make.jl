@@ -2,8 +2,6 @@ using Pkg
 using Documenter, AcceleratorLattice
 
 
-
-
 makedocs(
   sitename = "AcceleratorLattice.jl",
   authors = "David Sagan",

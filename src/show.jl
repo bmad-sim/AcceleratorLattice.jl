@@ -557,3 +557,63 @@ abstract_dict = Dict{Any,String}(
   AbstractLat       => "Base type for the Lat struct.",
   Enum              => "Base type for switch group values.",
 )
+
+#---------------------------------------------------------------------------------------------------
+# info
+
+"""
+    info(sym::Symbol) -> nothing
+    info(str::AbstractString) -> nothing
+
+Prints information about the element parameter represented by `Sym` or `str`.
+# Examples
+    info(:L)      - Prints information on parameter `L`.
+    info("L")     - Same as above.
+""" info
+
+function info(sym::Symbol)
+  if sym in keys(struct_sym_to_user_sym)
+    for sym2 in struct_sym_to_user_sym[sym]
+      println("")
+      info1(ele_param_info(sym2))
+    end
+    return
+  end
+
+  info = ele_param_info(sym, throw_error = false)
+  if !isnothing(info)
+    info1(info)
+    return
+  end
+
+  println(f"No information found on: {sym}")
+end
+
+#-
+
+info(str::AbstractString) = info(Symbol(str))
+
+!-
+
+function info(ele::Ele)
+  
+
+end
+
+#---------------------------------------------------------------------------------------------------
+# info1
+
+"""
+    Internal: info1(info::ParamInfo) -> nothing
+
+Used by `info` function.
+""" info1
+
+function info1(info::ParamInfo)
+  println(f"  User name:       {info.user_sym}")
+  println(f"  Stored in:       {info.parent_group}.{info.struct_sym}")
+  println(f"  Parameter type:  {info.kind}")
+  if info.units != ""; println(f"  Units:           {info.units}"); end
+  println(f"  Description:     {info.description}")
+  return nothing
+end
