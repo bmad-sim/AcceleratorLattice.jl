@@ -50,4 +50,5 @@ module AcceleratorLattice
   export struct_sym_to_user_sym, multipole!, index, integer, quat_angles
   export machine_location, body_location, EleRegion, multipole_param_info
 
+
 end # module
