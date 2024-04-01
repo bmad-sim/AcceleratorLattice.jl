@@ -1,0 +1,228 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global}
+    \entry{Appleby:Merlin2020}{article}{}
+      \name{author}{9}{}{%
+        {{hash=6bab4d5bbfab2a81bf7616425713fd4e}{%
+           family={Appleby},
+           familyi={A\bibinitperiod},
+           given={Robert\bibnamedelima B.},
+           giveni={R\bibinitperiod\bibinitdelim B\bibinitperiod}}}%
+        {{hash=c62ed8fb3bd2ecdda9818afdddd56c52}{%
+           family={Barlow},
+           familyi={B\bibinitperiod},
+           given={Roger\bibnamedelima J.},
+           giveni={R\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=c9268201d5c571df0b163a9c41d0e6b5}{%
+           family={Kruecker},
+           familyi={K\bibinitperiod},
+           given={Dirk},
+           giveni={D\bibinitperiod}}}%
+        {{hash=07e0916e3c0ddf98812e5032024c96cd}{%
+           family={Molson},
+           familyi={M\bibinitperiod},
+           given={James},
+           giveni={J\bibinitperiod}}}%
+        {{hash=c8e285cc6cf5e9271c43a4b0e0687a8d}{%
+           family={Rowan},
+           familyi={R\bibinitperiod},
+           given={Scott},
+           giveni={S\bibinitperiod}}}%
+        {{hash=a97d5d83dca4b11b91cc05daba7cde59}{%
+           family={Tygier},
+           familyi={T\bibinitperiod},
+           given={Sam},
+           giveni={S\bibinitperiod}}}%
+        {{hash=256ba60607f4f99b014b9b6bb60e5ac2}{%
+           family={Rafique},
+           familyi={R\bibinitperiod},
+           given={Haroon},
+           giveni={H\bibinitperiod}}}%
+        {{hash=a2cb9195a8702d229f3ccea9b7b3a484}{%
+           family={Walker},
+           familyi={W\bibinitperiod},
+           given={Nicholas},
+           giveni={N\bibinitperiod}}}%
+        {{hash=2f9bada81f52159aa7641b0801229850}{%
+           family={Wolski},
+           familyi={W\bibinitperiod},
+           given={Andrzej},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{0b71b8efdcb34900ddf88ef4318e97f9}
+      \strng{fullhash}{1c0e4999d622c7714ca31232fb5eb668}
+      \strng{bibnamehash}{0b71b8efdcb34900ddf88ef4318e97f9}
+      \strng{authorbibnamehash}{0b71b8efdcb34900ddf88ef4318e97f9}
+      \strng{authornamehash}{0b71b8efdcb34900ddf88ef4318e97f9}
+      \strng{authorfullhash}{1c0e4999d622c7714ca31232fb5eb668}
+      \field{sortinit}{A}
+      \field{sortinithash}{2f401846e2029bad6b3ecc16d50031e2}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{physics.acc-ph}
+      \field{eprinttype}{arXiv}
+      \field{journaltitle}{Comput. Phys. Commun.}
+      \field{title}{{Merlin++, a flexible and feature-rich accelerator physics and particle tracking library}}
+      \field{volume}{271}
+      \field{year}{2022}
+      \field{pages}{108204}
+      \range{pages}{1}
+      \verb{doi}
+      \verb 10.1016/j.cpc.2021.108204
+      \endverb
+      \verb{eprint}
+      \verb 2011.04335
+      \endverb
+    \endentry
+    \entry{Borland:Elegant2000}{inproceedings}{}
+      \name{author}{1}{}{%
+        {{hash=688b46d418b199aaedb1565b86f83e41}{%
+           family={Borland},
+           familyi={B\bibinitperiod},
+           given={M.},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{688b46d418b199aaedb1565b86f83e41}
+      \strng{fullhash}{688b46d418b199aaedb1565b86f83e41}
+      \strng{bibnamehash}{688b46d418b199aaedb1565b86f83e41}
+      \strng{authorbibnamehash}{688b46d418b199aaedb1565b86f83e41}
+      \strng{authornamehash}{688b46d418b199aaedb1565b86f83e41}
+      \strng{authorfullhash}{688b46d418b199aaedb1565b86f83e41}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{{6th International Computational Accelerator Physics Conference (ICAP 2000)}}
+      \field{title}{{elegant: A Flexible SDDS-Compliant Code for Accelerator Simulation}}
+      \field{year}{2000}
+      \verb{doi}
+      \verb 10.2172/761286
+      \endverb
+    \endentry
+    \entry{Grote:MAD1989}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=bfd74bbcf954b83f1b554ac4c361f120}{%
+           family={Grote},
+           familyi={G\bibinitperiod},
+           given={H.},
+           giveni={H\bibinitperiod}}}%
+        {{hash=4725da513f64e75fd059f90349ffe64d}{%
+           family={Iselin},
+           familyi={I\bibinitperiod},
+           given={F.C.},
+           giveni={F\bibinitperiod}}}%
+        {{hash=19f25bc73a52cd3b2506f8675b8e4a5d}{%
+           family={Keil},
+           familyi={K\bibinitperiod},
+           given={E.},
+           giveni={E\bibinitperiod}}}%
+        {{hash=4e49c3984bc355493dbe360817d5341c}{%
+           family={Niederer},
+           familyi={N\bibinitperiod},
+           given={J.},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{bb102c80578f0a346275e4b2d6ca62cb}
+      \strng{fullhash}{61017decb1ef1cad072876933563878a}
+      \strng{bibnamehash}{bb102c80578f0a346275e4b2d6ca62cb}
+      \strng{authorbibnamehash}{bb102c80578f0a346275e4b2d6ca62cb}
+      \strng{authornamehash}{bb102c80578f0a346275e4b2d6ca62cb}
+      \strng{authorfullhash}{61017decb1ef1cad072876933563878a}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 1989 IEEE Particle Accelerator Conference, . 'Accelerator Science and Technology}
+      \field{title}{The MAD program}
+      \field{year}{1989}
+      \field{pages}{1292\bibrangedash 1294 vol.2}
+      \range{pages}{-1}
+      \verb{doi}
+      \verb 10.1109/PAC.1989.73426
+      \endverb
+      \keyw{Computer graphics;Particle beam measurements}
+    \endentry
+    \entry{Iadarola:Xsuite2023}{article}{}
+      \true{moreauthor}
+      \true{morelabelname}
+      \name{author}{1}{}{%
+        {{hash=4879793390d8823abb0be18bba13a38d}{%
+           family={Iadarola},
+           familyi={I\bibinitperiod},
+           given={G.},
+           giveni={G\bibinitperiod}}}%
+      }
+      \strng{namehash}{7efd382febc5a58bac7e41968cd593fb}
+      \strng{fullhash}{7efd382febc5a58bac7e41968cd593fb}
+      \strng{bibnamehash}{7efd382febc5a58bac7e41968cd593fb}
+      \strng{authorbibnamehash}{7efd382febc5a58bac7e41968cd593fb}
+      \strng{authornamehash}{7efd382febc5a58bac7e41968cd593fb}
+      \strng{authorfullhash}{7efd382febc5a58bac7e41968cd593fb}
+      \field{sortinit}{I}
+      \field{sortinithash}{8d291c51ee89b6cd86bf5379f0b151d8}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{physics.acc-ph}
+      \field{eprinttype}{arXiv}
+      \field{month}{9}
+      \field{title}{{Xsuite: an integrated beam physics simulation framework}}
+      \field{year}{2023}
+      \verb{eprint}
+      \verb 2310.00317
+      \endverb
+    \endentry
+    \entry{Sagan:Bmad2006}{article}{}
+      \name{author}{1}{}{%
+        {{hash=4ed22e9f93f4e99b00f2c629543bbef7}{%
+           family={Sagan},
+           familyi={S\bibinitperiod},
+           given={D.},
+           giveni={D\bibinitperiod}}}%
+      }
+      \strng{namehash}{4ed22e9f93f4e99b00f2c629543bbef7}
+      \strng{fullhash}{4ed22e9f93f4e99b00f2c629543bbef7}
+      \strng{bibnamehash}{4ed22e9f93f4e99b00f2c629543bbef7}
+      \strng{authorbibnamehash}{4ed22e9f93f4e99b00f2c629543bbef7}
+      \strng{authornamehash}{4ed22e9f93f4e99b00f2c629543bbef7}
+      \strng{authorfullhash}{4ed22e9f93f4e99b00f2c629543bbef7}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{{Computational accelerator physics. Proceedings, 8th International Conference, ICAP 2004, St. Petersburg, Russia, June 29-July 2, 2004}}
+      \field{issn}{0168-9002}
+      \field{journaltitle}{Nucl. Instrum. Meth.}
+      \field{note}{Proceedings of the 8th International Computational Accelerator Physics Conference}
+      \field{number}{1}
+      \field{title}{{Bmad: A relativistic charged particle simulation library}}
+      \field{volume}{A558}
+      \field{year}{2006}
+      \field{pages}{356\bibrangedash 359}
+      \range{pages}{4}
+      \verb{doi}
+      \verb https://doi.org/10.1016/j.nima.2005.11.001
+      \endverb
+      \keyw{Simulation,Particle accelerators,Relativistic beams}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

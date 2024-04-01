@@ -83,7 +83,7 @@ These low level routines (there are several with this signature) are called via 
 """ bookkeeper!(ele::Ele)
 
 function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
-  for group in ele_param_groups[typeof(ele)]
+  for group in param_groups_list[typeof(ele)]
     try
       elegroup_bookkeeper!(ele, group, changed, previous_ele)
     catch er

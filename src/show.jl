@@ -573,9 +573,11 @@ Prints information about the element parameter represented by `Sym` or `str`.
 
 function info(sym::Symbol)
   if sym in keys(struct_sym_to_user_sym)
+    first_info_printed = false
     for sym2 in struct_sym_to_user_sym[sym]
-      println("")
+      if first_info_printed; println(""); end
       info1(ele_param_info(sym2))
+      first_info_printed = true
     end
     return
   end
@@ -595,10 +597,20 @@ info(str::AbstractString) = info(Symbol(str))
 
 !-
 
-function info(ele::Ele)
-  
+function info(ele_type::Type{T}) where T <: Ele
+  if ele_type ∉ keys(param_groups_list)
+    prinln("No information on $(ele_type)")
+    return
+  end
 
+  for group in param_groups_list[ele_type]
+    println("  $(rpad(string(group), 20)) -> $(param_group_info[group])")
+  end
 end
+
+!-
+
+info(ele::Ele) = info(typeof(ele))
 
 #---------------------------------------------------------------------------------------------------
 # info1
