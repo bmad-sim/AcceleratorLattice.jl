@@ -40,9 +40,9 @@ module AcceleratorLattice
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, ele_types_set, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, LatEleLocation, ele_at_s, add_governor!
-  export find_ele, find_eles, next_ele, branch, matches_branch, ele_param_groups, create_ele_vars
+  export find_ele, find_eles, next_ele, branch, matches_branch, param_groups_list, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
-  export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup
+  export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup, SolenoidGroup
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveGroup
   export GirderGroup, LCavityGroup, PatchGroup, RFFieldGroup, RFMasterGroup, ControlSlaveGroup, ControlVarGroup
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms

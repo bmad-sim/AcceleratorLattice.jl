@@ -44,14 +44,23 @@ with each lord branch containing only one type of lord.
 \paragraph{Type stability:}
 Type stability is {\em not} a major concern with \accellat. The reason being that compared to
 the time needed for tracking and track analysis, lattice instantiation
-and manipulation is only a minor player. And for tracking, an interface layer can be
+and manipulation does not take an appreciable amount of time. For tracking, where computation time
+is a hugh consideration, an interface layer can be
 used to translate lattice parameters to a type stable form. Of much greater importance is
-flexibility of the code to accomodate changing needs and software sustainability.
+flexibility of \accellat to accomodate changing needs and software sustainability.
 
 \paragraph{Lattice element structure:}
 All lattice element structs are very simple: They contain a single Dict and all element information
-is stored within this Dict. This makes adding custom information to an element simple. 
+is stored within this Dict. This means that there is no restriction as to what can be stored
+in an element adding custom information to an element simple. 
+And the ability to do customization easily is very important. 
 
-Within an element Dict, for the most part parameters are grouped into ``element group'' structs. A flattened structure
-without the element group structs would simplify things and this would be the correct strategy
-if the number of parameters for a given element type was not as large as it is. 
+Within an element Dict, for the most part, parameters are grouped into ``element group'' structs. A flattened structure,
+that is, without the element group structs, would be the correct strategy
+if the number of possible parameters for a given element type was not as large as it is. 
+However, the parameterization of an element can be complicated. 
+For example, a field table describing the field in an element has a grid of field points plus 
+parameters to specify the distance between points, the frequency if the field is oscillating, etc. 
+In such a case, where the number of parameters is large, and with the parameters falling into 
+logical groups, using substructures if preferred. 
+

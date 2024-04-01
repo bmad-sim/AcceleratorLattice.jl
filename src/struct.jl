@@ -118,7 +118,7 @@ function (::Type{T})(; kwargs...) where T <: Ele
   pdict[:changed] = Dict{Symbol,Any}()
 
   # Setup parameter groups.
-  for group in ele_param_groups[typeof(ele)]
+  for group in param_groups_list[typeof(ele)]
     pdict[Symbol(group)] = group()
   end
 
@@ -194,13 +194,13 @@ const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL"))
 Element location within a lattice.
 
 ## Components
-    ix_ele::Int64        Element index in branch.ele[] array.
-    ix_branch::Int64     Branch index of branch containing the element in lat.branch[] array.
+    ix_ele::Int          Element index in branch.ele[] array.
+    ix_branch::Int       Branch index of branch containing the element in lat.branch[] array.
 """ LatEleLocation
 
 struct LatEleLocation
-  ix_ele::Int64       # Element index in branch.ele array.
-  ix_branch::Int64    # Branch index in lat.branch array.
+  ix_ele::Int         # Element index in branch.ele array.
+  ix_branch::Int      # Branch index in lat.branch array.
 end
 
 """
@@ -228,7 +228,7 @@ Element length and s-positions.
   L = 0.0::Number
   s = 0.0::Number
   s_downstream::Number = 0.0
-  orientation::Int64 = 1
+  orientation::Int = 1
 end
 
 """
@@ -307,7 +307,7 @@ To switch between integrated and non-integrated, remove old struct first.
   Bn::Number = 0.0
   Bs::Number = 0.0  
   tilt::Number = 0.0
-  order::Int64 = -1         # Multipole order
+  order::Int   = -1         # Multipole order
   integrated = nothing  # Also determines what stays constant with length changes.
 end
 
@@ -329,7 +329,7 @@ See EMultipoleGroup.
   En::Number = 0.0                    # EG: "En2", "En2L"
   Es::Number = 0.0                    # EG: "Es2", "Es2L"
   Etilt::Number = 0.0
-  order::Int64 = -1                   # Multipole order
+  order::Int   = -1                   # Multipole order
   integrated::Bool = false
 end
 
@@ -427,13 +427,11 @@ RF parameters except for voltage and phase.
 See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
 """ 
 @kwdef mutable struct RFGroup <: EleParameterGroup
-  auto_amp::Number = 1.0         # See do_auto_amp in RFMasterGroup.
-  auto_phase::Number = 0.0       # See do_auto_phase in RFMasterGroup.
   multipass_phase::Number = 0.0
   frequency::Number = 0.0
   harmon::Number = 0.0
   cavity_type::CavityTypeSwitch = StandingWave
-  n_cell::Int64 = 1
+  n_cell::Int   = 1
 end
 
 """
@@ -476,8 +474,10 @@ RF autoscale and voltage_master
 """
 @kwdef mutable struct RFMasterGroup <: EleParameterGroup
   voltage_master::Bool = false      # Voltage or gradient stay constant with length changes?
-  do_auto_amp::Bool = true          # Will autoscaling set auto_amp in RFGroup?
-  do_auto_phase::Bool = true        # Will autoscaling set auto_phase in RFGroup?
+  do_auto_amp::Bool = true          # Will autoscaling set auto_amp?
+  do_auto_phase::Bool = true        # Will autoscaling set auto_phase?
+  auto_amp::Number = 1.0            # Auto amplitude scale value.
+  auto_phase::Number = 0.0          # Auto phase value.
 end
 
 """
@@ -486,7 +486,7 @@ Sets the nominal values for tracking prameters.
 @kwdef mutable struct TrackingGroup <: EleParameterGroup
   tracking_method::TrackingMethodSwitch = TrackingStandard
   field_calc::FieldCalcMethodSwitch = FieldStandard
-  num_steps::Int64 = -1
+  num_steps::Int   = -1
   ds_step::Number = NaN
 end
 

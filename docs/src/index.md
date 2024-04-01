@@ -32,3 +32,12 @@ Since Bmad-Julia is in the initial stages of development, currently there are no
 ## Cheat Sheet
 
 Functions and Structs sorted by functionality.
+
+## Programming conventions
+
+Follow general Julia programming conventions with two spaces per indent.
+
+Non-ASCII characters in code can be problematical in that some of them are hard to decipher and,
+depending upon the editor being used, hard to type. So use of non-ASCII characters should be
+avoided unless the use is clearly beneficial. One example of acceptable use is the notin character "∉" since
+there is no ASCII equivalent. 

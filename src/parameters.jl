@@ -2,7 +2,7 @@
 # ParamInfo
 
 """
-Possible `kind` values: String, Int64, Number, Vector{Number}, Bool, Pointer, etc.
+Possible `kind` values: String, Int, Number, Vector{Number}, Bool, Pointer, etc.
 
 A Switch is a variable that has only a finite number of values.
 Generally, a Switch will either be an enum or something that has a finite number of integer states.
@@ -44,7 +44,7 @@ EG: theta_floor user name corresponds to theta in the FloorPositionGroup.
 
 ele_param_info_dict = Dict(
   :name               => ParamInfo(Nothing,        String,      "Name of the element."),
-  :ix_ele             => ParamInfo(Nothing,        Int64,       "Index of element in containing branch.ele[] array."),
+  :ix_ele             => ParamInfo(Nothing,        Int,         "Index of element in containing branch.ele[] array."),
   :branch             => ParamInfo(Nothing,        Branch,      "Pointer to branch element is in."),
   :multipass_lord     => ParamInfo(Nothing,        Ele,         "Element's multipass_lord. Will not be present if no lord exists."),
   :super_lords        => ParamInfo(Nothing,        Vector{Ele}, "Array of element's super_lords. Will not be present if no lords exist."),
@@ -55,9 +55,9 @@ ele_param_info_dict = Dict(
   :description        => ParamInfo(StringGroup,    String,      "Descriptive info. Set by User and ignored by the code."),
 
   :L                  => ParamInfo(LengthGroup,    Number,      "Element length.", "m"),
-  :orientation        => ParamInfo(LengthGroup,    Int64,       "Longitudinal orientation of element. May be +1 or -1."),
-  :s                  => ParamInfo(LengthGroup,    Number,      "Longitudinal s-position.", "m"),
-  :s_downstream       => ParamInfo(LengthGroup,    Number,      "Longitudinal s-position at downstream end.", "m"),
+  :orientation        => ParamInfo(LengthGroup,    Int,         "Longitudinal orientation of element. May be +1 or -1."),
+  :s                  => ParamInfo(LengthGroup,    Number,      "Longitudinal s-position at the upstream end.", "m"),
+  :s_downstream       => ParamInfo(LengthGroup,    Number,      "Longitudinal s-position at the downstream end.", "m"),
 
   :field_master       => ParamInfo(MasterGroup,    Bool,      
                                   "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
@@ -111,15 +111,12 @@ ele_param_info_dict = Dict(
   :gradient           => ParamInfo(RFFieldGroup,   Number,        "RF gradient.", "volt/m"),
   :phase              => ParamInfo(RFFieldGroup,   Number,        "RF phase.", "rad"),
 
-  :auto_amp           => ParamInfo(RFGroup,        Number,    
-                                  "Correction to the voltage/gradient calculated by the auto scale code.", ""),
-  :auto_phase         => ParamInfo(RFGroup,        Number,        "Correction RF phase calculated by the auto scale code.", "rad"),
   :multipass_phase    => ParamInfo(RFGroup,        Number,    
                                   "RF phase which can differ from multipass element to multipass element.", "rad"),
   :frequency          => ParamInfo(RFGroup,        Number,           "RF frequency.", "Hz"),
   :harmon             => ParamInfo(RFGroup,        Number,           "RF frequency harmonic number.", ""),
   :cavity_type        => ParamInfo(RFGroup,        CavityTypeSwitch, "Type of cavity."),
-  :n_cell             => ParamInfo(RFGroup,        Int64,            "Number of RF cells."),
+  :n_cell             => ParamInfo(RFGroup,        Int,              "Number of RF cells."),
 
   :voltage_ref        => ParamInfo(LCavityGroup,   Number,        "Reference RF voltage.", "volt"),
   :voltage_err        => ParamInfo(LCavityGroup,   Number,        "RF voltage error.", "volt"),
@@ -132,13 +129,16 @@ ele_param_info_dict = Dict(
   :phase_tot          => ParamInfo(LCavityGroup,   Number,        "Actual RF phase. (ref + err)", "rad"),
 
   :voltage_master     => ParamInfo(RFMasterGroup,  Bool,          "Voltage or gradient is constant with length changes?"),
+  :auto_amp           => ParamInfo(RFMasterGroup,  Number,    
+                                  "Correction to the voltage/gradient calculated by the auto scale code.", ""),
+  :auto_phase         => ParamInfo(RFMasterGroup,  Number,        "Correction RF phase calculated by the auto scale code.", "rad"),
   :do_auto_amp        => ParamInfo(RFMasterGroup,  Bool,          "Autoscale voltage/gradient?"),
   :do_auto_phase      => ParamInfo(RFMasterGroup,  Bool,          "Autoscale phase?"),
   :do_auto_scale      => ParamInfo(Nothing,        Bool,          "Used to set do_auto_amp and do_auto_phase both at once.", ""),
 
   :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethodSwitch,  "Nominal method used for tracking."),
   :field_calc         => ParamInfo(TrackingGroup,  FieldCalcMethodSwitch, "Nominal method used for calculating the EM field."),
-  :num_steps          => ParamInfo(TrackingGroup,  Int64,                 "Nominal number of tracking steps."),
+  :num_steps          => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
   :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
   :aperture_type      => ParamInfo(ApertureGroup,  ApertureTypeSwitch,    "Type of aperture. Default is Elliptical."),
@@ -207,17 +207,6 @@ for (param, info) in ele_param_info_dict
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_param_group_list
-# Note: The transform to Symbol prepends "AcceleratorLattice." to the parameter group names so need to strip this.
-
-"""
-Symbol list of ele parameter groups.
-""" ele_param_group_list
-
-ele_param_group_list = Symbol.(replace.(string.(subtypes(EleParameterGroup)), "AcceleratorLattice." => ""))
-
-
-#---------------------------------------------------------------------------------------------------
 # units
 
 """
@@ -281,10 +270,10 @@ function multipole_type(str::AbstractString)
   if length(str) < 3 ; isbad; end
 
   if length(str) > 4 && str[1:4] == "tilt"
-    order = tryparse(Int64, str[5:end]) 
+    order = tryparse(Int,   str[5:end]) 
     isnothing(order) || order < 0 ? (return isbad) : return ("tilt", order, BMultipoleGroup)
   elseif length(str) > 5 && str[1:5] == "Etilt"
-    order = tryparse(Int64, str[6:end]) 
+    order = tryparse(Int,   str[6:end]) 
     isnothing(order) || order < 0 ? (return isbad) : return ("Etilt", order, EMultipoleGroup)
   end
 
@@ -297,10 +286,10 @@ function multipole_type(str::AbstractString)
   end
 
   if str[end] == 'L'
-    order = tryparse(Int64, str[3:end-1]) 
+    order = tryparse(Int,   str[3:end-1]) 
     str = str[1:2] * 'L'
   else
-    order = tryparse(Int64, str[3:end]) 
+    order = tryparse(Int,   str[3:end]) 
     str = str[1:2]
   end
 
@@ -404,7 +393,7 @@ function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
 
   if typeof(param_info.parent_group) <: Vector
     for parent in param_info.parent_group
-      if parent in ele_param_groups[typeof(ele)]
+      if parent in param_groups_list[typeof(ele)]
         param_info.parent_group = parent
         return param_info
       end
@@ -413,7 +402,7 @@ function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
     error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")
 
   else
-    if param_info.parent_group in ele_param_groups[typeof(ele)] || 
+    if param_info.parent_group in param_groups_list[typeof(ele)] || 
                                         param_info.parent_group == Nothing; return param_info; end
     error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")   
   end
@@ -474,7 +463,7 @@ function set_integrated!(ele::Ele, group::EMultipoleGroup, order::Int, integrate
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_param_groups
+# param_groups_list
 
 """
 Table of what element groups are associated with what element types.
@@ -483,14 +472,14 @@ Order is important. Bookkeeping routines rely on:
  - `BendGroup` after `ReferenceGroup` and `MasterGroup` (in case the reference energy is changing).
  - `BMultipoleGroup` and `EMultipoleGroup` after `MasterGroup` (in case the reference energy is changing).
  - `RFGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
-""" ele_param_groups
+""" param_groups_list
 
 base_group_list = [LengthGroup, LordSlaveGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 general_group_list = vcat(base_group_list, alignment_group_list, multipole_group_list)
 
-ele_param_groups = Dict(  
+param_groups_list = Dict(  
   Dict(
     BeginningEle   => base_group_list,
     Bend           => vcat(general_group_list, BendGroup),
@@ -507,21 +496,30 @@ ele_param_groups = Dict(
   )
 )
 
-ele_param_group_list = Dict(
-  :AlignmentGroup        => "Element position/orientation shift.",
-  :ApertureGroup         => "Vacuum chamber aperture.",
-  :BendGroup             => "Bend element parameters.",
-  :BMultipoleGroup       => "Magnetic multipoles.",
-  :ChamberWallGroup      => "Vacuum chamber wall.",
-  :ControlSlaveGroup     => "Controller or Ramper slave parameters.",
-  :ControlVarGroup       => "Controller or Ramper Variables.",
-  :EMultipoleGroup       => "Electric multipoles.",
-  :FloorPositionGroup    => "Global floor position and orientation.",
-  :LengthGroup           => "Length parameter.",
-  :ReferenceGroup        => "Reference energy and species.",
-  :RFGroup               => "RF parameters.",
-  :StringGroup           => "Informational strings.",
-  :TrackingGroup         => "Default tracking settings.",
+param_group_info = Dict(
+  AlignmentGroup        => "Element position/orientation shift.",
+  ApertureGroup         => "Vacuum chamber aperture.",
+  BendGroup             => "Bend element parameters.",
+  BMultipoleGroup       => "Magnetic multipoles.",
+  BMultipole1           => "Magnetic multipole of given order. Contained in BMultipoleGroup",
+  ChamberWallGroup      => "Vacuum chamber wall.",
+  ControlSlaveGroup     => "Controller or Ramper slave parameters.",
+  ControlVarGroup       => "Controller or Ramper Variables.",
+  EMultipoleGroup       => "Electric multipoles.",
+  EMultipole1           => "Electric multipole of given order. Contained in EMultipoleGroup.",
+  FloorPositionGroup    => "Global floor position and orientation.",
+  GirderGroup           => "Girder parameters.",
+  LCavityGroup          => "Accelerating cavity parameters.",
+  LengthGroup           => "Length and s-position parameters.",
+  LordSlaveGroup        => "Element lord and slave status.",
+  MasterGroup           => "Contains field_master parameter.",
+  PatchGroup            => "Patch parameters.",
+  ReferenceGroup        => "Reference energy and species.",
+  RFGroup               => "RF parameters.",
+  RFMasterGroup         => "Contains voltage_master, do_auto_map, and do_auto_phase.",
+  SolenoidGroup         => "Solenoid parameters.",
+  StringGroup           => "Informational strings.",
+  TrackingGroup         => "Default tracking settings.",
 )
 
 #---------------------------------------------------------------------------------------------------
@@ -540,7 +538,7 @@ Table of what parameters are associated with what element types.
 base_dict = Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch, :L, :name]])
 
 ele_param_by_ele_type = Dict{DataType,Dict{Symbol,Any}}()
-for (ele_type, group_list) in ele_param_groups
+for (ele_type, group_list) in param_groups_list
   ele_param_by_ele_type[ele_type] = base_dict
   for group in group_list
     if group in [BMultipoleGroup, EMultipoleGroup]; continue; end
@@ -555,7 +553,7 @@ function has_param(type::Union{T,Type{T}}, sym::Symbol) where T <: Ele
   if typeof(type) != DataType; type = typeof(type); end
   if haskey(ele_param_by_ele_type[type], sym); return true; end
   # Rule: If BMultipoleGroup is in ele then EMultipoleGroup is in ele. (Is this really wise?)
-  if BMultipoleGroup in ele_param_groups[type] && !isnothing(multipole_type(sym)[1]); return true; end
+  if BMultipoleGroup in param_groups_list[type] && !isnothing(multipole_type(sym)[1]); return true; end
   return false
 end
 
@@ -648,7 +646,7 @@ Dictionary of parameters in the Branch.pdict dict.
 """
 
 branch_param = Dict(
-  :ix_branch   => ParamInfo(Nothing, Int64,             "Index of branch in containing lat .branch[] array"),
+  :ix_branch   => ParamInfo(Nothing, Int,               "Index of branch in containing lat .branch[] array"),
   :geometry    => ParamInfo(Nothing, EleGeometrySwitch, "Open or closed Geometry"),
   :lat         => ParamInfo(Nothing, Pointer,           "Pointer to lattice containing the branch."),
   :type        => ParamInfo(Nothing, BranchType,        "Either LordBranch or TrackingBranch BranchType enums."),

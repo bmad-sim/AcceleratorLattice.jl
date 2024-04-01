@@ -5,6 +5,7 @@ manual/AcceleratorLattice.out
 manual/AcceleratorLattice.toc
 manual/AcceleratorLattice.pdf
 manual/AcceleratorLattice.idx
+manual/AcceleratorLattice.run.xml
 manual/*.aux
 docs/build/
 /Manifest.toml

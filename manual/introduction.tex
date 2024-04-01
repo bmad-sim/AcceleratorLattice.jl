@@ -7,10 +7,9 @@ things as LINACs, storage rings, X-ray beam lines,
 can be constructed and manipulated. Tracking and lattice analysis (for example, calculating
 closed orbits and Twiss functions) is left to other packages in the \bmadjl ecosystem.
 
-The \julia language itself is used as the basis for constructing lattices. Other simulation programs
-have similarly utilized the underlying programming language for constructing lattices\cite{merlin++,xsuite},
-but this is in marked contrast to such programs as MAD\cite{mad}, Elegant\cite{elegant}, and
-\bmad\cite{sagan:bmad2006}. 
+There are three main sources of documentation. One source is this manual which is written in LaTex
+and distributed in pdf format. A second source an introduction and overview guide written in Markdown.
+Finally, taking advantage of the 
 
 %---------------------------------------------------------------------------------------------------
 \section{Acknowledgements}
@@ -33,6 +32,32 @@ Laurent Deniau, and
 Hugo Slepicka
 
 %---------------------------------------------------------------------------
+\section{}
+
+
+The \julia language itself is used as the basis for constructing lattices with \accellat. 
+Other simulation programs
+have similarly utilized the underlying programming language for constructing 
+lattices\cite{Appleby:Merlin2020,Iadarola:Xsuite2023}. This is in marked contrast to many accelerator
+simulation programs such programs as MAD\cite{Grote:MAD1989}, Elegant\cite{Borland:Elegant2000}, and the 
+\bmad toolkit\cite{Sagan:Bmad2006}. 
+
+
+
+%---------------------------------------------------------------------------
+\section{Using AcceleratorLattice.jl}
+
+\accellat is hosted on GitHub. The official repository is at
+\begin{example}
+  github.com/bmad-sim/AcceleratorLattice.jl
+\end{example}
+
+A \vn{using} statement must be given before using \accellat
+\begin{example}
+  using AcceleratorLattice
+\end{example}
+
+%---------------------------------------------------------------------------
 \section{Lattice Elements}
 \label{s:element.def}
 
@@ -42,15 +67,14 @@ quadrupole or a Bragg crystal, or something like a \vn{marker} element (\sref{s:
 to mark a particular point in the machine.  Besides physical elements, there are \vn{controller}
 elements that can be used for parameter control of other elements.
 
-Lattice elements are structs that inherit from the abstract type \vn{Lat}.
+Lattice elements are Julia \vn{struct}s that inherit from the abstract type \vn{Lat}.
 
 Chapter~\sref{c:elements} lists the complete set of different element types that \bmad knows about.
 
-
-
-In a lattice \vn{branch} (\sref{s:branch.def}), The ordered array of elements are assigned an 
-\vn{ element index}
-starting from one. The first element is called \vn{beginning_ele} (\sref{s:begin.ele}).
+In a lattice \vn{branch} (\sref{s:branch.def}), each element in the
+ordered array of elements are assigned an \vn{element index}
+starting from one. The first element in a branch array
+is called \vn{beginning_ele} (\sref{s:begin.ele}).
 This element is always included in every \vn{branch} \sref{s:branch.def} and is used as a
 marker for the beginning of the \vn{branch}.  Additionally, every branch will have a final
 marker element (\sref{s:mark}) named \vn{end_ele}.
@@ -73,22 +97,25 @@ other \vn{branch} is called a \vn{root} branch. A branch that is forked to by so
 is called a \vn{downstream} branch.
 
 There are two types of \vn{branches}: \vn{LordBranches} and \vn{TrackingBranches}, Branches whose \vn{Branch.type} are set to \vn{LordBranch}
-hol
+
 
 %---------------------------------------------------------------------------
 \section{Lattice}
 \label{s:lattice.def}
 
-A \vn{lattice} (\sref{s:lattice.def}), has an array of \vn{branches}. Each \vn{branch} in this array
+A \vn{lattice} (\sref{s:lattice.def}), has an array of \vn{branches}. 
+Each \vn{branch} in this array
 has a name an is assigned an index starting from one. 
-Additionally, each \vn{branch} is assigned a name which is the
-\vn{line} that defines the branch (\sref{s:use}).
+Branches are named after the line that defines the \vn{branch}.
 
-A \vn{lattice} contains an array of \vn{branches} that can be interconnected together to describe an entire machine
+A \vn{lattice} contains an array of \vn{branches} that can be interconnected 
+together to describe an entire machine
 complex. A \vn{lattice} can include such things as transfer lines, dump lines, x-ray beam lines,
-colliding beam storage rings, etc. All of which can be connected together to form a coherent whole. In
-addition, a lattice may contain \vn{controller elements} (Table~\ref{t:control.classes}) which can
-simulate such things as magnet power supplies and lattice element mechanical support structures.
+colliding beam storage rings, etc. All of which can be connected together to form a coherent whole. 
+In addition, a lattice may contain \vn{controller elements} (Table~\ref{t:control.classes}) 
+which can
+simulate such things as magnet power supplies and support structures like a girder supporting
+a section of magnets or an optical table supporting photonic elements.
 
 Branches can be interconnected using \vn{fork} and \vn{photon_fork} elements (\sref{s:fork}). This
 is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
@@ -101,22 +128,4 @@ rings will generally have two \vn{root} branches, one for each ring. The \vn{use
 together lattice elements that are physically shared between branches, for example, the interaction
 region in colliding beam machines, \vn{multipass} lines (\sref{s:multipass}) can be used.
 
-The root branches of a lattice are defined by the \vn{use} (\sref{s:use}) statement. To further
-define such things as dump lines, x-ray beam lines, transfer lines, etc., that branch off from a
-root branch, a forking element is used.  \vn{Fork} elements can define where the particle beam can
-branch off, say to a beam dump. \vn{photon_fork} elements can define the source point for X-ray
-beams.  Example:
-\begin{example}
-  erl: line = (..., dump, ...)               ! Define the root branch 
-  use, erl
-  dump: fork, to_line = d_line               ! Define the fork point
-  d_line: line = (..., q3d, ...)             ! Define the branch line
-\end{example}
 
-Like the root branch \bmad always automatically creates an element with \vn{element index} 0 at the
-beginning of each branch called \vn{beginning}. The longitudinal \vn{s} position of an element in a
-branch is determined by the distance from the beginning of the branch.
-
-Branches are named after the line that defines the \vn{branch}. In the above example, the branch
-line would be named \vn{d_line}. The root branch, by default, is called after the name in the
-\vn{use} statement (\sref{s:use}).
