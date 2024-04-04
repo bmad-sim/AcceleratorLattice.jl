@@ -6,6 +6,9 @@ manual/AcceleratorLattice.toc
 manual/AcceleratorLattice.pdf
 manual/AcceleratorLattice.idx
 manual/AcceleratorLattice.run.xml
+manual/AcceleratorLattice.bbl
+manual/AcceleratorLattice.bcf
+manual/AcceleratorLattice.blg
 manual/*.aux
 docs/build/
 /Manifest.toml

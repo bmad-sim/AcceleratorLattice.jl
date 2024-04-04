@@ -71,7 +71,7 @@ group is the same. But there are exceptions. For example:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\subsection{Anatomy of an Element}
+\section{Anatomy of an Element}
 \label{s:ele.anatomy}
 
 The structs for all elements types contain exactly one component which is a Dict called \vn{pdict}
@@ -87,7 +87,8 @@ selection operator is used, have been overloaded for elements so that \vn{ele.L}
 \vn{ele.pdict[:LengthGroup].L}. Thus the following two statements both set the \vn{s_downstream}
 parameter of an element named \vn{q1}:
 \begin{example}
-  q1.pdict[:Length_group].s_downstream = q1.pdict[:Length_group].s + q1.pdict[:Length_group].L
+  q1.pdict[:Length_group].s_downstream = q1.pdict[:Length_group].s + 
+                                                     q1.pdict[:Length_group].L
   q1.s_downstream = q1.s + q1.L
 \end{example}
 These two statements are not equivalent however. The difference is that when \vn{s_downstream}
@@ -98,7 +99,8 @@ associated with the parameter and the value will be the old value of the paramet
 the \vn{bookkeeper(::Lat)} function is called, the bookkeeping code will use the
 entries in \vn{ele.pdict[:changed]} to limit the bookkeeping to what is necessary and thus
 minimize computing time. Knowing what has been changed is also important in resolving what
-parameters need to be changed. For example, if the bend \vn{angle} of a bend is changed, the bookkeeping code will set the 
+parameters need to be changed. 
+For example, if the bend \vn{angle} of a bend is changed, the bookkeeping code will set the 
 bending strength \vn{g} using the equation \vn{g} = \vn{angle} / \vn{L}. If, instead, if
 \vn{g} is changed, the bookkeeping code will set \vn{angle} appropriately. 
 
@@ -120,6 +122,22 @@ the changed parameters and the dependent parameters are all within the same elem
 cascading dependent parameters where changes to one element cause changes to parameters of 
 elements downstream.
 
+The cascading dependencies are:
+\begin{description}
+%
+\item [s-position dependency:]
+Changes to an elements length \vn{L} or changes to the beginning element's \vn{s} parameter will
+result in the s-positions of all downstream elements changing.
+%
+\item [Reference energy dependency:] Changes to the be beginning element's reference energy (or
+equivilantly the referece momentum), or changes to the \vn{voltage} of an \vn{LCavity} element
+will result in the reference energy of all downstream elements changing.
+%
+\item[Global position dependency:]
+The position of a lattice element in the global coordinate system (\sref{s:global}) is affected
+by a) the lengths of all upstream elements, b) the bend angles of all upstream elements, and c)
+the position in global coordinates of the beginning element.
+\end{description}
 
 
 %---------------------------------------------------------------------------------------------------
