@@ -213,7 +213,7 @@ function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near
   slave = copy(ele0)
   pop!(slave.pdict, :multipass_lord, nothing)
   slave.pdict[:super_lords] = Vector{Ele}([lord])
-  slave.slave_status = SuperSlave
+  slave.slave_status = super_slave
 
   branch.ele[slave.ix_ele] = slave
   slave2 = copy(slave)
@@ -221,10 +221,10 @@ function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near
   slave.L = s_split - ele0.s 
   slave2.L = ele0.s_downstream - s_split
 
-  sbranch = branch.lat.branch[:SuperLord]
+  sbranch = branch.lat.branch[:super_lord]
   push!(sbranch.ele, lord)
   lord.pdict[:slaves] = Vector{Ele}([slave, slave2])
-  lord.lord_status = SuperLord
+  lord.lord_status = super_lord
 
   index_and_s_bookkeeper!(branch)
   index_and_s_bookkeeper!(sbranch)
@@ -247,7 +247,7 @@ end
 """
 
 function set_super_slave_names!(lord::Ele)
-  if lord.lord_status != SuperLord; error(f"Argument is not a SuperLord: {ele_name(lord)}"); end
+  if lord.lord_status != super_lord; error(f"Argument is not a super_lord: {ele_name(lord)}"); end
 
   name_dict = Dict{String,Int}()
   for slave in lord.slaves

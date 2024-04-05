@@ -1,82 +1,88 @@
 #---------------------------------------------------------------------------------------------------
-# EleRegion
+# Region
 
 """
-    struct EleRegion
+    struct Region
 
-Structure used to iterate over through a set of elements in a lattice branch.
-This structure is ment to be used with non-lord branches only.
+Structure used to iterate over through a set of elements in a lattice branch or beamline line.
+Iteration will "wrap" around the ends of the branch if the `start_ele` is downstream of the `end_ele`.
+
 
 Example:
 ```julia
-  for ele in EleRegion(start_ele, end_ele)
+  for ele in Region(start_ele, end_ele)
     ... do something ... 
   end
 ```
 This will iterate over the region from `start_ele` to the element just before `end_ele`.
 To include `end_ele` in the iteration range, use the construct:
 ```julia
-  for ele in EleRegion(start_ele, end_ele, true)
+  for ele in Region(start_ele, end_ele, false)
 ```
-
-If `end_ele` is before `start_ele` in the branch then the iteration region will "wrap" around
-the ends of the branch.
 
 It is permissible for `start_ele` and/or `end_ele` to be a `super_lord`. In any case, the
 iteration region will never include any `super_lord` elements. but rather their corresponding `super_slave`s.
-""" EleRegion
+""" Region
 
-@kwdef mutable struct EleRegion
-  start_ele::Ele = NULL_ELE
-  end_ele::Ele = NULL_ELE
-  include_end::Bool = false
+@kwdef mutable struct Region
+  start_ele::BeamLineItem = NULL_ELE
+  end_ele::BeamLineItem = NULL_ELE
+  include_regionend::Bool = false
 end
 
 #---------------------------------------------------------------------------------------------------
+# Region
 
-EleRegion(start_ele::Ele, end_ele::Ele) = EleRegion(start_ele = start_ele, end_ele = end_ele)
+Region(start_ele::Ele, end_ele::Ele) = Region(start_ele = start_ele, end_ele = end_ele)
 
-function Base.show(io::IO, er::EleRegion)
+function Base.show(io::IO, er::Region)
   print(f"""
-EleRegion:
+Region:
  start_ele: {ele_name(er.start_ele)}
  end_ele:   {ele_name(er.end_ele)}
- include_end: {er.include_end}""")
+ include_regionend: {er.include_regionend}""")
 end
 
-Base.show(io::IO, ::MIME"text/plain", er::EleRegion) = Base.show(io::IO, er::EleRegion)
+Base.show(io::IO, ::MIME"text/plain", er::Region) = Base.show(io::IO, er::Region)
 
 #---------------------------------------------------------------------------------------------------
-# Base.iterate
+# Base.iterate(::Region)
 
 """
-    Base.iterate(x::EleRegion [, ele::Ele])
+    Base.iterate(x::Region [, ele::Ele]) -> Union{Nothing, Tuple{Any, Any}}
 
 Iterator used to iterate over through a set of elements in a lattice branch.
-See the `EleRegion` documentation for more details.
-""" Base.iterate(x::EleRegion)
+See the `Region` documentation for more details.
+""" Base.iterate(x::Region)
 
-function Base.iterate(x::EleRegion)
+function Base.iterate(x::Region)
   if :branch ∉ keys(x.start_ele.pdict); error("Start element not associated with a branch"); end
   if :branch ∉ keys(x.end_ele.pdict);   error("End element not associated with a branch"); end
-  x.start_ele.lord_status == SuperLord ? start_ele = x.start_ele.slaves[1] : start_ele = x.start_ele
-  x.end_ele.lord_status   == SuperLord ? end_ele   = x.end_ele.slaves[1]   : end_ele   = x.end_ele
+  x.start_ele.lord_status == super_lord ? start_ele = x.start_ele.slaves[1] : start_ele = x.start_ele
+  x.end_ele.lord_status   == super_lord ? end_ele   = x.end_ele.slaves[1]   : end_ele   = x.end_ele
   if !(start_ele.branch === end_ele.branch); error("Start and end elements are not in the same branch"); end
-  if start_ele.lord_status != NotALord; error("Start element may not be a non-super_lord lord."); end
-  if end_ele.lord_status   != NotALord; error("End element may not be a non-super_lord lord."); end
+  if start_ele.lord_status != not_a_lord; error("Start element may not be a non-super_lord lord."); end
+  if end_ele.lord_status   != not_a_lord; error("End element may not be a non-super_lord lord."); end
   return (start_ele, start_ele)
 end
 
-function Base.iterate(x::EleRegion, ele::Ele)
+function Base.iterate(x::Region, ele::Ele)
   end_ele = x.end_ele
-  if x.end_ele.lord_status == SuperLord
-    x.include_end ? end_ele = x.end_ele.save[end] : end_ele = x.end_ele.slaves[1]
+  if x.end_ele.lord_status == super_lord
+    x.include_regionend ? end_ele = x.end_ele.save[end] : end_ele = x.end_ele.slaves[1]
   end
-  if ele == end_ele && x.include_end; return nothing; end
+  if ele == end_ele && x.include_regionend; return nothing; end
   ele2 = next_ele(ele)
-  if ele2 == end_ele && !x.include_end; return nothing; end
+  if ele2 == end_ele && !x.include_regionend; return nothing; end
   return (ele2, ele2)
 end
+
+#---------------------------------------------------------------------------------------------------
+# Base.iterate(::BeamLine)
+
+"""
+    Base.iterate( [, state]) -> Union{Nothing, Tuple{Any, Any}}
+""" Base.iterate
 
 #---------------------------------------------------------------------------------------------------
 # next_ele

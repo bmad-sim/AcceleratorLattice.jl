@@ -44,7 +44,7 @@ Initialize lattice controllers and girders.
 
 function add_governor!(lat::Lat, governor::Union{T, Vector{T}}) where T <: Ele
   if !(typeof(governor) <: Vector); governor = [governor]; end
-  gbranch = branch(lat, "Governor")
+  gbranch = branch(lat, "governor")
   gbranch.ele = vcat(gbranch.ele, governor)
 
   for (ix, ele) in enumerate(gbranch.ele)
@@ -106,7 +106,7 @@ function init_multipass_bookkeeper!(lat::Lat)
   # Sort slaves. multipass_id is an identification tag to enable identifying the set of slaves
   # for a given lord. multipass_id is removed here since it will be no longer needed.
   mdict = Dict()
-  multipass_branch = lat.branch[:MultipassLord]
+  multipass_branch = lat.branch[:multipass_lord]
 
   for branch in lat.branch
     for ele in branch.ele

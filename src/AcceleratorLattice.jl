@@ -32,7 +32,7 @@ module AcceleratorLattice
   include("find.jl")
   include("external_ele.jl")
 
-  # Note: Switches and element types are exported automatically when constructed
+  # Note! Element types are exported automatically when constructed
 
   export QuatRotation, QuatN, Quat64
   export memloc, beamline, @ele, @eles, @construct_ele_type, expand, ele_name, show_name, show_ele

@@ -33,20 +33,17 @@ Creates a `beamline` from a vector of `BeamLineItem`s.
 ### Notes
 
 Recognized beamline parameters:
-- `geometry`      Branch geometry. Can be: `Open` (default) or `Closed`.
+- `geometry`      Branch geometry. Can be: `open` (default) or `closed`.
 - `orientation`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
 - `multipass`     Multipass line? Default is `false`.
-- `begin_ele`     Beginning element. Must be present and must be a `Marker` type. There is no default. 
-                    The element parameters `species_ref` along with `pc_ref` or `E_tot_ref` must be present.
-- `end_ele`       Ending element. If present, must be a `Marker` element. Default is a simple `Marker`. 
-All parameters are optional except for `begin_ele`.
+All parameters are optional.
 """ beamline
 
 function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
 
   if !haskey(bline.pdict, :orientation); bline.pdict[:orientation] = +1; end
-  if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = Open; end
+  if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = open; end
   if !haskey(bline.pdict, :multipass);   bline.pdict[:multipass]   = false; end
 
   for (ix, item) in enumerate(bline.line)
@@ -228,13 +225,6 @@ function new_tracking_branch!(lat::Lat, beamline::BeamLine)
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
   info = LatConstructionInfo([], beamline.pdict[:orientation], 0)
 
-  if haskey(beamline.pdict, :begin_ele)
-    add_beamline_ele_to_branch!(branch, BeamLineItem(beamline.pdict[:begin_ele]))
-  else
-    @ele begin_ele = BeginningEle(s = 0, L = 0)
-    add_beamline_ele_to_branch!(branch, BeamLineItem(begin_ele))
-  end
-
   if haskey(beamline.pdict, :species_ref); branch.ele[1].species_ref = beamline.pdict[:species_ref]; end
   if haskey(beamline.pdict, :pc_ref);      branch.ele[1].pc_ref      = beamline.pdict[:pc_ref]; end
   if haskey(beamline.pdict, :E_tot_ref);   branch.ele[1].E_tot_ref   = beamline.pdict[:E_tot_ref]; end
@@ -302,9 +292,9 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
 
   # Lord branches
 
-  new_lord_branch!(lat, "SuperLord", SuperLordBranch)
-  new_lord_branch!(lat, "MultipassLord", MultipassLordBranch)
-  new_lord_branch!(lat, "Governor", GovernorBranch)
+  new_lord_branch!(lat, "super_lord", SuperLordBranch)
+  new_lord_branch!(lat, "multipass_lord", MultipassLordBranch)
+  new_lord_branch!(lat, "governor", GovernorBranch)
 
   for branch in lat.branch
     index_and_s_bookkeeper!(branch)

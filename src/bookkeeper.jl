@@ -233,9 +233,10 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   rg.time_ref         = previous_ele.time_ref_exit
   rg.time_ref_exit    = rg.time_ref + ele.L / (c_light * rg.pc_ref / rg.E_tot_ref)
 
-  if has_changed(ele, ReferenceGroup)
-    error(f"ReferenceGroup parameters cannot be set for this element: {ele_name(ele)}")
-  end
+#  # Why was this check put in?
+#  if has_changed(ele, ReferenceGroup)
+#    error(f"ReferenceGroup parameters cannot be set for this element: {ele_name(ele)}")
+#  end
 
   clear_changed!(ele, ReferenceGroup)
 end
@@ -322,7 +323,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
     bg.e1_rect = bg.e1 - 0.5 * bg.angle
   elseif haskey(cdict, :e1_rect)
     bg.e1 = bg.e1_rect + 0.5 * bg.angle
-  elseif bg.bend_type == SBend
+  elseif bg.bend_type == sbend
     bg.e1_rect = bg.e1 + 0.5 * bg.angle
   else
     bg.e1 = bg.e1_rect - 0.5 * bg.angle
@@ -332,7 +333,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
     bg.e2_rect = bg.e2 - 0.5 * bg.angle
   elseif haskey(cdict, :e2_rect)
     bg.e2 = bg.e2_rect + 0.5 * bg.angle
-  elseif bg.bend_type == SBend
+  elseif bg.bend_type == sbend
     bg.e2_rect = bg.e2 + 0.5 * bg.angle
   else
     bg.e2 = bg.e2_rect - 0.5 * bg.angle
@@ -426,7 +427,7 @@ function reinstate_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGro
   for param in keys(ele.changed)
     info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info) || info.parent_group != group; continue; end
-    Base.setproperty(ele, param, ele.changed[param])
+    Base.setproperty!(ele, param, ele.changed[param])
   end
 end
 

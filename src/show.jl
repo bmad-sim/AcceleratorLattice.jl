@@ -612,6 +612,27 @@ end
 
 info(ele::Ele) = info(typeof(ele))
 
+!-
+
+function info(group::Type{T}) where T <: EleParameterGroup
+  if group in keys(param_group_info)
+    println("$group $(param_group_info[group])")
+  else
+    println("$group")
+  end
+
+  for param in fieldnames(group)
+    info = ele_param_info(param, throw_error = false)
+    if isnothing(info)
+      println("  $param")
+    else
+      str = rpad("$param::$(info.kind)", 30)
+      info.user_sym == info.struct_sym ? str2 = "" : str2 = "User sym = $(info.user_sym)"
+      println("  $str  $(info.description) ($(info.units))  $str2")
+    end
+  end
+end
+
 #---------------------------------------------------------------------------------------------------
 # info1
 

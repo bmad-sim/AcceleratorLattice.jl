@@ -2,8 +2,8 @@
 # superimpose!
 
 """
-    function superimpose!(super_ele::Ele; ref_ele::Eles = NULL_ELE; ele_origin::BodyLocationSwitch = Center, 
-                      offset::Real = 0, ref_origin::BodyLocationSwitch = Center, wrap::Bool = true)
+    function superimpose!(super_ele::Ele; ref_ele::Eles = NULL_ELE; ele_origin::BodyLocationSwitch = center, 
+                      offset::Real = 0, ref_origin::BodyLocationSwitch = center, wrap::Bool = true)
 
 Superimpose an element on a branch. 
 
@@ -29,8 +29,8 @@ The superimposed element will inherit the orientation of the `ref_ele`.
 
 """ superimpose!
 
-function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyLocationSwitch = BCenter, 
-           offset::Real = 0, ref_origin::BodyLocationSwitch = BCenter, wrap::Bool = true)
+function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyLocationSwitch = b_center, 
+           offset::Real = 0, ref_origin::BodyLocationSwitch = b_center, wrap::Bool = true)
   if ref_ele == NULL_ELE; error("ref_ele argument must be present."); end
 
   for refele in collect(ref_ele)
@@ -50,7 +50,7 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
 
     # Insertion of zero length element with zero offset at edge of an element.
     if L_super == 0 && offset == 0 
-      if machine_ref_origin == UpstreamEnd || (machine_ref_origin == Center && refele.L == 0)
+      if machine_ref_origin == UpstreamEnd || (machine_ref_origin == center && refele.L == 0)
         ix_insert = max(ref_ix_ele, 2)
         insert!(branch, ix_insert, super_ele)
         return
@@ -63,20 +63,20 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
 
     # Super_ele end locations: s1 and s2.
     if branch.type <: LordBranch
-      if machine_ref_origin == UpstreamEnd; s1 = refele.slaves[1].s
-      elseif machine_ref_origin == Center;  s1 = 0.5 * (refele.slaves[1].s + refele.slaves[end].s_downstream)
-      else;                                 s1 = refele.slaves[end].s_downstream
+      if machine_ref_origin == upstream_end; s1 = refele.slaves[1].s
+      elseif machine_ref_origin == center;   s1 = 0.5 * (refele.slaves[1].s + refele.slaves[end].s_downstream)
+      else;                                  s1 = refele.slaves[end].s_downstream
       end
     else    # Not a lord branch
-      if machine_ref_origin == UpstreamEnd; s1 = refele.s
-      elseif machine_ref_origin == Center;  s1 = 0.5 * (refele.s + refele.s_downstream)
-      else;                                 s1 = refele.s_downstream
+      if machine_ref_origin == upstream_end; s1 = refele.s
+      elseif machine_ref_origin == center;   s1 = 0.5 * (refele.s + refele.s_downstream)
+      else;                                  s1 = refele.s_downstream
       end
     end
 
-    if machine_ele_origin == UpstreamEnd; s1 = s1 + offset
-    elseif machine_ele_origin == Center;  s1 = s1 + offset - 0.5 * L_super
-    else;                                 s1 = s1 + offset - L_super
+    if machine_ele_origin == upstream_end; s1 = s1 + offset
+    elseif machine_ele_origin == center;   s1 = s1 + offset - 0.5 * L_super
+    else;                                  s1 = s1 + offset - L_super
     end
 
     s2 = s1 + L_super
@@ -142,7 +142,7 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
     # Note: In this case there cannot be wrap around.
     all_drift = true
     n_ele = 0
-    for ele in EleRegion(ele1, ele2)
+    for ele in Region(ele1, ele2, false)
       n_ele += 1
       if typeof(ele) != Drift; all_drift = false; end
     end
@@ -157,13 +157,13 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
     end
 
     # Here if a super_lord element needs to be constructed.
-    sbranch = branch.lat.branch[:SuperLord]
+    sbranch = branch.lat.branch[:super_lord]
     push!(sbranch.ele, super_ele)
-    super_ele.lord_status = SuperLord
+    super_ele.lord_status = super_lord
     super_ele.pdict[:slaves] = Vector{Ele}()
     index_and_s_bookkeeper!(sbranch)
 
-    for ele in EleRegion(ele1, ele2)
+    for ele in Region(ele1, ele2, false)
       if ele.L == 0; continue; end
       ix_ele = ele.ix_ele
 
@@ -171,18 +171,18 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
         branch.ele[ix_ele] = copy(super_ele)
         ele2 = branch.ele[ix_ele]
         ele2.ix_ele = ix_ele
-        ele2.slave_status = SuperSlave
+        ele2.slave_status = super_slave
         ele2.L = ele.L
         ele2.pdict[:super_lords] = Vector{Ele}([super_ele])
         push!(super_ele.slaves, ele2)
 
-      elseif ele.slave_status != SuperSlave
+      elseif ele.slave_status != super_slave
         lord2 = ele
         push!(sbranch.ele, lord2)
-        lord2.lord_status = SuperLord
+        lord2.lord_status = super_lord
         branch.ele[ix_ele] = UnionEle(name = "", L = ele.L, super_lord = Vector{Ele}([super_ele]))
         slave = branch.ele[ix_ele]
-        slave.slave_status = SuperSlave
+        slave.slave_status = super_slave
         lord2.pdict[:slaves] = Vector{Ele}([slave])
         push!(slave.pdict[:super_lords], lord2)
         push!(super_ele.pdict[:slaves], slave)
