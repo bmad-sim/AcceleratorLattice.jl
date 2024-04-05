@@ -142,10 +142,11 @@ end
 @construct_ele_type BeginningEle
 @construct_ele_type Bend
 @construct_ele_type Collimator
-@construct_ele_type Controller
+@construct_ele_type Controller    # Controller
 @construct_ele_type Converter
 @construct_ele_type CrabCavity
-@construct_ele_type Crystal
+@construct_ele_type Custom
+@construct_ele_type Crystal       # Photonic
 @construct_ele_type Drift
 @construct_ele_type EGun
 @construct_ele_type ELSeparator
@@ -154,7 +155,7 @@ end
 @construct_ele_type FloorShift
 @construct_ele_type Foil
 @construct_ele_type Fork
-@construct_ele_type Girder
+@construct_ele_type Girder        # Controller
 @construct_ele_type Instrument
 @construct_ele_type Kicker
 @construct_ele_type LCavity
@@ -166,7 +167,7 @@ end
 @construct_ele_type Octupole
 @construct_ele_type Patch
 @construct_ele_type Quadrupole
-@construct_ele_type Ramper
+@construct_ele_type Ramper        # Controller
 @construct_ele_type RFBend
 @construct_ele_type RFCavity
 @construct_ele_type SADMult
@@ -246,8 +247,8 @@ and K-multipols and bend `g` will be varied. Vice versa when `field_master = fal
 end
 
 @kwdef mutable struct LordSlaveGroup <: EleParameterGroup
-  lord_status::LordStatusSwitch = NotALord
-  slave_status::SlaveStatusSwitch = NotASlave
+  lord_status::LordStatusSwitch = not_a_lord
+  slave_status::SlaveStatusSwitch = not_a_slave
 end
 
 """
@@ -369,7 +370,7 @@ Whether `bend_field` or `g` is held constant when the reference energy is varied
 determined by the `field_master` setting in the MasterGroup struct.
 """
 @kwdef mutable struct BendGroup <: EleParameterGroup
-  bend_type::BendTypeSwitch = SBend    # Is e or e_rect fixed? Also is len or len_chord fixed?
+  bend_type::BendTypeSwitch = sbend    # Is e or e_rect fixed? Also is len or len_chord fixed?
   angle::Number = 0.0
   rho::Number = Inf
   g::Number = 0.0                # Note: Old Bmad dg -> K0.
@@ -388,13 +389,13 @@ determined by the `field_master` setting in the MasterGroup struct.
 end
 
 """
-Vacuum chamber aperture.
+Vacuum chamber aperture struct.
 """
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
   x_limit::Vector = [NaN, NaN]
   y_limit::Vector = [NaN, NaN]
-  aperture_type::ApertureTypeSwitch = Elliptical
-  aperture_at::BodyLocationSwitch = EntranceEnd
+  aperture_type::ApertureTypeSwitch = elliptical
+  aperture_at::BodyLocationSwitch = entrance_end
   offset_moves_aperture::Bool = true
 end
 
@@ -411,11 +412,11 @@ end
 
 
 """
-Girder parameters.
+Girder parameter struct.
 """
 @kwdef mutable struct GirderGroup <: EleParameterGroup
   origin_ele::Ele = NullEle
-  origin_ele_ref_pt::StreamLocationSwitch = Center
+  origin_ele_ref_pt::StreamLocationSwitch = center
   dr::Vector = [0.0, 0.0, 0.0]
   dtheta::Number = 0.0
   dphi::Number = 0.0
@@ -430,7 +431,7 @@ See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
   multipass_phase::Number = 0.0
   frequency::Number = 0.0
   harmon::Number = 0.0
-  cavity_type::CavityTypeSwitch = StandingWave
+  cavity_type::CavityTypeSwitch = standing_wave
   n_cell::Int   = 1
 end
 
@@ -484,8 +485,8 @@ end
 Sets the nominal values for tracking prameters.
 """
 @kwdef mutable struct TrackingGroup <: EleParameterGroup
-  tracking_method::TrackingMethodSwitch = TrackingStandard
-  field_calc::FieldCalcMethodSwitch = FieldStandard
+  tracking_method::TrackingMethodSwitch = standard_tracking
+  field_calc::FieldCalcMethodSwitch = field_standard
   num_steps::Int   = -1
   ds_step::Number = NaN
 end
@@ -520,7 +521,7 @@ abstract type ControlSlave end
   exp_str::String = ""
   exp_parsed = nothing
   value::Number = 0.0
-  type::ControlSlaveTypeSwitch = NotSet
+  type::ControlSlaveTypeSwitch = control_not_set
 end
 
 @kwdef mutable struct ControlSlaveKnot  <: ControlSlave
@@ -529,9 +530,9 @@ end
   slave_parameter = nothing
   x_knot::Vector = Vector()
   y_knot::Vector = Vector()
-  interpolation::InterpolationSwitch = Spline
+  interpolation::InterpolationSwitch = spline
   value::Number = 0.0
-  type::ControlSlaveTypeSwitch = NotSet
+  type::ControlSlaveTypeSwitch = control_not_set
 end
 
 @kwdef mutable struct ControlSlaveFunction  <: ControlSlave
@@ -540,7 +541,7 @@ end
   slave_parameter = nothing
   func = nothing
   value::Number = 0.0
-  type::ControlSlaveTypeSwitch = NotSet
+  type::ControlSlaveTypeSwitch = control_not_set
 end
 
 mutable struct ControlSlaveGroup  <: EleParameterGroup

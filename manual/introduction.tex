@@ -67,9 +67,7 @@ quadrupole or a Bragg crystal, or something like a \vn{marker} element (\sref{s:
 to mark a particular point in the machine.  Besides physical elements, there are \vn{controller}
 elements that can be used for parameter control of other elements.
 
-Lattice elements are Julia \vn{struct}s that inherit from the abstract type \vn{Lat}.
-
-Chapter~\sref{c:elements} lists the complete set of different element types that \bmad knows about.
+Chapter~\sref{c:element-list} lists the complete set of different element types that \bmad knows about.
 
 In a lattice \vn{branch} (\sref{s:branch.def}), each element in the
 ordered array of elements are assigned an \vn{element index}
@@ -96,7 +94,8 @@ X-ray beam line. A \vn{branch} from which other \vn{branches} fork but is not fo
 other \vn{branch} is called a \vn{root} branch. A branch that is forked to by some other branch
 is called a \vn{downstream} branch.
 
-There are two types of \vn{branches}: \vn{LordBranches} and \vn{TrackingBranches}, Branches whose \vn{Branch.type} are set to \vn{LordBranch}
+There are two types of \vn{branches}: \vn{LordBranches} and \vn{TrackingBranches}, 
+Branches whose \vn{Branch.type} are set to \vn{LordBranch}
 
 
 %---------------------------------------------------------------------------
@@ -127,5 +126,37 @@ rings will generally have two \vn{root} branches, one for each ring. The \vn{use
 (\sref{s:use}) in a lattice file will list the \vn{root} \vn{branches} of a lattice. To connect
 together lattice elements that are physically shared between branches, for example, the interaction
 region in colliding beam machines, \vn{multipass} lines (\sref{s:multipass}) can be used.
+
+%---------------------------------------------------------------------------
+\section{Conventions}
+\label{s:conventions}
+
+The following conventions 
+\begin{description}
+%
+\item[Evaluation is at upstream end:] 
+For lattice element parameters that are s-dependent, the evaluation location is the
+\vn{upstream} edge of the element (\sref{s:ref.construct}). These parameters include the 
+element's global position, the reference energy/momentum, and the s-position.
+%
+\end{description}
+
+
+%---------------------------------------------------------------------------
+\section{Convention Differences From Fortran Bmad}
+
+Certain conventions were changed
+
+\begin{description}
+\item
+The old Fortran \bmad names for the coordinate systems (\sref{s:coords}) was somewhat different and not
+always consistent. The \vn{global} and \vn{element body} names are the same but \vn{machine}
+coordinates are called the \vn{laboratory} in Fortran \bmad.
+%
+\item
+Evaluation was at the downstream end (\sref{s:conventions}) in Fortran \bmad not the upstream end.
+%
+\end{description}
+
 
 

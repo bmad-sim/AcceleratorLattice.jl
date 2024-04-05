@@ -1,5 +1,5 @@
 \chapter{Coordinates}
-\label{s:coords.3}
+\label{s:coords}
 \index{coordinates|hyperbf}
 
 \vspace*{-0.3in}
@@ -23,22 +23,21 @@ element and $s = 0$ in machine coordinates is at the beginning of the line.
 The transformation between \vn{machine} and \vn{body} coordinates is given in
 \sref{s:lab.body.transform}.
 The $x=y=0$ curved line of the
-laboratory coordinate system is known as the ``\vn{reference orbit}''.
+machine coordinate system is known as the ``\vn{reference orbit}''.
 
 \begin{figure}[!b]
   \centering
   \includegraphics[width=5.0in]{coordinates.pdf}
   \caption[The three coordinate system used by \bmad.]
-{The three coordinate systems used by \bmad: 
-The \vn{global} (or ``\vn{floor}'') coordinate system
+{The \vn{global} (or ``\vn{floor}'') coordinate system
 is independent of the accelerator.  The \vn{machine} curvilinear coordinate system follows the bends
 of the accelerator.  Each lattice element has \vn{element body} coordinates which, if the element is
-not ``misaligned'' is the same as the \vn{machine} coordinates. The $x=y=0$ curved line of the
-machine coordinate system is known as the ``reference orbit''. For each lattice element,
-there is also a \vn{local} coordinate system which is the same as the \vn{machine} coordinate
-system except that $s = 0$ in \vn{local} coordinates is at the beginning of the non-misaligned
+not ``misaligned'' is the same as the \vn{local} coordinates. 
+\vn{Local} coordinates are the same as \vn{machine} coordinates
+except that $s = 0$ in \vn{local} coordinates is at the beginning of the non-misaligned
 element and $s = 0$ in machine coordinates is at the beginning
-of the line.}
+of the line. The $x=y=0$ curved line of the
+machine coordinate system is known as the ``reference orbit''.}
   \label{f:coords}
 \end{figure}
 
@@ -46,15 +45,11 @@ of the line.}
 \section{Machine Coordinates and Reference Orbit}
 \label{s:local.coords}
 
-Note: The old Fortran \bmad names for the coordinate systems was somewhat different and not
-always consistent. The \vn{global} and \vn{element body} names are the same but \vn{machine}
-coordinates are called the \vn{laboratory} in Fortran \bmad.
-
 %-----------------------------------------------------------------------------
 \subsection{The Reference Orbit}
 \label{s:ref}
 \index{reference orbit|hyperbf}
-\index{laboratory coordinates|hyperbf}
+\index{machine coordinates|hyperbf}
 
 \begin{figure}[tb]
   \centering
@@ -79,9 +74,9 @@ orbit. The $z$--axis will generally be pointing in the direction of increasing $
 (\fig{f:local.coords}A) but, as discussed below, will point counter to $s$ for elements that are
 \vn{reversed} (\fig{f:local.coords}B). The $x$ and $y$--axes are perpendicular to the reference
 orbit and, by construction, the particle is always at $z = 0$. The coordinate system so constructed
-is called the \vn{``local coordinate system''} or sometimes the \vn{``laboratory coordinate
+is called the \vn{``local coordinate system''} or sometimes the \vn{``machine coordinate
 system''} when there is need to distinguish it from the \vn{``element body coordinate system''}
-(\sref{s:coords.3}) which is attached to the physical element. There is a separate reference orbit
+(\sref{s:coords}) which is attached to the physical element. There is a separate reference orbit
 for each branch (\sref{s:branch.def}) of a lattice.
 
 \index{x_offset}\index{y_offset}
@@ -108,7 +103,7 @@ lattice while the latter can be any arbitrary orbit.
   \centering
   \includegraphics[width=5in]{element-coord-frame.pdf}
 \caption[Lattice elements as LEGO blocks.]{Lattice elements can be imagined as ``LEGO blocks'' which
-fit together to form the reference orbit along with the laboratory coordinate system. How elements
+fit together to form the reference orbit along with the machine coordinate system. How elements
 join together is determined in part by their entrance and exit coordinate frames. A) For
 straight line elements the entrance and exit frames are colinear. B) For bends elements, the two
 frames are rotated with respect to each other. C) For \vn{patch} and \vn{floor_shift} elements the
@@ -121,7 +116,7 @@ exit frame may be arbitrarily positioned with respect to the entrance frame.}
 \index{sbend}\index{rbend}
 \index{crystal}\index{mirror}\index{entrance_end}
 \index{exit_end}\index{patch}\index{floor_shift}
-One way of thinking about the reference orbit and the laboratory coordinates is to imagine that each
+One way of thinking about the reference orbit and the machine coordinates is to imagine that each
 element is like a LEGO block with an ``\vn{entrance}'' and an ``\vn{exit}'' coordinate frame as
 illustrated in \fig{f:ele.coord.frame}\footnote
   {
@@ -141,7 +136,7 @@ arbitrarily oriented with respect to the entrance end. In this case, the referen
 entrance and exit faces is not defined.
 
 %-----------------------------------------------------------------------------
-\subsection{Reference Orbit and Laboratory Coordinates Construction}
+\subsection{Reference Orbit and Machine Coordinates Construction}
 \label{s:ref.construct}
 \index{reference orbit!construction}
 \index{upstream element end}\index{downstream element end}
@@ -151,7 +146,7 @@ entrance and exit faces is not defined.
 \begin{figure}[tb]
   \centering
   \includegraphics[width=5in]{patch-between.pdf}
-  \caption[Laboratory coordinates construction.]{A) The laboratory coordinates are constructed by
+  \caption[Machine coordinates construction.]{A) The machine coordinates are constructed by
 connecting the \vn{downstream} reference frame of one element with the \vn{upstream} reference frame
 of the next element in the branch. Coordinates shown is for the mating of element \vn{A} to element
 {B}.  B) Example with drift element \vn{dft} followed by a bend \vn{bnd}. Both elements are
@@ -167,55 +162,55 @@ is always out of the page.}
 Assuming for the moment that there are no \vn{fiducial} elements present, the construction of the
 reference orbit starts at the \vn{beginning_ele} element (\sref{s:begin.ele}) at the start of a
 branch. If the branch is a \vn{root} branch (\sref{s:lattice.def}), The orientation of the beginning
-element within the global coordinate system (\sref{s:coords.3}) can be set via the appropriate
+element within the global coordinate system (\sref{s:coords}) can be set via the appropriate
 positioning statements (\sref{s:beginning}). If the branch is not a \vn{root} branch, the position
 of the beginning element is determined by the position of the \vn{fork} or \vn{photon_fork} element
 from which the branch forks from. Unless set otherwise in the lattice file, $s = 0$ at the
 \vn{beginning_ele} element.
 
-If there are \vn{fiducial} elements, the laboratory coordinates are constructed beginning at these
+If there are \vn{fiducial} elements, the machine coordinates are constructed beginning at these
 elements.
 
 Once the beginning element in a branch is positioned, succeeding elements are concatenated together
-to form the laboratory coordinates. All elements have an ``\vn{upstream}'' and a ``\vn{downstream}''
+to form the machine coordinates. All elements have an ``\vn{upstream}'' and a ``\vn{downstream}''
 end as shown in \fig{f:patch.between}A. The \vn{downstream} end of an element is always farther (at
 greater $s$) from the beginning element than the \vn{upstream} end of the element.  Particles travel
 in the $+s$ direction, so particles will enter an element at the upstream end and exit at the
 downstream end.
 
-Normally, the \vn{upstream} end is the element's \vn{entrance} end (\fig{f:ele.coord.frame}) and the
-\vn{downstream} end is the element's \vn{exit} exit. This corresponds to particles entering at the
-entrance end and exiting the element at the exit end. However, if an element is reversed
+Normally, the \vn{upstream} end is the same as the element's \vn{entrance} end (\fig{f:ele.coord.frame}) and the
+\vn{downstream} end is the same as the element's \vn{exit} end. However, if an element is reversed
 (\sref{s:ele.reverse}), the element's \vn{exit} end will be \vn{upstream} end and the element's
-\vn{entrance} end will be the \vn{downstream} end. That is, for a reversed element, particles will
+\vn{entrance} end will be the \vn{downstream} end. That is, for a reversed element, particles 
+traveling downstream will
 enter at the element's \vn{exit} end and will exit at the \vn{entrance} end.
 
-The procedure to connect elements together to form the laboratory coordinates is to mate the
+The procedure to connect elements together to form the machine coordinates is to mate the
 downstream reference frame of the element with the upstream reference frame of the next element in
 the branch so that, without misalignments, the $(x,y,z)$ axes coincide\footnote
   {
 If there are misalignments, the \vn{entrance} and \vn{exit} frames will move with the element. However,
-the \vn{upstream} and \vn{downstream} frames, along with the reference orbit and laboratory
+the \vn{upstream} and \vn{downstream} frames, along with the reference orbit and machine
 coordinates, will not move.
   }. 
 This is illustrated in \fig{f:patch.between}. \fig{f:patch.between}A shows the general situation
 with the downstream frame of element \vn{A} mated to the upstream frame of element \vn{B}.
 Figures~\ref{f:patch.between}B-C show branches constructed from the following lattice file:
 \begin{example}
-  DFT: drift, l = 2
-  BND: sbend, l = 2, g = pi/12
-  P: patch, x_pitch = pi          ! Reflection patch.
-  B_line: line = (DFT, BND)       ! No reversal.
-  C_line: line = (DFT, --BND)     ! Illegal. Do not use!
-  D_line: line = (DFT, P, --BND)  ! Valid.
+  @ele dft = drift(L = 2)
+  @ele bnd = bend(l = 2, g = pi/12)
+  @ele p = patch(x_pitch = pi)                 ! Reflection patch.
+  BL = beamline("BL", [dft, bnd])              ! No reversal.
+  CL = beamline("CL", [dft, reverse(bnd)])     ! Illegal. Do not use!
+  DL = beamline("DL", [dft, p, reverse(bnd)])  ! Valid.
 \end{example}
 The $(x,z)$ coordinates are drawn at the entrance end of the elements and $z$ will always point
 towards the element's exit end.  \fig{f:patch.between}B shows the branch constructed from
-\vn{B_line} containing an unreversed drift named \vn{dft} connected to an unreversed bend named
-\vn{bnd}. \fig{f:patch.between}C shows the branch constructed from \vn{C_line}. This is like
-\vn{B_line} except here element \vn{bnd} is reversed. This gives an unphysical situation since a
+\vn{BL} containing an unreversed drift named \vn{dft} connected to an unreversed bend named
+\vn{bnd}. \fig{f:patch.between}C shows the branch constructed from \vn{CL}. This is like
+\vn{BL} except here element \vn{bnd} is reversed. This gives an unphysical situation since a
 particle traveling through \vn{dft} will ``fall off'' when it gets to the end.
-\fig{f:patch.between}D shows the branch constructed from \vn{D_line}. Here a ``\vn{reflection}''
+\fig{f:patch.between}D shows the branch constructed from \vn{DL}. Here a ``\vn{reflection}''
 patch \vn{P} (\sref{s:reflect.patch}) has been added to get a plausible geometry. The patch rotates the
 coordinate system around the $y$-axis by 180\Deg (leaving the $y$-axis invariant). It is always the
 case that a reflection patch is needed between reversed and unreversed elements
@@ -227,7 +222,7 @@ If the first element after the \vn{beginning_ele} element at the start of a bran
 \vn{beginning_ele} element will be marked as reversed so that a reflection patch is not needed in
 this circumstance.
 \item
-Irrespective of whether elements are reversed or not, the laboratory $(x,y,z)$ coordinate system
+Irrespective of whether elements are reversed or not, the machine $(x,y,z)$ coordinate system
 at all $s$-positions will always be a right-handed coordinate system.
 \item
 Care must be take when using reversed elements. For example, if the field of the \vn{bnd} element in
@@ -656,34 +651,34 @@ When there are a series of patches, The transformations of all the patches are c
 to form an effective $\bfS$ which can then be used with \Eq{s330}.
 
 %-----------------------------------------------------------------------------
-\section{Transformation Between Laboratory and Element Body Coordinates}
+\section{Transformation Between Machine and Element Body Coordinates}
 \label{s:lab.body.transform}
-\index{laboratory coordinates}
+\index{machine coordinates}
 \index{element body coordinates|hyperbf}
 
 The \vn{element body} coordinates are the coordinate system attached to an element. Without any
 misalignments, where \vn{``misalignments''} are here defined to be any offset, pitch or tilt
-(\sref{s:offset}), the \vn{laboratory} coordinates (\sref{s:ref}) and \vn{element body} coordinates
-are the same. With misalignments, the transformation between \vn{laboratory} and \vn{element body}
+(\sref{s:offset}), the \vn{machine} coordinates (\sref{s:ref}) and \vn{element body} coordinates
+are the same. With misalignments, the transformation between \vn{machine} and \vn{element body}
 coordinates depends upon whether the local coordinate system is straight (\sref{s:straight.mis}) or
 bent (\sref{s:bend.mis}).
 
 When tracking a particle through an element, the particle starts at the \vn{nominal}
-(\sref{s:coords.3}) upstream end of the element with the particle's position expressed in laboratory
+(\sref{s:coords}) upstream end of the element with the particle's position expressed in machine
 coordinates. Tracking from the the nominal upstream end to the actual upstream face of the element
 involves first transforming to element body coordinates (with $s = 0$ in the equations below) and
 then propagating the particle as in a field free drift space from the particle's starting position
 to the actual element face. Depending upon the element's orientation, this tracking may involve
 tracking backwards. Similarly, after a particle has been tracked through the physical element to the
 actual downstream face, the tracking to the nominal downstream end involves transforming to
-laboratory coordinates (using $s = L$ in the equations below) and then propagating the particle as
+machine coordinates (using $s = L$ in the equations below) and then propagating the particle as
 in a field free drift space to the nominal downstream edge.
 
 %-----------------------------------------------------------------------------
 \subsection{Straight Element Misalignment Transformation}
 \label{s:straight.mis}
 
-For straight line elements, given a laboratory coordinate frame $\Lambda_s$ with origin a distance
+For straight line elements, given a machine coordinate frame $\Lambda_s$ with origin a distance
 $s$ from the beginning of the element, misalignments will shift the coordinates to a new reference
 frame denoted $E_s$. Since misalignments are defined with respect to the middle of the element, the
 transformation between $\Lambda_s$ and $E_s$ is a three step process:
@@ -692,7 +687,7 @@ transformation between $\Lambda_s$ and $E_s$ is a three step process:
   \longrightarrow E_\text{mid} \longrightarrow E_s
   \label{llee}
 \end{equation}
-where $\Lambda_\text{mid}$ and $E_\text{mid}$ are the laboratory and element reference frames at the
+where $\Lambda_\text{mid}$ and $E_\text{mid}$ are the machine and element reference frames at the
 center of the element.
 
 The first and last transformations from $\Lambda_s$ to $\Lambda_\text{mid}$ and from $E_\text{mid}$
@@ -724,21 +719,21 @@ the bend position (\sref{s:bend.orient}). Furthermore, \vn{ref_tilt} is calculat
 the coordinates at the beginning of the bend while, like straight elements, \vn{roll}, offsets, and
 pitches are calculated with respect to the center of the bend. The different reference frame used
 for \vn{ref_tilt} versus everything else means that five transformations are needed to get from the
-laboratory frame to the element body frame (see \Eq{llee}). Symbolically:
+machine frame to the element body frame (see \Eq{llee}). Symbolically:
 \begin{equation}
   \Lambda_s \longrightarrow \Lambda_\text{mid} 
   \longrightarrow \Omega_\text{mid} \longrightarrow \Omega_0
   \longrightarrow E_0 \longrightarrow E_s
 \end{equation}
 
-The first transformation, $\Lambda_s$ to $\Lambda_\text{mid}$, from laboratory coordinates at a
-distance $s$ from the beginning of the element to laboratory coordinates at the center the bend is a
+The first transformation, $\Lambda_s$ to $\Lambda_\text{mid}$, from machine coordinates at a
+distance $s$ from the beginning of the element to machine coordinates at the center the bend is a
 rotation around the center of curvature of the bend and is given by \Eqs{vwlv} and \eq{wws} with
 \Eqs{ustt} and \eq{lrztt} with the substitution $\alpha_b \rightarrow (L/2 - s)/\rho$.
 
 The second transformation $\Lambda_\text{mid}$ to $\Omega_\text{mid}$ at the center of the element
 adds in the misalignments (Note that the coordinate frame $\Omega_\text{mid}$ is neither a
-laboratory frame or an element frame so hence the use of a different symbol $\Omega$). Explicitly,
+machine frame or an element frame so hence the use of a different symbol $\Omega$). Explicitly,
 the $\Lambda_\text{mid} \longrightarrow \Omega_\text{mid}$ transformation is
 \begin{align}
   \bfL &= \bfL_\text{off} + 

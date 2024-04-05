@@ -14,9 +14,9 @@ abstract type AbstractTrackPoint end
   charge_weight:: Float64 = NaN
   pc_ref::Float64 = NaN
   beta::Float64 = NaN
-  state::TrackingStateSwitch = Alive
+  state::TrackingStateSwitch = alive
   direction::Int = 1
   time_dir::Float64 = 1
-  species::Species = Species("NotSet")
-  location::StreamLocationSwitch = UpstreamEnd
+  species::Species = Species("not_set")
+  location::StreamLocationSwitch = upstream_end
 end
