@@ -1,0 +1,3 @@
+* Test that param_groups_list keys cover all element types.
+* Test that param_groups_list values are arrays of EleParameterGroup items.
+* Test that Param_group_info keys cover all parameter groups.

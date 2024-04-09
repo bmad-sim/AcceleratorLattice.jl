@@ -59,8 +59,8 @@ ele_param_info_dict = Dict(
   :s                  => ParamInfo(LengthGroup,    Number,      "Longitudinal s-position at the upstream end.", "m"),
   :s_downstream       => ParamInfo(LengthGroup,    Number,      "Longitudinal s-position at the downstream end.", "m"),
 
-  :field_master       => ParamInfo(MasterGroup,    Bool,      
-                                  "Used when varying ref energy. True -> fields are fixed and normalized fields vary."),
+  :is_on              => ParamInfo(MasterGroup,    Bool,        "Element fields on/off."),
+  :field_master       => ParamInfo(MasterGroup,    Bool,        "True: fields are fixed and normalized values change when varying ref energy."),
 
   :species_ref        => ParamInfo(ReferenceGroup, Species,     "Reference species."),
   :species_ref_exit   => ParamInfo(ReferenceGroup, Species,     "Reference species at exit end."),
@@ -161,14 +161,19 @@ ele_param_info_dict = Dict(
   :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),
   :dpsi_girder        => ParamInfo(GirderGroup,     Number,               "Psi angle orientation with respect to ref ele.", "rad", :dpsi),
 
-  :ks                 => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
-  :ks_field           => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
+  :ksol               => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
+  :bsol_field         => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
 
   :slave              => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
   :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
 
-  :slave_status       => ParamInfo(LordSlaveGroup,  SlaveStatusSwitch,     "Slave status."),
-  :lord_status        => ParamInfo(LordSlaveGroup,  LordStatusSwitch,      "Lord status."),
+  :slave_status       => ParamInfo(LordSlaveGroup,    SlaveStatusSwitch,    "Slave status."),
+  :lord_status        => ParamInfo(LordSlaveGroup,    LordStatusSwitch,     "Lord status."),
+
+  :twiss              => ParamInfo(InitTwissGroup,    InitTwissGroup,           "Initial Twiss parameters."),
+
+  :spin               => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle spin"),
+  :orbit              => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle position."),
 )
 
 for (key, info) in ele_param_info_dict
@@ -477,22 +482,22 @@ Order is important. Bookkeeping routines rely on:
 base_group_list = [LengthGroup, LordSlaveGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
-general_group_list = vcat(base_group_list, alignment_group_list, multipole_group_list)
+general_group_list = [base_group_list..., alignment_group_list..., multipole_group_list...]
 
 param_groups_list = Dict(  
   Dict(
-    BeginningEle   => base_group_list,
-    Bend           => vcat(general_group_list, BendGroup),
+    BeginningEle   => [base_group_list..., InitTwissGroup, InitParticleGroup],
+    Bend           => [general_group_list..., BendGroup],
     Controller     => [ControlVarGroup, ControlSlaveGroup],
-    Drift          => base_group_list,
-    LCavity        => vcat(general_group_list, RFMasterGroup, LCavityGroup, RFGroup),
-    Marker         => base_group_list,
-    Octupole       => general_group_list,
-    Patch          => vcat(base_group_list, PatchGroup),
-    Quadrupole     => general_group_list,
-    RFCavity       => vcat(general_group_list, RFMasterGroup, RFFieldGroup, RFGroup),
-    Sextupole      => general_group_list,
-    UnionEle       => vcat(base_group_list, alignment_group_list),
+    Drift          => [base_group_list...],
+    LCavity        => [general_group_list..., RFMasterGroup, LCavityGroup, RFGroup],
+    Marker         => [base_group_list...],
+    Octupole       => [general_group_list...],
+    Patch          => [base_group_list..., PatchGroup],
+    Quadrupole     => [general_group_list...],
+    RFCavity       => [general_group_list..., RFMasterGroup, RFFieldGroup, RFGroup],
+    Sextupole      => [general_group_list...],
+    UnionEle       => [base_group_list..., alignment_group_list...],
   )
 )
 
@@ -509,6 +514,8 @@ param_group_info = Dict(
   EMultipole1           => "Electric multipole of given order. Contained in EMultipoleGroup.",
   FloorPositionGroup    => "Global floor position and orientation.",
   GirderGroup           => "Girder parameters.",
+  InitParticleGroup     => "Initial particle position and spin.",
+  InitTwissGroup        => "Initial Twiss and coupling parameters.",
   LCavityGroup          => "Accelerating cavity parameters.",
   LengthGroup           => "Length and s-position parameters.",
   LordSlaveGroup        => "Element lord and slave status.",
@@ -521,57 +528,6 @@ param_group_info = Dict(
   StringGroup           => "Informational strings.",
   TrackingGroup         => "Default tracking settings.",
 )
-
-#---------------------------------------------------------------------------------------------------
-
-struct ParamState
-  settable::Bool
-end
-
-#---------------------------------------------------------------------------------------------------
-# ele_param_by_ele_type
-
-"""
-Table of what parameters are associated with what element types.
-"""
-
-base_dict = Dict{Symbol,Any}([v => ParamState(false) for v in [:s, :ix_ele, :branch, :L, :name]])
-
-ele_param_by_ele_type = Dict{DataType,Dict{Symbol,Any}}()
-for (ele_type, group_list) in param_groups_list
-  ele_param_by_ele_type[ele_type] = base_dict
-  for group in group_list
-    if group in [BMultipoleGroup, EMultipoleGroup]; continue; end
-    ele_param_by_ele_type[ele_type] = merge(ele_param_by_ele_type[ele_type], 
-                            Dict{Symbol,Any}([v => ParamState(true) for v in fieldnames(group)]))
-  end
-end
-ele_param_by_ele_type[BeginningEle][:s] = ParamState(true)
-
-
-function has_param(type::Union{T,Type{T}}, sym::Symbol) where T <: Ele
-  if typeof(type) != DataType; type = typeof(type); end
-  if haskey(ele_param_by_ele_type[type], sym); return true; end
-  # Rule: If BMultipoleGroup is in ele then EMultipoleGroup is in ele. (Is this really wise?)
-  if BMultipoleGroup in param_groups_list[type] && !isnothing(multipole_type(sym)[1]); return true; end
-  return false
-end
-
-#---------------------------------------------------------------------------------------------------
-# is_settable
-
-"""
-    is_settable(ele::T, sym::Symbol) where T <: Ele -> Bool
-""" is_settable
-
-function is_settable(ele::T, sym::Symbol) where T <: Ele
-  if haskey(ele_param_by_ele_type[typeof(ele)], sym); return ele_param_by_ele_type[typeof(ele)][sym].settable; end
-
-  pinfo = ele_param_info(sym)
-  if isnothing(pinfo); error(f"No info on: {sym}"); end
-
-  return true
-end
 
 #---------------------------------------------------------------------------------------------------
 # multipole!
@@ -592,7 +548,6 @@ function multipole!(mgroup, order; insert::Bool = false)
     if ix > length(mgroup.vec) || order != mgroup.vec[ix].order; return nothing; end
     return mgroup.vec[ix]
   end
-
 
   if ix > length(mgroup.vec) 
     ix = length(mgroup.vec) + 1
