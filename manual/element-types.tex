@@ -1,5 +1,5 @@
 \chapter{Lattice Element Types}
-\label{c:element-list}
+\label{c:ele.types}
 
 %---------------------------------------------------------------------------------------------------
 
@@ -61,19 +61,19 @@ Table~\ref{t:control.classes}}
 \section{BeginningEle}
 \label{s:begin.ele}
 
-A \vn{BeginningEle} element is placed at the beginning of every branch
-(\sref{s:branch.def}) of a lattice to mark the start of the branch. The beginning element always
-has element index 1 (\sref{c:lat.concepts}). The creation of this \vn{beginning_ele} element is
-automatic and it is not permitted to define a lattice with \vn{beginning_ele} elements at any
-other position.
+A \vn{BeginningEle} element must be present as the first element of every tracking branch.
+(\sref{s:branch.def}).
 
-The attributes of the \vn{beginning_ele} element in the root branch are are generally set using
-\vn{beginning} (\sref{s:beginning}) statements or line parameter (\sref{s:beginning}) statements.
-[The attributes of other \vn{beginning_ele} elements are set solely with line parameter statements.]
+Element parameter groups associated with a \vn{BeginningEle} are:
+\begin{example}
+  LengthGroup          -> Length and s-position parameters.
+  LordSlaveGroup       -> Element lord and slave status.
+  StringGroup          -> Informational strings.
+  ReferenceGroup       -> Reference energy and species.
+  FloorPositionGroup   -> Global floor position and orientation.
+  TrackingGroup        -> Default tracking settings.
+\end{example}
 
-If the first element after the \vn{beginning_ele} element at the start of a branch is reversed
-(\sref{s:ele.reverse}), the \vn{beginning_ele} element will be marked as reversed so that a
-reflection patch is not needed in this circumstance.
 
 \newpage
 

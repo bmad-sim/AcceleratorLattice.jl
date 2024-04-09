@@ -22,8 +22,43 @@ When defining custom parameter groups, key/value pairs can be added to `show_col
 """ show_column2
 
 show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
-  LordSlaveGroup => Dict{Symbol,Symbol}(
-    :lord_status      => :slave_status,
+  AlignmentGroup => Dict{Symbol,Symbol}(
+    :offset           => :offset_tot,
+    :x_pitch          => :x_pitch_tot,
+    :y_pitch          => :y_pitch_tot,
+    :tilt             => :tilt_tot,
+  ),
+
+  ApertureGroup => Dict{Symbol,Symbol}(
+    :x_limit          => :y_limit,
+    :aperture_at      => :aperture_type,
+  ),
+
+  BendGroup => Dict{Symbol,Symbol}(
+    :g                => :bend_field,
+    :angle            => :rho,
+    :L_chord          => :L_sagitta,
+    :e1               => :e1_rect,
+    :e2               => :e2_rect,
+    :fint1            => :hgap1,
+    :fint2            => :hgap2,
+  ),
+
+  FloorPositionGroup => Dict{Symbol,Symbol}(
+    :r                => :q,
+    :phi              => :psi,
+  ),
+
+  GirderGroup => Dict{Symbol,Symbol}(
+    :origin_ele       => :origin_ele_ref_pt,
+    :dtheta           => :dr,
+    :dphi             => :dpsi,
+  ),
+
+  LCavityGroup => Dict{Symbol,Symbol}(
+    :voltage_ref      => :gradient_ref,
+    :voltage_err      => :gradient_err,
+    :voltage_tot      => :gradient_tot,
   ),
 
   LengthGroup => Dict{Symbol,Symbol}(
@@ -31,9 +66,12 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
     :s                => :s_downstream,
   ),
 
-  FloorPositionGroup => Dict{Symbol,Symbol}(
-    :r                => :q,
-    :phi              => :psi,
+  LordSlaveGroup => Dict{Symbol,Symbol}(
+    :lord_status      => :slave_status,
+  ),
+
+  MasterGroup => Dict{Symbol,Symbol}(
+    :is_on            => :field_master
   ),
 
   PatchGroup => Dict{Symbol,Symbol}(
@@ -51,51 +89,17 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
     :time_ref         => :time_ref_exit,
   ),
 
-  AlignmentGroup => Dict{Symbol,Symbol}(
-    :offset           => :offset_tot,
-    :x_pitch          => :x_pitch_tot,
-    :y_pitch          => :y_pitch_tot,
-    :tilt             => :tilt_tot,
-  ),
-
-  BendGroup => Dict{Symbol,Symbol}(
-    :g                => :bend_field,
-    :angle            => :rho,
-    :L_chord          => :L_sagitta,
-    :e1               => :e1_rect,
-    :e2               => :e2_rect,
-    :fint1            => :hgap1,
-    :fint2            => :hgap2,
-  ),
-
-  ApertureGroup => Dict{Symbol,Symbol}(
-    :x_limit          => :y_limit,
-    :aperture_at      => :aperture_type,
-  ),
-
-  StringGroup => Dict{Symbol,Symbol}(
-    :type             => :alias,
-  ),
-
-  GirderGroup => Dict{Symbol,Symbol}(
-    :origin_ele       => :origin_ele_ref_pt,
-    :dtheta           => :dr,
-    :dphi             => :dpsi,
-  ),
-
   RFFieldGroup => Dict{Symbol,Symbol}(
     :voltage          => :gradient,
     :phase            => :rad2pi,
   ),
 
-  LCavityGroup => Dict{Symbol,Symbol}(
-    :voltage_ref      => :gradient_ref,
-    :voltage_err      => :gradient_err,
-    :voltage_tot      => :gradient_tot,
-  ),
-
   RFMasterGroup => Dict{Symbol,Symbol}(
     :do_auto_amp      => :do_auto_phase,
+  ),
+
+  StringGroup => Dict{Symbol,Symbol}(
+    :type             => :alias,
   ),
 
   TrackingGroup => Dict{Symbol,Symbol}(
@@ -335,6 +339,10 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
     println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.En,24)}{lpad(v.Es,24)}    En{ol}  Es{ol} ({ue})")
   end
 end
+
+#function show_elegroup(io::IO, group::InitTwissGroup, docstring::Bool)
+#end
+
 
 function show_elegroup(io::IO, group::Vector{ControlVar})
   println(f"This needs to be coded!")

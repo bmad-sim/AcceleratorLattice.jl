@@ -123,7 +123,8 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
   pdict::Dict{Symbol,Any} = ele.pdict
   if haskey(pdict, sym); pdict[sym] = value; return pdict[sym]; end
   pinfo = ele_param_info(sym, ele)
-  if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
+  ## Currently is_settable() does not exist.
+  ## if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
 
   parent = pinfo.parent_group
   # All parameters that do not have a parent ( EG: super_lord) are not "normal" and setting 

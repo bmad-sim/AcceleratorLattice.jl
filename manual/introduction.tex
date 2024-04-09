@@ -1,7 +1,7 @@
 \chapter{Introduction, Overview, and Concepts}
 
 This chapter is an overview of, and an introduction to, the \accellat package which is part of the
-greater \bmadjl ecosystem of toolkits  and programs for accelerator simulations. With \accellat,
+greater \bmadjl ecosystem of toolkits and programs for accelerator simulations. With \accellat,
 lattices, which can be used to describe such
 things as LINACs, storage rings, X-ray beam lines,
 can be constructed and manipulated. Tracking and lattice analysis (for example, calculating
@@ -10,6 +10,22 @@ closed orbits and Twiss functions) is left to other packages in the \bmadjl ecos
 There are three main sources of documentation. One source is this manual which is written in LaTex
 and distributed in pdf format. A second source an introduction and overview guide written in Markdown.
 Finally, taking advantage of the 
+
+%---------------------------------------------------------------------------
+\section{Brief History}
+
+\bmadjl has it's origins in the "Fortran \bmad" ecosystem of toolkits and programs developed over several
+decades at Cornell University. Although the two share a similar name, the code of the two are
+completely separate. That being said, the development of \accellat was heavily influenced by the 
+experience --- both good and bad --- in the development and use of Fortran \bmad as well as experience
+with other accelerator simulation programs.
+
+The \julia language itself is used as the basis for constructing lattices with \accellat. 
+Other simulation programs
+have similarly utilized the underlying programming language for constructing 
+lattices\cite{Appleby:Merlin2020,Iadarola:Xsuite2023}. This is in marked contrast to many accelerator
+simulation programs such programs as MAD\cite{Grote:MAD1989}, Elegant\cite{Borland:Elegant2000}, and the 
+\bmad toolkit\cite{Sagan:Bmad2006}. 
 
 %---------------------------------------------------------------------------------------------------
 \section{Acknowledgements}
@@ -30,19 +46,6 @@ Scott Berg,
 Dan Abell,
 Laurent Deniau, and
 Hugo Slepicka
-
-%---------------------------------------------------------------------------
-\section{}
-
-
-The \julia language itself is used as the basis for constructing lattices with \accellat. 
-Other simulation programs
-have similarly utilized the underlying programming language for constructing 
-lattices\cite{Appleby:Merlin2020,Iadarola:Xsuite2023}. This is in marked contrast to many accelerator
-simulation programs such programs as MAD\cite{Grote:MAD1989}, Elegant\cite{Borland:Elegant2000}, and the 
-\bmad toolkit\cite{Sagan:Bmad2006}. 
-
-
 
 %---------------------------------------------------------------------------
 \section{Using AcceleratorLattice.jl}
@@ -143,19 +146,31 @@ element's global position, the reference energy/momentum, and the s-position.
 
 
 %---------------------------------------------------------------------------
-\section{Convention Differences From Fortran Bmad}
+\section{Differences From Fortran Bmad}
 
-Certain conventions were changed
-
+There are many differences between \accellat and Fortran \bmad but certain difference should
+be kept in mind when comparing the two:
 \begin{description}
 \item
-The old Fortran \bmad names for the coordinate systems (\sref{s:coords}) was somewhat different and not
+Fortran \bmad is generally case insensitive (except for things like file names). \accellat, like
+the Julia language, is case sensitive.
+%
+\item
+The Fortran \bmad names for the coordinate systems (\sref{s:coords}) was somewhat different and not
 always consistent. The \vn{global} and \vn{element body} names are the same but \vn{machine}
 coordinates are called the \vn{laboratory} in Fortran \bmad.
 %
 \item
 Evaluation was at the downstream end (\sref{s:conventions}) in Fortran \bmad not the upstream end.
 %
+\item
+With Fortran \bmad a value for any aperture limits of zero means the limit does not exist.
+with \accellat a value of \vn{NaN} means the aperture does not exist. Additionally, with
+Fortran \bmad a positive value for \vn{x1_limit} or \vn{y1_limit} meant that the aperture was
+on the negative side of the \vn{x-axis} or \vn{y-axis} respectively. With \accellat, a positive
+value for \vn{x_limit[1]} or \vn{y_limit[1]} means the aperture is on the positive side of 
+of the \vn{x-axis} or \vn{y-axis} respectively. This makes the notation consistent across 
+the different ways to specify apertures (compare with \vn{Mask} element syntax.).
 \end{description}
 
 

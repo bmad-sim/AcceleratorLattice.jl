@@ -123,7 +123,11 @@ function (::Type{T})(; kwargs...) where T <: Ele
   end
 
   # Put name in first in case there are errors and the ele name needs to be printed.
-  pdict[:name] = kwargs[:name]
+  if haskey(kwargs, :name)
+    pdict[:name] = kwargs[:name]
+  else
+    pdict[:name] = "Not Set!"
+  end
 
   # Put parameters in parameter groups and changed area
   for (sym, val) in kwargs
@@ -211,7 +215,7 @@ Return corresponding `LatEleLocation` struct.
 LatEleLocation(ele::Ele) = LatEleLocation(ele.ix_ele, ele.branch.ix_branch)
 
 #---------------------------------------------------------------------------------------------------
-# Element groups
+# EleParameterGroup
 
 """
     abstract type EleParameterGroup
@@ -221,127 +225,8 @@ Base type for all element parameter groups.
 
 abstract type EleParameterGroup end
 
-"""
-Element length and s-positions.
-"""
-
-@kwdef mutable struct LengthGroup <: EleParameterGroup
-  L = 0.0::Number
-  s = 0.0::Number
-  s_downstream::Number = 0.0
-  orientation::Int = 1
-end
-
-"""
-    struct MasterGroup <: EleParameterGroup
-
-## Components
-
- - `field_master::Bool`  The `field_master` setting matters when there is a change in reference energy.
-In this case, if `field_master` = true, B-multipoles and BendGroup `bend_field` will be held constant
-and K-multipols and bend `g` will be varied. Vice versa when `field_master = false.
-""" MasterGroup
-
-@kwdef mutable struct MasterGroup <: EleParameterGroup
-  field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
-end
-
-@kwdef mutable struct LordSlaveGroup <: EleParameterGroup
-  lord_status::LordStatusSwitch = not_a_lord
-  slave_status::SlaveStatusSwitch = not_a_slave
-end
-
-"""
-Position and orientation in global coordinates.
-The FloorPositionGroup in a lattice element gives the coordinates at the entrance end of an element
-ignoring misalignments.
-
-Note: Rotations.jl is currently not compatible with using dual numbers so `q` is defined with `Float64`.
-"""
-@kwdef mutable struct FloorPositionGroup <: EleParameterGroup
-  r::Vector = [0.0, 0.0, 0.0]                    # (x,y,z) in Global coords
-  q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)         # Quaternion orientation.
-  theta::Number = 0.0
-  phi::Number = 0.0
-  psi::Number = 0.0
-end
-
-"""
-Patch element parameters
-"""
-@kwdef mutable struct PatchGroup <: EleParameterGroup
-  offset::Vector = [0.0, 0.0, 0.0]            # [x, y, z] offsets
-  t_offset::Number = 0.0                      # Time offset
-  x_pitch::Number = 0.0                       # x pitch
-  y_pitch::Number = 0.0                       # y pitch
-  tilt::Number = 0.0                          # tilt
-  E_tot_offset::Number = NaN
-  E_tot_exit::Number = NaN                    # Reference energy at exit end
-  pc_exit::Number = NaN                       # Reference momentum at exit end
-  flexible::Bool = false
-  user_sets_length::Bool = false
-  ref_coords::BodyLocationSwitch = ExitEnd
-end
-
-"""
-Reference energy, time and species.
-"""
-@kwdef mutable struct ReferenceGroup <: EleParameterGroup
-  species_ref::Species = Species("NotSet")
-  species_ref_exit::Species = Species("NotSet")
-  pc_ref::Number = NaN
-  pc_ref_exit::Number = NaN
-  E_tot_ref::Number = NaN
-  E_tot_ref_exit::Number = NaN
-  time_ref::Number = 0.0
-  time_ref_exit::Number = 0.0
-end
-
-"""
-Single magnetic multipole of a given order.
-See BMultipoleGroup.
-To switch between integrated and non-integrated, remove old struct first.
-"""
-@kwdef mutable struct BMultipole1 <: EleParameterGroup  # A single multipole
-  Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
-  Ks::Number = 0.0                 # EG: "Ks2", "Ks2L"
-  Bn::Number = 0.0
-  Bs::Number = 0.0  
-  tilt::Number = 0.0
-  order::Int   = -1         # Multipole order
-  integrated = nothing  # Also determines what stays constant with length changes.
-end
-
-"""
-  Vector of magnetic multipoles.
-
-  This group is optional and will not appear in an element that does not have any multipoles.
-"""
-@kwdef mutable struct BMultipoleGroup <: EleParameterGroup
-  vec::Vector{BMultipole1} = Vector{BMultipole1}([])         # Vector of multipoles.
-end
-
-"""
-Single electric multipole of a given order.
-See EMultipoleGroup.
-""" EMultipole1
-
-@kwdef mutable struct EMultipole1 <: EleParameterGroup
-  En::Number = 0.0                    # EG: "En2", "En2L"
-  Es::Number = 0.0                    # EG: "Es2", "Es2L"
-  Etilt::Number = 0.0
-  order::Int   = -1                   # Multipole order
-  integrated::Bool = false
-end
-
-"""
-  Vector of Electric multipoles.
-
-  This group is optional and will not appear in an element that does not have any multipoles.
-"""
-@kwdef mutable struct EMultipoleGroup <: EleParameterGroup
-  vec::Vector{EMultipole1} = Vector{EMultipole1}([])         # Vector of multipoles. 
-end
+#---------------------------------------------------------------------------------------------------
+# AlignmentGroup
 
 """
 Orientation of an element (specifically, orientation of the body coordinates) with respect to the 
@@ -358,6 +243,103 @@ laboratory coordinates.
   tilt_tot::Number = 0                   # Tilt including Girder misalignment
 end
 
+#---------------------------------------------------------------------------------------------------
+# AmpVsTimeGroup
+
+"""
+    struct ACKickerGroup
+
+Struct to define the time dependent amplitude that modulates the element strength using a set 
+of points spaced in time along with an interpolation method.
+Used with ACKicker elements.
+
+A positive `t_offset` shifts the waveform in the positive time direction.
+""" AmpVsTimeGroup
+
+@kwdef mutable struct AmpPoint
+  amp::Number = 0         # Amplitude
+  t::Number = 0           # Time
+end
+
+@kwdef mutable struct AmpVsTimeGroup <: EleParameterGroup
+  interpolation::InterpolationSwitch = spline     # Interpolation method between points.
+  t_offset::Number = 0                            # Time offset of the waveform.
+  point::Vector{AmpPoint} = Vector{AmpPoint}()    # Waveform points.
+end
+
+#---------------------------------------------------------------------------------------------------
+# AmpVsFreqGroup
+
+"""
+  struct AmpVsFreqGroup
+
+Struct to define the time dependent amplitude that modulates the element strength as the sum of
+a set of cosines with each cosine having an amplitude, frequency, and phase.
+Used with `ACKicker` elements.
+
+A positive `t_offset` shifts the waveform in the positive time direction.
+""" AmpVsFreqGroup
+
+@kwdef mutable struct FreqPoint
+  amp::Number = 0     
+  freq::Number = 0
+  phase::Number = 0
+end
+
+@kwdef mutable struct AmpVsFreqGroup <: EleParameterGroup
+  t_offset::Number = 0                              # Time offset of the waveform.
+  point::Vector{FreqPoint} = Vector{FreqPoint}()    # Waveform points.
+end
+
+#---------------------------------------------------------------------------------------------------
+# ApertureGroup
+
+"""
+    struct ApertureGroup
+
+Vacuum chamber aperture struct.
+""" ApertureGroup
+
+@kwdef mutable struct ApertureGroup <: EleParameterGroup
+  x_limit::Vector = [NaN, NaN]
+  y_limit::Vector = [NaN, NaN]
+  aperture_type::ApertureTypeSwitch = elliptical
+  aperture_at::BodyLocationSwitch = entrance_end
+  offset_moves_aperture::Bool = true
+end
+
+#---------------------------------------------------------------------------------------------------
+# BeamBeamGroup
+
+#### This is incomplete ####
+
+"""
+    struct BeamBeamGroup
+
+""" BeamBeamGroup
+
+@kwdef mutable struct Twiss <: EleParameterGroup
+  beta_a::Number = 0
+  alpha_a::Number = 0
+  beta_b::Number = 0
+  alpha_b::Number = 0
+end
+
+
+@kwdef mutable struct BeamBeamGroup <: EleParameterGroup
+  n_slice::Number = 1
+  z0_crossing::Number = 0       # Weak particle phase space z when strong beam center passes
+                                #   the BeamBeam element.
+  repetition_freq:: Number = 0  # Strong beam repetition rate.
+  twiss::Twiss = Twiss()        # Strong beam Twiss.
+  sig_x::Number = 0
+  sig_y::Number = 0
+  sig_z::Number = 0
+  bbi_constant::Number = 0      # Will be set by Bmad. See manual.
+end
+
+#---------------------------------------------------------------------------------------------------
+# BendGroup
 
 """
 Bend element parameters.
@@ -388,28 +370,84 @@ determined by the `field_master` setting in the MasterGroup struct.
   hgap2::Number = 0.0
 end
 
+#---------------------------------------------------------------------------------------------------
+# BMultipole1
+
 """
-Vacuum chamber aperture struct.
+Single magnetic multipole of a given order.
+See BMultipoleGroup.
+To switch between integrated and non-integrated, remove old struct first.
 """
-@kwdef mutable struct ApertureGroup <: EleParameterGroup
-  x_limit::Vector = [NaN, NaN]
-  y_limit::Vector = [NaN, NaN]
-  aperture_type::ApertureTypeSwitch = elliptical
-  aperture_at::BodyLocationSwitch = entrance_end
-  offset_moves_aperture::Bool = true
+@kwdef mutable struct BMultipole1 <: EleParameterGroup  # A single multipole
+  Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
+  Ks::Number = 0.0                 # EG: "Ks2", "Ks2L"
+  Bn::Number = 0.0
+  Bs::Number = 0.0  
+  tilt::Number = 0.0
+  order::Int   = -1         # Multipole order
+  integrated = nothing  # Also determines what stays constant with length changes.
 end
 
-"""
-Strings that can be set and used with element searches.
+#---------------------------------------------------------------------------------------------------
+# BMultipoleGroup
 
-These strings have no affect on tracking.
 """
-@kwdef mutable struct StringGroup <: EleParameterGroup
-  type::String = ""
-  alias::String = ""
-  description::String = ""
+  Vector of magnetic multipoles.
+
+  This group is optional and will not appear in an element that does not have any multipoles.
+"""
+@kwdef mutable struct BMultipoleGroup <: EleParameterGroup
+  vec::Vector{BMultipole1} = Vector{BMultipole1}([])         # Vector of multipoles.
 end
 
+#---------------------------------------------------------------------------------------------------
+# EMultipole1
+
+"""
+Single electric multipole of a given order.
+See EMultipoleGroup.
+""" EMultipole1
+
+@kwdef mutable struct EMultipole1 <: EleParameterGroup
+  En::Number = 0.0                    # EG: "En2", "En2L"
+  Es::Number = 0.0                    # EG: "Es2", "Es2L"
+  Etilt::Number = 0.0
+  order::Int   = -1                   # Multipole order
+  integrated::Bool = false
+end
+
+#---------------------------------------------------------------------------------------------------
+# EMultipoleGroup
+
+"""
+  Vector of Electric multipoles.
+
+  This group is optional and will not appear in an element that does not have any multipoles.
+"""
+@kwdef mutable struct EMultipoleGroup <: EleParameterGroup
+  vec::Vector{EMultipole1} = Vector{EMultipole1}([])         # Vector of multipoles. 
+end
+
+#---------------------------------------------------------------------------------------------------
+# FloorPositionGroup
+
+"""
+Position and orientation in global coordinates.
+The FloorPositionGroup in a lattice element gives the coordinates at the entrance end of an element
+ignoring misalignments.
+
+Note: Rotations.jl is currently not compatible with using dual numbers so `q` is defined with `Float64`.
+"""
+@kwdef mutable struct FloorPositionGroup <: EleParameterGroup
+  r::Vector = [0.0, 0.0, 0.0]                    # (x,y,z) in Global coords
+  q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)         # Quaternion orientation.
+  theta::Number = 0.0
+  phi::Number = 0.0
+  psi::Number = 0.0
+end
+
+#---------------------------------------------------------------------------------------------------
+# GirderGroup
 
 """
 Girder parameter struct.
@@ -423,27 +461,51 @@ Girder parameter struct.
   dpsi::Number = 0.0
 end
 
-"""
-RF parameters except for voltage and phase.
-See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
-""" 
-@kwdef mutable struct RFGroup <: EleParameterGroup
-  multipass_phase::Number = 0.0
-  frequency::Number = 0.0
-  harmon::Number = 0.0
-  cavity_type::CavityTypeSwitch = standing_wave
-  n_cell::Int   = 1
-end
+#---------------------------------------------------------------------------------------------------
+# InitParticleGroup
 
 """
-RF voltage parameters. Used by RFCavity element.
-See also RFMasterGroup and RFGroup.
+Initial particle position.
 """
-@kwdef mutable struct RFFieldGroup <: EleParameterGroup
-  voltage::Number = 0.0
-  gradient::Number = 0.0
-  phase::Number = 0.0
+
+@kwdef mutable struct InitParticleGroup <: EleParameterGroup
+  orbit::Vector{Number} = Vector{Number}([0,0,0,0,0,0])     # Phase space vector
+  spin::Vector{Number} = Vector{Number}([0,0,0])            # Spin vector
 end
+
+#---------------------------------------------------------------------------------------------------
+# InitTwissGroup
+
+"""
+Initial Twiss parameters
+"""
+
+@kwdef mutable struct Twiss1
+  beta::Number = 0          # Beta Twiss
+  alpha::Number = 0         # Alpha Twiss
+  gamma::Number = 0         # Gamma Twiss
+  phi::Number = 0           # Phase
+  eta::Number = 0           # Dispersion da/dpz for a-mode
+  etap::Number = 0          # Dispersion prime dpa/dpz for a-mode
+  deta_ds::Number = 0       # Dispersion derivative.
+  emit::Number = NaN        # Emittance
+  norm_emit::Number = NaN   # Normalized emittance
+  sigma::Number = NaN       # Beam size
+  sigma_p::Number = NaN     # Beam divergence
+end
+
+@kwdef mutable struct InitTwissGroup <: EleParameterGroup
+  a::Twiss1 = Twiss1()            # a-mode
+  b::Twiss1 = Twiss1()            # b-mode
+  c::Twiss1 = Twiss1()            # c-mode
+  x::Twiss1 = Twiss1()            # x-axis
+  y::Twiss1 = Twiss1()            # y-axis
+  z::Twiss1 = Twiss1()            # z-axis
+  c_mat::Matrix{Number} = Matrix{Number}([0 0; 0 0])  # Coupling matrix.
+  gammma::Number = 1              # Coupling gamma.
+end
+#---------------------------------------------------------------------------------------------------
+# LCavityGroup
 
 """
 Used by LCavity elements. 
@@ -461,14 +523,115 @@ See also RFMasterGroup and RFGroup.
   phase_tot::Number = 0.0
 end
 
+#---------------------------------------------------------------------------------------------------
+# LengthGroup
+
 """
-Solenoid 
+Element length and s-positions.
 """
 
-@kwdef mutable struct SolenoidGroup <: EleParameterGroup
-  ks::Number = 0.0              # Notice lower case "k".
-  bs_field::Number = 0.0
+@kwdef mutable struct LengthGroup <: EleParameterGroup
+  L = 0.0::Number
+  s = 0.0::Number
+  s_downstream::Number = 0.0
+  orientation::Int = 1
 end
+
+#---------------------------------------------------------------------------------------------------
+# LordSlaveGroup
+
+@kwdef mutable struct LordSlaveGroup <: EleParameterGroup
+  lord_status::LordStatusSwitch = not_a_lord
+  slave_status::SlaveStatusSwitch = not_a_slave
+end
+
+#---------------------------------------------------------------------------------------------------
+# MasterGroup
+
+"""
+    struct MasterGroup <: EleParameterGroup
+
+## Components
+
+ - `field_master::Bool`  The `field_master` setting matters when there is a change in reference energy.
+In this case, if `field_master` = true, B-multipoles and BendGroup `bend_field` will be held constant
+and K-multipols and bend `g` will be varied. Vice versa when `field_master = false.
+""" MasterGroup
+
+@kwdef mutable struct MasterGroup <: EleParameterGroup
+  field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
+end
+
+#---------------------------------------------------------------------------------------------------
+# PatchGroup
+
+"""
+Patch element parameters
+"""
+@kwdef mutable struct PatchGroup <: EleParameterGroup
+  offset::Vector = [0.0, 0.0, 0.0]            # [x, y, z] offsets
+  t_offset::Number = 0.0                      # Time offset
+  x_pitch::Number = 0.0                       # x pitch
+  y_pitch::Number = 0.0                       # y pitch
+  tilt::Number = 0.0                          # tilt
+  E_tot_offset::Number = NaN
+  E_tot_exit::Number = NaN                    # Reference energy at exit end
+  pc_exit::Number = NaN                       # Reference momentum at exit end
+  flexible::Bool = false
+  user_sets_length::Bool = false
+  ref_coords::BodyLocationSwitch = ExitEnd
+end
+
+#---------------------------------------------------------------------------------------------------
+# ReferenceGroup
+
+"""
+Reference energy, time and species. 
+
+Generally `species_ref_exit` will be he same as `species_ref`
+but with `Converter` or `Foil` Elements they will generally be different.
+"""
+@kwdef mutable struct ReferenceGroup <: EleParameterGroup
+  species_ref::Species = Species("NotSet")
+  species_ref_exit::Species = Species("NotSet")
+  pc_ref::Number = NaN
+  pc_ref_exit::Number = NaN
+  E_tot_ref::Number = NaN
+  E_tot_ref_exit::Number = NaN
+  time_ref::Number = 0.0
+  time_ref_exit::Number = 0.0
+end
+
+#---------------------------------------------------------------------------------------------------
+# RFGroup
+
+"""
+RF parameters except for voltage and phase.
+See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
+""" 
+@kwdef mutable struct RFGroup <: EleParameterGroup
+  multipass_phase::Number = 0.0
+  frequency::Number = 0.0
+  harmon::Number = 0.0
+  cavity_type::CavityTypeSwitch = standing_wave
+  n_cell::Int   = 1
+end
+
+#---------------------------------------------------------------------------------------------------
+# RFFieldGroup
+
+"""
+RF voltage parameters. Used by RFCavity element.
+See also RFMasterGroup and RFGroup.
+"""
+@kwdef mutable struct RFFieldGroup <: EleParameterGroup
+  voltage::Number = 0.0
+  gradient::Number = 0.0
+  phase::Number = 0.0
+end
+
+#---------------------------------------------------------------------------------------------------
+# RFMasterGroup
 
 """
 RF autoscale and voltage_master
@@ -480,6 +643,35 @@ RF autoscale and voltage_master
   auto_amp::Number = 1.0            # Auto amplitude scale value.
   auto_phase::Number = 0.0          # Auto phase value.
 end
+
+#---------------------------------------------------------------------------------------------------
+# StringGroup
+
+"""
+Strings that can be set and used with element searches.
+
+These strings have no affect on tracking.
+"""
+@kwdef mutable struct StringGroup <: EleParameterGroup
+  type::String = ""
+  alias::String = ""
+  description::String = ""
+end
+
+#---------------------------------------------------------------------------------------------------
+# SolenoidGroup
+
+"""
+Solenoid 
+"""
+
+@kwdef mutable struct SolenoidGroup <: EleParameterGroup
+  ksol::Number = 0.0              # Notice lower case "k".
+  bsol_field::Number = 0.0
+end
+
+#---------------------------------------------------------------------------------------------------
+# TrackingGroup
 
 """
 Sets the nominal values for tracking prameters.
@@ -498,8 +690,10 @@ Vacuum chamber wall.
 end
 
 #---------------------------------------------------------------------------------------------------
+# ControlVar
+
 """
-Controller
+ControlVar
 """
 
 @kwdef mutable struct ControlVar
@@ -508,11 +702,20 @@ Controller
   old_value::Number = 0.0
 end
 
+#---------------------------------------------------------------------------------------------------
+# ControlVarGroup
+
 @kwdef mutable struct ControlVarGroup <: EleParameterGroup
   variable::Vector{ControlVar} = Vector{ControlVar}()
 end
 
+#---------------------------------------------------------------------------------------------------
+# ControlSlave
+
 abstract type ControlSlave end
+
+#---------------------------------------------------------------------------------------------------
+# ControlSalveExpression
 
 @kwdef mutable struct ControlSlaveExpression <: ControlSlave
   eles = []                  # Strings, and/or LatEleLocations
@@ -523,6 +726,9 @@ abstract type ControlSlave end
   value::Number = 0.0
   type::ControlSlaveTypeSwitch = control_not_set
 end
+
+#---------------------------------------------------------------------------------------------------
+# ControlSlaveKnot
 
 @kwdef mutable struct ControlSlaveKnot  <: ControlSlave
   eles = []                  # Strings, and/or LatEleLocations
@@ -535,6 +741,9 @@ end
   type::ControlSlaveTypeSwitch = control_not_set
 end
 
+#---------------------------------------------------------------------------------------------------
+# ControlSlaveFunction
+
 @kwdef mutable struct ControlSlaveFunction  <: ControlSlave
   eles = []                  # Strings, and/or LatEleLocations
   ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
@@ -544,14 +753,23 @@ end
   type::ControlSlaveTypeSwitch = control_not_set
 end
 
+#---------------------------------------------------------------------------------------------------
+# ControlSlaveGroup
+
 mutable struct ControlSlaveGroup  <: EleParameterGroup
   slave::Vector{T} where T <: ControlSlave
 end
 ControlSlaveGroup() = ControlSlaveGroup(Vector{ControlSlave}())
 
+#---------------------------------------------------------------------------------------------------
+# var
+
 function var(sym::Symbol, val::Number = 0.0, old::Number = NaN) 
   isnan(old) ? (return ControlVar(sym, val, val)) : (return ControlVar(sym, val, old))
 end
+
+#---------------------------------------------------------------------------------------------------
+# ctrl
 
 function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, expr::AbstractString)
   if typeof(eles) == String; eles = [eles]; end

@@ -1,3 +1,18 @@
+* Some element parameter groups may or may not be present. EG: AmpVsTimeGroup for ACKicker. 
+
+* EG AmpVsTimeGroup: There are no "shortcuts" like ele.L -> ele.LengthGroup.L. Can set via:
+  at = ele.AmpVsTimeGroup    # Does this work if AmpVsTimeGroup is not present? If so need function for this.
+  at.interpolation = ...
+or
+  at = AmpVsTimeGroup(t_offset = ...)
+  at.interpolation = ...
+  ...
+  ele.AmpVsTimeGroup = at
+
+* BeamBeam element can have a reference to a Solenoid element 
+
+* Display (show) of parameter groups that have substructures.
+
 Coordinate System Names:
 	Global coordinates  -- Same as current
 	Machine coordinates -- (x,y,s) curvilinear coordinates with s measured from the start of the lattice branch. Currently called Laboratory coordinates or Local coordinates. Note: Will be left handed for elements with orientation = -1.
