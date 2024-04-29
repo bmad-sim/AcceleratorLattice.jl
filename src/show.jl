@@ -24,8 +24,8 @@ When defining custom parameter groups, key/value pairs can be added to `show_col
 show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
   AlignmentGroup => Dict{Symbol,Symbol}(
     :offset           => :offset_tot,
-    :x_pitch          => :x_pitch_tot,
-    :y_pitch          => :y_pitch_tot,
+    :x_rot            => :x_rot_tot,
+    :y_rot            => :y_rot_tot,
     :tilt             => :tilt_tot,
   ),
 
@@ -76,7 +76,7 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
 
   PatchGroup => Dict{Symbol,Symbol}(
     :offset           => :tilt,
-    :x_pitch          => :y_pitch,
+    :x_rot            => :y_rot,
     :E_tot_offset     => :t_offset,
     :E_tot_exit       => :pc_exit,
     :flexible         => :User_sets_length,

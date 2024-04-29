@@ -91,14 +91,14 @@ ele_param_info_dict = Dict(
   :bend_type          => ParamInfo(BendGroup,      BendTypeSwitch, "Sets how face angles varies with bend angle."),
 
   :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "3-Vector of [x, y, z] element offsets.", "m"),
-  :x_pitch  => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-pitch element orientation.", "rad"),
-  :y_pitch  => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-pitch element orientation.", "rad"),
-  :tilt     => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Element tilt.", "rad"),
+  :x_rot    => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis element rotation.", "rad"),
+  :y_rot    => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-axis element rotation.", "rad"),
+  :tilt     => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Z-axis element rotation.", "rad"),
 
   :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "Offset including Girder orientation.", "m"),
-  :x_pitch_tot        => ParamInfo(AlignmentGroup, Number,         "X-pitch element orientation including Girder orientation.", "rad"),
-  :y_pitch_tot        => ParamInfo(AlignmentGroup, Number,         "Y-pitch element orientation including Girder orientation.", "rad"),
-  :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Element tilt including Girder orientation.", "rad"),
+  :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad"),
+  :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad"),
+  :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad"),
 
   :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
   :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),

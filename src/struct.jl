@@ -235,12 +235,12 @@ laboratory coordinates.
 @kwdef mutable struct AlignmentGroup <: EleParameterGroup
   offset::Vector = [0.0, 0.0, 0.0]       # [x, y, z] offsets
   offset_tot::Vector = [0.0, 0.0, 0.0]   # [x, y, z] offsets including Girder misalignment.
-  x_pitch::Number = 0                    # x pitch
-  x_pitch_tot::Number = 0                # x pitch including Girder misalignment.
-  y_pitch::Number = 0                    # y pitch
-  y_pitch_tot::Number = 0                # y pitch including Girder misalignment.
-  tilt::Number = 0                       # Not used by Bend elements
-  tilt_tot::Number = 0                   # Tilt including Girder misalignment
+  x_rot::Number = 0                      # x-axis rotation
+  x_rot_tot::Number = 0                  # x-axis rotation including Girder misalignment.
+  y_rot::Number = 0                      # y-axis rotation
+  y_rot_tot::Number = 0                  # y-axis rotation including Girder misalignment.
+  tilt::Number = 0                       # z-axis rotation. Not used by Bend elements.
+  tilt_tot::Number = 0                   # z-axis rottion including Girder misalignment
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -571,9 +571,9 @@ Patch element parameters
 @kwdef mutable struct PatchGroup <: EleParameterGroup
   offset::Vector = [0.0, 0.0, 0.0]            # [x, y, z] offsets
   t_offset::Number = 0.0                      # Time offset
-  x_pitch::Number = 0.0                       # x pitch
-  y_pitch::Number = 0.0                       # y pitch
-  tilt::Number = 0.0                          # tilt
+  x_rot::Number = 0.0                         # x-axis rotaiton
+  y_rot::Number = 0.0                         # y-axis rotation
+  tilt::Number = 0.0                          # z-axis rotation
   E_tot_offset::Number = NaN
   E_tot_exit::Number = NaN                    # Reference energy at exit end
   pc_exit::Number = NaN                       # Reference momentum at exit end
