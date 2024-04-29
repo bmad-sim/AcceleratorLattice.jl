@@ -57,7 +57,7 @@ The reason for doing a shallow copy, instead of a deep copy, is to save on memor
 * Lattice bookkeeping can be bypassed by setting the element group parameter directly.
 
 * Old Bmad roll is "tilt" in new bmad.
-* Bend x_pitch and y_pitch are about the chord center and not the bend arc center. This is the same as a girder.
+* Bend x_rot and y_rot are about the chord center and not the bend arc center. This is the same as a girder.
 
 * bend angle is always a dependent parameter dependent on g and len.
 

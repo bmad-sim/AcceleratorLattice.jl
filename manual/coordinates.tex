@@ -80,10 +80,10 @@ system''} when there is need to distinguish it from the \vn{``element body coord
 for each branch (\sref{s:branch.def}) of a lattice.
 
 \index{x_offset}\index{y_offset}
-\index{x_pitch}\index{y_pitch}\index{wiggler}
+\index{x_rot}\index{y_rot}\index{wiggler}
 Notice that, in a \vn{wiggler}, the reference orbit, which is a straight line, does {\em not}
 correspond to the orbit that any actual particle could travel. Typically the physical element is
-centered with respect to the reference curve. However, by specifying offsets, pitches or a tilt (See
+centered with respect to the reference curve. However, by specifying offsets, rotations (See
 \sref{s:offset}), the physical element may be arbitrarily shifted with respect to its reference
 curve. Shifting a physical magnet with respect to its reference curve generally means that the
 reference curve does {\em not} correspond to the orbit that any actual particle could travel.
@@ -199,7 +199,7 @@ Figures~\ref{f:patch.between}B-C show branches constructed from the following la
 \begin{example}
   @ele dft = drift(L = 2)
   @ele bnd = bend(l = 2, g = pi/12)
-  @ele p = patch(x_pitch = pi)                 ! Reflection patch.
+  @ele p = patch(x_rot = pi)                   ! Reflection patch.
   BL = beamline("BL", [dft, bnd])              ! No reversal.
   CL = beamline("CL", [dft, reverse(bnd)])     ! Illegal. Do not use!
   DL = beamline("DL", [dft, p, reverse(bnd)])  ! Valid.
@@ -233,7 +233,7 @@ bent in a clockwise fashion but with \vn{D_line} a particle needs to be bent cou
 through the bend). To get a particle through the bend, positrons must be used.
 \item
 A reflection patch that rotated the coordinates, for example, around the $x$-axis by 180\Deg (by
-setting \vn{y_pitch} to \vn{pi}) would also produce a plausible geometry.
+setting \vn{x_rot} to \vn{pi}) would also produce a plausible geometry.
 \end{itemize}
 
 %-----------------------------------------------------------------------------
@@ -245,7 +245,7 @@ setting \vn{y_pitch} to \vn{pi}) would also produce a plausible geometry.
 {The local reference coordinates in a \vn{patch} element. The \vn{patch} element, shown
 schematically as an irregular quadrilateral, is sandwiched between elements \vn{ele_a} and
 \vn{ele_b}. \vn{L} is the length of the \vn{patch}. In this example, the \vn{patch} has a finite
-\vn{x_pitch}.}
+\vn{y_rot}.}
   \label{f:patch.prob}
 \end{figure}
 
@@ -257,7 +257,7 @@ schematically as an irregular quadrilateral, is sandwiched between elements \vn{
 
 Generally, if a particle is reasonably near the reference orbit, there is a one-to-one mapping
 between the particle's position and $(x, y, s)$ coordinates. A \vn{patch} (\sref{s:patch}) elements
-with a non-zero \vn{x_pitch} or non-zero \vn{y_pitch} breaks the one-to-one mapping. This is
+with a non-zero \vn{x_rot} or non-zero \vn{y_rot} breaks the one-to-one mapping. This is
 illustrated in \fig{f:patch.prob}.  The \vn{patch} element, shown schematically as an, irregular
 quadrilateral, is sandwiched between elements \vn{ele_a} and \vn{ele_b}. The local coordinate system
 with origin at $\alpha$ are the coordinates at the end of \vn{ele_a}. The coordinates at the end of
@@ -317,11 +317,11 @@ follows:
 %
 \item[$\theta(s)$ Azimuth (yaw) angle:] 
 Angle in the $(X, Z)$ plane between the $Z$--axis and the projection of the $z$--axis onto the $(X,
-Z)$ plane. Corresponds to the \vn{x_pitch} element attribute (\sref{s:offset}). A positive angle of
-$\theta = \pi/2$ corresponds to the projected $z$--axis pointing in the positive $X$ direction.
+Z)$ plane. Corresponds to the \vn{y_rot} element attribute (\sref{s:offset}). A positive angle of
+$\theta = \pi/2$ corresponds to the projected $z$--axis pointing in the negative $X$-direction.
 %
 \item[$\phi(s)$ Pitch (elevation) angle:] 
-Angle between the $z$--axis and the $(X,Z)$ plane. Corresponds to the \vn{y_pitch} element attribute
+Angle between the $z$--axis and the $(X,Z)$ plane. Corresponds to the \vn{x_rot} element attribute
 (\sref{s:offset}). A positive angle of $\phi = \pi/2$ corresponds to the $z$--axis pointing in the
 positive $Y$ direction.
 %
@@ -356,7 +356,7 @@ The orientation of an element is described by a unitary rotation matrix $\bfW$. 
 of $\bfW$ are the unit vectors spanning the local coordinate axes in the order $(x, y, z)$. $\bfW$
 can be expressed in terms of the orientation angles $\theta$, $\phi$, and $\psi$ via the formula
 \begin{align}
-  \bfW &= \bfR_{y}(\theta) \; \bfR_{-x}(\phi) \; \bfR_{z}(\psi) 
+  \bfW &= \bfR_{y}(\theta) \; \bfR_{x}(-\phi) \; \bfR_{z}(\psi) 
   \label{wwww} \\
   &= \begin{pmatrix}
     \cos\theta \cos\psi - \sin\theta \sin\phi \sin\psi & -\cos\theta \sin\psi - \sin\theta \sin\phi \cos\psi & 
@@ -375,11 +375,11 @@ where
     0           & 1 & 0          \\
     -\sin\theta & 0 & \cos\theta 
   \end{pmatrix}, \quad
-  \bfR_{-x}(\phi) = 
+  \bfR_{x}(\phi) = 
   \begin{pmatrix}
     1 & 0 & 0                \\
-    0 & \cos\phi  & \sin\phi \\
-    0 & -\sin\phi & \cos\phi 
+    0 & \cos\phi & -\sin\phi \\
+    0 & \sin\phi &  \cos\phi 
   \end{pmatrix}, \quad
   \bfR_{z}(\psi) = 
   \begin{pmatrix}
@@ -389,8 +389,7 @@ where
   \end{pmatrix}
   \label{wtt0t}
 \end{equation}
-Notice that $\bfR_{-x}(\phi)$, for positive $\phi$, represents a rotation around the negative
-$x$-axis. Also notice that these are Tait-Bryan angles and not Euler angles.
+Notice that these are Tait-Bryan angles and not Euler angles.
 
 An alternative representation of the $\bfW$ matrix (or any other rotation matrix) is to specify the
 axis $\Bf u$ (normalized to 1) and angle of rotation $\beta$
@@ -603,7 +602,7 @@ exit end reference coordinates is given by \Eqs{vwlv} and \eq{wws} with
       \text{x_offset} \\ \text{y_offset} \\ \text{z_offset} 
     \end{pmatrix}
     \CRNO
-  \bfS &= \bfR_{y} (\text{x_pitch}) \; \bfR_{-x} (\text{y_pitch}) \; \bfR_{z} (\text{tilt})
+  \bfS &= \bfR_{y} (\text{y_rot}) \; \bfR_{x} (\text{y_rot}) \; \bfR_{z} (\text{tilt})
   \label{swww}
 \end{align}
 
@@ -645,7 +644,7 @@ that the associated $\bfS$ matrix (see \Eq{swww}) satisfy:
 \end{equation}
 Using \Eq{swww} gives, after some simple algebra, this condition is equivalent to
 \begin{equation}
-  \cos(\text{x_pitch}) \, \cos(\text{y_pitch}) < 0
+  \cos(\text{x_rot}) \, \cos(\text{y_rot}) < 0
 \end{equation}
 When there are a series of patches, The transformations of all the patches are concatenated together
 to form an effective $\bfS$ which can then be used with \Eq{s330}.
@@ -657,7 +656,7 @@ to form an effective $\bfS$ which can then be used with \Eq{s330}.
 \index{element body coordinates|hyperbf}
 
 The \vn{element body} coordinates are the coordinate system attached to an element. Without any
-misalignments, where \vn{``misalignments''} are here defined to be any offset, pitch or tilt
+misalignments, where \vn{``misalignments''} are here defined to be any offset, or rotation
 (\sref{s:offset}), the \vn{machine} coordinates (\sref{s:ref}) and \vn{element body} coordinates
 are the same. With misalignments, the transformation between \vn{machine} and \vn{element body}
 coordinates depends upon whether the local coordinate system is straight (\sref{s:straight.mis}) or
@@ -693,31 +692,33 @@ center of the element.
 The first and last transformations from $\Lambda_s$ to $\Lambda_\text{mid}$ and from $E_\text{mid}$
 to $E_s$ use \Eqs{vwlv}, \eq{wws}, and \eq{l00l} with the replacement $L \rightarrow L/2 - s$ for
 the first transformation and $L \rightarrow s - L/2$ for the third transformation. The middle
-transformation, by definition of the offset, pitch and tilt parameters is
+transformation, by definition of the offset and rotation parameters is
 \begin{align}
   \bfL &= 
     \begin{pmatrix} 
       \text{x_offset} \\ \text{y_offset} \\ \text{z_offset} 
     \end{pmatrix}
     \CRNO
-  \bfS &= \bfR_{y} (\text{x_pitch}) \; \bfR_{-x} (\text{y_pitch}) \; \bfR_{z} (\text{tilt})
+  \bfS &= \bfR_{y} (\text{x_rot}) \; \bfR_{x} (\text{y_rot}) \; \bfR_{z} (\text{tilt})
   \label{swww2}
 \end{align}
 
 Notice that with this definition of how elements are misaligned, the position of the center of a
-non-bend misaligned element depends only on the offsets, and is independent of the pitches and tilt.
+non-bend misaligned element depends only on the offsets, and is independent of the rotations.
 
 %-----------------------------------------------------------------------------
 \subsection{Bend Element Misalignment Transformation}
 \label{s:bend.mis}
+
+This needs cleanup!!!
 
 \index{rbend!coordinate transformation}\index{sbend!coordinate transformation}
 \index{roll!coordinate transformation}\index{tilt!coordinate transformation}
 For \vn{rbend} and \vn{sbend} elements there is no \vn{tilt} attribute.  Rather, there is the
 \vn{roll} attribute and a \vn{ref_tilt} attribute. The latter affects both the reference orbit and
 the bend position (\sref{s:bend.orient}). Furthermore, \vn{ref_tilt} is calculated with respect to
-the coordinates at the beginning of the bend while, like straight elements, \vn{roll}, offsets, and
-pitches are calculated with respect to the center of the bend. The different reference frame used
+the coordinates at the beginning of the bend while, like straight elements, \vn{roll}, \vn{x_rot},
+\vn{y_rot}, and offsets are calculated with respect to the center of the bend. The different reference frame used
 for \vn{ref_tilt} versus everything else means that five transformations are needed to get from the
 machine frame to the element body frame (see \Eq{llee}). Symbolically:
 \begin{equation}
@@ -738,7 +739,7 @@ the $\Lambda_\text{mid} \longrightarrow \Omega_\text{mid}$ transformation is
 \begin{align}
   \bfL &= \bfL_\text{off} + 
     \left[ \bfR_z(\text{roll}) - \Bf1 \right] \; \bfR_z(\theta_t) \; \bfR_{y}(\alpha_b/2) \; \bfL_c \CRNO
-  \bfS &= \bfR_{y}(\text{x_pitch}) \; \bfR_{-x}(\text{y_pitch}) \; \bfR_z(\text{roll})
+  \bfS &= \bfR_{y}(\text{y_rot}) \; \bfR_{x}(\text{x_rot}) \; \bfR_z(\text{roll})
   \label{lcmis}
 \end{align}
 where
@@ -774,8 +775,8 @@ center of the bend but in this case, since we are dealing with element coordinat
 $\theta_t \rightarrow 0$ and $\alpha_b \rightarrow L/\rho$.
 
 Notice that with this definition of how elements are misaligned, the position of the center of a
-misaligned element depends only on the offsets and \vn{roll}, and is independent of the pitches and
-tilt. Also the orientation of an element depends only on the pitches roll, and ref_tilt, and is
+misaligned element depends only on the offsets and \vn{roll}, and is independent of any rotations. 
+Also the orientation of an element depends only on the \vn{x_rot}, \vn{y_rot}, \vn{roll}, and \vn{ref_tilt}, and is
 independent of the offsets.
 
 %-----------------------------------------------------------------------------
