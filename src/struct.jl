@@ -691,7 +691,7 @@ Vacuum chamber wall.
 end
 
 #---------------------------------------------------------------------------------------------------
-# InitTwissGroup
+# TwissGroup
 
 """
 Twiss parameters
@@ -714,7 +714,7 @@ Also see InitTwissGroup.
   sigmap::Number = NaN     # Beam divergence
 end
 
-@kwdef mutable struct InitTwissGroup <: EleParameterGroup
+@kwdef mutable struct TwissGroup <: EleParameterGroup
   a::Twiss1 = Twiss1()            # a-mode
   b::Twiss1 = Twiss1()            # b-mode
   c::Twiss1 = Twiss1()            # c-mode
