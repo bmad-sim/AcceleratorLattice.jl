@@ -1,15 +1,33 @@
-\chapter{Introduction, Overview, and Concepts}
+\chapter{Introduction and Concepts}
 
-This chapter is an overview of, and an introduction to, the \accellat package which is part of the
+%---------------------------------------------------------------------------
+\section{Introduction}
+
+This chapter is an introduction to, the \accellat package which is part of the
 greater \bmadjl ecosystem of toolkits and programs for accelerator simulations. With \accellat,
-lattices, which can be used to describe such
-things as LINACs, storage rings, X-ray beam lines,
-can be constructed and manipulated. Tracking and lattice analysis (for example, calculating
-closed orbits and Twiss functions) is left to other packages in the \bmadjl ecosystem.
+lattices can be constructed and manipulated. Essentially, a \vn{lattice} instance contains
+a set of ``\vn{branches}'' and a branch contains 
+an array of lattice \vn{elements} with each element representing an object like a magnet
+or a RF cavity. A branch can be used to describe such
+things as LINACs, storage rings, injection lines, X-ray beam lines, etc. Different branches in a
+lattice can be connected together. For example, an injection line branch connected to a storage
+ring branch or the lines of two ring connected together to form a colliding beam machine. 
+This ability to describe the interconnections between branches means that 
+a lattice instance can hold all the information about an entire machine complex from beam creation
+to dump lines enabling a single lattice to be used as the basis of start-to-end simulations.
 
-There are three main sources of documentation. One source is this manual which is written in LaTex
-and distributed in pdf format. A second source an introduction and overview guide written in Markdown.
-Finally, taking advantage of the 
+The sole purpose of the \accellat package is to implement methods for lattice construction.
+Other stuff, like tracking and lattice analysis (for example, calculating
+closed orbits and Twiss functions), is left to other packages in the \bmadjl ecosystem.
+
+%---------------------------------------------------------------------------
+\section{Documentation}
+
+There are three main sources of documentation. One source is this pdf manual which gives in-depth
+documentationon the \accellat package. A second source is the web based introduction and overview guide.
+Finally, functions, structs and other objects are documented in the code files themselves. 
+Taking advantage of Julia's built-in documentation system, this documentation can be accessed
+when using Julia's REPL.
 
 %---------------------------------------------------------------------------
 \section{Brief History}
@@ -26,6 +44,11 @@ have similarly utilized the underlying programming language for constructing
 lattices\cite{Appleby:Merlin2020,Iadarola:Xsuite2023}. This is in marked contrast to many accelerator
 simulation programs such programs as MAD\cite{Grote:MAD1989}, Elegant\cite{Borland:Elegant2000}, and the 
 \bmad toolkit\cite{Sagan:Bmad2006}. 
+
+By using Julia for the lattice language, the user will automatically have access to such features 
+as plotting, optimization packages, linear algebra packages, etc. 
+This is a massive boost to the versatility and usability of any \bmadjl simulation program. 
+Additionally, maintainability is greatly improved since the quantity of code that is needed is reduced.
 
 %---------------------------------------------------------------------------------------------------
 \section{Acknowledgements}
@@ -54,8 +77,9 @@ Hugo Slepicka
 \begin{example}
   github.com/bmad-sim/AcceleratorLattice.jl
 \end{example}
+The \vn{README.md} file there has instructions on how to install \accellat.
 
-A \vn{using} statement must be given before using \accellat
+A \vn{using} statement must be given before using \accellat in Julia
 \begin{example}
   using AcceleratorLattice
 \end{example}
@@ -67,24 +91,30 @@ A \vn{using} statement must be given before using \accellat
 The basic building block used to describe an accelerator is the lattice \vn{element}. An
 element can be a physical thing that particles travel ``through'' like a bending magnet, a
 quadrupole or a Bragg crystal, or something like a \vn{marker} element (\sref{s:mark}) that is used
-to mark a particular point in the machine.  Besides physical elements, there are \vn{controller}
-elements that can be used for parameter control of other elements.
-
+to mark a particular point in the machine. Besides physical elements, there are \vn{controller},
+elements that can be used for parameter control of other elements. All lattice elements are of types
+that inherit from the abstract type \vn{Lat}.
 Chapter~\sref{c:element-list} lists the complete set of different element types that \bmad knows about.
 
-In a lattice \vn{branch} (\sref{s:branch.def}), each element in the
-ordered array of elements are assigned an \vn{element index}
-starting from one. The first element in a branch array
-is called \vn{beginning_ele} (\sref{s:begin.ele}).
-This element is always included in every \vn{branch} \sref{s:branch.def} and is used as a
-marker for the beginning of the \vn{branch}.  Additionally, every branch will have a final
-marker element (\sref{s:mark}) named \vn{end_ele}.
+All lattice element structs hold a Dict named \vn{pdict} (parameter dict) which holds the element
+parameters. For ease of manipulation, parameters are grouped into \vn{parameter} \vn{groups} structs.
+and the values of \vn{pdict} will, with a few exceptions, be a parameter group. 
+To hide the complexity of parameter groups, the dot selection operator is overloaded for elements
+so something like \vn{q.s}, where \vn{q} is an element instance and \vn{s} is the parameter for the
+element's longitudinal position, is mapped to \vn{q.pdict[:LengthGroup].s}.
+This is discussed in detail in chapter~\sref{c:ele}.
 
 %---------------------------------------------------------------------------
 \section{Lattice Branches}
 \label{s:branch.def}
 
-The next level up from an \vn{element} is the \vn{branch}. A 
+The next level up from lattice \vn{elements} is the \vn{Branch} struct which
+holds an array of lattice elements.
+There are two types of branches.
+
+
+There
+
 \vn{branch} contains an ordered sequence of lattice elements that a particle will travel through. A
 branch can represent a LINAC, X-Ray beam line, storage ring or anything else that can be represented
 as a simple ordered list of elements.
@@ -101,8 +131,17 @@ There are two types of \vn{branches}: \vn{LordBranches} and \vn{TrackingBranches
 Branches whose \vn{Branch.type} are set to \vn{LordBranch}
 
 
+
+In a lattice \vn{branch} (\sref{s:branch.def}), each element in the
+ordered array of elements are assigned an \vn{element index}
+starting from one. The first element in a branch array
+is called \vn{beginning_ele} (\sref{s:begin.ele}).
+This element is always included in every \vn{branch} \sref{s:branch.def} and is used as a
+marker for the beginning of the \vn{branch}.  Additionally, every branch will have a final
+marker element (\sref{s:mark}) named \vn{end_ele}.
+
 %---------------------------------------------------------------------------
-\section{Lattice}
+\section{Lattices}
 \label{s:lattice.def}
 
 A \vn{lattice} (\sref{s:lattice.def}), has an array of \vn{branches}. 

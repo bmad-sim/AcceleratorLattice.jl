@@ -373,26 +373,34 @@ function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
   println(io, f"  {gtype}:")
 
   for field in fieldnames(gtype)
-    if field in values(col2); continue; end
-    if field in keys(col2)
-      kstr = rpad(full_parameter_name(field, gtype), nn)
-      vstr = ele_param_str(Base.getproperty(group, field))
-      str = f"    {kstr} {vstr} {units(field)}"
-      field2 = col2[field]
-      kstr = rpad(full_parameter_name(field2, gtype), nn)
-      vstr = ele_param_str(Base.getproperty(group, field2))
-      str2 = f"    {kstr} {vstr} {units(field2)}"
-      if length(str) > 50 || length(str2) > 50
-        println(io, str)
-        println(io, str2)
-      else
-        println(io, f"{rpad(str,50)}{str2}")
-      end
+    show_elegroup_field_wo_doc(io, field, group)
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# show_elegroup_field_wo_doc
+
+function show_elegroup_field_wo_doc(io::IO, field, group::T) where T <: EleParameterGroup
+  print("Here")
+  if field in values(col2); continue; end
+  if field in keys(col2)
+    kstr = rpad(full_parameter_name(field, gtype), nn)
+    vstr = ele_param_str(Base.getproperty(group, field))
+    str = f"    {kstr} {vstr} {units(field)}"
+    field2 = col2[field]
+    kstr = rpad(full_parameter_name(field2, gtype), nn)
+    vstr = ele_param_str(Base.getproperty(group, field2))
+    str2 = f"    {kstr} {vstr} {units(field2)}"
+    if length(str) > 50 || length(str2) > 50
+      println(io, str)
+      println(io, str2)
     else
-      kstr = rpad(full_parameter_name(field, gtype), nn)
-      vstr = ele_param_str(Base.getproperty(group, field))
-      println(io, f"    {kstr} {vstr} {units(field)}")
+      println(io, f"{rpad(str,50)}{str2}")
     end
+  else
+    kstr = rpad(full_parameter_name(field, gtype), nn)
+    vstr = ele_param_str(Base.getproperty(group, field))
+    println(io, f"    {kstr} {vstr} {units(field)}")
   end
 end
 

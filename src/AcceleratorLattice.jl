@@ -50,6 +50,6 @@ module AcceleratorLattice
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
   export struct_sym_to_user_sym, multipole!, index, integer, quat_angles
   export machine_location, body_location, EleRegion, multipole_param_info
-
+  export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
 
 end # module
