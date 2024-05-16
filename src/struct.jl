@@ -497,12 +497,12 @@ end
 end
 
 @kwdef mutable struct InitTwissGroup <: EleParameterGroup
-  a::Twiss1 = InitTwiss1()            # a-mode
-  b::Twiss1 = InitTwiss1()            # b-mode
-  c::Twiss1 = InitTwiss1()            # c-mode
-  x::Twiss1 = InitDispersion1()       # x-axis
-  y::Twiss1 = InitDispersion1()       # y-axis
-  z::Twiss1 = initDispersion1()       # z-axis
+  a::InitTwiss1 = InitTwiss1()            # a-mode
+  b::InitTwiss1 = InitTwiss1()            # b-mode
+  c::InitTwiss1 = InitTwiss1()            # c-mode
+  x::InitTwiss1 = InitDispersion1()       # x-axis
+  y::InitTwiss1 = InitDispersion1()       # y-axis
+  z::InitTwiss1 = initDispersion1()       # z-axis
   v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
 end
 #---------------------------------------------------------------------------------------------------

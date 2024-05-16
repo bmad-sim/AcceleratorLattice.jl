@@ -381,7 +381,6 @@ end
 # show_elegroup_field_wo_doc
 
 function show_elegroup_field_wo_doc(io::IO, field, group::T) where T <: EleParameterGroup
-  print("Here")
   if field in values(col2); continue; end
   if field in keys(col2)
     kstr = rpad(full_parameter_name(field, gtype), nn)
