@@ -1,3 +1,8 @@
+"""
+    module AcceleratorLattice
+
+Module for instantiating and manipulating lattices for particle beam machines.
+"""
 module AcceleratorLattice
 
   ## using OffsetArrays
@@ -40,7 +45,8 @@ module AcceleratorLattice
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, ele_types_set, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, LatEleLocation, ele_at_s, add_governor!
-  export find_ele, find_eles, next_ele, branch, matches_branch, param_groups_list, create_ele_vars
+  export find_ele, find_eles, next_ele, ele_at_index
+  export branch, matches_branch, param_groups_list, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup, SolenoidGroup
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveGroup

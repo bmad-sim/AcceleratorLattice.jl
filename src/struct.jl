@@ -483,14 +483,14 @@ Initial Twiss parameters.
 Also see TwissGroup.
 """
 
-@kwdef mutable struct InitTwiss1
+@kwdef mutable struct InitTwiss1 <: EleParameterGroup
   beta::Number = 0          # Beta Twiss
   alpha::Number = 0         # Alpha Twiss
   gamma::Number = 0         # Gamma Twiss
   phi::Number = 0           # Betatron phase
 end
 
-@kwdef mutable struct InitDispersion1
+@kwdef mutable struct InitDispersion1 <: EleParameterGroup
   eta::Number = 0           # Dispersion da/dpz for a-mode
   etap::Number = 0          # Dispersion prime dpa/dpz for a-mode
   deta_ds::Number = 0       # Dispersion derivative.
@@ -500,9 +500,9 @@ end
   a::InitTwiss1 = InitTwiss1()            # a-mode
   b::InitTwiss1 = InitTwiss1()            # b-mode
   c::InitTwiss1 = InitTwiss1()            # c-mode
-  x::InitTwiss1 = InitDispersion1()       # x-axis
-  y::InitTwiss1 = InitDispersion1()       # y-axis
-  z::InitTwiss1 = initDispersion1()       # z-axis
+  x::InitDispersion1 = InitDispersion1()       # x-axis
+  y::InitDispersion1 = InitDispersion1()       # y-axis
+  z::InitDispersion1 = InitDispersion1()       # z-axis
   v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
 end
 #---------------------------------------------------------------------------------------------------
@@ -580,7 +580,7 @@ Patch element parameters
   pc_exit::Number = NaN                       # Reference momentum at exit end
   flexible::Bool = false
   user_sets_length::Bool = false
-  ref_coords::BodyLocationSwitch = ExitEnd
+  ref_coords::BodyLocationSwitch = exit_end
 end
 
 #---------------------------------------------------------------------------------------------------

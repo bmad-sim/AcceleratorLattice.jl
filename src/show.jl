@@ -351,7 +351,7 @@ end
 #---------------------------------------------------------------------------------------------------
 # show_elegroup_with_doc
 
-function show_elegroup_with_doc(io::IO, group::T) where T <: EleParameterGroup
+function show_elegroup_with_doc(io::IO, group::T; indent = 0) where T <: EleParameterGroup
   gtype = typeof(group)
   nn = max(18, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
@@ -366,44 +366,39 @@ end
 #---------------------------------------------------------------------------------------------------
 # show_elegroup_wo_doc
 
-function show_elegroup_wo_doc(io::IO, group::T) where T <: EleParameterGroup
+function show_elegroup_wo_doc(io::IO, group::T; indent = 0) where T <: EleParameterGroup
   gtype = typeof(group)
   gtype in keys(show_column2) ? col2 = show_column2[gtype] : col2 = Dict{Symbol,Symbol}()
   nn = max(20, maximum(length.(fieldnames(gtype))))
+
   println(io, f"  {gtype}:")
 
-  for field in fieldnames(gtype)
-    show_elegroup_field_wo_doc(io, field, group)
-  end
-end
+  for field_sym in fieldnames(gtype)
+    if field_sym in values(col2); return; end
+    field = Base.getproperty(group, field_sym)
 
-#---------------------------------------------------------------------------------------------------
-# show_elegroup_field_wo_doc
+    if supertype(typeof(field)) == EleParameterGroup
+      println(io, "    show for this field `$field_sym` of type $(typeof(field)) not yet implemented.")
+    elseif field_sym in keys(col2)
+      kstr = rpad(full_parameter_name(field_sym, gtype), nn)
+      vstr = ele_param_str(field)
+      str = f"    {kstr} {vstr} {units(field_sym)}"
+      field2_sym = col2[field_sym]
+      kstr = rpad(full_parameter_name(field2_sym, gtype), nn)
+      vstr = ele_param_str(Base.getproperty(group, field2_sym))
+      str2 = f"    {kstr} {vstr} {units(field2_sym)}"
+      if length(str) > 50 || length(str2) > 50
+        println(io, str)
+        println(io, str2)
+      else
+        println(io, f"{rpad(str,50)}{str2}")
+      end
 
-
-
-
-
-function show_elegroup_field_wo_doc(io::IO, field, group::T) where T <: EleParameterGroup
-  if field in values(col2); return; end
-  if field in keys(col2)
-    kstr = rpad(full_parameter_name(field, gtype), nn)
-    vstr = ele_param_str(Base.getproperty(group, field))
-    str = f"    {kstr} {vstr} {units(field)}"
-    field2 = col2[field]
-    kstr = rpad(full_parameter_name(field2, gtype), nn)
-    vstr = ele_param_str(Base.getproperty(group, field2))
-    str2 = f"    {kstr} {vstr} {units(field2)}"
-    if length(str) > 50 || length(str2) > 50
-      println(io, str)
-      println(io, str2)
     else
-      println(io, f"{rpad(str,50)}{str2}")
+      kstr = rpad(full_parameter_name(field_sym, gtype), nn)
+      vstr = ele_param_str(field)
+      println(io, f"    {kstr} {vstr} {units(field_sym)}")
     end
-  else
-    kstr = rpad(full_parameter_name(field, gtype), nn)
-    vstr = ele_param_str(Base.getproperty(group, field))
-    println(io, f"    {kstr} {vstr} {units(field)}")
   end
 end
 
