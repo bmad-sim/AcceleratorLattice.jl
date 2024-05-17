@@ -23,7 +23,7 @@ Thus, a positive `offset` will displace the superposition location downstream if
 a normal orientation and vice versa for a reversed orientation.
 
 When `offset` = 0, for zero length elements  the superposition location is at the entrance end of `ref_ele` 
-except if `ele_origin` is set to `DownstreamEnd` in which case the location is at the exit end.
+except if `ele_origin` is set to `downstream_end` in which case the location is at the exit end.
 
 The superimposed element will inherit the orientation of the `ref_ele`.
 
@@ -50,11 +50,11 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
 
     # Insertion of zero length element with zero offset at edge of an element.
     if L_super == 0 && offset == 0 
-      if machine_ref_origin == UpstreamEnd || (machine_ref_origin == center && refele.L == 0)
+      if machine_ref_origin == upstream_end || (machine_ref_origin == center && refele.L == 0)
         ix_insert = max(ref_ix_ele, 2)
         insert!(branch, ix_insert, super_ele)
         return
-      elseif machine_ref_origin == DownstreamEnd 
+      elseif machine_ref_origin == downstream_end 
         ix_insert = min(ref_ix_ele+1, length(refele.branch.ele))
         insert!(branch, ix_insert, super_ele)
         return
@@ -83,7 +83,7 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
 
     # If super_ele has zero length just insert it.
     if L_super == 0
-      ele_at, _ = split!(branch, s1, choose_downstream = (machine_ref_origin != DownstreamEnd), ele_near = refele)
+      ele_at, _ = split!(branch, s1, choose_downstream = (machine_ref_origin != downstream_end), ele_near = refele)
       insert!(branch, ele_at.ix_ele, super_ele)
       return
     end
@@ -135,8 +135,8 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
     # choose_downstream is set to minimize number of elements in superposition region.
     # The superposition region is from beginning of ele1 to beginning of ele2.
 
+    ele2, _ = split!(branch, s2, false)  # Notice that s2 split must be done first!
     ele1, _ = split!(branch, s1, true)
-    ele2, _ = split!(branch, s2, false)
 
     # If there are just drifts here then no superimpose needed.
     # Note: In this case there cannot be wrap around.
@@ -164,6 +164,7 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
     index_and_s_bookkeeper!(sbranch)
 
     for ele in Region(ele1, ele2, false)
+      println("$(ele.name)   $(ele.ix_ele)")
       if ele.L == 0; continue; end
       ix_ele = ele.ix_ele
 
@@ -180,7 +181,7 @@ function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyL
         lord2 = ele
         push!(sbranch.ele, lord2)
         lord2.lord_status = super_lord
-        branch.ele[ix_ele] = UnionEle(name = "", L = ele.L, super_lord = Vector{Ele}([super_ele]))
+        branch.ele[ix_ele] = UnionEle(name = "", L = ele.L, super_lords = Vector{Ele}([super_ele]))
         slave = branch.ele[ix_ele]
         slave.slave_status = super_slave
         lord2.pdict[:slaves] = Vector{Ele}([slave])

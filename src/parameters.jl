@@ -105,7 +105,7 @@ ele_param_info_dict = Dict(
   :pc_exit            => ParamInfo(PatchGroup,     Number,         "Reference momentum at exit end.", "eV"),
   :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
   :user_sets_length   => ParamInfo(PatchGroup,     Bool,           "Does Bmad calculate the patch length?"),
-  :ref_coords         => ParamInfo(PatchGroup,     BodyLocationSwitch, "Patch coords with respect to EntranceEnd or ExitEnd?"),
+  :ref_coords         => ParamInfo(PatchGroup,     BodyLocationSwitch, "Patch coords with respect to entrance_end or exit_end?"),
 
   :voltage            => ParamInfo(RFFieldGroup,   Number,        "RF voltage.", "volt"),
   :gradient           => ParamInfo(RFFieldGroup,   Number,        "RF gradient.", "volt/m"),
@@ -142,7 +142,7 @@ ele_param_info_dict = Dict(
   :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
   :aperture_type      => ParamInfo(ApertureGroup,  ApertureTypeSwitch,    "Type of aperture. Default is Elliptical."),
-  :aperture_at        => ParamInfo(ApertureGroup,  BodyLocationSwitch, "Where the aperture is. Default is EntranceEnd."),
+  :aperture_at        => ParamInfo(ApertureGroup,  BodyLocationSwitch, "Where the aperture is. Default is entrance_end."),
   :offset_moves_aperture 
                       => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
   :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of horizontal aperture limits.", "m"),

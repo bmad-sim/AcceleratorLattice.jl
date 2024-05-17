@@ -1,3 +1,8 @@
+"""
+    module AcceleratorLattice
+
+Module for instantiating and manipulating lattices for particle beam machines.
+"""
 module AcceleratorLattice
 
   ## using OffsetArrays
@@ -40,16 +45,17 @@ module AcceleratorLattice
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, ele_types_set, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, LatEleLocation, ele_at_s, add_governor!
-  export find_ele, find_eles, next_ele, branch, matches_branch, param_groups_list, create_ele_vars
+  export find_ele, find_eles, next_ele, ele_at_index
+  export branch, matches_branch, param_groups_list, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup, SolenoidGroup
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveGroup
   export GirderGroup, LCavityGroup, PatchGroup, RFFieldGroup, RFMasterGroup, ControlSlaveGroup, ControlVarGroup
-  export InitTwissGroup, InitSpinGroup, InitParticleGroup
+  export InitTwissGroup, InitTwiss1, InitDispersion1, InitSpinGroup, InitParticleGroup
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
   export struct_sym_to_user_sym, multipole!, index, integer, quat_angles
   export machine_location, body_location, EleRegion, multipole_param_info
-
+  export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
 
 end # module

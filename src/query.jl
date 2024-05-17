@@ -46,7 +46,7 @@ The reverse function is machine_location.
 
 ### Input
 
- - `loc`          Possible values: `upstream_End`, `b_center`, or `downstream_end` .
+ - `loc`          Possible values: `upstream_end`, `b_center`, or `downstream_end` .
  - `orientation`  Possible values: -1 or +1.
 
 ### Output

@@ -197,7 +197,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   if has_changed(ele, ReferenceGroup); changed.ref_group = true; end
 
   if is_null(previous_ele)   # implies BeginningEle
-    if rg.species_ref == Species("NotSet"); error(f"Species not set for: {ele_name(ele)}"); end
+    if rg.species_ref == Species("NotSet"); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
     rg.species_ref_exit = rg.species_ref
 
     rg.time_ref_exit = rg.time_ref

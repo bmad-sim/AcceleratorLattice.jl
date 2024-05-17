@@ -1,13 +1,25 @@
 #---------------------------------------------------------------------------------------------------
 # ele_at_index
 
+"""
+    ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true)  -> ::Ele
+
+Returns element with index `ix_ele` in branch `branch`.
+
+With `wrap` = `false`, an error is raised if `ix_ele` is out-of-bounds.
+
+With `wrap` = `true`, if `ix_ele` is out-of-bounds, will "wrap" around ends of the branch so,
+for a branch with `N` elements,
+`ix_ele = N+1` will return `branch.ele[1]` and `ix_ele = 0` will return `branch.ele[N]`.
+""" ele_at_index
+
 function ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true)
   n = length(branch.ele)
 
   if wrap
     if n == 0; error(f"BoundsError: " *           # Happens with lord branch with no lord elements
               f"Element index: {ix_ele} out of range in branch {branch.ix_branch}: {branch.name}"); end
-    ix_ele = mod(ix_ele-1, n-1) + 1
+    ix_ele = mod(ix_ele-1, n) + 1
     return branch.ele[ix_ele]
   else
     if ix_ele < 1 || ix_ele > n; error(f"BoundsError: " * 
@@ -137,7 +149,7 @@ place any super_lord elements at the end of the list.
 Note: When there are multiple element names in loc_str (which will be separated by a comma or blank), 
 the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
 with who = "quad::*,sbend::*", all the quadrupoles will appear in eles(:) before all of the sbends.
-""" find_ele
+""" find_eles
 
 function find_eles(lat::Lat, who::Union{AbstractString,Regex})
   # Julia regex is simple
@@ -186,8 +198,9 @@ end
 
 Returns element specified by `who`. 
 
-- `default`   Value to return if the number of elements matching `who` is not one. If the value of `default` is `missing`, an error is thrown. 
-"""
+- `default`   Value to return if the number of elements matching `who` is not one. 
+If the value of `default` is `missing`, an error is thrown. 
+""" find_ele
 
 function find_ele(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
   eles = find_eles(lat, who)

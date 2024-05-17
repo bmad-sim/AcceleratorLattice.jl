@@ -4,9 +4,12 @@
 This chapter discusses some of the design decisions that were made in the planning of \accellat.
 Hopefully this information will be useful as \accellat is developed in the future.
 The design of \accellat is heavily influenced by the decades of experience constructing and maintaining
-\bmad --- both in terms of what works and what has not worked. 
+\bmad --- both in terms of what works and what has not worked. To avoid confusion, \bnadjl will
+never be called \bmad, and \bmad always refers to the Fortran
+code (which is sometimes called Fortran \bmad for emphasis).
 
-First a clarification. The name \bmad can be used in two senses. There is \bmad the software toolkit
+First a clarification. The name \bmad (referring to Fortran \bmad)
+can be used in two senses. There is \bmad the software toolkit
 that can be used to create simulation programs. But \bmad can also be used to refer to the 
 ecosystem of toolkit and \bmad based programs that have been developed over the years --- the
 most heavily used program being Tao. In the discussion below, \bmad generally refers to the toolkit
@@ -16,7 +19,7 @@ since it is the toolkit that defines the syntax for \bmad lattice files.
 To understand \accellat it helps to understand some of the history of \bmad. The \bmad toolkit 
 started out as a modest project for calculating Twiss parameters and closed orbits within online control
 programs for the Cornell CESR storage ring. As such, the lattice structure was simply an array
-of elements. That is, multiple branches could not be instantiated. And tracking was very simple ---
+of elements. That is, early \bmad did not have the concept of interlocking branches, and tracking was very simple ---
 there was only one tracking method, symplecticity was ignored and ultra-relativistic and 
 paraxial approximations were used. 
 \bmad has come a long way from the early days but design decisions made early on still haunt the \bmad
@@ -24,7 +27,7 @@ toolkit.
 
 \paragraph{Separation of tracking and lattice description:} 
 One of the first \accellat design decisions was to separate, as much as
-possible, particle tracking and lattice description. 
+possible, particle tracking from the lattice description. 
 This decision was inspired by the PTC code of Etienne Forest.
 The fact that \bmad did not make this separation complicated \bmad's lattice element structure,
 the \vn{ele_struct}, 
@@ -47,7 +50,9 @@ the time needed for tracking and track analysis, lattice instantiation
 and manipulation does not take an appreciable amount of time. For tracking, where computation time
 is a hugh consideration, an interface layer can be
 used to translate lattice parameters to a type stable form. Of much greater importance is
-flexibility of \accellat to accomodate changing needs and software sustainability.
+flexibility of \accellat to accomodate changing needs and software sustainability. 
+Hence all element, branch, and lattice structures contain a Dict (always called \vn{pdict}) which
+can store arbitrary information.
 
 \paragraph{Lattice element structure:}
 All lattice element structs are very simple: They contain a single Dict and all element information
@@ -55,12 +60,15 @@ is stored within this Dict. This means that there is no restriction as to what c
 in an element adding custom information to an element simple. 
 And the ability to do customization easily is very important. 
 
-Within an element Dict, for the most part, parameters are grouped into ``element group'' structs. A flattened structure,
-that is, without the element group structs, would be the correct strategy
+Within an element Dict, for the most part, parameters are grouped into ``element group'' structs. 
+A flattened structure, that is, without the element group structs, would be the correct strategy
 if the number of possible parameters for a given element type was not as large as it is. 
 However, the parameterization of an element can be complicated. 
 For example, a field table describing the field in an element has a grid of field points plus 
-parameters to specify the distance between points, the frequency if the field is oscillating, etc. 
+parameters to specify the distance between points, the frequency (if the field is oscillating), etc.
 In such a case, where the number of parameters is large, and with the parameters falling into 
-logical groups, using substructures if preferred. 
+logical groups, using substructures if preferred. Another consideration is that parameter groups
+help remove the conflict that occurs when multiple parameters logically should have the same name.
+For example, if an element is made up of different parts and multipole parts can have independent
+misalignments, parameter groups help keep the offset parameters distinct. 
 

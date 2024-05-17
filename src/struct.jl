@@ -477,32 +477,33 @@ end
 # InitTwissGroup
 
 """
-Initial Twiss parameters
+Initial Twiss parameters.
+
+
+Also see TwissGroup.
 """
 
-@kwdef mutable struct Twiss1
+@kwdef mutable struct InitTwiss1 <: EleParameterGroup
   beta::Number = 0          # Beta Twiss
   alpha::Number = 0         # Alpha Twiss
   gamma::Number = 0         # Gamma Twiss
-  phi::Number = 0           # Phase
+  phi::Number = 0           # Betatron phase
+end
+
+@kwdef mutable struct InitDispersion1 <: EleParameterGroup
   eta::Number = 0           # Dispersion da/dpz for a-mode
   etap::Number = 0          # Dispersion prime dpa/dpz for a-mode
   deta_ds::Number = 0       # Dispersion derivative.
-  emit::Number = NaN        # Emittance
-  norm_emit::Number = NaN   # Normalized emittance
-  sigma::Number = NaN       # Beam size
-  sigma_p::Number = NaN     # Beam divergence
 end
 
 @kwdef mutable struct InitTwissGroup <: EleParameterGroup
-  a::Twiss1 = Twiss1()            # a-mode
-  b::Twiss1 = Twiss1()            # b-mode
-  c::Twiss1 = Twiss1()            # c-mode
-  x::Twiss1 = Twiss1()            # x-axis
-  y::Twiss1 = Twiss1()            # y-axis
-  z::Twiss1 = Twiss1()            # z-axis
-  c_mat::Matrix{Number} = Matrix{Number}([0 0; 0 0])  # Coupling matrix.
-  gammma::Number = 1              # Coupling gamma.
+  a::InitTwiss1 = InitTwiss1()            # a-mode
+  b::InitTwiss1 = InitTwiss1()            # b-mode
+  c::InitTwiss1 = InitTwiss1()            # c-mode
+  x::InitDispersion1 = InitDispersion1()       # x-axis
+  y::InitDispersion1 = InitDispersion1()       # y-axis
+  z::InitDispersion1 = InitDispersion1()       # z-axis
+  v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
 end
 #---------------------------------------------------------------------------------------------------
 # LCavityGroup
@@ -579,7 +580,7 @@ Patch element parameters
   pc_exit::Number = NaN                       # Reference momentum at exit end
   flexible::Bool = false
   user_sets_length::Bool = false
-  ref_coords::BodyLocationSwitch = ExitEnd
+  ref_coords::BodyLocationSwitch = exit_end
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -687,6 +688,41 @@ end
 Vacuum chamber wall.
 """
 @kwdef mutable struct ChamberWallGroup <: EleParameterGroup
+end
+
+#---------------------------------------------------------------------------------------------------
+# TwissGroup
+
+"""
+Twiss parameters
+
+Not currently used.
+Also see InitTwissGroup.
+"""
+
+@kwdef mutable struct Twiss1
+  beta::Number = 0          # Beta Twiss
+  alpha::Number = 0         # Alpha Twiss
+  gamma::Number = 0         # Gamma Twiss
+  phi::Number = 0           # Phase
+  eta::Number = 0           # Dispersion da/dpz for a-mode
+  etap::Number = 0          # Dispersion prime dpa/dpz for a-mode
+  deta_ds::Number = 0       # Dispersion derivative.
+  emit::Number = NaN        # Emittance
+  norm_emit::Number = NaN   # Normalized emittance
+  sigma::Number = NaN       # Beam size
+  sigmap::Number = NaN     # Beam divergence
+end
+
+@kwdef mutable struct TwissGroup <: EleParameterGroup
+  a::Twiss1 = Twiss1()            # a-mode
+  b::Twiss1 = Twiss1()            # b-mode
+  c::Twiss1 = Twiss1()            # c-mode
+  x::Twiss1 = Twiss1()            # x-axis
+  y::Twiss1 = Twiss1()            # y-axis
+  z::Twiss1 = Twiss1()            # z-axis
+  c_mat::Matrix{Number} = Matrix{Number}([0 0; 0 0])  # Coupling matrix.
+  gammma_c::Number = 1            # Coupling gamma.
 end
 
 #---------------------------------------------------------------------------------------------------
