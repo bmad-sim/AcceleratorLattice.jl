@@ -1,21 +1,20 @@
 \chapter{Lattice Elements}
 \label{c:ele}
 
-This chapter discusses lattice element including how to create them and how to manipulate them.
+This chapter discusses lattice elements including how to create them and how to manipulate them.
+For a list of lattice elements defined by \accellat, see chapter~\sref{c:ele.types}. 
 
 %---------------------------------------------------------------------------------------------------
-\section{Defining a Lattice Element}
+\section{Instantiating a Lattice Element}
 \label{s:ele.def}
-
-Chapter~\sref{c:ele.types} gives a list of lattice elements defined by \accellat. 
-Lattice elements are instantiated from structs which inherit from the abstract type \vn{Ele}.
 
 Elements are defined using the \vn{@ele} or \vn{@eles} macros. 
 The general syntax of the \vn{@ele} macro is:
 \begin{example}
   @ele eleName = eleType(param1 = val1, param2 = val2, ...)
 \end{example}
-where \vn{eleName} is the name of the element, \vn{eleType} is the type of element, \vn{param1}, \vn{param2},
+where \vn{eleName} is the name of the element, \vn{eleType} is the type of element, 
+\vn{param1}, \vn{param2},
 etc. are parameter names and \vn{val1}, \vn{val2}, etc. are the parameter values.
 Example:
 \begin{example}
@@ -47,18 +46,19 @@ Example:
 \section{Element Parameters}
 \label{s:ele.type}
 
-Generally, element parameters are grouped into ``element parameter groups'' structs which inherit
-from the abstract type \vn{EleParameterGroup}.
+Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
+types which inherit from the abstract type \vn{EleParameterGroup}.
 For example, the \vn{LengthGroup} holds the length and s-positions of the element and is defined by:
 \begin{example}
   @kwdef struct LengthGroup <: EleParameterGroup
-    L::Number = 0
-    s::Number = 0
-    s_downstream::Number = 0
-    orientation::Int = 1
+    L::Number = 0.0               # Length of element
+    s::Number = 0.0               # Starting s-position
+    s_downstream::Number = 0.0    # Ending s-position
+    orientation::Int = 1          # Longitudinal orientation
   end
 \end{example}
-The \vn{\@kwdef} macro automatically defines a keyword-based constructor for \vn{LengthGroup}. 
+The \vn{\@kwdef} macro automatically defines a keyword-based constructor for \vn{LengthGroup}.
+See the Julia manual for more information on \vn{\@kwdef}. 
 To see a list of all element parameter groups use the \vn{subtypes(EleParamterGroup)} command.
 To see the components of a given group use the \vn{fieldnames} function. For information on
 a given element parameter use the \vn{info(::Symbol)} function. For example:
@@ -87,13 +87,16 @@ group is the same. But there are exceptions. For example:
 \section{Anatomy of an Element}
 \label{s:ele.anatomy}
 
-The structs for all elements types contain exactly one component which is a Dict called \vn{pdict}
-(short for ``parameter dict'') which is of type \vn{Dict\{Symbol,Any\}}.
+Lattice element types (\vn{Quadrupole}, \vn{RFCavity}, etc.) inherit from the abstract 
+type \vn{Ele}.
 
-Element parameter groups~\sref{s:ele.type} are stored in an element's \vn{pdict}, with the key 
-being the symbol associated with the group. For example, an element \vn{ele} that has a
-\vn{LengthGroup} will store this group at \vn{ele.pdict[:LengthGroup]} and the length component \vn{L}
-of this group is accessed by \vn{ele.pdict[:LengthGroup].L}.
+All lattice element types have a single field which is a Dict named \vn{pdict} (parameter dict). 
+The values of \vn{pdict} will, with a few exceptions, be a parameter group.
+By convention, the key used for storing a parameter group in \vn{pdict} is the symbol associated with the type. For example, a \vn{LengthGroup} would be stored in \vn{pdict[:LengthGroup]}.
+
+To hide the complexity of parameter groups, the dot selection operator is overloaded for elements.
+For example, if \vn{q} is an element instance, \vn{q.pdict[:LengthGroup].s} can be accessed
+via \vn{q.s}.
 
 The \vn{Base.setproperty} and \vn{Base.getproperty} functions, which get called when the dot
 selection operator is used, have been overloaded for elements so that \vn{ele.L} will get mapped to 
@@ -127,7 +130,8 @@ After lattice parameters are changed, the function \vn{bookkeeper(::Lat)} needs 
 so that dependent parameters can be updated. 
 Since bookkeeping can take a significant amount of time if bookkeeping is done every time
 a change to the lattice is made, and since there is no good way to tell when bookkeeping should
-be done, After lattice expansion, \vn{bookkeeper(::Lat)} is never called directly by \accellat functions and needs to be called by the User when appropriate (generally before tracking or
+be done, After lattice expansion, \vn{bookkeeper(::Lat)} is never called directly by \accellat 
+functions and needs to be called by the User when appropriate (generally before tracking or
 other computations are done).
 
 Broadly there are two types of dependent parameters: intra-element dependent parameters where
@@ -154,7 +158,7 @@ the position in global coordinates of the beginning element.
 
 
 %---------------------------------------------------------------------------------------------------
-\section{Defining a Lattice Element Type}
+\section{Defining a New Element Type}
 \label{s:ele.type}
 
 All lattice element types like \vn{Quadrupole}, \vn{Marker}, etc. are subtypes of the abstract type
