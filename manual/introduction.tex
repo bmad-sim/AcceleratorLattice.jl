@@ -10,8 +10,8 @@ a set of ``\vn{branches}'' and a branch contains
 an array of lattice \vn{elements} with each element representing an object like a magnet
 or a RF cavity. A branch can be used to describe such
 things as LINACs, storage rings, injection lines, X-ray beam lines, etc. Different branches in a
-lattice can be connected together. For example, an injection line branch connected to a storage
-ring branch or the lines of two ring connected together to form a colliding beam machine. 
+lattice can be connected together. For example, an injection line branch can be connected to a storage
+ring branch or the lines of two rings can be connected together to form a colliding beam machine. 
 This ability to describe the interconnections between branches means that 
 a lattice instance can hold all the information about an entire machine complex from beam creation
 to dump lines enabling a single lattice to be used as the basis of start-to-end simulations.
@@ -23,18 +23,19 @@ closed orbits and Twiss functions), is left to other packages in the \bmadjl eco
 %---------------------------------------------------------------------------
 \section{Documentation}
 
-There are three main sources of documentation. One source is this pdf manual which gives in-depth
-documentationon the \accellat package. A second source is the web based introduction and overview guide.
+There are three main sources of documentation of the \accellat package. 
+One source is this PDF manual which gives in-depth documentationon. 
+A second source is the web based introduction and overview guide.
 Finally, functions, structs and other objects are documented in the code files themselves. 
-Taking advantage of Julia's built-in documentation system, this documentation can be accessed
-when using Julia's REPL.
+Taking advantage of Julia's built-in documentation system, this in-file documentation can be accessed
+via using Julia's REPL.
 
 %---------------------------------------------------------------------------
 \section{Brief History}
 
 \bmadjl has it's origins in the "Fortran \bmad" ecosystem of toolkits and programs developed over several
 decades at Cornell University. Although the two share a similar name, the code of the two are
-completely separate. That being said, the development of \accellat was heavily influenced by the 
+completely separate. That being said, the development of \accellat is heavily influenced by the 
 experience --- both good and bad --- in the development and use of Fortran \bmad as well as experience
 with other accelerator simulation programs.
 
@@ -44,7 +45,6 @@ have similarly utilized the underlying programming language for constructing
 lattices\cite{Appleby:Merlin2020,Iadarola:Xsuite2023}. This is in marked contrast to many accelerator
 simulation programs such programs as MAD\cite{Grote:MAD1989}, Elegant\cite{Borland:Elegant2000}, and the 
 \bmad toolkit\cite{Sagan:Bmad2006}. 
-
 By using Julia for the lattice language, the user will automatically have access to such features 
 as plotting, optimization packages, linear algebra packages, etc. 
 This is a massive boost to the versatility and usability of any \bmadjl simulation program. 
@@ -53,8 +53,8 @@ Additionally, maintainability is greatly improved since the quantity of code tha
 %---------------------------------------------------------------------------------------------------
 \section{Acknowledgements}
 
-It is my pleasure to express appreciation to people who have contributed to this effort, and without
-whom, \bmadjl would only be a shadow of what it is today: 
+Thanks must go to the people who have contributed to this effort and without
+whom \bmadjl would only be a shadow of what it is today: 
 
 \'Etienne Forest (aka Patrice Nishikawa),
 Matthew Signorelli,
@@ -85,6 +85,26 @@ A \vn{using} statement must be given before using \accellat in Julia
 \end{example}
 
 %---------------------------------------------------------------------------
+\section{Manual Conventions}
+\label{s:manual.con}
+
+This manual has the following conventions:
+\begin{description}
+%
+\item[Types:]
+\vn{Types} are also referred to as \vn{structs}.
+%
+\item[Type fields:]
+\vn{Fields} of a type are also referred to as \vn{components} or \vn{parameters}.
+A component \vn{c} of a type \vn{S} can be referred to as \vn{S.c}. In the case
+of lattice elements, \vn{Ele} (the abstract type that all elements inherit from) is
+used represent any of the subtypes such as \vn{Quadrupole}, etc. If the component
+is an array, the notation \vn{S.c[]} can be used to emphasize this.
+%
+\end{description}
+
+
+%---------------------------------------------------------------------------
 \section{Lattice Elements}
 \label{s:element.def}
 
@@ -93,87 +113,47 @@ element can be a physical thing that particles travel ``through'' like a bending
 quadrupole or a Bragg crystal, or something like a \vn{marker} element (\sref{s:mark}) that is used
 to mark a particular point in the machine. Besides physical elements, there are \vn{controller},
 elements that can be used for parameter control of other elements. All lattice elements are of types
-that inherit from the abstract type \vn{Lat}.
-Chapter~\sref{c:element-list} lists the complete set of different element types that \bmad knows about.
-
-All lattice element structs hold a Dict named \vn{pdict} (parameter dict) which holds the element
-parameters. For ease of manipulation, parameters are grouped into \vn{parameter} \vn{groups} structs.
-and the values of \vn{pdict} will, with a few exceptions, be a parameter group. 
-To hide the complexity of parameter groups, the dot selection operator is overloaded for elements
-so something like \vn{q.s}, where \vn{q} is an element instance and \vn{s} is the parameter for the
-element's longitudinal position, is mapped to \vn{q.pdict[:LengthGroup].s}.
-This is discussed in detail in chapter~\sref{c:ele}.
+that inherit from the abstract type \vn{Ele}.
+Chapter~\sref{c:ele.types} lists the different element types that \bmad knows about.
 
 %---------------------------------------------------------------------------
 \section{Lattice Branches}
 \label{s:branch.def}
 
-The next level up from lattice \vn{elements} is the \vn{Branch} struct which
-holds an array of lattice elements.
-There are two types of branches.
+The next level up from lattice \vn{elements} are the branches which
+holds an array of lattice elements. A branch is of type \vn{Branch}. All
+branches have a name \vn{Branch.name} inherited from the line that defines
+the branch and branches contains an array of elements \vn{Branch.ele[]}
 
+There are two types of \vn{branches}: branches whose \vn{Branch.type} parameter is set to
+\vn{LordBranch} hold Lord elements and 
+branches whose \vn{branch.type} parameter is set to \vn{TrackingBranch} is 
 
-There
-
-\vn{branch} contains an ordered sequence of lattice elements that a particle will travel through. A
-branch can represent a LINAC, X-Ray beam line, storage ring or anything else that can be represented
-as a simple ordered list of elements.
-
-Chapter~\sref{c:sequence} shows how a \vn{branch} can be defined using \vn{line}s.
-
-Branches can be interconnected using \vn{fork} elements (\sref{s:fork}). This
-is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
-X-ray beam line. A \vn{branch} from which other \vn{branches} fork but is not forked to by any
-other \vn{branch} is called a \vn{root} branch. A branch that is forked to by some other branch
-is called a \vn{downstream} branch.
-
-There are two types of \vn{branches}: \vn{LordBranches} and \vn{TrackingBranches}, 
-Branches whose \vn{Branch.type} are set to \vn{LordBranch}
-
-
-
-In a lattice \vn{branch} (\sref{s:branch.def}), each element in the
-ordered array of elements are assigned an \vn{element index}
-starting from one. The first element in a branch array
-is called \vn{beginning_ele} (\sref{s:begin.ele}).
-This element is always included in every \vn{branch} \sref{s:branch.def} and is used as a
-marker for the beginning of the \vn{branch}.  Additionally, every branch will have a final
-marker element (\sref{s:mark}) named \vn{end_ele}.
+A tracking branch can represent a LINAC, X-Ray beam line, storage ring, etc.
+For all tracking branches, the first element in the element array
+must be of type \vn{BeginningEle} (\sref{s:begin.ele}).
+Additionally, for all tracking branches, 
+the end element must be of type \vn{Marker} (\sref{s:mark}).
 
 %---------------------------------------------------------------------------
 \section{Lattices}
 \label{s:lattice.def}
 
-A \vn{lattice} (\sref{s:lattice.def}), has an array of \vn{branches}. 
-Each \vn{branch} in this array
-has a name an is assigned an index starting from one. 
-Branches are named after the line that defines the \vn{branch}.
-
-A \vn{lattice} contains an array of \vn{branches} that can be interconnected 
-together to describe an entire machine
-complex. A \vn{lattice} can include such things as transfer lines, dump lines, x-ray beam lines,
-colliding beam storage rings, etc. All of which can be connected together to form a coherent whole. 
-In addition, a lattice may contain \vn{controller elements} (Table~\ref{t:control.classes}) 
-which can
-simulate such things as magnet power supplies and support structures like a girder supporting
-a section of magnets or an optical table supporting photonic elements.
-
-Branches can be interconnected using \vn{fork} and \vn{photon_fork} elements (\sref{s:fork}). This
-is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
+All \vn{lattices} (\sref{s:lattice.def}) are of type \vn{Lat}.
+A \vn{lattice}, has an array of \vn{branches} \vn{Lat.branch[]}. 
+Tracking branches can be interconnected using \vn{fork} and \vn{photon_fork} elements (\sref{s:fork}). 
+This is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
 X-ray beam line. The \vn{branch} from which other \vn{branches} fork but is not forked to by any
 other \vn{branch} is called a \vn{root} branch.
 
 A lattice may contain multiple \vn{root} \vn{branches}. For example, a pair of intersecting storage
-rings will generally have two \vn{root} branches, one for each ring. The \vn{use} statement
-(\sref{s:use}) in a lattice file will list the \vn{root} \vn{branches} of a lattice. To connect
-together lattice elements that are physically shared between branches, for example, the interaction
-region in colliding beam machines, \vn{multipass} lines (\sref{s:multipass}) can be used.
+rings will generally have two \vn{root} branches, one for each ring.
 
 %---------------------------------------------------------------------------
-\section{Conventions}
+\section{AcceleratorLattice Conventions}
 \label{s:conventions}
 
-The following conventions 
+\accellat has the following conventions:
 \begin{description}
 %
 \item[Evaluation is at upstream end:] 
@@ -193,6 +173,10 @@ be kept in mind when comparing the two:
 \item
 Fortran \bmad is generally case insensitive (except for things like file names). \accellat, like
 the Julia language, is case sensitive.
+%
+In \accellat branches are indexed from one (EG: \vn{lat.branch[1]}) instead of zero as in \bmad.
+%
+In \accellat elements are indexed from one (EG: \vn{branch.ele[1]}
 %
 \item
 The Fortran \bmad names for the coordinate systems (\sref{s:coords}) was somewhat different and not

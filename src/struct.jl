@@ -528,14 +528,23 @@ end
 # LengthGroup
 
 """
+    mutable struct LengthGroup <: EleParameterGroup
+
 Element length and s-positions.
-"""
+
+# Fields
+
+    L::Number = 0.0               # Length of element
+    s::Number = 0.0               # Starting s-position
+    s_downstream::Number = 0.0    # Ending s-position
+    orientation::Int = 1          # Longitudinal orientation
+""" LengthGroup
 
 @kwdef mutable struct LengthGroup <: EleParameterGroup
-  L = 0.0::Number
-  s = 0.0::Number
-  s_downstream::Number = 0.0
-  orientation::Int = 1
+  L::Number = 0.0               # Length of element
+  s::Number = 0.0               # Starting s-position
+  s_downstream::Number = 0.0    # Ending s-position
+  orientation::Int = 1          # Longitudinal orientation
 end
 
 #---------------------------------------------------------------------------------------------------
