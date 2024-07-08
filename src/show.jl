@@ -106,6 +106,21 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
     :tracking_method  => :field_calc,
     :num_steps        => :ds_step,
   ),
+
+  InitTwiss1 => Dict{Symbol,Symbol}(
+    :beta             => :alpha,
+    :gamma            => :phi,
+  ),
+
+  InitDispersion1 => Dict{Symbol,Symbol}(
+    :eta              => :etap,
+  ),
+
+  InitTwissGroup => Dict{Symbol,Symbol}(
+  ),
+
+  InitParticleGroup => Dict{Symbol,Symbol}(
+  ),
 )
 
 #---------------------------------------------------------------------------------------------------
@@ -170,25 +185,25 @@ function ele_name(ele::Ele, template::AbstractString = "")
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_param_str
+# ele_param_value_str
 
 """
-    Internal: ele_param_str(pdict::Dict, key; default::AbstractString = "???")
-    Internal: ele_param_str(vec_var::Vector{ControlVar}; default::AbstractString = "???")
-    Internal: ele_param_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
+    Internal: ele_param_value_str(pdict::Dict, key; default::AbstractString = "???")
+    Internal: ele_param_value_str(vec_var::Vector{ControlVar}; default::AbstractString = "???")
+    Internal: ele_param_value_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
     Internal: ... and others too numerous to mention ...
 
 Routine to take a set of parameters and values and form a string with this information.
 used by the `show` routines for showing element, branch, and lat info.
-""" ele_param_str
+""" ele_param_value_str
 
 
-function ele_param_str(pdict::Dict, key; default::AbstractString = "???")
+function ele_param_value_str(pdict::Dict, key; default::AbstractString = "???")
   who = get(pdict, key, nothing)
-  return ele_param_str(who, default = default)
+  return ele_param_value_str(who, default = default)
 end
 
-function ele_param_str(vec_var::Vector{ControlVar}; default::AbstractString = "???")
+function ele_param_value_str(vec_var::Vector{ControlVar}; default::AbstractString = "???")
   if length(vec_var) == 0; return "No Vars"; end
   str = ""
   for var in vec_var
@@ -200,12 +215,12 @@ function ele_param_str(vec_var::Vector{ControlVar}; default::AbstractString = "?
   return "[" * str[3:end] * "]"
 end
 
-function ele_param_str(who::Vector{T}; default::AbstractString = "???") where T <: ControlSlave
+function ele_param_value_str(who::Vector{T}; default::AbstractString = "???") where T <: ControlSlave
   if length(who) == 0; return "No Slave Parameters"; end
   return f"[{length(who)} ControlSlaves]"
 end
 
-function ele_param_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
+function ele_param_value_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
   try
     val = Base.getproperty(ele, key)
     if format == ""
@@ -218,12 +233,12 @@ function ele_param_str(ele::Ele, key::Symbol; default::AbstractString = "???", f
   end
 end
 
-ele_param_str(who::Nothing; default::AbstractString = "???") = default
-ele_param_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
-ele_param_str(vec_ele::Vector{Ele}; default::AbstractString = "???") = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
-ele_param_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
-ele_param_str(str::String; default::AbstractString = "???") = str_quote(str)
-ele_param_str(who; default::AbstractString = "???") = string(who)
+ele_param_value_str(who::Nothing; default::AbstractString = "???") = default
+ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
+ele_param_value_str(vec_ele::Vector{Ele}; default::AbstractString = "???") = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
+ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
+ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
+ele_param_value_str(who; default::AbstractString = "???") = string(who)
 
 
 #---------------------------------------------------------------------------------------------------
@@ -250,7 +265,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
       kstr = rpad(string(key), nn2)
-      vstr = ele_param_str(pdict, key)
+      vstr = ele_param_value_str(pdict, key)
       if docstring
         ele_print_line(io, f"  {kstr} {vstr} {units(key)}", description(key))
       else
@@ -262,7 +277,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
       if !(typeof(group) <: EleParameterGroup); continue; end
-      show_elegroup(io, group, docstring)
+      show_elegroup(io, group, docstring, indent = 2)
     end
 
     # Finally print changed params.
@@ -272,7 +287,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       for (key, value) in changed
         nn2 = max(nn, length(string(key)))
         kstr = rpad(string(key), nn2)
-        vstr = ele_param_str(changed, key)
+        vstr = ele_param_value_str(changed, key)
         if docstring
           ele_print_line(io, f"    {kstr} {vstr} {units(key, eletype)}", description(key, eletype))
         else
@@ -293,58 +308,56 @@ Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
 # show_elegroup
 
 """
-    Internal: show_elegroup(io::IO, group::T, docstring::Bool)
+    Internal: show_elegroup(io::IO, group::T, docstring::Bool; indent = 0)
 
 Prints lattice element group info. Used by `show_ele`.
 """ show_elegroup
 
-function show_elegroup(io::IO, group::T, docstring::Bool) where T <: EleParameterGroup
+function show_elegroup(io::IO, group::T, docstring::Bool; indent = 0) where T <: EleParameterGroup
   if docstring
-    show_elegroup_with_doc(io, group)
+    show_elegroup_with_doc(io, group, indent = indent)
   else
-    show_elegroup_wo_doc(io, group)
+    show_elegroup_wo_doc(io, group, indent = indent)
   end
 end
 
-function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool)
+function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool; indent = 0)
+  off_str = " "^indent
+
   if length(group.vec) == 0
-    println(io, f"  BMultipoleGroup: No magnetic multipoles")
+    println(io, f"{off_str}BMultipoleGroup: No magnetic multipoles")
     return
   end
 
-  println(io, f"  BMultipoleGroup:")
-  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}")
+  println(io, f"{off_str}BMultipoleGroup:")
+  println(io, f"{off_str}  Order Integrated{lpad(\"Tilt (rad)\",24)}")
   for v in group.vec
     ol = f"{v.order}"
     if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
     uk = units(Symbol(f"Kn{ol}"));  ub = units(Symbol(f"Bn{ol}"))
-    println(io, f"{lpad(v.order,9)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
+    println(io, f"{off_str}{lpad(v.order,9)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
                          f"{lpad(v.Kn,24)}  Kn{ol}{lpad(v.Ks,24)}  Ks{ol} ({uk})")
-    println(io, " "^44 * f"{lpad(v.Bn,24)}  Bn{ol}{lpad(v.Bs,24)}  Bs{ol} ({ub})")
+    println(io, off_str * " "^42 * f"{lpad(v.Bn,24)}  Bn{ol}{lpad(v.Bs,24)}  Bs{ol} ({ub})")
   end
 end
 
 function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
   if length(group.vec) == 0
-    println(io, f"  EMultipoleGroup: No electric multipoles")
+    println(io, f"{off_str}EMultipoleGroup: No electric multipoles")
     return
   end
 
-  println(io, f"  EMultipoleGroup:")
-  println(io, f"    Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"En\",24)}{lpad(\"Es\",24)}")
+  println(io, f"{off_str}EMultipoleGroup:")
+  println(io, f"{off_str}  Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"En\",24)}{lpad(\"Es\",24)}")
   for v in group.vec
     ol = f"{v.order}"
     if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
     ue = units(Symbol(f"En{ol}"))
-    println(io, f"{lpad(n,9)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.En,24)}{lpad(v.Es,24)}    En{ol}  Es{ol} ({ue})")
+    println(io, f"{lpad(n,9+indent)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.En,24)}{lpad(v.Es,24)}    En{ol}  Es{ol} ({ue})")
   end
 end
 
-#function show_elegroup(io::IO, group::InitTwissGroup, docstring::Bool)
-#end
-
-
-function show_elegroup(io::IO, group::Vector{ControlVar})
+function show_elegroup(io::IO, group::Vector{ControlVar}; indent = 0)
   println(f"This needs to be coded!")
 end
 
@@ -358,7 +371,7 @@ function show_elegroup_with_doc(io::IO, group::T; indent = 0) where T <: ElePara
 
   for field in fieldnames(gtype)
     kstr = rpad(full_parameter_name(field, gtype), nn)
-    vstr = ele_param_str(Base.getproperty(group, field))
+    vstr = ele_param_value_str(Base.getproperty(group, field))
     ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
   end
 end
@@ -366,40 +379,57 @@ end
 #---------------------------------------------------------------------------------------------------
 # show_elegroup_wo_doc
 
-function show_elegroup_wo_doc(io::IO, group::T; indent = 0) where T <: EleParameterGroup
+function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = :NONE) where T <: EleParameterGroup
   gtype = typeof(group)
-  gtype in keys(show_column2) ? col2 = show_column2[gtype] : col2 = Dict{Symbol,Symbol}()
+  if gtype ∉ keys(show_column2)
+    if field_sym == :NONE
+      println(io, " "^indent * "Show for field of type $gtype not yet implemented.")
+    else
+      println(io, " "^indent * "Show for this field `$field_sym` of type $gtype not yet implemented.")
+    end
+    return
+  end
+
+  col2 = show_column2[gtype]
   nn = max(20, maximum(length.(fieldnames(gtype))))
 
-  println(io, f"  {gtype}:")
+  if field_sym == :NONE
+    println(io, " "^indent * "$(gtype):")
+  else
+    println(io, " "^indent * ".$field_sym:")
+  end
 
   for field_sym in fieldnames(gtype)
-    if field_sym in values(col2); return; end
     field = Base.getproperty(group, field_sym)
+    if typeof(field) ∈ keys(show_column2)
+      show_elegroup_wo_doc(io, field, indent = indent + 2, field_sym = field_sym)
+      continue
+    end
 
-    if supertype(typeof(field)) == EleParameterGroup
-      println(io, "    show for this field `$field_sym` of type $(typeof(field)) not yet implemented.")
-    elseif field_sym in keys(col2)
+    if field_sym in values(col2); continue; end         # Second column fields handled with first column ones.
+
+    if field_sym in keys(col2)
       kstr = rpad(full_parameter_name(field_sym, gtype), nn)
-      vstr = ele_param_str(field)
-      str = f"    {kstr} {vstr} {units(field_sym)}"
+      vstr = ele_param_value_str(field)
+      str = f"  {kstr} {vstr} {units(field_sym)}"   # First column entry
       field2_sym = col2[field_sym]
       kstr = rpad(full_parameter_name(field2_sym, gtype), nn)
-      vstr = ele_param_str(Base.getproperty(group, field2_sym))
-      str2 = f"    {kstr} {vstr} {units(field2_sym)}"
-      if length(str) > 50 || length(str2) > 50
-        println(io, str)
-        println(io, str2)
-      else
-        println(io, f"{rpad(str,50)}{str2}")
+      vstr = ele_param_value_str(Base.getproperty(group, field2_sym))
+      str2 = f"  {kstr} {vstr} {units(field2_sym)}" # Second column entry.
+      if length(str) > 50 || length(str2) > 50        # If length is too big print in two lines.
+        println(io, " "^indent * str)
+        println(io, " "^indent * str2)
+      else                                            # Can print as a single line.
+        println(io, " "^indent * f"{rpad(str, 50)}{str2}")
       end
 
     else
       kstr = rpad(full_parameter_name(field_sym, gtype), nn)
-      vstr = ele_param_str(field)
-      println(io, f"    {kstr} {vstr} {units(field_sym)}")
+      vstr = ele_param_value_str(field)
+      println(io, " "^indent * f"  {kstr} {vstr} {units(field_sym)}")
     end
-  end
+
+  end  # for field_sym in fieldnames(gtype)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -477,14 +507,14 @@ function Base.show(io::IO, branch::Branch)
       end_str = ""
       if branch.type == MultipassLordBranch
         end_str = f"{ele.L:12.6f}"
-        if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_str(ele.pdict, :slaves, default = \"\")}"; end
+        if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
       elseif haskey(ele.pdict, :LengthGroup)
-        s_str = ele_param_str(ele, :s, default = "    "*"-"^7, format = "11.6f")
-        s_down_str = ele_param_str(ele, :s_downstream, default = "    "*"-"^7, format = "11.6f")
+        s_str = ele_param_value_str(ele, :s, default = "    "*"-"^7, format = "11.6f")
+        s_down_str = ele_param_value_str(ele, :s_downstream, default = "    "*"-"^7, format = "11.6f")
         end_str = f"{ele.L:12.6f}{s_str} -> {s_down_str}"
-        if haskey(ele.pdict, :multipass_lord); end_str = end_str * f"  {ele_param_str(ele.pdict, :multipass_lord, default = \"\")}"; end
-        if haskey(ele.pdict, :super_lords);  end_str = end_str * f"  {ele_param_str(ele.pdict, :super_lords, default = \"\")}"; end
-        if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_str(ele.pdict, :slaves, default = \"\")}"; end
+        if haskey(ele.pdict, :multipass_lord); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :multipass_lord, default = \"\")}"; end
+        if haskey(ele.pdict, :super_lords);  end_str = end_str * f"  {ele_param_value_str(ele.pdict, :super_lords, default = \"\")}"; end
+        if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
         if ele.orientation == -1; end_str = end_str * "  orientation = -1"; end
       end
       println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" * end_str)                    

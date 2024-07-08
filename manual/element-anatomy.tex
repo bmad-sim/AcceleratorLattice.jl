@@ -57,11 +57,12 @@ For example, the \vn{LengthGroup} holds the length and s-positions of the elemen
     orientation::Int = 1          # Longitudinal orientation
   end
 \end{example}
-The \vn{\@kwdef} macro automatically defines a keyword-based constructor for \vn{LengthGroup}.
-See the Julia manual for more information on \vn{\@kwdef}. 
+The \vn{@kwdef} macro automatically defines a keyword-based constructor for \vn{LengthGroup}.
+See the Julia manual for more information on \vn{@kwdef}. 
 To see a list of all element parameter groups use the \vn{subtypes(EleParamterGroup)} command.
 To see the components of a given group use the \vn{fieldnames} function. For information on
-a given element parameter use the \vn{info(::Symbol)} function. For example:
+a given element parameter use the \vn{info(::Symbol)} function. For example, the information on
+the \vn{s_downstream} parameter which is a field of the \vn{LengthGroup} is:
 \begin{example}
   julia> info(:s_downstream)
     User name:       s_downstream
@@ -71,8 +72,8 @@ a given element parameter use the \vn{info(::Symbol)} function. For example:
     Description:     Longitudinal s-position at the downstream end.
 \end{example}
 Notice that the argument to the \vn{info} function is the symbol associated with the parameter.
-the ``User name'' is the name used when setting the parameter. This is discussed below. For most
-parameters, the User name and the name of the corresponding component in the element parameter
+the ``user name'' is the name used when setting the parameter. This is discussed below. For most
+parameters, the user name and the name of the corresponding component in the element parameter
 group is the same. But there are exceptions. For example:
 \begin{example}
   julia> info(:theta)
@@ -82,17 +83,37 @@ group is the same. But there are exceptions. For example:
     Units:           rad
     Description:     Element floor theta angle orientation
 \end{example}
+In this example, the user name is \vn{theta_floor} so that this parameter can be set via
+\begin{example}
+  @ele bg = BeginningEle(theta_floor = 0.3)    # Set at element definition time.
+  bg.theta_floor = 2.7                         # Or set after definition.
+\end{example}
+But the component in the \vn{FloorPositionGroup} is \vn{theta} so
+\begin{example}
+  bg.FloorPositionGroup.theta = 2.7   # Equivalent to the set above.
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{Anatomy of an Element}
 \label{s:ele.anatomy}
 
 Lattice element types (\vn{Quadrupole}, \vn{RFCavity}, etc.) inherit from the abstract 
-type \vn{Ele}.
+type \vn{Ele}. To see a list of all element types, use the command \vn{subtypes(Ele)}:
+\begin{example}
+  julia> subtypes(Ele)
+  41-element Vector{Any}:
+   ACKicker
+   BeamBeam
+   BeginningEle
+   Bend
+   ...
+\end{example}
 
-All lattice element types have a single field which is a Dict named \vn{pdict} (parameter dict). 
-The values of \vn{pdict} will, with a few exceptions, be a parameter group.
-By convention, the key used for storing a parameter group in \vn{pdict} is the symbol associated with the type. For example, a \vn{LengthGroup} would be stored in \vn{pdict[:LengthGroup]}.
+All lattice element types have a single field which is a Dict named \vn{pdict} (parameter dict)
+of type \vn{Dict\{Symbol,Any\}}. 
+The values of \vn{pdict} will, with a few exceptions, be an
+element parameter group. The corresponding key for a parameter group in \vn{pdict} is the symbol associated 
+with the type. For example, a \vn{LengthGroup} would be stored in \vn{pdict[:LengthGroup]}.
 
 To hide the complexity of parameter groups, the dot selection operator is overloaded for elements.
 For example, if \vn{q} is an element instance, \vn{q.pdict[:LengthGroup].s} can be accessed
@@ -161,8 +182,10 @@ the position in global coordinates of the beginning element.
 \section{Defining a New Element Type}
 \label{s:ele.type}
 
-All lattice element types like \vn{Quadrupole}, \vn{Marker}, etc. are subtypes of the abstract type
-\vn{Ele}. To construct a new type, use the \vn{\@construct_ele_type} macro. Example:
+To construct a new type, use the \vn{@construct_ele_type} macro. Example:
 \begin{example}
-  @construct_ele_type MyEleType
+  @construct_ele_type MyEle
 \end{example}
+And this defines a new type called \vn{MyEle} which inherits from the abstract type \vn{Ele} and
+defines \vn{MyEle} to have a single field called \vn{pdict} which is of type \vn{Dict\{Symbol,Any\}}.
+This macro also pushes the name

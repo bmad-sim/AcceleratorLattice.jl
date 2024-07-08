@@ -34,8 +34,14 @@ abstract type Ele <: BeamLineItem end
 #---------------------------------------------------------------------------------------------------
 # Eles
 
-"Single element or vector of elemements."
+"""
+    Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
+
+Single element or vector of elemements."
+""" Eles
+
 Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
+
 
 Base.collect(x::T) where T <: Ele = [x]
 
@@ -54,11 +60,8 @@ macro construct_ele_type(type_name)
   eval( Meta.parse("mutable struct $type_name <: Ele; pdict::Dict{Symbol,Any}; end") )
   str_type = String("$type_name")
   eval( Meta.parse("export $str_type") )
-  push!(ele_types_set, eval(Meta.parse("$str_type")))
   return nothing
 end
-
-ele_types_set = Set()  # Global list of element types.
 
 #---------------------------------------------------------------------------------------------------
 # @ele/@eles macros
@@ -229,9 +232,22 @@ abstract type EleParameterGroup end
 # AlignmentGroup
 
 """
+    mutable struct AlignmentGroup <: EleParameterGroup
+
 Orientation of an element (specifically, orientation of the body coordinates) with respect to the 
 laboratory coordinates.
-"""
+
+# Fields
+    offset::Vector = [0.0, 0.0, 0.0]       # [x, y, z] offsets
+    offset_tot::Vector = [0.0, 0.0, 0.0]   # [x, y, z] offsets including Girder misalignment.
+    x_rot::Number = 0                      # x-axis rotation
+    x_rot_tot::Number = 0                  # x-axis rotation including Girder misalignment.
+    y_rot::Number = 0                      # y-axis rotation
+    y_rot_tot::Number = 0                  # y-axis rotation including Girder misalignment.
+    tilt::Number = 0                       # z-axis rotation. Not used by Bend elements.
+    tilt_tot::Number = 0                   # z-axis rottion including Girder misalignment
+""" AlignmentGroup
+
 @kwdef mutable struct AlignmentGroup <: EleParameterGroup
   offset::Vector = [0.0, 0.0, 0.0]       # [x, y, z] offsets
   offset_tot::Vector = [0.0, 0.0, 0.0]   # [x, y, z] offsets including Girder misalignment.
@@ -256,7 +272,7 @@ Used with ACKicker elements.
 A positive `t_offset` shifts the waveform in the positive time direction.
 """ AmpVsTimeGroup
 
-@kwdef mutable struct AmpPoint
+@kwdef mutable struct AmpPoint <: EleParameterGroup
   amp::Number = 0         # Amplitude
   t::Number = 0           # Time
 end
@@ -432,18 +448,28 @@ end
 # FloorPositionGroup
 
 """
+    mutable struct FloorPositionGroup <: EleParameterGroup
+
 Position and orientation in global coordinates.
 The FloorPositionGroup in a lattice element gives the coordinates at the entrance end of an element
 ignoring misalignments.
 
 Note: Rotations.jl is currently not compatible with using dual numbers so `q` is defined with `Float64`.
-"""
+
+# Fields
+    r::Vector = [0.0, 0.0, 0.0]                   # (x,y,z) in Global coords
+    q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)        # Quaternion orientation.
+    theta::Number = 0.0                           # Global orientation angle
+    phi::Number = 0.0                             # Global orientation angle
+    psi::Number = 0.0                             # Global orientation angle
+""" FloorPositionGroup
+
 @kwdef mutable struct FloorPositionGroup <: EleParameterGroup
-  r::Vector = [0.0, 0.0, 0.0]                    # (x,y,z) in Global coords
-  q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)         # Quaternion orientation.
-  theta::Number = 0.0
-  phi::Number = 0.0
-  psi::Number = 0.0
+  r::Vector = [0.0, 0.0, 0.0]                   # (x,y,z) in Global coords
+  q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)        # Quaternion orientation.
+  theta::Number = 0.0                           # Global orientation angle
+  phi::Number = 0.0                             # Global orientation angle
+  psi::Number = 0.0                             # Global orientation angle
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -477,11 +503,17 @@ end
 # InitTwissGroup
 
 """
-Initial Twiss parameters.
+    mutable struct InitTwiss1 <: EleParameterGroup
 
+Initial Twiss parameters for a single mode.
+Used in the InitTwissGroup struct.
 
-Also see TwissGroup.
-"""
+# Fields
+    beta::Number = 0          # Beta Twiss
+    alpha::Number = 0         # Alpha Twiss
+    gamma::Number = 0         # Gamma Twiss
+    phi::Number = 0           # Betatron phase
+""" InitTwiss1
 
 @kwdef mutable struct InitTwiss1 <: EleParameterGroup
   beta::Number = 0          # Beta Twiss
@@ -490,21 +522,56 @@ Also see TwissGroup.
   phi::Number = 0           # Betatron phase
 end
 
+#-------------
+
+"""
+    mutable struct InitDispersion1 <: EleParameterGroup
+
+Dispersion parameters for a single plane `x`, `y`, or `z`.
+Used in the InitTwissGroup struct.
+
+# Fields
+    eta::Number = 0           # Position dispersion.
+    etap::Number = 0          # Momentum dispersion.
+    deta_ds::Number = 0       # Dispersion derivative with respect to s.
+""" InitDispersion1
+
 @kwdef mutable struct InitDispersion1 <: EleParameterGroup
-  eta::Number = 0           # Dispersion da/dpz for a-mode
-  etap::Number = 0          # Dispersion prime dpa/dpz for a-mode
-  deta_ds::Number = 0       # Dispersion derivative.
+  eta::Number = 0           # Position dispersion.
+  etap::Number = 0          # Momentum dispersion.
 end
 
+#-------------
+
+"""
+    mutable struct InitTwissGroup <: EleParameterGroup
+
+Lattice element parameter group storing initial Twiss, dispersion and coupling parameters
+for a lattice branch.
+This is just a suggestion. What the actual initial twiss values will be is decided by the program.
+In particular, the initial twiss values for a branch with a closed geometry will be the periodic
+solution.
+
+# Fields
+    a::InitTwiss1 = InitTwiss1()                 # a-mode
+    b::InitTwiss1 = InitTwiss1()                 # b-mode
+    c::InitTwiss1 = InitTwiss1()                 # c-mode
+    x::InitDispersion1 = InitDispersion1()       # x-axis
+    y::InitDispersion1 = InitDispersion1()       # y-axis
+    z::InitDispersion1 = InitDispersion1()       # z-axis
+    v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
+""" InitTwissGroup
+
 @kwdef mutable struct InitTwissGroup <: EleParameterGroup
-  a::InitTwiss1 = InitTwiss1()            # a-mode
-  b::InitTwiss1 = InitTwiss1()            # b-mode
-  c::InitTwiss1 = InitTwiss1()            # c-mode
+  a::InitTwiss1 = InitTwiss1()                 # a-mode
+  b::InitTwiss1 = InitTwiss1()                 # b-mode
+  c::InitTwiss1 = InitTwiss1()                 # c-mode
   x::InitDispersion1 = InitDispersion1()       # x-axis
   y::InitDispersion1 = InitDispersion1()       # y-axis
   z::InitDispersion1 = InitDispersion1()       # z-axis
   v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
 end
+
 #---------------------------------------------------------------------------------------------------
 # LCavityGroup
 
@@ -576,8 +643,11 @@ end
 # PatchGroup
 
 """
-Patch element parameters
-"""
+    mutable struct PatchGroup <: EleParameterGroup
+
+Patch element parameters.
+""" PatchGroup
+
 @kwdef mutable struct PatchGroup <: EleParameterGroup
   offset::Vector = [0.0, 0.0, 0.0]            # [x, y, z] offsets
   t_offset::Number = 0.0                      # Time offset
@@ -596,6 +666,8 @@ end
 # ReferenceGroup
 
 """
+    mutable struct ReferenceGroup <: EleParameterGroup
+
 Reference energy, time and species. 
 
 Generally `species_ref_exit` will be he same as `species_ref`
@@ -616,9 +688,12 @@ end
 # RFGroup
 
 """
+    mutable struct RFGroup <: EleParameterGroup
+
 RF parameters except for voltage and phase.
 See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
-""" 
+""" RFGroup
+
 @kwdef mutable struct RFGroup <: EleParameterGroup
   multipass_phase::Number = 0.0
   frequency::Number = 0.0
@@ -631,9 +706,12 @@ end
 # RFFieldGroup
 
 """
+    mutable struct RFFieldGroup <: EleParameterGroup
+
 RF voltage parameters. Used by RFCavity element.
 See also RFMasterGroup and RFGroup.
-"""
+""" RFFieldGroup
+
 @kwdef mutable struct RFFieldGroup <: EleParameterGroup
   voltage::Number = 0.0
   gradient::Number = 0.0
@@ -644,8 +722,11 @@ end
 # RFMasterGroup
 
 """
-RF autoscale and voltage_master
-"""
+    mutable struct RFMasterGroup <: EleParameterGroup
+
+RF autoscale and voltage_master.
+""" RFMasterGroup
+
 @kwdef mutable struct RFMasterGroup <: EleParameterGroup
   voltage_master::Bool = false      # Voltage or gradient stay constant with length changes?
   do_auto_amp::Bool = true          # Will autoscaling set auto_amp?
@@ -658,10 +739,12 @@ end
 # StringGroup
 
 """
-Strings that can be set and used with element searches.
+    mutable struct StringGroup <: EleParameterGroup
 
+Strings that can be set and used with element searches.
 These strings have no affect on tracking.
-"""
+""" StringGroup
+
 @kwdef mutable struct StringGroup <: EleParameterGroup
   type::String = ""
   alias::String = ""
@@ -672,8 +755,10 @@ end
 # SolenoidGroup
 
 """
-Solenoid 
-"""
+  mutable struct SolenoidGroup <: EleParameterGroup
+
+Solenoid parameters.
+""" SolenoidGroup
 
 @kwdef mutable struct SolenoidGroup <: EleParameterGroup
   ksol::Number = 0.0              # Notice lower case "k".
@@ -684,8 +769,11 @@ end
 # TrackingGroup
 
 """
+    mutable struct TrackingGroup <: EleParameterGroup
+
 Sets the nominal values for tracking prameters.
-"""
+""" TrackingGroup
+
 @kwdef mutable struct TrackingGroup <: EleParameterGroup
   tracking_method::TrackingMethodSwitch = standard_tracking
   field_calc::FieldCalcMethodSwitch = field_standard
@@ -707,21 +795,28 @@ Twiss parameters
 
 Not currently used.
 Also see InitTwissGroup.
-"""
+""" Twiss1
 
 @kwdef mutable struct Twiss1
   beta::Number = 0          # Beta Twiss
   alpha::Number = 0         # Alpha Twiss
   gamma::Number = 0         # Gamma Twiss
   phi::Number = 0           # Phase
-  eta::Number = 0           # Dispersion da/dpz for a-mode
-  etap::Number = 0          # Dispersion prime dpa/dpz for a-mode
+  eta::Number = 0           # Position dispersion.
+  etap::Number = 0          # Momentum dispersion.
   deta_ds::Number = 0       # Dispersion derivative.
   emit::Number = NaN        # Emittance
   norm_emit::Number = NaN   # Normalized emittance
   sigma::Number = NaN       # Beam size
-  sigmap::Number = NaN     # Beam divergence
+  sigmap::Number = NaN      # Beam divergence
 end
+
+"""
+Twiss parameters
+
+Not currently used.
+Also see InitTwissGroup.
+""" TwissGroup
 
 @kwdef mutable struct TwissGroup <: EleParameterGroup
   a::Twiss1 = Twiss1()            # a-mode
