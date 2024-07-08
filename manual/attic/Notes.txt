@@ -65,6 +65,8 @@ The reason for doing a shallow copy, instead of a deep copy, is to save on memor
 
 Note: Could also have defined parameters to be Union{Float64,Missing} but this possibly incurs a speed penalty (but this has not been tested).
 
+* InitTwiss are just a suggestion for how to start tracking.
+
 * Implementation note: Bookkeeping is element-by-element rather then parameter group by parameter group since 
 the parameter groups are not necessarily independent. For example, the reference time will depend upon
 the FloorPositionGroup if the lattice contains a flexible patch. 
@@ -120,17 +122,8 @@ Getting the offset right can be tricky!
 
 * Beamline expansion: species_ref, pc_ref, E_tot_ref may be stored in the Beamline.pdict or in begin_ele
 
-\'Etienne Forest (aka Patrice Nishikawa),
-Matthew Signorelli,
-Alexander Coxe,
-Oleksii Beznosov,
-Ryan Foussel,
-Auralee Edelen,
-Chris Mayes,
-Georg Hoffstaetter,
-Juan Pablo Gonzalez-Aguilera,
-Scott Berg,
-Dan Abell,
-Laurent Deniau,
-Hugo Slepicka
+* Always use absolute time tracking?
 
+* Put lattice files in modules for namespace safety of exported element names.
+
+* End element in a branch must be a marker.

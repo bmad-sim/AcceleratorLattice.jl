@@ -43,7 +43,7 @@ module AcceleratorLattice
   export memloc, beamline, @ele, @eles, @construct_ele_type, expand, ele_name, show_name, show_ele
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!, set_param!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
-  export BeamLineItem, BeamLine, Ele, ele_types_set, propagate_ele_geometry, ele_floor_transform
+  export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, LatEleLocation, ele_at_s, add_governor!
   export find_ele, find_eles, next_ele, ele_at_index
   export branch, matches_branch, param_groups_list, create_ele_vars
