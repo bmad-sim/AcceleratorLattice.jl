@@ -174,6 +174,17 @@ ele_param_info_dict = Dict(
 
   :spin               => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle spin"),
   :orbit              => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle position."),
+
+  :beta_twiss         => ParamInfo(InitTwiss1,      Number,             "Beta Twiss parameter", "m", :beta),
+  :alpha_twiss        => ParamInfo(InitTwiss1,      Number,             "Beta Twiss parameter", "", :alpha),
+  :gamma_twiss        => ParamInfo(InitTwiss1,      Number,             "Beta Twiss parameter", "1/m", :gamma),
+  :phi_twiss          => ParamInfo(InitTwiss1,      Number,             "Beta Twiss parameter", "rad", :phi),
+
+  :eta                => ParamInfo(InitDispersion1, Number,             "Position dispersion", "m"),
+  :etap               => ParamInfo(InitDispersion1, Number,             "Momentum dispersion", ""),
+  :deta_ds            => ParamInfo(InitDispersion1, Number,             "Dispersion derivative", ""),
+
+  :v_mat              => ParamInfo(InitTwissGroup,  Matrix{Number},     "Normal mode 6x6 coupling matrix", "")
 )
 
 for (key, info) in ele_param_info_dict

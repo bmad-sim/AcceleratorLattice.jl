@@ -27,7 +27,7 @@ There are three main sources of documentation of the \accellat package.
 One source is this PDF manual which gives in-depth documentationon. 
 A second source is the web based introduction and overview guide.
 Finally, functions, structs and other objects are documented in the code files themselves. 
-Taking advantage of Julia's built-in documentation system, this in-file documentation can be accessed
+Taking advantage of Julia's built-in documentation system, this code-file documentation can be accessed
 via using Julia's REPL.
 
 %---------------------------------------------------------------------------
@@ -167,16 +167,16 @@ element's global position, the reference energy/momentum, and the s-position.
 %---------------------------------------------------------------------------
 \section{Differences From Fortran Bmad}
 
-There are many differences between \accellat and Fortran \bmad but certain difference should
+Some differences between \accellat and Fortran \bmad to
 be kept in mind when comparing the two:
 \begin{description}
 \item
 Fortran \bmad is generally case insensitive (except for things like file names). \accellat, like
 the Julia language, is case sensitive.
 %
-In \accellat branches are indexed from one (EG: \vn{lat.branch[1]}) instead of zero as in \bmad.
-%
-In \accellat elements are indexed from one (EG: \vn{branch.ele[1]}
+With Fortran \bmad, the branch array within a lattice and the element array within a branch is
+indexed from zero. With \bmadjl, indexing of \vn{Lat.branch[]} and \vn{branch.ele[]} is 
+from one conforming to the Julia standard.
 %
 \item
 The Fortran \bmad names for the coordinate systems (\sref{s:coords}) was somewhat different and not
@@ -194,6 +194,15 @@ on the negative side of the \vn{x-axis} or \vn{y-axis} respectively. With \accel
 value for \vn{x_limit[1]} or \vn{y_limit[1]} means the aperture is on the positive side of 
 of the \vn{x-axis} or \vn{y-axis} respectively. This makes the notation consistent across 
 the different ways to specify apertures (compare with \vn{Mask} element syntax.).
+%
+\item
+Fortran \bmad does not allow redefinition of named variables nor elements. \accellat allows this.
+%
+\item
+With Fortran \bmad, the beginning and end elements are implicitly inserted into a branch line.
+With \accellat, there is not implicit insertion. Also with Fortran \bmad the beginning element
+is always named \vn{Beginning}. 
+%
 \end{description}
 
 
