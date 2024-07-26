@@ -156,7 +156,7 @@ end
 @construct_ele_type Crystal       # Photonic
 @construct_ele_type Drift
 @construct_ele_type EGun
-@construct_ele_type ELSeparator
+@construct_ele_type ElectricSeparator
 @construct_ele_type EMField
 @construct_ele_type Fiducial
 @construct_ele_type FloorShift
@@ -500,79 +500,6 @@ Initial particle position.
 end
 
 #---------------------------------------------------------------------------------------------------
-# InitTwissGroup
-
-"""
-    mutable struct InitTwiss1 <: EleParameterGroup
-
-Initial Twiss parameters for a single mode.
-Used in the InitTwissGroup struct.
-
-# Fields
-    beta::Number = 0          # Beta Twiss
-    alpha::Number = 0         # Alpha Twiss
-    gamma::Number = 0         # Gamma Twiss
-    phi::Number = 0           # Betatron phase
-""" InitTwiss1
-
-@kwdef mutable struct InitTwiss1 <: EleParameterGroup
-  beta::Number = 0          # Beta Twiss
-  alpha::Number = 0         # Alpha Twiss
-  gamma::Number = 0         # Gamma Twiss
-  phi::Number = 0           # Betatron phase
-end
-
-#-------------
-
-"""
-    mutable struct InitDispersion1 <: EleParameterGroup
-
-Dispersion parameters for a single plane `x`, `y`, or `z`.
-Used in the InitTwissGroup struct.
-
-# Fields
-    eta::Number = 0           # Position dispersion.
-    etap::Number = 0          # Momentum dispersion.
-    deta_ds::Number = 0       # Dispersion derivative with respect to s.
-""" InitDispersion1
-
-@kwdef mutable struct InitDispersion1 <: EleParameterGroup
-  eta::Number = 0           # Position dispersion.
-  etap::Number = 0          # Momentum dispersion.
-end
-
-#-------------
-
-"""
-    mutable struct InitTwissGroup <: EleParameterGroup
-
-Lattice element parameter group storing initial Twiss, dispersion and coupling parameters
-for a lattice branch.
-This is just a suggestion. What the actual initial twiss values will be is decided by the program.
-In particular, the initial twiss values for a branch with a closed geometry will be the periodic
-solution.
-
-# Fields
-    a::InitTwiss1 = InitTwiss1()                 # a-mode
-    b::InitTwiss1 = InitTwiss1()                 # b-mode
-    c::InitTwiss1 = InitTwiss1()                 # c-mode
-    x::InitDispersion1 = InitDispersion1()       # x-axis
-    y::InitDispersion1 = InitDispersion1()       # y-axis
-    z::InitDispersion1 = InitDispersion1()       # z-axis
-    v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
-""" InitTwissGroup
-
-@kwdef mutable struct InitTwissGroup <: EleParameterGroup
-  a::InitTwiss1 = InitTwiss1()                 # a-mode
-  b::InitTwiss1 = InitTwiss1()                 # b-mode
-  c::InitTwiss1 = InitTwiss1()                 # c-mode
-  x::InitDispersion1 = InitDispersion1()       # x-axis
-  y::InitDispersion1 = InitDispersion1()       # y-axis
-  z::InitDispersion1 = InitDispersion1()       # z-axis
-  v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
-end
-
-#---------------------------------------------------------------------------------------------------
 # LCavityGroup
 
 """
@@ -791,13 +718,11 @@ end
 # TwissGroup
 
 """
-Twiss parameters
+Twiss parameters for a single mode.
 
-Not currently used.
-Also see InitTwissGroup.
 """ Twiss1
 
-@kwdef mutable struct Twiss1
+@kwdef mutable struct Twiss1 <: EleParameterGroup
   beta::Number = 0          # Beta Twiss
   alpha::Number = 0         # Alpha Twiss
   gamma::Number = 0         # Gamma Twiss
@@ -805,28 +730,37 @@ Also see InitTwissGroup.
   eta::Number = 0           # Position dispersion.
   etap::Number = 0          # Momentum dispersion.
   deta_ds::Number = 0       # Dispersion derivative.
-  emit::Number = NaN        # Emittance
-  norm_emit::Number = NaN   # Normalized emittance
-  sigma::Number = NaN       # Beam size
-  sigmap::Number = NaN      # Beam divergence
 end
+
+#-----------------
+
+"""
+Dispersion parameters for a single axis.
+
+""" Dispersion1
+
+@kwdef mutable struct Dispersion1 <: EleParameterGroup
+  eta::Number = 0           # Position dispersion.
+  etap::Number = 0          # Momentum dispersion.
+  deta_ds::Number = 0       # Dispersion derivative.
+end
+
+#-----------------
 
 """
 Twiss parameters
 
-Not currently used.
-Also see InitTwissGroup.
+Lattice element parameter group storing Twiss, dispersion and coupling parameters
+for an element.
 """ TwissGroup
 
 @kwdef mutable struct TwissGroup <: EleParameterGroup
-  a::Twiss1 = Twiss1()            # a-mode
-  b::Twiss1 = Twiss1()            # b-mode
-  c::Twiss1 = Twiss1()            # c-mode
-  x::Twiss1 = Twiss1()            # x-axis
-  y::Twiss1 = Twiss1()            # y-axis
-  z::Twiss1 = Twiss1()            # z-axis
-  c_mat::Matrix{Number} = Matrix{Number}([0 0; 0 0])  # Coupling matrix.
-  gammma_c::Number = 1            # Coupling gamma.
+  a::Twiss1 = Twiss1()                # a-mode
+  b::Twiss1 = Twiss1()                # b-mode
+  c::Twiss1 = Twiss1()                # c-mode
+  x::Dispersion1 = Dispersion1()      # x-axis
+  y::Dispersion1 = Dispersion1()      # y-axis
+  v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
 end
 
 #---------------------------------------------------------------------------------------------------

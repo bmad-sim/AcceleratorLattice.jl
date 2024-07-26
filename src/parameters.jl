@@ -2,6 +2,8 @@
 # ParamInfo
 
 """
+Holds information for a single element parameter.
+
 Possible `kind` values: String, Int, Number, Vector{Number}, Bool, Pointer, etc.
 
 A Switch is a variable that has only a finite number of values.
@@ -10,26 +12,31 @@ Generally, a Switch will either be an enum or something that has a finite number
 A Pointer is something that points to other variables.
 For example, a Ele may have a vector pointing to its lords. In this case the vector
 itself is considered to be a Pointer as well as its components.
+
+`sub_struct` component of ParamInfo is needed, for example, for `a_beta` which needs to be mapped 
+to `Twiss.a.beta` which is 2 levels down from parent struct Twiss.
 """ ParamInfo
 
 abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
   parent_group::T where T <: Union{DataType,Vector}  # Use the parent_group function to get the parent group.
-  kind::Union{T, Union} where T <: DataType         # Something like ApertureTypeSwitch is a Union.
+  kind::Union{T, Union} where T <: DataType          # Something like ApertureTypeSwitch is a Union.
   description::String = ""
   units::String = ""
-  struct_sym::Symbol                                # Symbol associated with parent struct.
-  user_sym::Symbol                                  # Symbol used to construct elements.
+  struct_sym::Symbol                                 # Symbol in struct.
+  sub_struct::Union{Function, Nothing}               # Used if parameter parent is not parent_group. EG: Twiss.a.beta
+  user_sym::Symbol                                   # Symbol used to construct elements.
 end
 
-# Used for constructing the ele_param_info_dict.
-# ":XXX" indicates that the struct_sym will be the same as the key in ele_param_info_dict.
-# And ":Z" is always replaced by the key in ele_param_info_dict.
 
-ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :XXX, :Z)
-ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :XXX, :Z)
-ParamInfo(parent, kind, description, units, struct_sym) = ParamInfo(parent, kind, description, units, struct_sym, :Z)
+# `:XXX` indicates that the struct_sym will be the same as the key in ele_param_info_dict.
+# And `:Z` is always replaced by the key in ele_param_info_dict.
+
+ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :XXX, nothing, :Z)
+ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :XXX, nothing, :Z)
+ParamInfo(parent, kind, description, units, struct_sym) = ParamInfo(parent, kind, description, units, struct_sym, nothing, :Z)
+ParamInfo(parent, kind, description, units, struct_sym, sub_struct) = ParamInfo(parent, kind, description, units, struct_sym, sub_struct, :Z)
 
 #---------------------------------------------------------------------------------------------------
 # ele_param_info_dict
@@ -170,21 +177,53 @@ ele_param_info_dict = Dict(
   :slave_status       => ParamInfo(LordSlaveGroup,    SlaveStatusSwitch,    "Slave status."),
   :lord_status        => ParamInfo(LordSlaveGroup,    LordStatusSwitch,     "Lord status."),
 
-  :twiss              => ParamInfo(InitTwissGroup,    InitTwissGroup,           "Initial Twiss parameters."),
-
   :spin               => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle spin"),
   :orbit              => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle position."),
 
-  :beta_twiss         => ParamInfo(InitTwiss1,      Number,             "Beta Twiss parameter", "m", :beta),
-  :alpha_twiss        => ParamInfo(InitTwiss1,      Number,             "Beta Twiss parameter", "", :alpha),
-  :gamma_twiss        => ParamInfo(InitTwiss1,      Number,             "Beta Twiss parameter", "1/m", :gamma),
-  :phi_twiss          => ParamInfo(InitTwiss1,      Number,             "Beta Twiss parameter", "rad", :phi),
+  :beta               => ParamInfo(Twiss1,      Number,             "Beta Twiss parameter.", "m"),
+  :alpha              => ParamInfo(Twiss1,      Number,             "Alpha Twiss parameter.", ""),
+  :gamma              => ParamInfo(Twiss1,      Number,             "Gamma Twiss parameter.", "1/m"),
+  :phi                => ParamInfo(Twiss1,      Number,             "Betatron phase.", "rad"),
+  :eta                => ParamInfo(Twiss1,      Number,             "Position dispersion.", "m"),
+  :etap               => ParamInfo(Twiss1,      Number,             "Momentum dispersion.", ""),
+  :deta_ds            => ParamInfo(Twiss1,      Number,             "Dispersion derivative.", ""),
 
-  :eta                => ParamInfo(InitDispersion1, Number,             "Position dispersion", "m"),
-  :etap               => ParamInfo(InitDispersion1, Number,             "Momentum dispersion", ""),
-  :deta_ds            => ParamInfo(InitDispersion1, Number,             "Dispersion derivative", ""),
+  :twiss              => ParamInfo(TwissGroup,  TwissGroup,         "Initial Twiss parameters."),
 
-  :v_mat              => ParamInfo(InitTwissGroup,  Matrix{Number},     "Normal mode 6x6 coupling matrix", "")
+  :beta_a             => ParamInfo(TwissGroup,  Number,             "A-mode beta Twiss parameter.", "m", :beta, T->T.a),
+  :alpha_a            => ParamInfo(TwissGroup,  Number,             "A-mode alpha Twiss parameter.", "", :alpha, T->T.a),
+  :gamma_a            => ParamInfo(TwissGroup,  Number,             "A-mode gamma Twiss parameter.", "1/m", :gamma, T->T.a),
+  :phi_a              => ParamInfo(TwissGroup,  Number,             "A-mode betatron phase.", "rad", :phi, T->T.a),
+  :eta_a              => ParamInfo(TwissGroup,  Number,             "A-mode position dispersion.", "m", :eta, T->T.a),
+  :etap_a             => ParamInfo(TwissGroup,  Number,             "A-mode momentum dispersion.", "", :etap, T->T.a),
+  :deta_ds_a          => ParamInfo(TwissGroup,  Number,             "A-mode dispersion derivative.", "", :deta_ds, T->T.a),
+
+  :beta_b             => ParamInfo(TwissGroup,  Number,             "B-mode beta Twiss parameter.", "m", :beta, T->T.b),
+  :alpha_b            => ParamInfo(TwissGroup,  Number,             "B-mode alpha Twiss parameter.", "", :alpha, T->T.b),
+  :gamma_b            => ParamInfo(TwissGroup,  Number,             "B-mode gamma Twiss parameter.", "1/m", :gamma, T->T.b),
+  :phi_b              => ParamInfo(TwissGroup,  Number,             "B-mode betatron phase.", "rad", :phi, T->T.b),
+  :eta_b              => ParamInfo(TwissGroup,  Number,             "B-mode position dispersion.", "m", :eta, T->T.b),
+  :etap_b             => ParamInfo(TwissGroup,  Number,             "B-mode momentum dispersion.", "", :etap, T->T.b),
+  :deta_ds_b          => ParamInfo(TwissGroup,  Number,             "B-mode dispersion derivative.", "", :deta_ds, T->T.b),
+
+  :beta_c             => ParamInfo(TwissGroup,  Number,             "C-mode beta Twiss parameter.", "m", :beta, T->T.c),
+  :alpha_c            => ParamInfo(TwissGroup,  Number,             "C-mode alpha Twiss parameter.", "", :alpha, T->T.c),
+  :gamma_c            => ParamInfo(TwissGroup,  Number,             "C-mode gamma Twiss parameter.", "1/m", :gamma, T->T.c),
+  :phi_c              => ParamInfo(TwissGroup,  Number,             "C-mode betatron phase.", "rad", :phi, T->T.c),
+  :eta_c              => ParamInfo(TwissGroup,  Number,             "C-mode position dispersion.", "m", :eta, T->T.c),
+  :etap_c             => ParamInfo(TwissGroup,  Number,             "C-mode momentum dispersion.", "", :etap, T->T.c),
+  :deta_ds_c          => ParamInfo(TwissGroup,  Number,             "C-mode dispersion derivative.", "", :deta_ds, T->T.c),
+
+  :v_mat              => ParamInfo(TwissGroup,  Matrix{Number},     "Normal mode 6x6 coupling matrix", ""),
+
+  :eta_x              => ParamInfo(TwissGroup,  Number,             "X-mode position dispersion.", "m", :eta, T->T.x),
+  :etap_x             => ParamInfo(TwissGroup,  Number,             "X-mode momentum dispersion.", "", :etap, T->T.x),
+  :deta_ds_x          => ParamInfo(TwissGroup,  Number,             "X-mode dispersion derivative.", "", :deta_ds, T->T.x),
+
+  :eta_y              => ParamInfo(TwissGroup,  Number,             "Y-mode position dispersion.", "m", :eta, T->T.y),
+  :etap_y             => ParamInfo(TwissGroup,  Number,             "Y-mode momentum dispersion.", "", :etap, T->T.y),
+  :deta_ds_y          => ParamInfo(TwissGroup,  Number,             "Y-mode dispersion derivative.", "", :deta_ds, T->T.y),
+
 )
 
 for (key, info) in ele_param_info_dict
@@ -281,9 +320,9 @@ If `str` is a multipole parameter name like `Kn2L` or `Etilt`,
 If `str` is not a valid multipole parameter name, returned will be `("", -1, Nothing)`.
 """ multipole_type
 
-function multipole_type(str::AbstractString) 
+function multipole_type(str::AbstractString)
   isbad = ("", -1, Nothing)
-  if length(str) < 3 ; isbad; end
+  if length(str) < 3 ; return isbad; end
 
   if length(str) > 4 && str[1:4] == "tilt"
     order = tryparse(Int,   str[5:end]) 
@@ -329,10 +368,10 @@ function multipole_param_info(sym::Symbol)
 
   n = length(mtype)
   if n == 4 && mtype[1:4] == "tilt"
-    return ParamInfo(BMultipoleGroup, Number, f"Magnetic multipole tilt for order {order}", "rad", :tilt, sym)
+    return ParamInfo(BMultipoleGroup, Number, f"Magnetic multipole tilt for order {order}", "rad", :tilt, nothing, sym)
   end
   if n == 5 && mtype[1:5] == "Etilt"
-    return ParamInfo(EMultipoleGroup, Number, f"Electric multipole tilt for order {order}", "rad", :tilt, sym)
+    return ParamInfo(EMultipoleGroup, Number, f"Electric multipole tilt for order {order}", "rad", :tilt, nothing, sym)
   end
 
   mtype[2] == "s" ? str = "Skew," : str = "Normal (non-skew)"
@@ -348,7 +387,7 @@ function multipole_param_info(sym::Symbol)
     else;           units = f"1/m^{order+1}"
     end
 
-    return ParamInfo(BMultipoleGroup, Number, f"{str}, momentum-normalized magnetic multipole.", units, insym, sym)
+    return ParamInfo(BMultipoleGroup, Number, f"{str}, momentum-normalized magnetic multipole.", units, insym, nothing, sym)
 
   elseif mtype[1] == 'B'
     if order == -1;    units = "T*m"
@@ -356,14 +395,14 @@ function multipole_param_info(sym::Symbol)
     else;              units = f"T/m^{order}"
     end
 
-    return ParamInfo(BMultipoleGroup, Number, f"{str} magnetic field multipole.", units, insym, sym)
+    return ParamInfo(BMultipoleGroup, Number, f"{str} magnetic field multipole.", units, insym, nothing, sym)
 
   elseif mtype[1] == 'E'
     if order == -1; units = "V"
     else;           units = f"V/m^{order+1}"
     end
 
-    return ParamInfo(EMultipoleGroup, Number, f"{str} electric field multipole.", units, insym, sym) 
+    return ParamInfo(EMultipoleGroup, Number, f"{str} electric field multipole.", units, insym, nothing, sym) 
   end
 end
 
@@ -497,18 +536,47 @@ general_group_list = [base_group_list..., alignment_group_list..., multipole_gro
 
 param_groups_list = Dict(  
   Dict(
-    BeginningEle   => [base_group_list..., InitTwissGroup, InitParticleGroup],
-    Bend           => [general_group_list..., BendGroup],
-    Controller     => [ControlVarGroup, ControlSlaveGroup],
-    Drift          => [base_group_list...],
-    LCavity        => [general_group_list..., RFMasterGroup, LCavityGroup, RFGroup],
-    Marker         => [base_group_list...],
-    Octupole       => [general_group_list...],
-    Patch          => [base_group_list..., PatchGroup],
-    Quadrupole     => [general_group_list...],
-    RFCavity       => [general_group_list..., RFMasterGroup, RFFieldGroup, RFGroup],
-    Sextupole      => [general_group_list...],
-    UnionEle       => [base_group_list..., alignment_group_list...],
+    ACKicker            => [base_group_list...],
+    BeamBeam            => [base_group_list...],
+    BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
+    Bend                => [general_group_list..., BendGroup, ],
+    Collimator          => [base_group_list...],
+    Controller          => [ControlVarGroup, ControlSlaveGroup],
+    Converter           => [base_group_list...],
+    CrabCavity          => [base_group_list...],
+    Custom              => [base_group_list...],
+    Crystal             => [base_group_list...],
+    Drift               => [base_group_list...],
+    EGun                => [base_group_list...],
+    ElectricSeparator   => [base_group_list...],
+    EMField             => [base_group_list...],
+    Fiducial            => [base_group_list...],
+    FloorShift          => [base_group_list...],
+    Foil                => [base_group_list...],
+    Fork                => [base_group_list...],
+    Girder              => [base_group_list...],
+    Instrument          => [base_group_list...],
+    Kicker              => [general_group_list...],
+    LCavity             => [general_group_list..., RFMasterGroup, LCavityGroup, RFGroup],
+    Marker              => [base_group_list...],
+    Mask                => [base_group_list...],
+    Match               => [base_group_list...],
+    Multipole           => [general_group_list...],
+    NullEle             => [],
+    Octupole            => [general_group_list...],
+    Patch               => [base_group_list..., PatchGroup],
+    Quadrupole          => [general_group_list...],
+    Ramper              => [base_group_list...],
+    RFBend              => [base_group_list...],
+    RFCavity            => [general_group_list..., RFMasterGroup, RFFieldGroup, RFGroup],
+    SADMult             => [general_group_list...],
+    Sextupole           => [general_group_list...],
+    Solenoid            => [general_group_list..., SolenoidGroup],
+    Taylor              => [base_group_list...],
+    ThickMultipole      => [general_group_list...],
+    Undulator           => [base_group_list...],
+    UnionEle            => [base_group_list..., alignment_group_list...],
+    Wiggler             => [base_group_list...],
   )
 )
 
@@ -526,7 +594,7 @@ param_group_info = Dict(
   FloorPositionGroup    => "Global floor position and orientation.",
   GirderGroup           => "Girder parameters.",
   InitParticleGroup     => "Initial particle position and spin.",
-  InitTwissGroup        => "Initial Twiss and coupling parameters.",
+  TwissGroup            => "Initial Twiss and coupling parameters.",
   LCavityGroup          => "Accelerating cavity parameters.",
   LengthGroup           => "Length and s-position parameters.",
   LordSlaveGroup        => "Element lord and slave status.",

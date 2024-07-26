@@ -33,9 +33,9 @@ via using Julia's REPL.
 %---------------------------------------------------------------------------
 \section{Brief History}
 
-\bmadjl has it's origins in the "Fortran \bmad" ecosystem of toolkits and programs developed over several
-decades at Cornell University. Although the two share a similar name, the code of the two are
-completely separate. That being said, the development of \accellat is heavily influenced by the 
+\bmadjl has it's origins in the "Fortran Bmad"\cite{Sagan:Bmad2006} ecosystem of toolkits and programs developed over several
+decades at Cornell University. Although the two share a similar name, {\bf the code of the two are
+completely separate}. That being said, the development of \accellat is heavily influenced by the 
 experience --- both good and bad --- in the development and use of Fortran \bmad as well as experience
 with other accelerator simulation programs.
 
@@ -43,12 +43,13 @@ The \julia language itself is used as the basis for constructing lattices with \
 Other simulation programs
 have similarly utilized the underlying programming language for constructing 
 lattices\cite{Appleby:Merlin2020,Iadarola:Xsuite2023}. This is in marked contrast to many accelerator
-simulation programs such programs as MAD\cite{Grote:MAD1989}, Elegant\cite{Borland:Elegant2000}, and the 
-\bmad toolkit\cite{Sagan:Bmad2006}. 
+simulation programs such programs as MAD\cite{Grote:MAD1989}, Elegant\cite{Borland:Elegant2000}, and
+Fortran Bmad. 
 By using Julia for the lattice language, the user will automatically have access to such features 
 as plotting, optimization packages, linear algebra packages, etc. 
-This is a massive boost to the versatility and usability of any \bmadjl simulation program. 
-Additionally, maintainability is greatly improved since the quantity of code that is needed is reduced.
+This gives a massive boost to the versatility and usability of any \bmadjl simulation program.
+Moreover, maintainability is greatly enhanced due to the reduction in the amount of code that needs
+to be developed.
 
 %---------------------------------------------------------------------------------------------------
 \section{Acknowledgements}
@@ -57,17 +58,17 @@ Thanks must go to the people who have contributed to this effort and without
 whom \bmadjl would only be a shadow of what it is today: 
 
 \'Etienne Forest (aka Patrice Nishikawa),
-Matthew Signorelli,
-Alexander Coxe,
-Oleksii Beznosov,
-Ryan Foussel,
-Auralee Edelen,
-Chris Mayes,
-Georg Hoffstaetter,
-Juan Pablo Gonzalez-Aguilera,
-Scott Berg,
 Dan Abell,
-Laurent Deniau, and
+Scott Berg,
+Oleksii Beznosov,
+Alexander Coxe,
+Laurent Deniau,
+Auralee Edelen,
+Ryan Foussel,
+Juan Pablo Gonzalez-Aguilera,
+Georg Hoffstaetter,
+Chris Mayes,
+Matthew Signorelli,
 Hugo Slepicka
 
 %---------------------------------------------------------------------------
@@ -103,31 +104,34 @@ is an array, the notation \vn{S.c[]} can be used to emphasize this.
 %
 \end{description}
 
-
 %---------------------------------------------------------------------------
 \section{Lattice Elements}
 \label{s:element.def}
 
 The basic building block used to describe an accelerator is the lattice \vn{element}. An
-element can be a physical thing that particles travel ``through'' like a bending magnet, a
-quadrupole or a Bragg crystal, or something like a \vn{marker} element (\sref{s:mark}) that is used
-to mark a particular point in the machine. Besides physical elements, there are \vn{controller},
-elements that can be used for parameter control of other elements. All lattice elements are of types
-that inherit from the abstract type \vn{Ele}.
+element can be a something physical that particles travel through like a bending magnet, a
+quadrupole, a diffracting crystal. Besides ``tracking'' elements, there are \vn{controller},
+elements that can be used for parameter control of other elements.
+For special situations there are ``\vn{super_lord}'' and ``\vn{multipass_lord}'' elements (\ref{})
+which are used for bookkeeping purposes when element parameters are modified in the lattice.
+
+All lattice elements are of types that inherit from the abstract type \vn{Ele}.
 Chapter~\sref{c:ele.types} lists the different element types that \bmad knows about.
 
 %---------------------------------------------------------------------------
 \section{Lattice Branches}
 \label{s:branch.def}
 
-The next level up from lattice \vn{elements} are the branches which
-holds an array of lattice elements. A branch is of type \vn{Branch}. All
-branches have a name \vn{Branch.name} inherited from the line that defines
-the branch and branches contains an array of elements \vn{Branch.ele[]}
+The next level up from lattice \vn{elements} are the \vn{branches}.
+Each branch holds an array of lattice elements. 
+A branch is of type \vn{Branch}. All
+branches have a name \vn{Branch.name} inherited from the \vn{BeamLine} that defines
+the branch in the lattice file and branches contains an array of elements \vn{Branch.ele[]}
 
 There are two types of \vn{branches}: branches whose \vn{Branch.type} parameter is set to
-\vn{LordBranch} hold Lord elements and 
-branches whose \vn{branch.type} parameter is set to \vn{TrackingBranch} is 
+a suitable subtype of \vn{LordBranch} holds Lord elements and 
+branches whose \vn{branch.type} parameter is set to \vn{TrackingBranch}  holds an ordered
+list of elements that can be tracked through.
 
 A tracking branch can represent a LINAC, X-Ray beam line, storage ring, etc.
 For all tracking branches, the first element in the element array
@@ -139,8 +143,13 @@ the end element must be of type \vn{Marker} (\sref{s:mark}).
 \section{Lattices}
 \label{s:lattice.def}
 
-All \vn{lattices} (\sref{s:lattice.def}) are of type \vn{Lat}.
-A \vn{lattice}, has an array of \vn{branches} \vn{Lat.branch[]}. 
+A \vn{lattice} (\sref{s:lattice.def}) is the root structure holding the information about a
+``machine''. A machine may be as simple as a line of elements (like the elements of a Linac) or
+as complicated as an entire accelerator complex with multiple storage rings, Linacs, transfer
+lines, etc. All lattices are of type \vn{Lat}.
+
+Essentially, a \vn{lattice}, has an array of \vn{branches} with each branch describing part of the
+machine. Branches can be interconnected to form a unified whole.
 Tracking branches can be interconnected using \vn{fork} and \vn{photon_fork} elements (\sref{s:fork}). 
 This is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
 X-ray beam line. The \vn{branch} from which other \vn{branches} fork but is not forked to by any
@@ -163,6 +172,22 @@ element's global position, the reference energy/momentum, and the s-position.
 %
 \end{description}
 
+%---------------------------------------------------------------------------
+\section{Minimal Working Lattice Example}
+\label{s:min.lat}
+
+The following is a minimal example of constructing a lattice with a quadrupole, drift, and then
+a bend:
+\begin{example}
+  using AcceleratorLattice
+  @ele begin_ele = BeginningEle(pc_ref = 1e7, species_ref = species("electron"))
+  @ele q = Quadrupole(L = 0.6, K2 = 0.3)
+  @ele d = Drift(L = 0.4)
+  @ele b = Bend(L = 1.2, angle = 0.001)
+
+  a_line = beamline("simple_line", [begin_ele, q, d, b])
+  lat = expand("simple_lat", [a_line])
+\end{example}
 
 %---------------------------------------------------------------------------
 \section{Differences From Fortran Bmad}
@@ -200,8 +225,9 @@ Fortran \bmad does not allow redefinition of named variables nor elements. \acce
 %
 \item
 With Fortran \bmad, the beginning and end elements are implicitly inserted into a branch line.
-With \accellat, there is not implicit insertion. Also with Fortran \bmad the beginning element
-is always named \vn{Beginning}. 
+With \accellat, only an end element will be implicitly inserted if the end of the beamline is
+not a marker. 
+Also with Fortran \bmad the beginning element is always named \vn{Beginning}. 
 %
 \end{description}
 

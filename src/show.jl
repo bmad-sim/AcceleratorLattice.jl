@@ -44,6 +44,10 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
     :fint2            => :hgap2,
   ),
 
+  Dispersion1 => Dict{Symbol,Symbol}(
+    :eta              => :etap,
+  ),
+
   FloorPositionGroup => Dict{Symbol,Symbol}(
     :r                => :q,
     :phi              => :psi,
@@ -107,16 +111,13 @@ show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
     :num_steps        => :ds_step,
   ),
 
-  InitTwiss1 => Dict{Symbol,Symbol}(
+  Twiss1 => Dict{Symbol,Symbol}(
     :beta             => :alpha,
     :gamma            => :phi,
-  ),
-
-  InitDispersion1 => Dict{Symbol,Symbol}(
     :eta              => :etap,
   ),
 
-  InitTwissGroup => Dict{Symbol,Symbol}(
+  TwissGroup => Dict{Symbol,Symbol}(
   ),
 
   InitParticleGroup => Dict{Symbol,Symbol}(
@@ -506,12 +507,12 @@ function Base.show(io::IO, branch::Branch)
     for ele in branch.ele
       end_str = ""
       if branch.type == MultipassLordBranch
-        end_str = f"{ele.L:12.6f}"
+        end_str = f"{ele.L:11.6f}"
         if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
       elseif haskey(ele.pdict, :LengthGroup)
-        s_str = ele_param_value_str(ele, :s, default = "    "*"-"^7, format = "11.6f")
-        s_down_str = ele_param_value_str(ele, :s_downstream, default = "    "*"-"^7, format = "11.6f")
-        end_str = f"{ele.L:12.6f}{s_str} -> {s_down_str}"
+        s_str = ele_param_value_str(ele, :s, default = "    "*"-"^7, format = "12.6f")
+        s_down_str = ele_param_value_str(ele, :s_downstream, default = "    "*"-"^7, format = "12.6f")
+        end_str = f"{ele.L:12.6f}{s_str} ->{s_down_str}"
         if haskey(ele.pdict, :multipass_lord); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :multipass_lord, default = \"\")}"; end
         if haskey(ele.pdict, :super_lords);  end_str = end_str * f"  {ele_param_value_str(ele.pdict, :super_lords, default = \"\")}"; end
         if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
@@ -549,19 +550,26 @@ function Base.show(io::IO, bl::BeamLine)
   n = 6
   for item in bl.line
     if item isa BeamLineEle
-      n = maximum([n, length(item.ele.name)]) + 2
+      n = maximum([n, length(item.ele.name)]) 
     else  # BeamLine
-      n = maximum([n, length(item.name)]) + 2
+      n = maximum([n, length(item.name)])
     end
   end
 
+  out = []
+
   for (ix, item) in enumerate(bl.line)
+    orient = ""
+    if item.pdict[:orientation] == -1; orient = "orientation = -1"; end
+
     if item isa BeamLineEle
-      println(io, f"{ix:5i}  {rpad(str_quote(item.ele.name), n)}  {rpad(typeof(item.ele), 12)}  {lpad(item.pdict[:orientation], 2)}")
+      push!(out, f"{ix:5i}  {rpad(str_quote(item.ele.name), n+2)}  {rpad(typeof(item.ele), 20)}  {orient}\n")
     else  # BeamLine
-      println(io, f"{ix:5i}  {rpad(str_quote(item.name), n)}  {rpad(typeof(item), 12)}  {lpad(item.pdict[:orientation], 2)}")
+      push!(out, f"{ix:5i}  {rpad(str_quote(item.name), n+2)}  {rpad(typeof(item), 20)}  {orient}\n")
     end
   end
+
+  println(io, out)
   return nothing
 end
 

@@ -189,7 +189,13 @@ EG: integrated multipole value even if stored value is not integrated.
 """ get_elegroup_param
 
 function get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
-  return getfield(group, pinfo.struct_sym)
+  if !isnothing(pinfo.sub_struct)                       # Example see: ParamInfo(:a_beta)
+    return getfield(pinfo.sub_struct(group), pinfo.struct_sym)
+  elseif pinfo.parent_group == pinfo.kind               # Example see: ParamInfo(:twiss)
+    return group
+  else
+    return getfield(group, pinfo.struct_sym)
+  end
 end
 
 #-
@@ -222,7 +228,11 @@ end
 """ set_elegroup_param
 
 function set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo, value)
-  return setfield!(group, pinfo.struct_sym, value)
+  if !isnothing(pinfo.sub_struct)    # Example see: ParamInfo(:a_beta)  
+    return setfield!(pinfo.sub_struct(group), pinfo.struct_sym, value)
+  else
+    return setfield!(group, pinfo.struct_sym, value)
+  end
 end
 
 function set_elegroup_param!(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo, value)
