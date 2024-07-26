@@ -51,7 +51,7 @@ module AcceleratorLattice
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup, SolenoidGroup
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveGroup
   export GirderGroup, LCavityGroup, PatchGroup, RFFieldGroup, RFMasterGroup, ControlSlaveGroup, ControlVarGroup
-  export InitTwissGroup, InitTwiss1, InitDispersion1, InitSpinGroup, InitParticleGroup
+  export TwissGroup, Twiss1, InitSpinGroup, InitParticleGroup
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
   export struct_sym_to_user_sym, multipole!, index, integer, quat_angles

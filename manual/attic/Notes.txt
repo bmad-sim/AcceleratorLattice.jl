@@ -63,6 +63,8 @@ The reason for doing a shallow copy, instead of a deep copy, is to save on memor
 
 * `NaN` is used instead of something like `missing` since `NaN` is considered a Float so can specify a parameter like `len_chord` as `Float64` instead of `Union{Float64,Missing}` which is not as clean and will slow down calculations.
 
+* Have a "definitions" section with short definitions of different terms and a link to more detail? EG define upstream/downstream.
+
 Note: Could also have defined parameters to be Union{Float64,Missing} but this possibly incurs a speed penalty (but this has not been tested).
 
 * InitTwiss are just a suggestion for how to start tracking.
