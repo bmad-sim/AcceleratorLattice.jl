@@ -1,0 +1,192 @@
+\chapter{Multipass}
+\label{s:multipass}
+\index{multipass|hyperbf}
+
+%-----------------------------------------------------------------------------
+\section{Multipass Fundamentals}
+\label{s:multipass.fund}
+
+\vn{Multipass} lines are a way to handle the bookkeeping when different elements being tracked
+through represent the same physical element. For example, consider the case where dual ring colliding
+beam machine is to be simulated. In this case the lattice file might look like:
+\begin{example}
+  ring1 = beamline("r1", [..., IR_region, ...])
+  ring2 = beamline("r2", [..., reverse(IR_region), ...])
+  IR_region = beamline("IR", [Q1, ....])
+  lat = expand("dual_ring", [ring1, ring2])
+\end{example}
+[The \vn{reverse} construct means go through the line backwards (\sref{s:ele.reverse})] 
+In this case, the \vn{Q1} element in \vn{ring1} and the
+\vn{Q1} element in \vn{ring2} represent the same physical element.
+Thus the parameters
+of both the \vn{Q1}s should be varied in tandem. This can be done automatically using \vn{multipass}.
+The use of multipass simplifies lattice and program development since the bookkeeping details are left
+to the \accellat bookkeeping routines.
+
+\index{multipass_slave}\index{multipass_lord}
+To illustrate how \vn{multipass} works, consider the example of an Energy Recovery Linac (ERL) where
+the beam will recirculate back through the LINAC section to recover the energy in the beam before it
+is dumped. In \accellat, this situation can simulated by designating the LINAC section as \vn{multipass}.
+The lattice file might look like:
+\begin{example}
+  @ele RF1 = LCavity(...)
+  linac = beamline["linac", [RF1, ...], multipass = true)
+  erl_line = beamline("erl", [linac, ..., linac])
+  lat = expand("erl", [erl_line])
+  rf1p2 = find_ele(lat, "RF1!mp1")
+  rf1p2.multipass_phase = pi
+\end{example}
+The beamline called \vn{linac} is designated as \vn{multipass}. This \vn{linac} line appears twice in
+the line \vn{erl_line} and \vn{erl_line} is the root line for lattice expansion. 
+In branch 1 of the 
+lattice, which will be a tracking branch, there will be two elements derived from the \vn{RF1} element:
+\begin{example}
+  RF1!mp1, ..., RF1!mp2, ...
+\end{example}
+Since the two elements are derived from a \vn{multipass} line, they are given unique names by adding
+an \vn{!mpN} suffix where \vn{N} is an integer. 
+These types of elements are known as \vn{multipass_slave} elements. In
+addition to the \vn{multipass_slave} elements there will be a \vn{multipass_lord} element (that doesn't
+get tracked through) called \vn{RF1} in the \vn{multipass_lord} branch of the lattice (\sref{s:lord.slave}).
+Changes to the attributes of the lord \vn{RF1} element will be passed to the slave elements by the \accellat
+bookkeeping routines. Assuming that the phase of \vn{RF1!mp1} gives acceleration, to make \vn{RF1!mp2}
+decelerate, the \vn{multipass_phase} attribute of \vn{RF1!mp2} is set to pi. This is the one attribute
+that \accellat's bookkeeping routines will not touch when transferring attribute values from \vn{RF1} to
+its slaves. Notice that the \vn{multipass_phase} attribute had to be set after the lattice is formed
+using the \vn{expand} function (\sref{s:expand}). This is true since 
+\vn{RF1!mp2} does not exist before the lattice is expanded. \vn{multipass_phase} is useful with
+relative time tracking \sref{s:rf.time}. However, \vn{multipass_phase} is ``unphysical'' and is just
+a convenient way to shift the phase pass-to-pass through a given cavity. To ``correctly'' simulate
+the recirculating beam, absolute time tracking should be used and the length of the lattice from a
+cavity back to itself needs to be properly adjusted to get the desired phase advance. See the discussion
+in section~\sref{s:rf.time}.
+
+Multiple elements of the same name in a multipass line are considered 
+physically distinct. Example:
+\begin{example}
+  m_line = beamline("m", [A, A, B], multipass = true)
+  u_line = beamline("u", [m_line, m_line])
+  lat = expand("lat", [u_line])
+\end{example}
+In this example, branch 1 of the lattice is:
+\begin{example}
+  A!mp1, A!mp1, B!mp1, A!mp2, A!mp2, B!mp2
+\end{example}
+In the \vn{multipass_lord} branch of the lattice there will be two multipass lords called \vn{A} and 
+one another lord called \vn{B}. 
+That is, there are three physically distinct elements in the lattice. The first
+\vn{A} lord controls the 1\St and 4\Th elements in branch 1 and the second
+\vn{A} lord controls the 2\Nd and 5\Th elements. If \vn{m_line} was {\em not} marked \vn{multipass},
+branch 1 would have four \vn{A} and two \vn{B} elements and there would be
+no lord elements.
+
+Sublines contained in a multipass line that are themselves not marked multipass act the same as if
+the elements of the subline where substituted directly in place of the subline in the containing
+line. For example:
+\begin{example}
+  a_line = beamline("a", [A])
+  m_line = beamline("m", [a_line, a_line], multipass = true)
+  u_line = beamline("u", [m_line, m_line])
+  lat = expand("lat", [u_line])
+\end{example}
+In this example, \vn{a_line}, which is a subline of the multipass \vn{m_line}, is {\em not}
+designated \vn{multipass} and the result is the same as the previous example where \vn{m_line} was
+defined to be \vn{(A, A, B)}. That is, there will be three physical elements represented by three
+multipass lords.
+
+Multipass lines do not have to be at the same ``level'' in terms of nesting of lines within
+lines. Additionally, multipass can be used with line reversal (\sref{s:ele.reverse}). Example:
+\begin{example}
+  m_line = beamline("m", [A, B], multipass = true)
+  m2_line = beamline("m2", m_line)
+  @ele P = patch(...)  # Reflection patch
+  u_line = beamline("u", [m_line, P, reverse(m2_line)])
+  lat = expand("lat", [u_line])
+\end{example}
+Here the tracking part of the lattice is
+\begin{example}
+  A!mp1, B!mp1, ..., B!mp2 (r), A!mp2 (r)
+\end{example}
+The ``(r)'' here just denotes that the element is reversed and is not part of the name. The lattice
+will have a multipass lord \vn{A} that controls the two \vn{A!mp n} elements and similarly with
+\vn{B}. This lattice represents the case where, when tracking, 
+a particle goes through the m_line in the ``forward''
+direction and, at the reflection patch element \vn{P}, the coordinate system is reversed so that the particle
+is then tracked in the reverse direction through the elements of \vn{m_line} twice.
+While it is possible to use reflection ``$-$'' (\sref{s:lines.wo.arg}) instead
+of reversal (\sref{s:ele.reverse}), reflection here does not make physical sense.  Needed
+here is a reflection patch \vn{P} (\sref{s:patch}) between reversed and unreversed elements.
+
+The procedure for how to group lattice elements into multipass slave groups which represent the same
+physical element is as follows. For any given element in the lattice, this element has some line it
+came from. Call this line $L_0$. The $L_0$ line in turn may have been contained in some other line
+$L_1$, etc. The chain of lines $L_0$, $L_1$, ..., $L_n$ ends at some point and the last (top) line
+$L_n$ will be one of the root lines listed in the \vn{use} statement (\sref{s:use}) in the lattice
+file. For any given element in the lattice, starting with $L_0$ and proceeding upwards through the
+chain, let $L_m$ be the {\em first} line in the chain that is marked as \vn{multipass}. If no such
+line exists for a given element, that element will not be a multipass slave. For elements that have
+an associated $L_m$ multipass line, all elements that have a common $L_m$ line and have the same
+element index when $L_m$ is expanded are put into a multipass slave group (for a given line the
+element index with respect to that line is 1 for the first element in the expanded line, the second
+element has index 2, etc.).  For example, using the example above, the first element of the lattice,
+\vn{A!mp1}, has the chain:
+\begin{example}
+    m_line, u_line
+\end{example} 
+The last element in the lattice, (\vn{A!mp2}), has the chain
+\begin{example}
+  m_line, m2_line, u_line
+\end{example}
+For both elements the $L_m$ line is \vn{m_line} and both elements are derived from the element with
+index 1 with respect to \vn{m_line}. Therefore, the two elements will be slaved together.
+
+As a final example, consider the case where a subline of a multipass line is also marked
+\vn{multipass}:
+\begin{example}
+  a_line = beamline("a", [A], multipass = true)
+  m_line = beamline("m", [a_line, a_line, B], multipass = true)
+  u_line = beamline("u", [m_line, m_line])
+  lat = expand("lat", [u_line])
+\end{example}
+In this case, branch 1 of the lattice will be:
+\begin{example}
+  A!mp1, A!mp2, B!mp1, A!mp3, A!mp4, B!mp2
+\end{example}
+There will be two lord elements representing the two physically distinct elements \vn{A} and \vn{B}.
+The \vn{A} lord element will will control the four \vn{A!mpN} elements in the tracking
+part of the lattice. The \vn{B} lord will control the two \vn{B!mpN} elements in the tracking part
+of the lattice. 
+
+To simplify the constructed lattice, if the set of lattice elements to slave together only contains
+one element, a multipass lord is not constructed. For example:
+\begin{example}
+  m_line = beamline("m", [A, A, B], multipass = true)
+  u_line = beamline([m_line])
+  lat = expand("lat", [u_line])
+\end{example}
+In this example no multipass lords are constructed and the lattice is simply
+\begin{example}
+  A, A, B
+\end{example}
+
+It is important to note that the global coordinates (\sref{s:global}) of the slaves of a given
+multipass lord are not constrained by \accellat to be the same. It is up to the lattice designer to make
+sure that the physical positions of the slaves makes sense (that is, are the same).
+
+%-----------------------------------------------------------------------------
+\section{The Reference Energy in a Multipass Line}
+\label{s:ref.e.multi}
+
+Consider the lattice where the tracking elements are
+\begin{example}
+  A!mp1, C, A!mp2
+\end{example}
+where \vn{A!mp1} and \vn{A!mp2} are multipass slaves of element \vn{A} and \vn{C} is a \vn{lcavity}
+element with some finite voltage. In this case, the reference energy calculation (\sref{s:energy})
+where the reference energy of an element is inherited from the previous element, assigns differing
+reference energies to \vn{A!mp1} and \vn{A!mp2}. In such a situation, what should be the assigned
+reference energy for the multipass lord element \vn{A}? \accellat calculates the lord reference energy
+in one of two ways. If, in the lattice file, \vn{e_tot_ref} or \vn{pc_ref} is set for the multipass lord
+element, that setting will be used. If the reference energy (or reference momentum) is not set in the lattice
+file, the reference energy of the lord is set equal to the reference energy of the first pass slave
+element.

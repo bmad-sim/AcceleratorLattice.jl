@@ -16,3 +16,8 @@ ln2 = beamline("ln2", [qd, d, qd], geometry = closed, multipass = true)
 fodo = beamline("fodo", [z1, z2, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), reverse(beamline("sub", [qd, ln1]))])
 
 lat = expand("mylat", [beamline("fodo2", [begin_fodo, fodo]), beamline("ln2", [begin_ln2, ln2])])
+
+@ele b1 = Bend(L = 0.2, angle = 0.1)
+superimpose!(b1, lat.branch[2].ele[3], offset = 0.2, ref_origin = entrance_end);
+
+lat

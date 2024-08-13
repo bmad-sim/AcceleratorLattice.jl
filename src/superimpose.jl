@@ -2,7 +2,7 @@
 # superimpose!
 
 """
-    function superimpose!(super_ele::Ele; ref_ele::Eles = NULL_ELE; ele_origin::BodyLocationSwitch = center, 
+    function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLocationSwitch = center, 
                       offset::Real = 0, ref_origin::BodyLocationSwitch = center, wrap::Bool = true)
 
 Superimpose an element on a branch. 
@@ -25,13 +25,17 @@ a normal orientation and vice versa for a reversed orientation.
 When `offset` = 0, for zero length elements  the superposition location is at the entrance end of `ref_ele` 
 except if `ele_origin` is set to `downstream_end` in which case the location is at the exit end.
 
-The superimposed element will inherit the orientation of the `ref_ele`.
+The superimposed element will inherit the orientation of the `ref`.
 
 """ superimpose!
 
-function superimpose!(super_ele::Ele; ref_ele::Ele = NULL_ELE, ele_origin::BodyLocationSwitch = b_center, 
+function superimpose!(super_ele::Ele ref::Union{Ele,Branch}; ele_origin::BodyLocationSwitch = b_center, 
            offset::Real = 0, ref_origin::BodyLocationSwitch = b_center, wrap::Bool = true)
-  if ref_ele == NULL_ELE; error("ref_ele argument must be present."); end
+  if typeof(ref) == Branch
+    ref_ele = ref.ele[1]
+  else
+    ref_ele = ref
+  end
 
   for refele in collect(ref_ele)
     # Get insertion branch
