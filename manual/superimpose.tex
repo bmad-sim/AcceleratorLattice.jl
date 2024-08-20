@@ -2,31 +2,23 @@
 \label{c:super}
 
 %-----------------------------------------------------------------------------
-\subsection{Superposition Fundamentals}
+\section{Superposition Fundamentals}
 \label{s:super.fund}
-
-  \begin{figure}[tb]
-  \centering 
-  \includegraphics[width=0.95\textwidth]{superimpose-example.pdf} 
-  \caption[Superposition example.]
-{Superposition example. A) The physical layout involves a quadrupole partially inside a solenoid. B)
-The standard superposition procedure involves creating \vn{super_slave} elements whose edges are at
-the boundaries where the physical elements overlap. C) When jumbo \vn{super_slaves} are created, the
-\vn{super_slaves} span the entire space where elements overlap.}
-  \label{f:super.ex}
-  \end{figure}
 
 In practice the field at a particular point in the lattice may be due to more than one physical
 element. One example of this is a quadrupole magnet inside a larger solenoid magnet as shown in
 \fig{f:super.ex}A. \bmad has a mechanism to handle this using what is called ``superposition''. A
 simple example shows how this works (also see section \sref{s:lord.slave}):
 \begin{example}
-  Q: quad, l = 4
-  D: drift, l = 12
-  S: solenoid, l = 8, superimpose, ref = Q, ele_origin = beginning
-  M: marker, superimpose, ref = S, offset = 1
-  lat: line = (Q, D)
-  use, lat
+  using AcceleratorLattice
+  @ele qq = Quadrupole(L = 4)
+  @ele dd = Drift(L = 12)
+  @ele ss = Solenoid(L = 1)
+  @ele bb = BeginningEle(species_ref = species("proton"), pc_ref = 1e11)
+  zline = beamline("z", [bb, qq, dd])
+  lat = expand("lat", zline)
+  dd_list = find_eles (lat, "dd")
+  superimpose!(ss, dd_list, offset = 0.2)
 \end{example}
 The \vn{superimpose} attribute of element \vn{S} superimposes \vn{S} over the lattice \vn{(Q,
 D)}. The placement of \vn{S} is such that the beginning of \vn{S} is coincident with the center of
@@ -73,9 +65,9 @@ element that properly mimics the effect of a non-zero orientation.
 
   \begin{figure}[tb]
   \centering 
-  \includegraphics[width=0.8\textwidth]{superimpose.pdf} 
+  \includegraphics[width=0.8\textwidth]{superimpose-positioning.pdf} 
   \caption[Superposition Offset.]{
-The superposition offset is the distance along the local reference orbit from the origin point of the
+The superposition offset is the longitudinal $s$-distance from the origin point of the
 reference element to the origin point of the element being superimposed.
   }
   \label{f:superimpose}
@@ -305,7 +297,7 @@ Superposition with \vn{line reflection} (\sref{s:lines.wo.arg}) works the same w
 The \vn{no_superposition} statement (\sref{s:no.sup}) can be used to turn off superpositioning
 
 %-----------------------------------------------------------------------------
-\subsection{Superposition and Sub-Lines}
+\section{Superposition and Sub-Lines}
 \label{s:super.sub.line}
 
 Sometimes it is convenient to do simulations with only part of a lattice. The rule for how
@@ -343,7 +335,7 @@ superposition of \vn{m1} is referenced to the beginning of \vn{sub2} which is no
 beginning of \vn{full}.
 
 %-----------------------------------------------------------------------------
-\subsection{Jumbo Super_Slaves}
+\section{Jumbo Super_Slaves}
 \label{s:jumbo.slave}
 
 The problem with the way \vn{super_slave} elements are created as discussed above is that edge
@@ -400,7 +392,7 @@ Another possible way to handle overlapping fields is to use the \vn{field_overla
 attribute as discussed in \sref{s:overlap}.
 
 %-----------------------------------------------------------------------------
-\subsection{Changing Element Lengths when there is Superposition}
+\section{Changing Element Lengths when there is Superposition}
 \label{s:super.length}
 
 When a program is running, if \vn{group} (\sref{s:group}) or \vn{overlay} (\sref{s:overlay})
@@ -447,4 +439,11 @@ downstream edge of \vn{Q}:
 \begin{example}
   G3: group = \{Q\}, var = \{end_edge\}
 \end{example}
+
+\etcetc...
+
+*) Difference from Bmad: Superposition is always done after lattice expansion.
+
+*) Superimposing on a given drift multiple times is not allowed (unlike Bmad). 
+  Instead, superimpose a Null ele at the beginning or end of the drift.
 

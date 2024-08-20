@@ -32,24 +32,23 @@ end
 # holly_type
 
 """
-    holly_type(str::AbstractString)
+    holly_type(atype::AbstractString, ctypes::Vector)
 
 Makes an abstract type from the first word and makes concrete types that inherit from the abstract type
 from the other words in the string.
 """ holly_type
 
-macro holly_type(str::AbstractString)
-  tlist = split(str)
-  eval( Meta.parse("abstract type $(tlist[1]) end") )
-  str2 = join(tlist, ',')
-  eval( Meta.parse("export $str2") )
+function holly_type(atype::AbstractString, ctypes::Vector)
+  eval( Meta.parse("abstract type $atype end") )
+  eval( Meta.parse("export $atype") )
 
-  for tp in tlist[2:end]
-    eval( Meta.parse("struct $tp <: $(tlist[1]); end") )
+  for ct in ctypes
+    eval( Meta.parse("struct $ct <: $atype; end") )
   end
 end
 
-@holly_type("EleGeometrySwitch Straight Circular ZeroLength PatchGeom GirderGeom CrystalGeom MirrorGeom")
+holly_type("EleGeometrySwitch", ["Straight", "Circular", "ZeroLength", 
+                                  "PatchGeom", "GirderGeom", "CrystalGeom",  "MirrorGeom"])
 
 #---------------------------------------------------------------------------------------------------
 # Exceptions

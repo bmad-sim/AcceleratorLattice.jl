@@ -103,8 +103,9 @@ than 2*`LatticeGlobal.significant_length`.
 > [!NOTE]
 > `split_branch!` will redo the appropriate bookkeeping for lords and slaves and
 > a super-lord element will be created if needed (not needed for split drifts).
-> drift to be split is put in `branch.ele_saved` for possible use if a future superposition uses
-> the drift as a reference.
+> For drifts that are split, a drift structure is put in `branch.drift_saved` so that split drifts
+> can have their names properly mangled.
+> [!NOTE]
 > `bookkeeper!` needs to be called after splitting.
 
 ### Input
@@ -127,90 +128,88 @@ than 2*`LatticeGlobal.significant_length`.
 
 function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s_split)
-  ele0 = ele_at_s(branch, s_split, choose_downstream, ele_near = ele_near)
+  slave1 = ele_at_s(branch, s_split, choose_downstream, ele_near = ele_near)
 
   # Make sure split does create an element that is less than min_len in length.
   min_len = min_ele_length(branch.lat)
-  if !choose_downstream && ele0.s > s_split-min_len
-    ele0 = ele_at_s(branch, ele0.s, true)
-    s_split = ele0.s_downstream
-  elseif choose_downstream && ele0.s_downstream < s_split+min_len
-    ele0 = ele_at_s(branch, ele0.s_downstream, true)
-    s_split = ele0.s
+  if !choose_downstream && slave1.s > s_split-min_len
+    slave1 = ele_at_s(branch, slave1.s, true)
+    s_split = slave1.s_downstream
+  elseif choose_downstream && slave1.s_downstream < s_split+min_len
+    slave1 = ele_at_s(branch, slave1.s_downstream, true)
+    s_split = slave1.s
   end
 
   # No element split cases where s_split is at an element boundary.
 
-  if s_split == ele0.s; return (ele0, false); end
-  if s_split == ele0.s_downstream; return (next_ele(ele0), false); end
+  if s_split == slave1.s; return (slave1, false); end
+  if s_split == slave1.s_downstream; return (next_ele(slave1), false); end
 
   # An element is split cases:
 
-  # Split case 1: Element is a drift. No super lord issues but save this element in case
-  # later superpositions use this drift as a reference element.
-  if typeof(ele0) == Drift
-    slave2 = copy(ele0)
-    slave2.name = ele0.name * "!0"    # To include ele in name setting below
-    insert!(branch.ele, ele0.ix_ele+1, slave2)  # Just after ele0
-    if haskey(branch.pdict, :ele_save)
-      push!(branch.pdict[:ele_save], ele0)
+  # Split case 1: Element is a drift. No super lord issues but need to create a drift structure 
+  # in `branch.drift_saved` so that split drift names can be properly mangled.
+  if typeof(slave1) == Drift
+    slave2 = copy(slave1)
+    insert!(branch.ele, slave1.ix_ele+1, slave2)  # Just after slave1
+
+    if haskey(slave1.private, :lord) 
+      lord = slave1.private[:lord]
+      ix = findfirst(isequal(slave1), lord.private[:slaves])
+      insert!(lord.private[:slaves], ix+1, slave2)
     else
-      branch.pdict[:ele_save] = Vector{Ele}([ele0])
+      haskey(branch.pdict, :drift_saved) ? push!(branch.pdict[:drift_saved], Vector{Ele}([copy(slave1)])) : 
+                                                branch.pdict[:drift_saved] = Vector{Ele}([copy(slave1)])
+      lord = branch.pdict[:drift_saved][end]
+      lord.private[:slaves] = [slave1, slave2]
     end
-    branch.ele[ele0.ix_ele] = copy(ele0)
-    branch.ele[ele0.ix_ele].L = s_split - ele0.s
-    branch.ele[ele0.ix_ele].name = ele0.name * "!0"
-    slave2.L = ele0.s_downstream - s_split
-    ele0.ix_ele = -1             # Mark as not being in branch.ele array.
+
+    slave1 = branch.ele[slave1.ix_ele]
+    slave1.L = s_split - slave1.s
+    slave2.L = slave1.s_downstream - s_split
+
+    slave1.private[:lord] = lord
+    slave2.private[:lord] = lord
+
     index_and_s_bookkeeper!(branch)
 
-    # Set names of all split drifts in branch
-    drift_index = Dict{String, Int}()
-    for ele in branch.ele
-      if typeof(ele) != Drift; continue; end
-      ix = index(ele.name, "!")
-      # Avoid name mangling something like "d!mp1" so check if integer after "!".
-      if ix == 0 || isnan(integer(ele.name[ix+1:end], NaN)); continue; end
-      if ele.name[1:ix-1] in keys(drift_index)
-        drift_index[ele.name[1:ix-1]] += 1
-      else
-        drift_index[ele.name[1:ix-1]] = 1
-      end
-      ele.name = ele.name[1:ix] * string(drift_index[ele.name[1:ix-1]])
+    for (ix, ele) in enumerate(lord.private[:slaves])
+      ele.name = "$(lord.name)!$ix" 
     end
+
     return (slave2, true)
   end
 
   # Split case 2: Element to be split is a super_slave. In this case no new lord is generated.
-  if haskey(ele0.pdict, :super_lords)
-    slave2 = copy(ele0)
-    insert!(branch.ele, ele0.ix_ele+1, slave2)  # Just after ele0
-    ele0.L = s_split - ele0.s
-    slave2.L = ele0.s_downstream - s_split
+  if haskey(slave1.pdict, :super_lords)
+    slave2 = copy(slave1)
+    insert!(branch.ele, slave1.ix_ele+1, slave2)  # Just after slave1
+    slave1.L = s_split - slave1.s
+    slave2.L = slave1.s_downstream - s_split
 
     # Now update the slave lists for the super lords to include the new slave.
     # Notice that the lord list of the slaves does not have to be modified.
-    for lord in ele0.super_lords
+    for lord in slave1.super_lords
       for (ix, slave) in enumerate(lord.slaves)
-        if !(slave === ele0) continue; end
+        if !(slave === slave1) continue; end
         insert!(lord.slaves, ix+1, slave2)
         break
       end
     end
     index_and_s_bookkeeper!(branch)
-    for lord in ele0.super_lords
+    for lord in slave1.super_lords
       set_super_slave_names!(lord)
     end
     return (slave2, true)
   end
 
   # Split case 3: Element to be split is not a super_slave. Here create a super_lord.
-  # Important for multipass and governor control that original ele0 is put in super_lord branch
+  # Important for multipass and governor control that original slave1 is put in super_lord branch
   # and the copies are in the tracking branch.
 
-  lord = ele0
+  lord = slave1
 
-  slave = copy(ele0)
+  slave = copy(slave1)
   pop!(slave.pdict, :multipass_lord, nothing)
   slave.pdict[:super_lords] = Vector{Ele}([lord])
   slave.slave_status = super_slave
@@ -218,8 +217,8 @@ function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near
   branch.ele[slave.ix_ele] = slave
   slave2 = copy(slave)
   insert!(branch.ele, slave.ix_ele+1, slave2)
-  slave.L = s_split - ele0.s 
-  slave2.L = ele0.s_downstream - s_split
+  slave.L = s_split - slave1.s 
+  slave2.L = slave1.s_downstream - s_split
 
   sbranch = branch.lat.branch[:super_lord]
   push!(sbranch.ele, lord)
