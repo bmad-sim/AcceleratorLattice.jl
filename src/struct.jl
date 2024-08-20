@@ -119,6 +119,7 @@ function (::Type{T})(; kwargs...) where T <: Ele
   ele = T(Dict{Symbol,Any}())
   pdict = ele.pdict
   pdict[:changed] = Dict{Symbol,Any}()
+  pdict[:private] = Dict{Symbol,Any}()
 
   # Setup parameter groups.
   for group in param_groups_list[typeof(ele)]
@@ -191,7 +192,7 @@ NullEle lattice element type used to indicate the absence of any valid element.
 `NULL_ELE` is a const NullEle element with `name` set to "null" that can be used for coding.
 """ NULL_ELE
 
-const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL"))
+const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL_ELE"))
 
 #---------------------------------------------------------------------------------------------------
 # LatEleLocation
@@ -891,7 +892,7 @@ The constant NULL_BRANCH is defined as a placeholder for signaling the absense o
 The test is_null(branch) will test if a branch is a NULL_BRANCH.
 """ NULL_BRANCH
 
-const NULL_BRANCH = Branch("NULL", Vector{Ele}(), Dict{Symbol,Any}(:ix_branch => -1))
+const NULL_BRANCH = Branch("NULL_BRANCH", Vector{Ele}(), Dict{Symbol,Any}(:ix_branch => -1))
 
 #---------------------------------------------------------------------------------------------------
 # Branch types

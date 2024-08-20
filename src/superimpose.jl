@@ -29,7 +29,7 @@ The superimposed element will inherit the orientation of the `ref`.
 
 """ superimpose!
 
-function superimpose!(super_ele::Ele ref::Union{Ele,Branch}; ele_origin::BodyLocationSwitch = b_center, 
+function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLocationSwitch = b_center, 
            offset::Real = 0, ref_origin::BodyLocationSwitch = b_center, wrap::Bool = true)
   if typeof(ref) == Branch
     ref_ele = ref.ele[1]
@@ -144,12 +144,27 @@ function superimpose!(super_ele::Ele ref::Union{Ele,Branch}; ele_origin::BodyLoc
 
     # If there are just drifts here then no superimpose needed.
     # Note: In this case there cannot be wrap around.
+
     all_drift = true
     n_ele = 0
     for ele in Region(ele1, ele2, false)
       n_ele += 1
-      if typeof(ele) != Drift; all_drift = false; end
+
+      if typeof(ele) == Drift
+        if haskey(ele.private, :lord)
+          lord = ele.private[:lord]
+          ix = findfirst(isequal(ele), lord.private[:slaves])
+          deleteat!(lord.private[:slaves], ix)
+          for (ix, ele2) in enumerate(lord.private[:slaves])
+            ele2.name = "$(lord.name)!$ix"
+          end
+        end
+      else
+        all_drift = false
+      end
     end
+
+    #
 
     if all_drift
       super_ele.ix_ele = ele1.ix_ele

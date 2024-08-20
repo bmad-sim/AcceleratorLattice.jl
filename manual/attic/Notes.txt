@@ -129,3 +129,5 @@ Getting the offset right can be tricky!
 * Put lattice files in modules for namespace safety of exported element names.
 
 * End element in a branch must be a marker.
+
+* Document Ele.pdict[:private] used in keeping track of split drifts.

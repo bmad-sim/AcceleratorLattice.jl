@@ -229,6 +229,13 @@ With \accellat, only an end element will be implicitly inserted if the end of th
 not a marker. 
 Also with Fortran \bmad the beginning element is always named \vn{Beginning}. 
 %
+\item
+Restrictions on the order of statements in a lattice file are different. 
+For example, in Fortran \bmad, a statement defining a lattice element can be placed anywhere
+except if there is an \vn{expand_lattice} statement and the element is not being used
+with superposition in which case the element definition must be before the \vn{expand_lattice}
+statement. With \accellat, element definitions must come before the element is used in a line
+or used to define a control element.
 \end{description}
 
 

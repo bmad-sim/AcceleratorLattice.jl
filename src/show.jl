@@ -262,7 +262,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     # Print non-group, non-changed parameters first.
     for key in sort(collect(keys(pdict)))
       val = pdict[key]
-      if typeof(val) <: EleParameterGroup || key == :changed; continue; end
+      if typeof(val) <: EleParameterGroup || key == :changed || key == :private; continue; end
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
       kstr = rpad(string(key), nn2)
@@ -277,7 +277,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     # Print element parameter groups (does not include changed)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
-      if !(typeof(group) <: EleParameterGroup); continue; end
+      if !(typeof(group) <: EleParameterGroup) || key == :private; continue; end
       show_elegroup(io, group, docstring, indent = 2)
     end
 
@@ -496,14 +496,15 @@ Base.show(io::IO, ::MIME"text/plain", lat::Lat) = Base.show(stdout, lat)
 # Show Branch
 
 function Base.show(io::IO, branch::Branch)
+  length(branch.ele) == 0 ? n = 0 : n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
   g_str = ""
   if haskey(branch.pdict, :geometry); g_str = f"geometry => {branch.pdict[:geometry]}"; end
+  if n > 0; g_str = rpad(g_str, 33) * "L           s       s_downstream"; end
   println(io, f"Branch {branch.ix_branch}: {str_quote(branch.name)}  {g_str}")
 
   if length(branch.ele) == 0 
     println(io, "     --- No Elements ---")
   else
-    n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
     for ele in branch.ele
       end_str = ""
       if branch.type == MultipassLordBranch
