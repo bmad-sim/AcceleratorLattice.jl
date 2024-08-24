@@ -39,6 +39,7 @@ function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLo
 
   for refele in collect(ref_ele)
     # Get insertion branch
+    if !haskey(refele.pdict, :branch); error("Reference element: $(ref_ele.name) does is not part of a lattice."); end
     branch = refele.branch
     if branch.type <: LordBranch 
       branch = refele.slaves[1].branch
