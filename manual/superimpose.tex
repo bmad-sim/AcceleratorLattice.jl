@@ -1,14 +1,95 @@
 \chapter{Superposition}
 \label{c:super}
 
+Superposition is the insertion of elements into a lattice after the lattice has been created by the 
+\vn{expand} function. Superposition is beneficial for various purposes. A common use of superposition is to
+insert \vn{marker} elements within other elements. For example, placing a marker element in the middle
+of a quadrupole. 
+Another use case is when the field in some region is due to the overlap of several
+elements. For example, a quadrupole magnet inside a larger solenoid magnet.
+
 %-----------------------------------------------------------------------------
-\section{Superposition Fundamentals}
+\section{Superposition on a Drift}
 \label{s:super.fund}
 
-In practice the field at a particular point in the lattice may be due to more than one physical
-element. One example of this is a quadrupole magnet inside a larger solenoid magnet as shown in
-\fig{f:super.ex}A. \bmad has a mechanism to handle this using what is called ``superposition''. A
-simple example shows how this works (also see section \sref{s:lord.slave}):
+\begin{figure}[tb]
+  \centering 
+  \includegraphics[width=0.8\textwidth]{superimpose-positioning.pdf} 
+  \caption[Superposition Offset.]{
+The superposition \vn{offset} is the longitudinal $s$-distance from the origin point of the
+reference element to the origin point of the element being superimposed.
+  }
+  \label{f:superimpose}
+\end{figure}
+
+A simple example illustrates how superposition works (also see section \sref{s:lord.slave}):
+\begin{example}
+  using AcceleratorLattice
+  @ele dd = Drift(L = 12)
+  @ele bb = BeginningEle(species_ref = species("proton"), pc_ref = 1e11)
+  @ele ss = Solenoid(L = 1)
+  zline = beamline("z", [bb, dd])
+  lat = expand("lat", zline)
+
+  ref_ele = find_eles(lat, "dd")
+  superimpose!(ss, ref_ele, offset = 0.2)
+\end{example}
+Before superposition, branch 1 of lattice \vn{lat} looks like
+\begin{example}
+  Branch 1: "z"  geometry => open             L           s      s_downstream
+    1  "bb"           BeginningEle        0.000000    0.000000 ->    0.000000
+    2  "dd"           Drift              12.000000    0.000000 ->   12.000000
+    3  "end_ele"      Marker              0.000000   12.000000 ->   12.000000
+\end{example}
+
+The \vn{superimpose!} function has the signature
+\begin{example}
+  function superimpose!(super_ele::Ele, ref::T; 
+          ele_origin::BodyLocationSwitch = b_center, offset::Real = 0, 
+          ref_origin::BodyLocationSwitch = b_center, wrap::Bool = true) 
+          where {E <: Ele, T <: Union{Branch, Ele, Vector{Branch}, Vector{E}}}
+\end{example}
+The superimpose
+
+statement inserts a copy of the element \vn{ss} in the lattice. 
+
+
+
+
+After insertion, branch 1 looks like:
+\begin{example}
+  Branch 1: "z"  geometry => open             L           s      s_downstream
+    1  "bb"           BeginningEle        0.000000    0.000000 ->    0.000000
+    2  "dd!1"         Drift               5.700000    0.000000 ->    5.700000
+    3  "ss"           Solenoid            1.000000    5.700000 ->    6.700000
+    4  "dd!2"         Drift               5.300000    6.700000 ->   12.000000
+    5  "end_ele"      Marker              0.000000   12.000000 ->   12.000000
+\end{example}
+The insertion of the \vn{ss} copy is within the \vn{drift} named \vn{dd}. The position
+
+With superpositions, \vn{Drift} elements are handled differently from other elements. This is done
+to simplify the bookkeeping code. T
+
+
+
+Rules:
+\begin{itemize}
+%
+\item
+The \vn{super_ele} element cannot be a \vn{Drift}.
+%
+\item
+
+%
+\end{itemize}
+
+
+Branch 1: "z"  geometry => open                 L           s       s_downstream
+      1  "bb"           BeginningEle        0.000000    0.000000 ->    0.000000
+      2  "dd"           Drift              12.000000    0.000000 ->   12.000000
+      3  "end_ele"      Marker              0.000000   12.000000 ->   12.000000
+
+
 \begin{example}
   using AcceleratorLattice
   @ele qq = Quadrupole(L = 4)
@@ -17,10 +98,12 @@ simple example shows how this works (also see section \sref{s:lord.slave}):
   @ele bb = BeginningEle(species_ref = species("proton"), pc_ref = 1e11)
   zline = beamline("z", [bb, qq, dd])
   lat = expand("lat", zline)
-  dd_list = find_eles (lat, "dd")
-  superimpose!(ss, dd_list, offset = 0.2)
+
+  ref_ele = find_eles (lat, "dd")
+  superimpose!(ss, ref_ele, offset = 0.2)
 \end{example}
-The \vn{superimpose} attribute of element \vn{S} superimposes \vn{S} over the lattice \vn{(Q,
+
+attribute of element \vn{S} superimposes \vn{S} over the lattice \vn{(Q,
 D)}. The placement of \vn{S} is such that the beginning of \vn{S} is coincident with the center of
 \vn{Q} (this is is explained in more detail below). Additionally, a marker \vn{M} is superimposed at
 a distance of +1~meter from the center of \vn{S}. The tracking part of the lattice
@@ -63,15 +146,7 @@ there is no other class of element that can simultaneously handle solenoid and R
 have a non-zero orientation (\sref{s:offset}) since it is not, in general, possible to construct a slave
 element that properly mimics the effect of a non-zero orientation.
 
-  \begin{figure}[tb]
-  \centering 
-  \includegraphics[width=0.8\textwidth]{superimpose-positioning.pdf} 
-  \caption[Superposition Offset.]{
-The superposition offset is the longitudinal $s$-distance from the origin point of the
-reference element to the origin point of the element being superimposed.
-  }
-  \label{f:superimpose}
-  \end{figure}
+
 
 With the lattice broken up like this \bmad has constructed something that can be easily
 analyzed. However, the original elements \vn{Q} and \vn{S} still exist within the lord section of
@@ -444,6 +519,7 @@ downstream edge of \vn{Q}:
 
 *) Difference from Bmad: Superposition is always done after lattice expansion.
 
-*) Superimposing on a given drift multiple times is not allowed (unlike Bmad). 
-  Instead, superimpose a Null ele at the beginning or end of the drift.
+*) Superimposing using the same given Drift as a reference element multiple times is not allowed (unlike Bmad). 
+  Instead, superimpose a Null ele at the beginning or end of the drift and then use that as the reference.
+  At the end, remove the Null element
 

@@ -3,6 +3,25 @@
 #-
 
 #---------------------------------------------------------------------------------------------------
+# LatConstructionInfo
+
+"""
+    Internal: mutable struct LatConstructionInfo
+
+Internal struct to hold information during lattice construction.
+
+### Components
+- `multipass_id::Vector{String}`
+- `orientation_here::Int`
+- `n_loop::Int`
+"""
+mutable struct LatConstructionInfo
+  multipass_id::Vector{String}
+  orientation_here::Int
+  n_loop::Int
+end
+
+#---------------------------------------------------------------------------------------------------
 # BeamLineItem
 
 """
@@ -21,6 +40,7 @@ BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.pdict))
 
 """
     beamline(name::AbstractString, line::Vector{T}; kwargs...)
+    beamline(line::Vector{T}; kwargs...)
 
 Creates a `beamline` from a vector of `BeamLineItem`s.
 
@@ -41,7 +61,6 @@ All parameters are optional.
 
 function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
-
   if !haskey(bline.pdict, :orientation); bline.pdict[:orientation] = +1; end
   if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = open; end
   if !haskey(bline.pdict, :multipass);   bline.pdict[:multipass]   = false; end
@@ -51,6 +70,12 @@ function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: B
   end
 
   return bline
+end
+
+#
+
+function beamline(line::Vector{T}; kwargs...) where T <: BeamLineItem
+  return beamline("anonymous", line, kwargs...)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -217,6 +242,12 @@ Used by the `expand` function.
 """ new_tracking_branch!
 
 function new_tracking_branch!(lat::Lat, beamline::BeamLine)
+  if typeof(beamline) == Tuple{BeginningEle, BeamLine}
+    beginning_ele = beamline[2]
+    beamline = beamline[2]
+    insert!(beamline.line, 1, beginning_ele)
+  end
+
   push!(lat.branch, Branch(beamline.name, Vector{Ele}(), Dict{Symbol,Any}(:geometry => beamline.pdict[:geometry])))
   branch = lat.branch[end]
   branch.pdict[:lat] = lat
@@ -258,7 +289,7 @@ end
 # expand
 
 """
-    expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}})
+    expand(name::AbstractString, root_line::Union{BeamLine,Vector{Any}})
     expand(root_line::Union{BeamLine,Vector{BeamLine}})
 
 Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
@@ -267,7 +298,7 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 - `name`      Optional name put in `lat.name`. If not present or blank (""), `lat.name` will be set
                 to the name of the first branch.
-- root_line   Root beamline or lines.
+- root_line   Root beamline(s). 
 
 ### Output
 
@@ -275,16 +306,14 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 """ expand
 
-function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}}) 
+function expand(name::AbstractString, root_line::Union{BeamLine,Vector{Any}}) 
   lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
-
-  if isnothing(root_line); root_line = root_beamline; end
   
   if root_line isa BeamLine
     new_tracking_branch!(lat, root_line)
   else
-    for subline in root_line
-      new_tracking_branch!(lat, subline)
+    for root in root_line
+      new_tracking_branch!(lat, root)
     end
   end
   
@@ -308,9 +337,8 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector{BeamLine}
 end
 
 #---------------------------------------------------------------------------------------------------
-# expand
-
 # expand version without lattice name argument.
+
 function expand(root_line::Union{BeamLine,Vector{BeamLine}})
   expand("", root_line)
 end

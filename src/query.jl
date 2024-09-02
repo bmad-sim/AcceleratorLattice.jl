@@ -105,7 +105,7 @@ end
 Test if argument is either of the NULL_ELE or NULL_BRANCH constants.
 """ is_null
 
-is_null(ele::Ele) = return (typeof(ele) == NullEle && ele.name == "NULL_ELE")
+is_null(ele::Ele) = return (ele.name == "NULL_ELE")
 is_null(branch::Branch) = return (branch.name == "NULL_BRANCH")
 
 #---------------------------------------------------------------------------------------------------

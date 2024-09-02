@@ -1,4 +1,6 @@
-name: CI
+# Script to make a PR if the push is from DCS.
+
+name: dcs16_push_to_pr
 on:
   push:
     branches-ignore: main
