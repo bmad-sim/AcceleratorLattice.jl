@@ -1,68 +1,39 @@
 #---------------------------------------------------------------------------------------------------
 
-QuatN = QuatRotation{Number}
-Quat64 = QuatRotation{Float64}
+Quat = Quaternion{Number}
 
-abstract type AbstractQuaternion end
+function rot(q::Quaternion, v::Vector)
+  vv = q * v / q
+  return [vv.q1, vv.q2, vv.q3]
+end
 
 #---------------------------------------------------------------------------------------------------
-# The Rotation.jl package displays the 3x3 rotation matrix with 
-# the show command which is not what is wanted.
-
-function Base.show(io::IO, ::MIME"text/plain", q::QuatRotation{T}) where T
-  println(io, typeof(q))
-  println(io, f"  ({q.q.s}, {q.q.v1}, {q.q.v2}, {q.q.v3})")
-end
-
-function Base.show(io::IO, q::QuatRotation{T}) where T
-  print(io, f"({q.q.s}, {q.q.v1}, {q.q.v2}, {q.q.v3})")
-end
-
-function Base.show(io::IO, ::MIME"text/plain", a::AngleAxis{T}) where T
-  println(io, typeof(a))
-  println(io, f"  ({a.theta}, {a.axis_x}, {a.axis_y}, {a.axis_z})")
-end
-
-function Base.show(io::IO, ::MIME"text/plain", rv::RotationVec{T}) where T
-  println(io, typeof(rv))
-  println(io, f"  ({rv.sx}, {rv.sy}, {rv.sz})")
-end
-
-rot(q::QuatRotation, v::Vector) = Vector(q * v)
-rot(q1::QuatRotation, q2::QuatRotation) = q1 * q2
-
-#---------------------------------------------------------------------------------------------------
-
-struct Quaternion <: AbstractQuaternion
-  q0::Float64
-  vec::Vector{Float64}
-end
 
 const UNIT_QUAT = Quaternion(1.0, [0.0, 0.0, 0.0])
-
-struct BiQuaternion <: AbstractQuaternion
-  q0::ComplexF64
-  vec::Vector{ComplexF64}
-end
 
 """
 The `axis` vector is not necessarily normalized.
 """ AxisAngle
 
 struct AxisAngle
-  angle::Float64
-  axis::Vector{Float64}
+  angle::Number
+  axis::Vector{Number}
 end
 
 #---------------------------------------------------------------------------------------------------
 
+RotX(angle) = Quaternion(cos(angle/2), [sin(angle/2), 0, 0])
+RotY(angle) = Quaternion(cos(angle/2), [0, sin(angle/2), 0])
+RotZ(angle) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
+
+#---------------------------------------------------------------------------------------------------
+
 Quaternion(qv::Vector) = Quaternion(qv[1], qv[2:end])
-Quaternion(x::T) where T <: Number = Quaternion(x, [0.0, 0.0, 0.0])
 
 function Quaternion(aa::AxisAngle) 
   if aa.angle == 0; return UNIT_QUAT; end
   m = mag(aa.axis)
-  if m == 0; error(f"RangeError: Length of axis is zero."); end
+  if m == 0; error("RangeError: Length of axis is zero."); end
   return Quaternion(cos(0.5*aa.angle), sin(0.5*aa.angle)*axis / m)
 end
 

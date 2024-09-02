@@ -1,3 +1,13 @@
 \chapter{Constructing Lattices}
 \label{c:construct-lat}
 
+Note: 
+\begin{example}
+  @ele qq = Quadrupole()
+  bl = beamline([.., qq, ..., qq, ...], ...)
+\end{example}
+Here changing parameters of qq will affect the parameters of the qq's in any beamline.
+However, lattice expansion constructs the lattice with copies of qq so changing the
+parameters of qq will not affect any of the copies in the lattice. This is done so that
+parameters in the various qq's in the lattice are independent and an therefore differ from each
+other. 

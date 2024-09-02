@@ -3,6 +3,12 @@ using AcceleratorLattice, Test
 @testset "AcceleratorLattice" begin
   t0 = time()
 
+  @testset "superimpose_test" begin
+    println("##### Testing superimpose_test.jl...")
+    t = @elapsed include("superimpose_test.jl")
+    println("##### done (took $t seconds).")
+  end
+
   @testset "find_test" begin
     println("##### Testing find_test.jl...")
     t = @elapsed include("find_test.jl")

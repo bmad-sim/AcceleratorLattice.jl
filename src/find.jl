@@ -50,7 +50,7 @@ function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
   if !julia_regex; name = replace(name, "'" => "\""); end
 
   branch_id = ""; offset = 0
-  nth_match = 1
+  nth_match = -1
 
   if occursin(">>", name); branch_id, name = split(name, ">>"); end
 
@@ -95,7 +95,7 @@ function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
       if length(words) != 1; error(f"ParseError: Bad lattice element name: {name}"); end
       ele_id = words[1]
       ix_ele = str_to_int(ele_id, -1)
-      if ix_ele != NaN && nth_match != 1; return eles; end
+      if ix_ele != NaN && nth_match != -1; return eles; end
     end
 
     for branch in lat.branch
@@ -112,8 +112,8 @@ function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
         else
           if !str_match(ele_id, ele.name); continue; end
           ix_match += 1
-          if ix_match == nth_match; push!(eles, ele); end
-          if ix_match > nth_match; continue; end
+          if nth_match != -1 && ix_match > nth_match; continue; end
+          if ix_match == nth_match || nth_match == -1; push!(eles, ele); end
         end
       end
     end   # branch loop
@@ -242,7 +242,8 @@ end
 # ele_at_s
 
 """
-    ele_at_s(branch::Branch, s::Real, choose_downstream::Bool; ele_near::ELE = NULL_ELE) -> ele::Ele
+    ele_at_s(branch::Branch, s::Real; choose::StreamLocationSwitch = upstream_end, ele_near::ELE = NULL_ELE) 
+                                                                          -> ele_overlap::Ele
 
 Returns lattice element that overlaps a given longitudinal s-position. That is, `s` will be in the
 half-open interval `[ele.s, ele.s_downstream)` (or the point `ele.s` if `ele` has zero length) where 
@@ -250,22 +251,24 @@ half-open interval `[ele.s, ele.s_downstream)` (or the point `ele.s` if `ele` ha
 
 ## Input
 
- - `branch`            Branch to search.
- - `s`                 Longitudinal position to match to.
- - `choose_downstream` If there is a choice of elements, which can happen if `s` corresponds to a boundary
-                       point, choose the downstream element if choose_downstream is `true` and vice versa.
- - `ele_near`          If there are elements with negative drift lengths (generally this will be a
-                       `drift` or `patch` element), there might be multiple solutions. If `ele_near`
-                       is specified, this routine will choose the solution nearest `ele_near`.
+ - `branch`     Branch to search.
+ - `s`          Longitudinal position to match to.
+ - `choose`     If there is a choice of elements, which can happen if `s` corresponds to a boundary
+                point between two elements, `choose` is used to pick either the `upstream_end` 
+                element (default) or `downstream_end` element.
+ - `ele_near`   If there are elements with negative drift lengths (generally this will be a
+                `drift` or `patch` element), there might be multiple solutions. If `ele_near`
+                is specified, this routine will choose the solution nearest `ele_near`.
 
-## Return
+## Returns
 
- - Returns element that overlaps the given `s` position.
+ - `ele_overlap` Element that overlaps the given `s` position.
 
 """ ele_at_s
 
-function ele_at_s(branch::Branch, s::Real, choose_downstream::Bool; ele_near::Ele = NULL_ELE)
+function ele_at_s(branch::Branch, s::Real; choose::StreamLocationSwitch = upstream_end, ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s)
+  if choose != upstream_end && choose != downstream_end; error("Bad `choose` argument: $choose"); end 
 
   # If ele_near is not set
   if is_null(ele_near)
@@ -275,11 +278,11 @@ function ele_at_s(branch::Branch, s::Real, choose_downstream::Bool; ele_near::El
     while true
       if n3 == n1 + 1; break; end
       n2 = div(n1 + n3, 2)
-      s < branch.ele[n2].s || (!choose_downstream && branch.ele[n2].s == s) ? n3 = n2 : n1 = n2
+      s < branch.ele[n2].s || (choose == upstream_end && branch.ele[n2].s == s) ? n3 = n2 : n1 = n2
     end
 
     # Solution is n1 except in one case.
-    if choose_downstream && branch.ele[n3].s == s
+    if choose == downstream_end && branch.ele[n3].s == s
       return branch.ele[n3]
     else
       return branch.ele[n1]
@@ -289,19 +292,19 @@ function ele_at_s(branch::Branch, s::Real, choose_downstream::Bool; ele_near::El
   # If ele_near is used
   ele = ele_near
   if ele.branch.type <: LordBranch
-    choose_downstream ? ele = ele.slaves[end] : ele = ele.slaves[1]
+    choose == downstream_end ? ele = ele.slaves[end] : ele = ele.slaves[1]
   end
 
 
-  if s > ele.s_downstream || (choose_downstream && s == ele.s_downstream)
+  if s > ele.s_downstream || (choose == downstream_end && s == ele.s_downstream)
     while true
       ele = next_ele(ele)
-      if s < ele.s_downstream || (s == ele.s_downstream && !choose_downstream); return ele; end
+      if s < ele.s_downstream || (s == ele.s_downstream && choose == upstream_end); return ele; end
     end
 
   else
     while true
-      if s > ele.s || (choose_downstream && ele.s == s); return ele; end
+      if s > ele.s || (choose == downstream_end && ele.s == s); return ele; end
       ele = next_ele(ele, -1)
     end
   end

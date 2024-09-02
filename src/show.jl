@@ -497,10 +497,10 @@ Base.show(io::IO, ::MIME"text/plain", lat::Lat) = Base.show(stdout, lat)
 
 function Base.show(io::IO, branch::Branch)
   length(branch.ele) == 0 ? n = 0 : n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
-  g_str = ""
-  if haskey(branch.pdict, :geometry); g_str = f"geometry => {branch.pdict[:geometry]}"; end
-  if n > 0; g_str = rpad(g_str, 33) * "L           s       s_downstream"; end
-  println(io, f"Branch {branch.ix_branch}: {str_quote(branch.name)}  {g_str}")
+  g_str = f"Branch {branch.ix_branch}: {str_quote(branch.name)}"
+  if haskey(branch.pdict, :geometry); g_str = g_str * f"  geometry => {branch.pdict[:geometry]}"; end
+  if n > 0; g_str = rpad(g_str, 48) * "L           s      s_downstream"; end
+  println(io, "$g_str")
 
   if length(branch.ele) == 0 
     println(io, "     --- No Elements ---")

@@ -203,7 +203,7 @@ end
 function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
   (mtype, order, mgroup) = multipole_type(pinfo.user_sym)
   mul = multipole!(group, order)
-  if isnothing(mgroup) || group != mgroup; return 0.0::Float64; end
+  if isnothing(mgroup) || group != mgroup; return 0.0; end
 
   val =  getfield(mul, pinfo.struct_sym)
   if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'

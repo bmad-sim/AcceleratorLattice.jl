@@ -455,11 +455,9 @@ Position and orientation in global coordinates.
 The FloorPositionGroup in a lattice element gives the coordinates at the entrance end of an element
 ignoring misalignments.
 
-Note: Rotations.jl is currently not compatible with using dual numbers so `q` is defined with `Float64`.
-
 # Fields
     r::Vector = [0.0, 0.0, 0.0]                   # (x,y,z) in Global coords
-    q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)        # Quaternion orientation.
+    q::Quat = Quat(1.0, 0.0, 0.0, 0.0)            # Quaternion orientation.
     theta::Number = 0.0                           # Global orientation angle
     phi::Number = 0.0                             # Global orientation angle
     psi::Number = 0.0                             # Global orientation angle
@@ -467,7 +465,7 @@ Note: Rotations.jl is currently not compatible with using dual numbers so `q` is
 
 @kwdef mutable struct FloorPositionGroup <: EleParameterGroup
   r::Vector = [0.0, 0.0, 0.0]                   # (x,y,z) in Global coords
-  q::Quat64 = Quat64(1.0, 0.0, 0.0, 0.0)        # Quaternion orientation.
+  q::Quat = Quat(1.0, 0.0, 0.0, 0.0)            # Quaternion orientation.
   theta::Number = 0.0                           # Global orientation angle
   phi::Number = 0.0                             # Global orientation angle
   psi::Number = 0.0                             # Global orientation angle
@@ -877,8 +875,8 @@ Lattice branch structure.
     pdict::Dict{Symbol,Any}
 
 ## Notes
-The constant NULL_BRANCH is defined as a placeholder for signaling the absense of a branch.
-The test is_null(branch) will test if a branch is a NULL_BRANCH.
+The constant `NULL_BRANCH` is defined as a placeholder for signaling the absense of a branch.
+The test `is_null(branch)` will test if a branch is a `NULL_BRANCH`.
 """ Branch
 
 mutable struct Branch <: BeamLineItem
@@ -923,11 +921,25 @@ end
 LatticeGlobal() = LatticeGlobal(1.0e-10, Dict())
 
 #---------------------------------------------------------------------------------------------------
-# Lat
+# AbstractLat & Lat
 
-"Abstract lattice from which Lat inherits"
+"""
+    abstract type AbstractLat
+
+Abstract lattice type from which the `Lat` struct inherits.
+"""
 abstract type AbstractLat end
 
+"""
+    mutable struct Lat <: AbstractLat
+
+Lattice structure.
+
+### Components:
+-  `name::String`
+-  `branch::Vector{Branch}`
+-  `pdict::Dict{Symbol,Any}`
+"""
 mutable struct Lat <: AbstractLat
   name::String
   branch::Vector{Branch}
@@ -935,28 +947,43 @@ mutable struct Lat <: AbstractLat
 end
 
 #---------------------------------------------------------------------------------------------------
-# BeamLine
-# Rule: pdict Dict of BeamLineEle and BeamLine always define :orientation and :multipass keys.
-# Rule: All instances a given Ele in beamlines are identical so that the User can easily 
-# make a Change to all. When the lattice is expanded, deepcopyies of Eles will be done.
+# BeamLineEle
 
-# Why wrap a Ele within a BeamLineEle? This allows multiple instances in a beamline of the same 
-# identical Ele with some having orientation reversed or within multipass regions and some not.
+"""
+    mutable struct BeamLineEle <: BeamLineItem
 
+An item in a `BeamLine.line[]` array that represents a lattice element.
+
+### Components
+- `ele::Ele`
+- `pdict::Dict{Symbol,Any}`
+
+Essentially, `BeamLineEle` is an `Ele` along with some extra information stored in the `pdict` Dict
+component. The extra information is the element's orientation and multipass state.
+
+Note: All instances a given Ele in beamlines are identical so that the User can easily 
+make a Change to all. When the lattice is expanded, deepcopyies of Eles will be done.
+"""
 mutable struct BeamLineEle <: BeamLineItem
   ele::Ele
   pdict::Dict{Symbol,Any}
 end
 
+#---------------------------------------------------------------------------------------------------
+# BeamLine
+
+"""
+    mutable struct BeamLine <: BeamLineItem
+
+Structure holding a beamline.
+
+### Components
+- `name::String`
+- `line::Vector{BeamLineItem}`
+- `pdict::Dict{Symbol,Any}`
+"""
 mutable struct BeamLine <: BeamLineItem
   name::String
   line::Vector{BeamLineItem}
   pdict::Dict{Symbol,Any}
-end
-
-"Used when doing lattice expansion."
-mutable struct LatConstructionInfo
-  multipass_id::Vector{String}
-  orientation_here::Int
-  n_loop::Int
 end

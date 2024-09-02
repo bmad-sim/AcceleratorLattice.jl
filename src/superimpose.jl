@@ -2,80 +2,112 @@
 # superimpose!
 
 """
-    function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLocationSwitch = center, 
-                      offset::Real = 0, ref_origin::BodyLocationSwitch = center, wrap::Bool = true)
+    function superimpose!(super_ele::Ele, ref; ele_origin::BodyLocationSwitch = b_center, 
+                          offset::Real = 0, ref_origin::BodyLocationSwitch = b_center, 
+                          wrap::Bool = true) where T <: Union{Branch, Ele, Vector{Branch}, Vector{Ele}}
 
-Superimpose an element on a branch. 
+Superimpose a copy (or copies) of the element `super_ele` on a lattice. 
+If `ref` is a scaler, one superposition is done. 
+If `ref` is a vector, one superposition is done per element of `ref`.
+See the AcceleratorLattice manual for more details.
 
-- The `super_ele` element must not be a `Drift`
+### Input
+- `super_ele`     Element to be copied and the copies to be superimposed on the lattice.
+                  `Drift` and `BeginningEle` type elements are not allowed.
 
-- Zero length elements in the superposition region will be left alone.
+- `ref`           Reference element or element array that determine where superposition is done.
+                  A superposition is done for each element in an array. If `ref` is a `Branch`
+                  or array of Branches, the reference element is taken to be the `BeginningEle`
+                  element at the beginning of the branch.
 
-- Superimposing an element on top of a non-`Drift` element produces a `UnionEle` `super_slave`.
+- `ele_origin`    Location of the origin point on the `super_ele` in body coordinates. That is,
 
-- `wrap`   Only relavent if the superimposed element has an end that extends beyond the 
+- `offset`        Offset distance between the `ele_origin` and the `ref_origin`.
+
+- `ref_origin`    Location of the reference origin point on the `ref` element.
+
+- `wrap`          Only relavent if the superimposed element has an end that extends beyond the 
 starting or ending edge of the branch. If true (default), wrap the element around the
 branch so that the element's upstream edge before the branch end edge and the element's 
 downstream edge after the branch start edge. If `wrap` = false, extend the lattice to accommodate.
 
-The superposition location is determined with respect to the `local` coordinates of the `ref_ele`.
-Thus, a positive `offset` will displace the superposition location downstream if `ref_ele` has
+
+### Notes
+- Valid `BodyLocationSwitch` values are:
+  - entrance_end
+  - b_center
+  - exit_end
+
+- Zero length elements in the superposition region will be left alone.
+
+- Superimposing an element on top of a non-`Drift` element produces a `UnionEle` `super_slave`
+with appropriate `super_lord` elements.
+
+- The superposition location is determined with respect to the `local` coordinates of the `ref`.
+Thus, a positive `offset` will displace the superposition location downstream if `ref` has
 a normal orientation and vice versa for a reversed orientation.
 
-When `offset` = 0, for zero length elements  the superposition location is at the entrance end of `ref_ele` 
-except if `ele_origin` is set to `downstream_end` in which case the location is at the exit end.
+- When `offset` = 0, for zero length `super_ele` elements the superposition location is at the 
+entrance end of `ref` except if `ref_origin` is set to `downstream_end` in which case the 
+superposition location is at the exit end of `ref`.
 
-The superimposed element will inherit the orientation of the `ref`.
-
+- The superimposed element will inherit the orientation of the `ref` element.
 """ superimpose!
 
-function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLocationSwitch = b_center, 
-           offset::Real = 0, ref_origin::BodyLocationSwitch = b_center, wrap::Bool = true)
+function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLocationSwitch = b_center, 
+                      offset::Real = 0, ref_origin::BodyLocationSwitch = b_center, 
+                      wrap::Bool = true) where {E <: Ele, T <: Union{Branch, Ele, Vector{Branch}, Vector{E}}}
   if typeof(ref) == Branch
     ref_ele = ref.ele[1]
   else
     ref_ele = ref
   end
 
-  for refele in collect(ref_ele)
-    # Get insertion branch
-    if !haskey(refele.pdict, :branch); error("Reference element: $(ref_ele.name) does is not part of a lattice."); end
-    branch = refele.branch
-    if branch.type <: LordBranch 
-      branch = refele.slaves[1].branch
-      ref_ix_ele = refele.slaves[1].ix_ele
+  for this_ref in collect(ref)
+    if typeof(this_ref) == Branch
+      ref_ele = this_ref.ele[1]
     else
-      ref_ix_ele = refele.ix_ele
+      ref_ele = this_ref
+    end
+
+    # Get insertion branch
+    if !haskey(ref_ele.pdict, :branch); error("Reference element: $(ref_ele.name) does is not part of a lattice."); end
+    branch = ref_ele.branch
+    if branch.type <: LordBranch 
+      branch = ref_ele.slaves[1].branch
+      ref_ix_ele = ref_ele.slaves[1].ix_ele
+    else
+      ref_ix_ele = ref_ele.ix_ele
     end
 
     L_super = super_ele.L
-    offset = offset * refele.orientation
-    machine_ref_origin = machine_location(ref_origin, refele.orientation)  # Convert from entrance/exit to up/dowstream
-    machine_ele_origin = machine_location(ele_origin, refele.orientation)
+    offset = offset * ref_ele.orientation
+    machine_ref_origin = machine_location(ref_origin, ref_ele.orientation)  # Convert from entrance/exit to up/dowstream
+    machine_ele_origin = machine_location(ele_origin, ref_ele.orientation)
 
     # Insertion of zero length element with zero offset at edge of an element.
     if L_super == 0 && offset == 0 
-      if machine_ref_origin == upstream_end || (machine_ref_origin == center && refele.L == 0)
+      if machine_ref_origin == upstream_end || (machine_ref_origin == center && ref_ele.L == 0)
         ix_insert = max(ref_ix_ele, 2)
         insert!(branch, ix_insert, super_ele)
-        return
+        continue
       elseif machine_ref_origin == downstream_end 
-        ix_insert = min(ref_ix_ele+1, length(refele.branch.ele))
+        ix_insert = min(ref_ix_ele+1, length(ref_ele.branch.ele))
         insert!(branch, ix_insert, super_ele)
-        return
+        continue
       end
     end
 
     # Super_ele end locations: s1 and s2.
     if branch.type <: LordBranch
-      if machine_ref_origin == upstream_end; s1 = refele.slaves[1].s
-      elseif machine_ref_origin == center;   s1 = 0.5 * (refele.slaves[1].s + refele.slaves[end].s_downstream)
-      else;                                  s1 = refele.slaves[end].s_downstream
+      if machine_ref_origin == upstream_end; s1 = ref_ele.slaves[1].s
+      elseif machine_ref_origin == center;   s1 = 0.5 * (ref_ele.slaves[1].s + ref_ele.slaves[end].s_downstream)
+      else;                                  s1 = ref_ele.slaves[end].s_downstream
       end
     else    # Not a lord branch
-      if machine_ref_origin == upstream_end; s1 = refele.s
-      elseif machine_ref_origin == center;   s1 = 0.5 * (refele.s + refele.s_downstream)
-      else;                                  s1 = refele.s_downstream
+      if machine_ref_origin == upstream_end; s1 = ref_ele.s
+      elseif machine_ref_origin == center;   s1 = 0.5 * (ref_ele.s + ref_ele.s_downstream)
+      else;                                  s1 = ref_ele.s_downstream
       end
     end
 
@@ -88,9 +120,10 @@ function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLo
 
     # If super_ele has zero length just insert it.
     if L_super == 0
-      ele_at, _ = split!(branch, s1, choose_downstream = (machine_ref_origin != downstream_end), ele_near = refele)
+      machine_ref_origin == downstream_end ? choose = upstream_end : choose = downstream_end
+      ele_at, _ = split!(branch, s1, choose = choose, ele_near = ref_ele)
       insert!(branch, ele_at.ix_ele, super_ele)
-      return
+      continue
     end
 
     # Below is for a super_ele that has a nonzero length
@@ -116,8 +149,8 @@ function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLo
 
     # Split points are chosen to avoid creating elements with non-zero length below the minimum.
     # And super_lord length will be adjusted accordingly.
-    ele1 = ele_at_s(branch, s1, false, ele_near = refele)
-    ele2 = ele_at_s(branch, s2, true, ele_near = refele)
+    ele1 = ele_at_s(branch, s1, choose = upstream_end, ele_near = ref_ele)
+    ele2 = ele_at_s(branch, s2, choose = downstream_end, ele_near = ref_ele)
 
     min_len = min_ele_length(branch.lat)
 
@@ -137,11 +170,11 @@ function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLo
       super_ele.L = super_ele.L + ele2.s_downstream - s2
     end
 
-    # choose_downstream is set to minimize number of elements in superposition region.
-    # The superposition region is from beginning of ele1 to beginning of ele2.
+    # `choose` is set to minimize number of elements in the superposition region.
+    # The superposition region is from beginning of ele1 to the beginning of ele2.
 
-    ele2, _ = split!(branch, s2, false)  # Notice that s2 split must be done first!
-    ele1, _ = split!(branch, s1, true)
+    ele2, _ = split!(branch, s2, choose = upstream_end)  # Notice that s2 split must be done first!
+    ele1, _ = split!(branch, s1, choose = downstream_end)
 
     # If there are just drifts here then no superimpose needed.
     # Note: In this case there cannot be wrap around.
@@ -173,7 +206,7 @@ function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLo
       if n_ele > 1; deleatat!(branch.ele, super_ele.ix_ele+1:super_ele.ix_ele+n_ele-1); end
 
       index_and_s_bookkeeper!(branch)
-      return 
+      continue 
     end
 
     # Here if a super_lord element needs to be constructed.
@@ -184,7 +217,6 @@ function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLo
     index_and_s_bookkeeper!(sbranch)
 
     for ele in Region(ele1, ele2, false)
-      println("$(ele.name)   $(ele.ix_ele)")
       if ele.L == 0; continue; end
       ix_ele = ele.ix_ele
 
@@ -228,5 +260,5 @@ function superimpose!(super_ele::Ele, ref::Union{Ele,Branch}; ele_origin::BodyLo
       set_super_slave_names!(lord)
     end
 
-  end   # for refele in collect(ref_ele)
+  end   # for this_ref in collect(ref)
 end

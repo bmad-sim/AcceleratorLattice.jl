@@ -92,8 +92,7 @@ end
 # split!
 
 """
-    split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near::Ele = NULL_ELE)
-    split!(branch::Branch, s_split::Real; choose_downstream::Bool = true, ele_near::Ele = NULL_ELE)
+    split!(branch::Branch, s_split::Real; choose::StreamLocationSwitch = upstream_end, ele_near::Ele = NULL_ELE)
 
 Routine to split an lattice element of a branch into two to create a branch that has an element
 boundary at the point s = `s_split`. 
@@ -111,11 +110,13 @@ than 2*`LatticeGlobal.significant_length`.
 ### Input
 - `branch`            -- Lattice branch
 - `s_split`           -- Position at which branch is to be split.
-- `choose_downstream` -- logical, optional: If no splitting of an element is needed, that is, 
-  `s_split` is at an element boundary, there can be multiple possible split points if there exist zero 
-  length elements at the split point. If `choose_downstream` = true, the split will be chosen to be 
-  at the maximal downstream location. If `choose_downstream` = false the split will be chosen to be the 
-  upstream location. If `s_split` is not at an element boundary, the setting of `choose_downstream` is immaterial.
+- `choose`            -- logical, optional: If no splitting of an element is needed, that is, 
+  `s_split` is at an element boundary, there can be multiple possible `ele_split` elements to
+  return if there exist zero length elements at the split location. 
+  If `choose` = `downstream_end`, the returned `ele_split` element will be chosen to be 
+  at the maximal downstream element. If `choose` = `upstream_end`, the returned `ele_split` element
+  will be chosen to be the maximal upstream location. 
+  If `s_split` is not at an element boundary, the setting of `choose` is immaterial.
 - `ele_near`          -- Element near the point to be split. `ele_near` is useful in the case where
   there is a patch with a negative length which can create an ambiguity as to where to do the split
   In this case `ele_near` will remove the ambiguity. Also useful to ensure where to split if there
@@ -126,17 +127,18 @@ than 2*`LatticeGlobal.significant_length`.
 - `split_done`    -- true if lat was split, false otherwise.
 """ split!(branch::Branch)
 
-function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near::Ele = NULL_ELE)
+function split!(branch::Branch, s_split::Real; choose::StreamLocationSwitch = upstream_end, ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s_split)
-  slave1 = ele_at_s(branch, s_split, choose_downstream, ele_near = ele_near)
+  if choose != upstream_end && choose != downstream_end; error("Bad `choose` argument: $choose"); end 
+  slave1 = ele_at_s(branch, s_split, choose = choose, ele_near = ele_near)
 
   # Make sure split does create an element that is less than min_len in length.
   min_len = min_ele_length(branch.lat)
-  if !choose_downstream && slave1.s > s_split-min_len
-    slave1 = ele_at_s(branch, slave1.s, true)
+  if choose == upstream_end && slave1.s > s_split-min_len
+    slave1 = ele_at_s(branch, slave1.s, choose = downstream_end)
     s_split = slave1.s_downstream
-  elseif choose_downstream && slave1.s_downstream < s_split+min_len
-    slave1 = ele_at_s(branch, slave1.s_downstream, true)
+  elseif choose == downstream_end && slave1.s_downstream < s_split+min_len
+    slave1 = ele_at_s(branch, slave1.s_downstream, choose = downstream_end)
     s_split = slave1.s
   end
 
@@ -230,10 +232,6 @@ function split!(branch::Branch, s_split::Real, choose_downstream::Bool; ele_near
   set_super_slave_names!(lord)
 
   return slave2, true
-end
-
-function split!(branch::Branch, s_split::Real; choose_downstream::Bool = true, ele_near::Ele = NULL_ELE)
-  return split!(branch, s_split, choose_downstream; ele_near = ele_near)
 end
 
 #---------------------------------------------------------------------------------------------------

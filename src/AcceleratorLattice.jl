@@ -10,10 +10,11 @@ module AcceleratorLattice
   using PyFormattedStrings
   using Accessors
   using LinearAlgebra
-  using Rotations
+  using ReferenceFrameRotations
 
   import Base.Cartesian.lreplace
 
+  include("enum.jl")
   include("core.jl")
   include("quaternion.jl")
   include("AtomicAndPhysicalConstants.jl")
@@ -39,7 +40,6 @@ module AcceleratorLattice
 
   # Note! Element types are exported automatically when constructed
 
-  export QuatRotation, QuatN, Quat64
   export memloc, beamline, @ele, @eles, @construct_ele_type, expand, ele_name, show_name, show_ele
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!, set_param!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
