@@ -39,8 +39,8 @@ BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.pdict))
 # beamline
 
 """
-    beamline(name::AbstractString, line::Vector{T}; kwargs...)
-    beamline(line::Vector{T}; kwargs...)
+    beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
+    beamline(line::Vector{T}; kwargs...) where T <: BeamLineItem
 
 Creates a `beamline` from a vector of `BeamLineItem`s.
 
@@ -234,36 +234,34 @@ end
 # new_tracking_branch!
 
 """
-    Internal: new_tracking_branch!(lat::Lat, beamline::BeamLine)
+    Internal: new_tracking_branch!(lat::Lat, beamline::Union{BeamLine, Tuple})
 
 Adds a `BeamLine` to the lattice creating a new `Branch`.
 
 Used by the `expand` function.
 """ new_tracking_branch!
 
-function new_tracking_branch!(lat::Lat, beamline::BeamLine)
-  if typeof(beamline) == Tuple{BeginningEle, BeamLine}
-    beginning_ele = beamline[2]
-    beamline = beamline[2]
-    insert!(beamline.line, 1, beginning_ele)
+function new_tracking_branch!(lat::Lat, bline::Union{BeamLine, Tuple})
+  if typeof(bline) == Tuple{BeginningEle, BeamLine}
+    bline = beamline(bline[2].name, [bline[1], bline[2]])
   end
 
-  push!(lat.branch, Branch(beamline.name, Vector{Ele}(), Dict{Symbol,Any}(:geometry => beamline.pdict[:geometry])))
+  push!(lat.branch, Branch(bline.name, Vector{Ele}(), Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
   branch = lat.branch[end]
   branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = TrackingBranch
   if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
-  info = LatConstructionInfo([], beamline.pdict[:orientation], 0)
+  info = LatConstructionInfo([], bline.pdict[:orientation], 0)
 
-  if haskey(beamline.pdict, :species_ref); branch.ele[1].species_ref = beamline.pdict[:species_ref]; end
-  if haskey(beamline.pdict, :pc_ref);      branch.ele[1].pc_ref      = beamline.pdict[:pc_ref]; end
-  if haskey(beamline.pdict, :E_tot_ref);   branch.ele[1].E_tot_ref   = beamline.pdict[:E_tot_ref]; end
+  if haskey(bline.pdict, :species_ref); branch.ele[1].species_ref = bline.pdict[:species_ref]; end
+  if haskey(bline.pdict, :pc_ref);      branch.ele[1].pc_ref      = bline.pdict[:pc_ref]; end
+  if haskey(bline.pdict, :E_tot_ref);   branch.ele[1].E_tot_ref   = bline.pdict[:E_tot_ref]; end
 
-  add_beamline_line_to_branch!(branch, beamline, info)
+  add_beamline_line_to_branch!(branch, bline, info)
 
-  if haskey(beamline.pdict, :end_ele)
-    add_beamline_ele_to_branch!(branch, BeamLineItem(beamline.pdict[:end_ele]))
+  if haskey(bline.pdict, :end_ele)
+    add_beamline_ele_to_branch!(branch, BeamLineItem(bline.pdict[:end_ele]))
   else
     @ele end_ele = Marker()
     add_beamline_ele_to_branch!(branch, BeamLineItem(end_ele))
@@ -289,7 +287,7 @@ end
 # expand
 
 """
-    expand(name::AbstractString, root_line::Union{BeamLine,Vector{Any}})
+    expand(name::AbstractString, root_line::Union{BeamLine,Vector})
     expand(root_line::Union{BeamLine,Vector{BeamLine}})
 
 Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
@@ -306,7 +304,7 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 """ expand
 
-function expand(name::AbstractString, root_line::Union{BeamLine,Vector{Any}}) 
+function expand(name::AbstractString, root_line::Union{BeamLine,Vector}) 
   lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
   
   if root_line isa BeamLine

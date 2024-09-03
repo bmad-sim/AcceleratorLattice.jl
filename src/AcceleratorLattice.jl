@@ -45,7 +45,7 @@ module AcceleratorLattice
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, LatEleLocation, ele_at_s, add_governor!
-  export find_ele, find_eles, next_ele, ele_at_index
+  export eles, next_ele, ele_at_index
   export branch, matches_branch, param_groups_list, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup, SolenoidGroup
@@ -57,5 +57,5 @@ module AcceleratorLattice
   export struct_sym_to_user_sym, multipole!, index, integer, quat_angles
   export machine_location, body_location, EleRegion, multipole_param_info
   export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
-
+  export str_split, str_match, str_unquote, str_quote, str_to_int
 end # module

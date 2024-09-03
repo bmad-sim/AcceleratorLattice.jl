@@ -36,7 +36,7 @@ function propagate_ele_geometry(::Type{Circular}, fstart::FloorPositionGroup, el
   bend::BendGroup = ele.BendGroup
   (r_trans, q_trans) = ele_floor_transform(bend, ele.L)
   r_floor = fstart.r + rot(fstart.q, r_trans)
-  q_floor = rot(fstart.q, q_trans)
+  q_floor = fstart.q * q_trans
   return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart)...)
 end
 
@@ -62,11 +62,11 @@ Returns the (dr, dq) transformation between the beginning of a bend and the end 
 
 The transformation is
   r_end = r_start + rot(q_start, dr)
-  q_end = rot(q_start, dq)
+  q_end = q_start * dq)
 """ ele_floor_transform
 
 function ele_floor_transform(bend::BendGroup, L)
-  qa = Quaternion(RotY(bend.angle))
+  qa = RotY(bend.angle)
   r_vec = [-L * sinc(bend.angle/(2*pi)) * sin(bend.angle), 0.0, L * sinc(bend.angle/pi)]
   if bend.ref_tilt == 0; return (r_vec, qa); end
 
@@ -105,7 +105,7 @@ Input:
 """ floor_angles
 
 function floor_angles(q::Quaternion, f0::FloorPositionGroup = FloorPositionGroup())
-  m = RotMatrix(q)
+  m = quat_to_dcm(q)
   # Special case where cos(phi) is close to zero.
   if abs(m[1,3]) + abs(m[3,3]) < 1e-12
     # Only theta +/- pis is well defined here so this is rather arbitrary.

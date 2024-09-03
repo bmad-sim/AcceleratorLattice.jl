@@ -19,10 +19,10 @@ lat = expand([ln1]);
 
 #---------------------------------------------------------------------------------------------------
 
-superimpose!(zs1, find_eles(lat, "d1"), offset = 0.2);
-superimpose!(zm1, find_eles(lat, "m1"), ref_origin = entrance_end);
-superimpose!(zm2, find_eles(lat, "m1"), ref_origin = b_center);
-superimpose!(zm3, find_eles(lat, "m1"), ref_origin = exit_end);
+superimpose!(zs1, eles(lat, "d1"), offset = 0.2);
+superimpose!(zm1, eles(lat, "m1"), ref_origin = entrance_end);
+superimpose!(zm2, eles(lat, "m1"), ref_origin = b_center);
+superimpose!(zm3, eles(lat, "m1"), ref_origin = exit_end);
 
 @testset "Superimpose" begin
   @test ele_at_s(lat.branch[1], 0.3, true).ix_ele == 1
