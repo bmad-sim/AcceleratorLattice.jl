@@ -2,7 +2,7 @@
 # machine_location
 
 """
-    machine_location(loc::BodyLocationSwitch, orientation::Int) -> StreamLocationSwitch
+    machine_location(loc::BodyLocation, orientation::Int) -> StreamLocation
 
 Given a location with respect to an element's `local` orientation and the element's `orientation`,
 return the equivalent location in machine coordinates.
@@ -12,23 +12,23 @@ The reverse function is body_location.
 ### Input
 
  - `loc`          Location with respect to an element's `local` orientation.
-                     Possible values: `entrance_end`, `b_center`, or `exit_end`
+                     Possible values: `ENTRANCE_END`, `B_CENTER`, or `EXIT_END`
  - `orientation`  Element orientation. Possible values: -1 or +1.
 
 ### Output
 
- - Returns: `upstream_end`, `center`, or `downstream_end` (a `StreamLocationSwitch` value).
+ - Returns: `UPSTREAM_END`, `CENTER`, or `DOWNSTREAM_END` (a `StreamLocation` value).
 """ machine_location
 
-function machine_location(loc::BodyLocationSwitch, orientation::Int)
-  if loc == b_center; return center; end
+function machine_location(loc::BodyLocation, orientation::Int)
+  if loc == B_CENTER; return CENTER; end
 
-  if loc == entrance_end
-    orientation == 1 ? (return upstream_end) : return downstream_end
-  elseif loc == exit_end
-    orientation == 1 ? (return downstream_end) : return upstream_end
+  if loc == ENTRANCE_END
+    orientation == 1 ? (return UPSTREAM_END) : return DOWNSTREAM_END
+  elseif loc == EXIT_END
+    orientation == 1 ? (return DOWNSTREAM_END) : return UPSTREAM_END
   else
-    error(f"loc argument values limited to `entrance_end`, `b_center`,  or `exit_end`. Not: {loc}")
+    error(f"loc argument values limited to `ENTRANCE_END`, `B_CENTER`,  or `EXIT_END`. Not: {loc}")
   end
 end
 
@@ -36,7 +36,7 @@ end
 # body_location
 
 """
-    body_location(loc::StreamLocationSwitch, orientation::Int) -> BodyLocationSwitch
+    body_location(loc::StreamLocation, orientation::Int) -> BodyLocation
 
 Given an element location with respect to machine coordinates,
 along with the element's orientation with respect to machine coordinates, 
@@ -46,21 +46,21 @@ The reverse function is machine_location.
 
 ### Input
 
- - `loc`          Possible values: `upstream_end`, `b_center`, or `downstream_end` .
+ - `loc`          Possible values: `UPSTREAM_END`, `B_CENTER`, or `DOWNSTREAM_END` .
  - `orientation`  Possible values: -1 or +1.
 
 ### Output
 
- - Returns: `entranc_end`, `b_center`, `exit_end`.
+ - Returns: `entranc_end`, `B_CENTER`, `EXIT_END`.
 """ body_location
 
-function body_location(loc::StreamLocationSwitch, orientation::Int)
-  if loc == center; return b_enter; end
+function body_location(loc::StreamLocation, orientation::Int)
+  if loc == CENTER; return b_enter; end
 
-  if loc == upstream_end
-    orientation == 1 ? (return entrance_end) : return exit_end
-  elseif loc == downstream_end
-    orientation == 1 ? (return exit_end) : return entrance_end
+  if loc == UPSTREAM_END
+    orientation == 1 ? (return ENTRANCE_END) : return EXIT_END
+  elseif loc == DOWNSTREAM_END
+    orientation == 1 ? (return EXIT_END) : return ENTRANCE_END
   else
     error(f"ConfusedError: Should not be here! Please report this!")
   end

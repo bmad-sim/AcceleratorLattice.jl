@@ -278,7 +278,7 @@ A positive `t_offset` shifts the waveform in the positive time direction.
 end
 
 @kwdef mutable struct AmpVsTimeGroup <: EleParameterGroup
-  interpolation::InterpolationSwitch = spline     # Interpolation method between points.
+  interpolation::Interpolation = spline     # Interpolation method between points.
   t_offset::Number = 0                            # Time offset of the waveform.
   point::Vector{AmpPoint} = Vector{AmpPoint}()    # Waveform points.
 end
@@ -319,8 +319,8 @@ Vacuum chamber aperture struct.
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
   x_limit::Vector = [NaN, NaN]
   y_limit::Vector = [NaN, NaN]
-  aperture_type::ApertureTypeSwitch = elliptical
-  aperture_at::BodyLocationSwitch = entrance_end
+  aperture_type::ApertureType = elliptical
+  aperture_at::BodyLocation = ENTRANCE_END
   offset_moves_aperture::Bool = true
 end
 
@@ -344,7 +344,7 @@ end
 
 @kwdef mutable struct BeamBeamGroup <: EleParameterGroup
   n_slice::Number = 1
-  z0_crossing::Number = 0       # Weak particle phase space z when strong beam center passes
+  z0_crossing::Number = 0       # Weak particle phase space z when strong beam CENTER passes
                                 #   the BeamBeam element.
   repetition_freq:: Number = 0  # Strong beam repetition rate.
   twiss::Twiss = Twiss()        # Strong beam Twiss.
@@ -368,7 +368,7 @@ Whether `bend_field` or `g` is held constant when the reference energy is varied
 determined by the `field_master` setting in the MasterGroup struct.
 """
 @kwdef mutable struct BendGroup <: EleParameterGroup
-  bend_type::BendTypeSwitch = sbend    # Is e or e_rect fixed? Also is len or len_chord fixed?
+  bend_type::BendType = sbend    # Is e or e_rect fixed? Also is len or len_chord fixed?
   angle::Number = 0.0
   rho::Number = Inf
   g::Number = 0.0                # Note: Old Bmad dg -> K0.
@@ -478,7 +478,7 @@ Girder parameter struct.
 """
 @kwdef mutable struct GirderGroup <: EleParameterGroup
   origin_ele::Ele = NullEle
-  origin_ele_ref_pt::StreamLocationSwitch = center
+  origin_ele_ref_pt::StreamLocation = CENTER
   dr::Vector = [0.0, 0.0, 0.0]
   dtheta::Number = 0.0
   dphi::Number = 0.0
@@ -543,8 +543,8 @@ end
 # LordSlaveGroup
 
 @kwdef mutable struct LordSlaveGroup <: EleParameterGroup
-  lord_status::LordStatusSwitch = not_a_lord
-  slave_status::SlaveStatusSwitch = not_a_slave
+  lord_status::LordStatus = NOT_A_LORD
+  slave_status::SlaveStatus = NOT_A_SLAVE
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -584,7 +584,7 @@ Patch element parameters.
   pc_exit::Number = NaN                       # Reference momentum at exit end
   flexible::Bool = false
   user_sets_length::Bool = false
-  ref_coords::BodyLocationSwitch = exit_end
+  ref_coords::BodyLocation = EXIT_END
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -623,7 +623,7 @@ See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
   multipass_phase::Number = 0.0
   frequency::Number = 0.0
   harmon::Number = 0.0
-  cavity_type::CavityTypeSwitch = standing_wave
+  cavity_type::CavityType = STANDING_WAVE
   n_cell::Int   = 1
 end
 
@@ -701,7 +701,7 @@ Sets the nominal values for tracking prameters.
 
 @kwdef mutable struct TrackingGroup <: EleParameterGroup
   tracking_method::TrackingMethodSwitch = standard_tracking
-  field_calc::FieldCalcMethodSwitch = field_standard
+  field_calc::FieldCalcMethod = FIELD_STANDARD
   num_steps::Int   = -1
   ds_step::Number = NaN
 end
@@ -796,7 +796,7 @@ abstract type ControlSlave end
   exp_str::String = ""
   exp_parsed = nothing
   value::Number = 0.0
-  type::ControlSlaveTypeSwitch = control_not_set
+  type::ControlSlaveType = CONTROL_NOT_SET
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -808,9 +808,9 @@ end
   slave_parameter = nothing
   x_knot::Vector = Vector()
   y_knot::Vector = Vector()
-  interpolation::InterpolationSwitch = spline
+  interpolation::Interpolation = spline
   value::Number = 0.0
-  type::ControlSlaveTypeSwitch = control_not_set
+  type::ControlSlaveType = CONTROL_NOT_SET
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -822,7 +822,7 @@ end
   slave_parameter = nothing
   func = nothing
   value::Number = 0.0
-  type::ControlSlaveTypeSwitch = control_not_set
+  type::ControlSlaveType = CONTROL_NOT_SET
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -843,12 +843,12 @@ end
 #---------------------------------------------------------------------------------------------------
 # ctrl
 
-function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, expr::AbstractString)
+function ctrl(type::ControlSlaveType, eles, parameter, expr::AbstractString)
   if typeof(eles) == String; eles = [eles]; end
   return ControlSlaveExpression(eles = eles, slave_parameter = parameter, exp_str = expr, type = type)
 end
 
-function ctrl(type::ControlSlaveTypeSwitch, eles, parameter, x_knot::Vector, 
+function ctrl(type::ControlSlaveType, eles, parameter, x_knot::Vector, 
                                                       y_knot::Vector, interpolation = Spline)
   if typeof(eles) == String; eles = [eles]; end
   return ControlSlaveKnot(eles = eles, slave_parameter = parameter, x_knot = x_knot, y_knot = y_knot, type = type)
