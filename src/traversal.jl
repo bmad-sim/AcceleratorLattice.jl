@@ -61,8 +61,8 @@ function Base.iterate(x::Region)
   x.start_ele.lord_status == super_lord ? start_ele = x.start_ele.slaves[1] : start_ele = x.start_ele
   x.end_ele.lord_status   == super_lord ? end_ele   = x.end_ele.slaves[1]   : end_ele   = x.end_ele
   if !(start_ele.branch === end_ele.branch); error("Start and end elements are not in the same branch"); end
-  if start_ele.lord_status != not_a_lord; error("Start element may not be a non-super_lord lord."); end
-  if end_ele.lord_status   != not_a_lord; error("End element may not be a non-super_lord lord."); end
+  if start_ele.lord_status != NOT_A_LORD; error("Start element may not be a non-super_lord lord."); end
+  if end_ele.lord_status   != NOT_A_LORD; error("End element may not be a non-super_lord lord."); end
   return (start_ele, start_ele)
 end
 
