@@ -105,7 +105,6 @@ function str_match(pattern::AbstractString, who::AbstractString)
   pattern = replace(pattern, "*" => ".*", "%" => ".")
   pattern = replace(pattern, "sTaR" => "\\*", "pErCeNt" => "\\%")
   re = Regex("^" * pattern * "\$")
-  println(string(re))
   return !isnothing(match(re, who))
 end
 

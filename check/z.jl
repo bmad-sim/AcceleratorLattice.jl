@@ -11,9 +11,9 @@ lat = expand("lat", zline);
 
 show(lat)
 
-ref_ele = find_ele(lat, "dd");
+ref_ele = eles(lat, "dd")[1];
 superimpose!(ss, ref_ele, offset = 0.2);
-#ref_ele = find_ele(lat, "ss");
+#ref_ele = eles(lat, "ss")[1];
 #superimpose!(zz, [ref_ele], offset = 0.2);
 
 show(lat)

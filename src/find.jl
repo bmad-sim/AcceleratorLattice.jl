@@ -2,9 +2,10 @@
 # ele_at_index
 
 """
-    ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true)  -> ::Ele
+    ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true, ele0::Ele = NULL_ELE)  -> ele::Ele
 
 Returns element with index `ix_ele` in branch `branch`.
+If `ele0` is not `NULL_ELE`, `ix_ele` will be offset by `ele0.ix_ele`.
 
 With `wrap` = `false`, an error is raised if `ix_ele` is out-of-bounds.
 
@@ -13,7 +14,9 @@ for a branch with `N` elements,
 `ix_ele = N+1` will return `branch.ele[1]` and `ix_ele = 0` will return `branch.ele[N]`.
 """ ele_at_index
 
-function ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true)
+function ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true, ele0::Ele = NULL_ELE)
+  if ele0 != NULL_ELE; ix_ele = ix_ele + ele0.ix_ele; end
+
   n = length(branch.ele)
 
   if wrap
@@ -29,42 +32,38 @@ function ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true)
 end
 
 #---------------------------------------------------------------------------------------------------
-# find_ele_base
+# eles_base
 
 """
-    function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
+    Internal: function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex})
 
-Returns a vector of all lattice elements that match element `name` which is in the form:
-  {branch_id>>}ele_id{#N}{+/-offset}
-or
-  {branch_id>>}attribute->match_str{+/-offset}
+Internal. Called by `eles` function.
+""" eles_base
 
-To match to element lists, use the `eles` function.
-""" find_ele_base
-
-function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
-  julia_regex = (typeof(name) == Regex)
-  name = string(name)
+function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex})
+  julia_regex = (typeof(who) == Regex)
+  who = string(who)
+  typeof(where_search) == Lat ? branch_vec = where_search.branch : branch_vec = [where_search]
 
   eles = Ele[]
-  if !julia_regex; name = replace(name, "'" => "\""); end
+  if !julia_regex; who = replace(who, "'" => "\""); end
 
   branch_id = ""; offset = 0
   nth_match = -1
 
-  if occursin(">>", name); branch_id, name = split(name, ">>"); end
+  if occursin(">>", who); branch_id, who = split(who, ">>"); end
 
   # attrib->pattern construct
-  if occursin("->", name)
-    attrib, pattern = split(name, "->")
+  if occursin("->", who)
+    attrib, pattern = split(who, "->")
     attrib = Meta.parse(attrib)     # Makes attrib a Symbol
 
     words = str_split(pattern, "+-")
-    if length(words) == 2 || length(words) > 3; error(f"ParseError: Bad lattice element name: {name}"); end
+    if length(words) == 2 || length(words) > 3; error(f"ParseError: Bad lattice element name: {who}"); end
     pattern = str_unquote(words[1])
     if length(words) == 3; offset = parse(Int, words[2]*words[3]); end
 
-    for branch in lat.branch
+    for branch in branch_vec
       if !matches_branch(branch, branch_id); continue; end
       for ele in branch.ele
         if !haskey(ele.pdict, attrib); continue; end
@@ -76,44 +75,51 @@ function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
       end
     end
 
-  # ele_id construct
+  # ele_id or key::ele_id construct
   else
+    key = nothing
+    if occursin("::", who)
+      key, who = split(who, "::")
+      key = Symbol(key)
+    end
+
     ix_ele = -1
     if !julia_regex
-      words = str_split(name, "+-#", doubleup = true);
+      words = str_split(who, "+-#", doubleup = true)   # EG: ["Marker::*", "-", "1"]
 
       if length(words) > 2 && occursin(words[end-1], "+-")
         offset = parse(Int, words[end-1]*words[end])
-        words = words[:end-2]
+        words = words[1:end-2]
       end
 
       if length(words) > 2 && words[end-1] == "#"
         nth_match = parse(Int, words[end])
-        words = words[:end-2]
+        words = words[1:end-2]
       end
 
-      if length(words) != 1; error(f"ParseError: Bad lattice element name: {name}"); end
+      if length(words) != 1; error(f"ParseError: Bad lattice element name: {who}"); end
       ele_id = words[1]
       ix_ele = str_to_int(ele_id, -1)
-      if ix_ele != NaN && nth_match != -1; return eles; end
+      if ix_ele != -1 && nth_match != -1; return eles; end
     end
 
-    for branch in lat.branch
+    for branch in branch_vec
       if !matches_branch(branch_id, branch); continue; end
       if ix_ele != -1
-        push!(eles, ele(branch, ix_ele, wrap = false))
+        push!(eles, ele_at_index(branch, ix_ele+offset, wrap = false))
         continue
       end
 
       ix_match = 0
       for ele in branch.ele
         if julia_regex
-          if match(ele_id, ele.name); push!(eles, ele); end
+          if match(ele_id, ele.who); push!(eles, ele); end
         else
+          if !isnothing(key) && Symbol(typeof(ele)) != key; continue; end
           if !str_match(ele_id, ele.name); continue; end
           ix_match += 1
           if nth_match != -1 && ix_match > nth_match; continue; end
-          if ix_match == nth_match || nth_match == -1; push!(eles, ele); end
+          if ix_match == nth_match || nth_match == -1; push!(eles, ele_at_index(branch, offset, ele0=ele)); end
         end
       end
     end   # branch loop
@@ -123,37 +129,36 @@ function find_ele_base(lat::Lat, name::Union{AbstractString,Regex})
 end
 
 #---------------------------------------------------------------------------------------------------
-# find_eles
+# eles
 
 """
-    function find_eles(lat::Lat, who::Union{AbstractString,Regex})
+    function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}) -> [ele-array]
 
-Returns a vector of all lattice elements that match `who`.
-This is an extension of `ele(lat, name)` to include 
+Returns a vector of all elements that match `who`.
+
+# 
+
+
+Returns a vector of all lattice elements that match element `who` which is in the form:
+  `{branch_id>>}{key::}ele_id{#N}{+/-offset}`
+or
+  `{branch_id>>}attribute->match_str{+/-offset}`
+where `attribute` is something like `alias`, `description`, `type`, or any custom field.
+
   key selection EG: "Quadrupole::<list>"
   ranges        EG: "<ele1>:<ele2>"
   negation      EG: "<list1> ~<list2>"
   intersection  EG: "<list1> & <list2>"
 Note: negation and intersection evaluated left to right
 
-ele vector will be ordered by s-position for each branch.
+### Input
 
-Also see `find_ele`
-
-Note: For something like `who` = `"quad::*"`, if order_by_index = True, the eles(:) array will
-be ordered by element index. If order_by_index = False, the eles(:) array will be ordered by
-s-position. This is the same as order by index except in the case where where there are super_lord elements. 
-Since super_lord elements always have a greater index (at least in branch 0), order by index will 
-place any super_lord elements at the end of the list.
-
-Note: When there are multiple element names in loc_str (which will be separated by a comma or blank), 
-the elements in the eles(:) array will be in the same order as they appear loc_str. For example,
-with who = "quad::*,sbend::*", all the quadrupoles will appear in eles(:) before all of the sbends.
-""" find_eles
-
-function find_eles(lat::Lat, who::Union{AbstractString,Regex})
+- `where_search` `Lat` or `Branch` to search.
+- `who` `String` or `Regex` to use in the search.
+""" 
+function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex})
   # Julia regex is simple
-  if typeof(who) == Regex; return find_ele_base(lat, who); end
+  if typeof(who) == Regex; return eles_base(where_search, who); end
 
   # Intersection
   list = str_split(who, "~&", limit = 3)
@@ -162,10 +167,10 @@ function find_eles(lat::Lat, who::Union{AbstractString,Regex})
     error(f"ParseError: Cannot parse: {who}")
   end
 
-  eles1 = find_ele_base(lat, list[1])
+  eles1 = eles_base(where_search, list[1])
   if length(list) == 1; return eles1; end
 
-  eles2 = find_eles(lat, list[3])
+  eles2 = eles(lat, list[3])
   eles = []
 
   if list[2] == "&"
@@ -188,30 +193,6 @@ function find_eles(lat::Lat, who::Union{AbstractString,Regex})
   end
 
   return eles
-end
-
-#---------------------------------------------------------------------------------------------------
-# find_ele
-
-"""
-    function find_ele(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
-
-Returns element specified by `who`. 
-
-- `default`   Value to return if the number of elements matching `who` is not one. 
-If the value of `default` is `missing`, an error is thrown. 
-""" find_ele
-
-function find_ele(lat::Lat, who::Union{AbstractString,Regex}; default = NULL_ELE)
-  eles = find_eles(lat, who)
-  if length(eles) == 1; return eles[1]; end
-  if (ismissing(default))
-    if length(eles) == 0
-      error(f"Cannot find: {who} in lattice")
-    else
-      error(f"FindError: More than one element matches: {who} in lattice")
-    end
-  end
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -245,13 +226,12 @@ end
     ele_at_s(branch::Branch, s::Real; choose::StreamLocationSwitch = upstream_end, ele_near::ELE = NULL_ELE) 
                                                                           -> ele_overlap::Ele
 
-Returns lattice element that overlaps a given longitudinal s-position. That is, `s` will be in the
-half-open interval `[ele.s, ele.s_downstream)` (or the point `ele.s` if `ele` has zero length) where 
-`ele` is the returned element.
+Returns lattice element `ele_overlap` that overlaps a given longitudinal s-position. 
+That is, `s` will be in the interval `[ele_overlap.s, ele_overlap.s_downstream]`.
 
 ## Input
 
- - `branch`     Branch to search.
+ - `branch`     Lattice `Branch` to search.
  - `s`          Longitudinal position to match to.
  - `choose`     If there is a choice of elements, which can happen if `s` corresponds to a boundary
                 point between two elements, `choose` is used to pick either the `upstream_end` 

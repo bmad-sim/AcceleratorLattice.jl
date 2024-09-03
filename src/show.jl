@@ -557,20 +557,18 @@ function Base.show(io::IO, bl::BeamLine)
     end
   end
 
-  out = []
-
   for (ix, item) in enumerate(bl.line)
     orient = ""
     if item.pdict[:orientation] == -1; orient = "orientation = -1"; end
 
     if item isa BeamLineEle
-      push!(out, f"{ix:5i}  {rpad(str_quote(item.ele.name), n+2)}  {rpad(typeof(item.ele), 20)}  {orient}\n")
+      out = f"{ix:5i}  {rpad(str_quote(item.ele.name), n+2)}  {rpad(typeof(item.ele), 20)}  {orient}"
     else  # BeamLine
-      push!(out, f"{ix:5i}  {rpad(str_quote(item.name), n+2)}  {rpad(typeof(item), 20)}  {orient}\n")
+      out = f"{ix:5i}  {rpad(str_quote(item.name), n+2)}  {rpad(typeof(item), 20)}  {orient}"
     end
+    println(io, out)
   end
 
-  println(io, out)
   return nothing
 end
 

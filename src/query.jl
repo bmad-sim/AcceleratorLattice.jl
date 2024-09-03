@@ -124,8 +124,8 @@ end
 # check_if_s_in_branch_range
 
 function check_if_s_in_branch_range(branch::Branch, s::Real)
-  if s < branch.ele[1].s || s > branch.ele[end].s
-    error(f"RangeError: s-position ({s}) out of range [{branch.ele[1].s}], for branch ({branch.name})")
+  if s < branch.ele[1].s || s > branch.ele[end].s_downstream
+    error("RangeError: s-position ($s) out of range [$(branch.ele[1].s), $(branch.ele[end].s_downstream)], for branch ($(branch.name))")
   end
 end
 

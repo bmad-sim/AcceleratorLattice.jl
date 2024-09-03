@@ -190,8 +190,7 @@ end
 """
 NullEle lattice element type used to indicate the absence of any valid element.
 `NULL_ELE` is a const NullEle element with `name` set to "null" that can be used for coding.
-""" NULL_ELE
-
+"""
 const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL_ELE"))
 
 #---------------------------------------------------------------------------------------------------
@@ -914,7 +913,7 @@ Each Lat will store a `LatticeGlobal` in `Lat.pdict[:LatticeGlobal]`.
 """ LatticeGlobal
 
 mutable struct LatticeGlobal
-  significant_length::Number
+  significant_length::Float64
   pdict::Dict{Symbol,Any}
 end
 
@@ -935,7 +934,7 @@ abstract type AbstractLat end
 
 Lattice structure.
 
-### Components:
+## Components:
 -  `name::String`
 -  `branch::Vector{Branch}`
 -  `pdict::Dict{Symbol,Any}`
