@@ -700,7 +700,7 @@ Sets the nominal values for tracking prameters.
 """ TrackingGroup
 
 @kwdef mutable struct TrackingGroup <: EleParameterGroup
-  tracking_method::TrackingMethodSwitch = standard_tracking
+  tracking_method::TrackingMethod = STANDARD_TRACKING
   field_calc::FieldCalcMethod = FIELD_STANDARD
   num_steps::Int   = -1
   ds_step::Number = NaN
