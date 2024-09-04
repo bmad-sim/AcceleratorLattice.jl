@@ -2,8 +2,8 @@
 # superimpose!
 
 """
-    function superimpose!(super_ele::Ele, ref; ele_origin::BodyLocation = B_CENTER, 
-                          offset::Real = 0, ref_origin::BodyLocation = B_CENTER, 
+    function superimpose!(super_ele::Ele, ref; ele_origin::BodyLoc.T = BodyLoc.StreamLoc.CENTER, 
+                          offset::Real = 0, ref_origin::BodyLoc.T = BodyLoc.StreamLoc.CENTER, 
                           wrap::Bool = true) where T <: Union{Branch, Ele, Vector{Branch}, Vector{Ele}}
 
 Superimpose a copy (or copies) of the element `super_ele` on a lattice. 
@@ -33,10 +33,10 @@ downstream edge after the branch start edge. If `wrap` = false, extend the latti
 
 
 ### Notes
-- Valid `BodyLocation` values are:
-  - ENTRANCE_END
-  - B_CENTER
-  - EXIT_END
+- Valid `BodyLoc.T` values are:
+  - BodyLoc.ENTRANCE_END
+  - BodyLoc.StreamLoc.CENTER
+  - BodyLoc.EXIT_END
 
 - Zero length elements in the superposition region will be left alone.
 
@@ -48,14 +48,14 @@ Thus, a positive `offset` will displace the superposition location downstream if
 a normal orientation and vice versa for a reversed orientation.
 
 - When `offset` = 0, for zero length `super_ele` elements the superposition location is at the 
-entrance end of `ref` except if `ref_origin` is set to `DOWNSTREAM_END` in which case the 
+entrance end of `ref` except if `ref_origin` is set to `StreamLoc.DOWNSTREAM_END` in which case the 
 superposition location is at the exit end of `ref`.
 
 - The superimposed element will inherit the orientation of the `ref` element.
 """ superimpose!
 
-function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLocation = B_CENTER, 
-                      offset::Real = 0, ref_origin::BodyLocation = B_CENTER, 
+function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.StreamLoc.CENTER, 
+                      offset::Real = 0, ref_origin::BodyLoc.T = BodyLoc.StreamLoc.CENTER, 
                       wrap::Bool = true) where {E <: Ele, T <: Union{Branch, Ele, Vector{Branch}, Vector{E}}}
   if typeof(ref) == Branch
     ref_ele = ref.ele[1]
@@ -87,11 +87,11 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLocation = B_CENTE
 
     # Insertion of zero length element with zero offset at edge of an element.
     if L_super == 0 && offset == 0 
-      if machine_ref_origin == UPSTREAM_END || (machine_ref_origin == CENTER && ref_ele.L == 0)
+      if machine_ref_origin == StreamLoc.UPSTREAM_END || (machine_ref_origin == StreamLoc.CENTER && ref_ele.L == 0)
         ix_insert = max(ref_ix_ele, 2)
         insert!(branch, ix_insert, super_ele)
         continue
-      elseif machine_ref_origin == DOWNSTREAM_END 
+      elseif machine_ref_origin == StreamLoc.DOWNSTREAM_END 
         ix_insert = min(ref_ix_ele+1, length(ref_ele.branch.ele))
         insert!(branch, ix_insert, super_ele)
         continue
@@ -100,19 +100,19 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLocation = B_CENTE
 
     # Super_ele end locations: s1 and s2.
     if branch.type <: LordBranch
-      if machine_ref_origin == UPSTREAM_END; s1 = ref_ele.slaves[1].s
-      elseif machine_ref_origin == CENTER;   s1 = 0.5 * (ref_ele.slaves[1].s + ref_ele.slaves[end].s_downstream)
+      if machine_ref_origin == StreamLoc.UPSTREAM_END; s1 = ref_ele.slaves[1].s
+      elseif machine_ref_origin == StreamLoc.CENTER;   s1 = 0.5 * (ref_ele.slaves[1].s + ref_ele.slaves[end].s_downstream)
       else;                                  s1 = ref_ele.slaves[end].s_downstream
       end
     else    # Not a lord branch
-      if machine_ref_origin == UPSTREAM_END; s1 = ref_ele.s
-      elseif machine_ref_origin == CENTER;   s1 = 0.5 * (ref_ele.s + ref_ele.s_downstream)
+      if machine_ref_origin == StreamLoc.UPSTREAM_END; s1 = ref_ele.s
+      elseif machine_ref_origin == StreamLoc.CENTER;   s1 = 0.5 * (ref_ele.s + ref_ele.s_downstream)
       else;                                  s1 = ref_ele.s_downstream
       end
     end
 
-    if machine_ele_origin == UPSTREAM_END; s1 = s1 + offset
-    elseif machine_ele_origin == CENTER;   s1 = s1 + offset - 0.5 * L_super
+    if machine_ele_origin == StreamLoc.UPSTREAM_END; s1 = s1 + offset
+    elseif machine_ele_origin == StreamLoc.CENTER;   s1 = s1 + offset - 0.5 * L_super
     else;                                  s1 = s1 + offset - L_super
     end
 
@@ -120,7 +120,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLocation = B_CENTE
 
     # If super_ele has zero length just insert it.
     if L_super == 0
-      machine_ref_origin == DOWNSTREAM_END ? choose = UPSTREAM_END : choose = DOWNSTREAM_END
+      machine_ref_origin == StreamLoc.DOWNSTREAM_END ? choose = StreamLoc.UPSTREAM_END : choose = StreamLoc.DOWNSTREAM_END
       ele_at, _ = split!(branch, s1, choose = choose, ele_near = ref_ele)
       insert!(branch, ele_at.ix_ele, super_ele)
       continue
@@ -149,8 +149,8 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLocation = B_CENTE
 
     # Split points are chosen to avoid creating elements with non-zero length below the minimum.
     # And super_lord length will be adjusted accordingly.
-    ele1 = ele_at_s(branch, s1, choose = UPSTREAM_END, ele_near = ref_ele)
-    ele2 = ele_at_s(branch, s2, choose = DOWNSTREAM_END, ele_near = ref_ele)
+    ele1 = ele_at_s(branch, s1, choose = StreamLoc.UPSTREAM_END, ele_near = ref_ele)
+    ele2 = ele_at_s(branch, s2, choose = StreamLoc.DOWNSTREAM_END, ele_near = ref_ele)
 
     min_len = min_ele_length(branch.lat)
 
@@ -173,8 +173,8 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLocation = B_CENTE
     # `choose` is set to minimize number of elements in the superposition region.
     # The superposition region is from beginning of ele1 to the beginning of ele2.
 
-    ele2, _ = split!(branch, s2, choose = UPSTREAM_END)  # Notice that s2 split must be done first!
-    ele1, _ = split!(branch, s1, choose = DOWNSTREAM_END)
+    ele2, _ = split!(branch, s2, choose = StreamLoc.UPSTREAM_END)  # Notice that s2 split must be done first!
+    ele1, _ = split!(branch, s1, choose = StreamLoc.DOWNSTREAM_END)
 
     # If there are just drifts here then no superimpose needed.
     # Note: In this case there cannot be wrap around.

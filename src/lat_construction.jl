@@ -53,7 +53,7 @@ Creates a `beamline` from a vector of `BeamLineItem`s.
 ### Notes
 
 Recognized beamline parameters:
-- `geometry`      Branch geometry. Can be: `open` (default) or `closed`.
+- `geometry`      Branch geometry. Can be: `BranchGeom.OPEN` (default) or `BranchGeom.CLOSED`.
 - `orientation`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
 - `multipass`     Multipass line? Default is `false`.
 All parameters are optional.

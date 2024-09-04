@@ -2,7 +2,7 @@
 # machine_location
 
 """
-    machine_location(loc::BodyLocation, orientation::Int) -> StreamLocation
+    machine_location(loc::BodyLoc.T, orientation::Int) -> StreamLoc.T
 
 Given a location with respect to an element's `local` orientation and the element's `orientation`,
 return the equivalent location in machine coordinates.
@@ -12,23 +12,23 @@ The reverse function is body_location.
 ### Input
 
  - `loc`          Location with respect to an element's `local` orientation.
-                     Possible values: `ENTRANCE_END`, `B_CENTER`, or `EXIT_END`
+                     Possible values: `BodyLoc.ENTRANCE_END`, `BodyLoc.StreamLoc.CENTER`, or `BodyLoc.EXIT_END`
  - `orientation`  Element orientation. Possible values: -1 or +1.
 
 ### Output
 
- - Returns: `UPSTREAM_END`, `CENTER`, or `DOWNSTREAM_END` (a `StreamLocation` value).
+ - Returns: `StreamLoc.UPSTREAM_END`, `StreamLoc.CENTER`, or `StreamLoc.DOWNSTREAM_END` (a `StreamLoc.T` value).
 """ machine_location
 
-function machine_location(loc::BodyLocation, orientation::Int)
-  if loc == B_CENTER; return CENTER; end
+function machine_location(loc::BodyLoc.T, orientation::Int)
+  if loc == BodyLoc.StreamLoc.CENTER; return StreamLoc.CENTER; end
 
-  if loc == ENTRANCE_END
-    orientation == 1 ? (return UPSTREAM_END) : return DOWNSTREAM_END
-  elseif loc == EXIT_END
-    orientation == 1 ? (return DOWNSTREAM_END) : return UPSTREAM_END
+  if loc == BodyLoc.ENTRANCE_END
+    orientation == 1 ? (return StreamLoc.UPSTREAM_END) : return StreamLoc.DOWNSTREAM_END
+  elseif loc == BodyLoc.EXIT_END
+    orientation == 1 ? (return StreamLoc.DOWNSTREAM_END) : return StreamLoc.UPSTREAM_END
   else
-    error(f"loc argument values limited to `ENTRANCE_END`, `B_CENTER`,  or `EXIT_END`. Not: {loc}")
+    error(f"loc argument values limited to `BodyLoc.ENTRANCE_END`, `BodyLoc.StreamLoc.CENTER`,  or `BodyLoc.EXIT_END`. Not: {loc}")
   end
 end
 
@@ -36,7 +36,7 @@ end
 # body_location
 
 """
-    body_location(loc::StreamLocation, orientation::Int) -> BodyLocation
+    body_location(loc::StreamLoc.T, orientation::Int) -> BodyLoc.T
 
 Given an element location with respect to machine coordinates,
 along with the element's orientation with respect to machine coordinates, 
@@ -46,21 +46,21 @@ The reverse function is machine_location.
 
 ### Input
 
- - `loc`          Possible values: `UPSTREAM_END`, `B_CENTER`, or `DOWNSTREAM_END` .
+ - `loc`          Possible values: `StreamLoc.UPSTREAM_END`, `BodyLoc.StreamLoc.CENTER`, or `StreamLoc.DOWNSTREAM_END` .
  - `orientation`  Possible values: -1 or +1.
 
 ### Output
 
- - Returns: `entranc_end`, `B_CENTER`, `EXIT_END`.
+ - Returns: `entranc_end`, `BodyLoc.StreamLoc.CENTER`, `BodyLoc.EXIT_END`.
 """ body_location
 
-function body_location(loc::StreamLocation, orientation::Int)
-  if loc == CENTER; return b_enter; end
+function body_location(loc::StreamLoc.T, orientation::Int)
+  if loc == StreamLoc.CENTER; return b_enter; end
 
-  if loc == UPSTREAM_END
-    orientation == 1 ? (return ENTRANCE_END) : return EXIT_END
-  elseif loc == DOWNSTREAM_END
-    orientation == 1 ? (return EXIT_END) : return ENTRANCE_END
+  if loc == StreamLoc.UPSTREAM_END
+    orientation == 1 ? (return BodyLoc.ENTRANCE_END) : return BodyLoc.EXIT_END
+  elseif loc == StreamLoc.DOWNSTREAM_END
+    orientation == 1 ? (return BodyLoc.EXIT_END) : return BodyLoc.ENTRANCE_END
   else
     error(f"ConfusedError: Should not be here! Please report this!")
   end
@@ -113,8 +113,8 @@ is_null(branch::Branch) = return (branch.name == "NULL_BRANCH")
 
 """
 Returns the equivalent inbounds s-position in the range [branch.ele[1].s, branch.ele[end].s]
-if the branch has a closed geometry. Otherwise returns s.
-This is useful since in closed geometries 
+if the branch has a `BranchGeom.CLOSED` geometry. Otherwise returns s.
+This is useful since in `Branch.Geom.CLOSED` geometries.
 """ s_inbounds
 
 function s_inbounds(branch::Branch, s::Real)
