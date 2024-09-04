@@ -11,6 +11,7 @@ module AcceleratorLattice
   using Accessors
   using LinearAlgebra
   using ReferenceFrameRotations
+  using EnumX
 
   import Base.Cartesian.lreplace
 

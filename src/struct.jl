@@ -278,7 +278,7 @@ A positive `t_offset` shifts the waveform in the positive time direction.
 end
 
 @kwdef mutable struct AmpVsTimeGroup <: EleParameterGroup
-  interpolation::Interpolation.T = spline     # Interpolation.T method between points.
+  interpolation::Interpolation.T = Interpolation.SPLINE # Interpolation method between points.
   t_offset::Number = 0                            # Time offset of the waveform.
   point::Vector{AmpPoint} = Vector{AmpPoint}()    # Waveform points.
 end
@@ -319,7 +319,7 @@ Vacuum chamber aperture struct.
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
   x_limit::Vector = [NaN, NaN]
   y_limit::Vector = [NaN, NaN]
-  aperture_type::Aperture.T = elliptical
+  aperture_type::ApertureShape.T = ApertureShape.ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
   offset_moves_aperture::Bool = true
 end
@@ -360,15 +360,15 @@ end
 """
 Bend element parameters.
 
-For tracking there is no distinction made between sector like (`SBend`) bends and
-rectangular like (`RBend`) bends. The `bend_type` switch is only important when the
+For tracking there is no distinction made between sector like (`BendType.SECTOR`) bends and
+rectangular like (`BendType.RECTANGULAR`) bends. The `bend_type` switch is only important when the
 bend angle or length is varied. See the documentation for details.
 
 Whether `bend_field` or `g` is held constant when the reference energy is varied is
 determined by the `field_master` setting in the MasterGroup struct.
 """
 @kwdef mutable struct BendGroup <: EleParameterGroup
-  bend_type::Bend.T = sbend    # Is e or e_rect fixed? Also is len or len_chord fixed?
+  bend_type::BendType.T = BendType.SECTOR    # Is e or e_rect fixed? Also is len or len_chord fixed?
   angle::Number = 0.0
   rho::Number = Inf
   g::Number = 0.0                # Note: Old Bmad dg -> K0.
@@ -543,7 +543,7 @@ end
 # LordSlaveGroup
 
 @kwdef mutable struct LordSlaveGroup <: EleParameterGroup
-  lord_status::Lord.T = NOT_A_LORD
+  lord_status::Lord.T = Lord.NOT
   slave_status::Slave.T = Slave.NOT
 end
 
@@ -700,7 +700,7 @@ Sets the nominal values for tracking prameters.
 """ TrackingGroup
 
 @kwdef mutable struct TrackingGroup <: EleParameterGroup
-  tracking_method::TrackingMethod = STANDARD_TRACKING
+  tracking_method::TrackingMethod.T = TrackingMethod.STANDARD
   field_calc::FieldCalc.T = FieldCalc.STANDARD
   num_steps::Int   = -1
   ds_step::Number = NaN
@@ -808,7 +808,7 @@ end
   slave_parameter = nothing
   x_knot::Vector = Vector()
   y_knot::Vector = Vector()
-  interpolation::Interpolation.T = spline
+  interpolation::Interpolation.T = Interpolation.SPLINE
   value::Number = 0.0
   type::SlaveControl.T = SlaveControl.NOT_SET
 end

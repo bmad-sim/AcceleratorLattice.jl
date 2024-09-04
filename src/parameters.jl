@@ -21,7 +21,7 @@ abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
   parent_group::T where T <: Union{DataType,Vector}  # Use the parent_group function to get the parent group.
-  kind::Union{T, Union} where T <: DataType          # Something like Aperture.T is a Union.
+  kind::Union{T, Union} where T <: DataType          # Something like Aperture is a Union.
   description::String = ""
   units::String = ""
   struct_sym::Symbol                                 # Symbol in struct.
@@ -95,7 +95,7 @@ ele_param_info_dict = Dict(
   :hgap               => ParamInfo(Nothing,        Number,      "Used to set hgap1 and hgap2 both at once.", ""),
   :hgap1              => ParamInfo(BendGroup,      Number,      "Bend entrance edge pole gap height.", "m"),
   :hgap2              => ParamInfo(BendGroup,      Number,      "Bend exit edge pole gap height.", "m"),
-  :bend_type          => ParamInfo(BendGroup,      Bend.T,    "Sets how face angles varies with bend angle."),
+  :bend_type          => ParamInfo(BendGroup,      BendType.T, "Sets how face angles varies with bend angle."),
 
   :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "3-Vector of [x, y, z] element offsets.", "m"),
   :x_rot    => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis element rotation.", "rad"),
@@ -143,13 +143,13 @@ ele_param_info_dict = Dict(
   :do_auto_phase      => ParamInfo(RFMasterGroup,  Bool,          "Autoscale phase?"),
   :do_auto_scale      => ParamInfo(Nothing,        Bool,          "Used to set do_auto_amp and do_auto_phase both at once.", ""),
 
-  :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethod,        "Nominal method used for tracking."),
-  :field_calc         => ParamInfo(TrackingGroup,  FieldCalc.T,       "Nominal method used for calculating the EM field."),
+  :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethod.T,      "Nominal method used for tracking."),
+  :field_calc         => ParamInfo(TrackingGroup,  FieldCalc.T,           "Nominal method used for calculating the EM field."),
   :num_steps          => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
   :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
-  :aperture_type      => ParamInfo(ApertureGroup,  Aperture.T,          "Type of aperture. Default is Elliptical."),
-  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,          "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
+  :aperture_type      => ParamInfo(ApertureGroup,  ApertureShape.T,       "Type of aperture. Default is Elliptical."),
+  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,             "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
   :offset_moves_aperture 
                       => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
   :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of horizontal aperture limits.", "m"),
@@ -162,7 +162,7 @@ ele_param_info_dict = Dict(
   :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Element floor psi angle orientation", "rad", :psi),
 
   :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
-  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     StreamLoc.T,       "Reference location on reference element. Default is StreamLoc.CENTER."),
+  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     StreamLoc.T,          "Reference location on reference element. Default is StreamLoc.CENTER."),
   :dr_girder          => ParamInfo(GirderGroup,     Vector{Number},       "3-vector of girder position with respect to ref ele.", "m", :dr),
   :dtheta_girder      => ParamInfo(GirderGroup,     Number,               "Theta angle orientation with respect to ref ele.", "rad", :dtheta),
   :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),

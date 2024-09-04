@@ -31,7 +31,7 @@ end
 
 
 
-ln2 = beamline([beginning, qd, d, qd], geometry = Closed, multipass = true);
+ln2 = beamline([beginning, qd, d, qd], geometry = CLOSED, multipass = true);
 
 
 fodo = beamline("fodo", [z1, z2, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), reverse(beamline("sub", [qd, ln1]))]);
