@@ -21,7 +21,7 @@ abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
   parent_group::T where T <: Union{DataType,Vector}  # Use the parent_group function to get the parent group.
-  kind::Union{T, Union} where T <: DataType          # Something like ApertureType is a Union.
+  kind::Union{T, Union} where T <: DataType          # Something like Aperture.T is a Union.
   description::String = ""
   units::String = ""
   struct_sym::Symbol                                 # Symbol in struct.
@@ -95,7 +95,7 @@ ele_param_info_dict = Dict(
   :hgap               => ParamInfo(Nothing,        Number,      "Used to set hgap1 and hgap2 both at once.", ""),
   :hgap1              => ParamInfo(BendGroup,      Number,      "Bend entrance edge pole gap height.", "m"),
   :hgap2              => ParamInfo(BendGroup,      Number,      "Bend exit edge pole gap height.", "m"),
-  :bend_type          => ParamInfo(BendGroup,      BendType,    "Sets how face angles varies with bend angle."),
+  :bend_type          => ParamInfo(BendGroup,      Bend.T,    "Sets how face angles varies with bend angle."),
 
   :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "3-Vector of [x, y, z] element offsets.", "m"),
   :x_rot    => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis element rotation.", "rad"),
@@ -112,7 +112,7 @@ ele_param_info_dict = Dict(
   :pc_exit            => ParamInfo(PatchGroup,     Number,         "Reference momentum at exit end.", "eV"),
   :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
   :user_sets_length   => ParamInfo(PatchGroup,     Bool,           "Does Bmad calculate the patch length?"),
-  :ref_coords         => ParamInfo(PatchGroup,     BodyLocation,   "Patch coords with respect to ENTRANCE_END or EXIT_END?"),
+  :ref_coords         => ParamInfo(PatchGroup,     BodyLoc.T,   "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
   :voltage            => ParamInfo(RFFieldGroup,   Number,        "RF voltage.", "volt"),
   :gradient           => ParamInfo(RFFieldGroup,   Number,        "RF gradient.", "volt/m"),
@@ -122,7 +122,7 @@ ele_param_info_dict = Dict(
                                   "RF phase which can differ from multipass element to multipass element.", "rad"),
   :frequency          => ParamInfo(RFGroup,        Number,        "RF frequency.", "Hz"),
   :harmon             => ParamInfo(RFGroup,        Number,        "RF frequency harmonic number.", ""),
-  :cavity_type        => ParamInfo(RFGroup,        CavityType,    "Type of cavity."),
+  :cavity_type        => ParamInfo(RFGroup,        Cavity.T,    "Type of cavity."),
   :n_cell             => ParamInfo(RFGroup,        Int,           "Number of RF cells."),
 
   :voltage_ref        => ParamInfo(LCavityGroup,   Number,        "Reference RF voltage.", "volt"),
@@ -144,12 +144,12 @@ ele_param_info_dict = Dict(
   :do_auto_scale      => ParamInfo(Nothing,        Bool,          "Used to set do_auto_amp and do_auto_phase both at once.", ""),
 
   :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethod,        "Nominal method used for tracking."),
-  :field_calc         => ParamInfo(TrackingGroup,  FieldCalcMethod,       "Nominal method used for calculating the EM field."),
+  :field_calc         => ParamInfo(TrackingGroup,  FieldCalc.T,       "Nominal method used for calculating the EM field."),
   :num_steps          => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
   :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
-  :aperture_type      => ParamInfo(ApertureGroup,  ApertureType,          "Type of aperture. Default is Elliptical."),
-  :aperture_at        => ParamInfo(ApertureGroup,  BodyLocation,          "Where the aperture is. Default is ENTRANCE_END."),
+  :aperture_type      => ParamInfo(ApertureGroup,  Aperture.T,          "Type of aperture. Default is Elliptical."),
+  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,          "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
   :offset_moves_aperture 
                       => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
   :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of horizontal aperture limits.", "m"),
@@ -162,7 +162,7 @@ ele_param_info_dict = Dict(
   :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Element floor psi angle orientation", "rad", :psi),
 
   :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
-  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     StreamLocation,       "Reference location on reference element. Default is CENTER."),
+  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     StreamLoc.T,       "Reference location on reference element. Default is StreamLoc.CENTER."),
   :dr_girder          => ParamInfo(GirderGroup,     Vector{Number},       "3-vector of girder position with respect to ref ele.", "m", :dr),
   :dtheta_girder      => ParamInfo(GirderGroup,     Number,               "Theta angle orientation with respect to ref ele.", "rad", :dtheta),
   :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),
@@ -174,8 +174,8 @@ ele_param_info_dict = Dict(
   :slave              => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
   :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
 
-  :slave_status       => ParamInfo(LordSlaveGroup,    SlaveStatus,    "Slave status."),
-  :lord_status        => ParamInfo(LordSlaveGroup,    LordStatus,     "Lord status."),
+  :slave_status       => ParamInfo(LordSlaveGroup,    Slave.T,    "Slave status."),
+  :lord_status        => ParamInfo(LordSlaveGroup,    Lord.T,     "Lord status."),
 
   :spin               => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle spin"),
   :orbit              => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle position."),
@@ -681,7 +681,7 @@ Dictionary of parameters in the Branch.pdict dict.
 
 branch_param = Dict(
   :ix_branch   => ParamInfo(Nothing, Int,               "Index of branch in containing lat .branch[] array"),
-  :geometry    => ParamInfo(Nothing, EleGeometrySwitch, "Open or closed Geometry"),
+  :geometry    => ParamInfo(Nothing, EleGeometrySwitch, "BranchGeom.OPEN or BranchGeom.CLOSED Geometry"),
   :lat         => ParamInfo(Nothing, Pointer,           "Pointer to lattice containing the branch."),
   :type        => ParamInfo(Nothing, BranchType,        "Either LordBranch or TrackingBranch BranchType enums."),
   :from_ele    => ParamInfo(Nothing, Pointer,           "Element that forks to this branch."),
