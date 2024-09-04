@@ -323,7 +323,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
     bg.e1_rect = bg.e1 - 0.5 * bg.angle
   elseif haskey(cdict, :e1_rect)
     bg.e1 = bg.e1_rect + 0.5 * bg.angle
-  elseif bg.bend_type == sbend
+  elseif bg.bend_type == BendType.SECTOR
     bg.e1_rect = bg.e1 + 0.5 * bg.angle
   else
     bg.e1 = bg.e1_rect - 0.5 * bg.angle
@@ -333,7 +333,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
     bg.e2_rect = bg.e2 - 0.5 * bg.angle
   elseif haskey(cdict, :e2_rect)
     bg.e2 = bg.e2_rect + 0.5 * bg.angle
-  elseif bg.bend_type == sbend
+  elseif bg.bend_type == BendType.SECTOR
     bg.e2_rect = bg.e2 + 0.5 * bg.angle
   else
     bg.e2 = bg.e2_rect - 0.5 * bg.angle

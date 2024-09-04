@@ -13,8 +13,8 @@ macro enumit(str::AbstractString)
   eval( Meta.parse("export $str2") )
 end
 
-@enumit("ApertureType RECTANGULAR ELLIPTICAL")
-@enumit("Bend SECTOR RECTANGULAR")
+@enumit("ApertureShape RECTANGULAR ELLIPTICAL")
+@enumit("BendType SECTOR RECTANGULAR")
 @enumit("BodyLoc ENTRANCE_END CENTER EXIT_END BOTH_ENDS NOWHERE EVERYWHERE")
 @enumit("BranchGeometry OPEN CLOSED")
 @enumit("Cavity STANDING_WAVE TRAVELING_WAVE")
@@ -25,5 +25,10 @@ end
 @enumit("Slave NOT SUPER MULTIPASS")
 @enumit("StreamLoc UPSTREAM_END CENTER INSIDE DOWNSTREAM_END")
 
-@enumit("TrackingMethod RUNGE_KUTTA TIME_RUNGE_KUTTA STANDARD_TRACKING")
-@enumit("TrackingState PREBORN ALIVE PRETRACK LOST LOST_NEG_X LOST_POS_X LOST_NEG_Y LOST_POS_Y LOST_PZ LOST_Z")
+@enumit("TrackingMethod RUNGE_KUTTA TIME_RUNGE_KUTTA STANDARD")
+@enumit("ParticleState PREBORN ALIVE PRETRACK LOST LOST_NEG_X LOST_POS_X LOST_NEG_Y LOST_POS_Y LOST_PZ LOST_Z")
+
+# Useful abbreviations
+
+CLOSED::BranchGeometry.T = BranchGeometry.CLOSED
+OPEN::BranchGeometry.T = BranchGeometry.OPEN

@@ -10,7 +10,7 @@
 
 
 ln1 = beamline("ln1", [qf, d])
-ln2 = beamline("ln2", [qd, d, qd], geometry = closed, multipass = true, begin_ele = begin_ln2)
+ln2 = beamline("ln2", [qd, d, qd], geometry = BranchGeometry.CLOSED, multipass = true, begin_ele = begin_ln2)
 fodo = beamline("fodo", [z1, z2, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), reverse(beamline("sub", [qd, ln1]))])
 
 lat = expand("mylat", [beamline("fodo2", [fodo], begin_ele = begin_fodo), ln2])

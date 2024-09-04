@@ -15,7 +15,7 @@ abstract type AbstractTrackPoint end
   charge_weight:: Float64 = NaN
   pc_ref::Float64 = NaN
   beta::Float64 = NaN
-  state::TrackingState = ALIVE
+  state::ParticleState.T = ParticleState.ALIVE
   direction::Int = 1
   time_dir::Float64 = 1
   species::Species = Species("not_set")
