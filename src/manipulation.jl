@@ -92,7 +92,7 @@ end
 # split!
 
 """
-    split!(branch::Branch, s_split::Real; choose::StreamLoc.T = StreamLoc.UPSTREAM_END, ele_near::Ele = NULL_ELE)
+    split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREAM, ele_near::Ele = NULL_ELE)
 
 Routine to split an lattice element of a branch into two to create a branch that has an element
 boundary at the point s = `s_split`. 
@@ -110,13 +110,13 @@ than 2*`LatticeGlobal.significant_length`.
 ### Input
 - `branch`            -- Lattice branch
 - `s_split`           -- Position at which branch is to be split.
-- `choose`            -- logical, optional: If no splitting of an element is needed, that is, 
+- `select`            -- logical, optional: If no splitting of an element is needed, that is, 
   `s_split` is at an element boundary, there can be multiple possible `ele_split` elements to
   return if there exist zero length elements at the split location. 
-  If `choose` = `StreamLoc.DOWNSTREAM_END`, the returned `ele_split` element will be chosen to be 
-  at the maximal downstream element. If `choose` = `StreamLoc.UPSTREAM_END`, the returned `ele_split` element
+  If `select` = `Select.DOWNSTREAM`, the returned `ele_split` element will be chosen to be 
+  at the maximal downstream element. If `select` = `Select.UPSTREAM`, the returned `ele_split` element
   will be chosen to be the maximal upstream location. 
-  If `s_split` is not at an element boundary, the setting of `choose` is immaterial.
+  If `s_split` is not at an element boundary, the setting of `select` is immaterial.
 - `ele_near`          -- Element near the point to be split. `ele_near` is useful in the case where
   there is a patch with a negative length which can create an ambiguity as to where to do the split
   In this case `ele_near` will remove the ambiguity. Also useful to ensure where to split if there
@@ -127,18 +127,18 @@ than 2*`LatticeGlobal.significant_length`.
 - `split_done`    -- true if lat was split, false otherwise.
 """ split!(branch::Branch)
 
-function split!(branch::Branch, s_split::Real; choose::StreamLoc.T = StreamLoc.UPSTREAM_END, ele_near::Ele = NULL_ELE)
+function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREAM, ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s_split)
-  if choose != StreamLoc.UPSTREAM_END && choose != StreamLoc.DOWNSTREAM_END; error("Bad `choose` argument: $choose"); end 
-  slave1 = ele_at_s(branch, s_split, choose = choose, ele_near = ele_near)
+  if select != Select.UPSTREAM && select != Select.DOWNSTREAM; error("Bad `select` argument: $select"); end 
+  slave1 = ele_at_s(branch, s_split, select = select, ele_near = ele_near)
 
   # Make sure split does create an element that is less than min_len in length.
   min_len = min_ele_length(branch.lat)
-  if choose == StreamLoc.UPSTREAM_END && slave1.s > s_split-min_len
-    slave1 = ele_at_s(branch, slave1.s, choose = StreamLoc.DOWNSTREAM_END)
+  if select == Select.UPSTREAM && slave1.s > s_split-min_len
+    slave1 = ele_at_s(branch, slave1.s, select = Select.DOWNSTREAM)
     s_split = slave1.s_downstream
-  elseif choose == StreamLoc.DOWNSTREAM_END && slave1.s_downstream < s_split+min_len
-    slave1 = ele_at_s(branch, slave1.s_downstream, choose = StreamLoc.DOWNSTREAM_END)
+  elseif select == Select.DOWNSTREAM && slave1.s_downstream < s_split+min_len
+    slave1 = ele_at_s(branch, slave1.s_downstream, select = Select.DOWNSTREAM)
     s_split = slave1.s
   end
 

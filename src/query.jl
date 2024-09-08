@@ -2,7 +2,7 @@
 # machine_location
 
 """
-    machine_location(loc::BodyLoc.T, orientation::Int)::StreamLoc.T
+    machine_location(loc::BodyLoc.T, orientation::Int)::Loc.T
 
 Given a location with respect to an element's `local` orientation and the element's `orientation`,
 return the equivalent location in machine coordinates.
@@ -17,16 +17,16 @@ The reverse function is body_location.
 
 ### Output
 
- - Returns: `StreamLoc.UPSTREAM_END`, `StreamLoc.CENTER`, or `StreamLoc.DOWNSTREAM_END` (a `StreamLoc.T` value).
+ - Returns: `Loc.UPSTREAM_END`, `Loc.CENTER`, or `Loc.DOWNSTREAM_END` (a `Loc.T` value).
 """ machine_location
 
-function machine_location(loc::BodyLoc.T, orientation::Int)::StreamLoc.T
-  if loc == BodyLoc.CENTER; return StreamLoc.CENTER; end
+function machine_location(loc::BodyLoc.T, orientation::Int)::Loc.T
+  if loc == BodyLoc.CENTER; return Loc.CENTER; end
 
   if loc == BodyLoc.ENTRANCE_END
-    orientation == 1 ? (return StreamLoc.UPSTREAM_END) : return StreamLoc.DOWNSTREAM_END
+    orientation == 1 ? (return Loc.UPSTREAM_END) : return Loc.DOWNSTREAM_END
   elseif loc == BodyLoc.EXIT_END
-    orientation == 1 ? (return StreamLoc.DOWNSTREAM_END) : return StreamLoc.UPSTREAM_END
+    orientation == 1 ? (return Loc.DOWNSTREAM_END) : return Loc.UPSTREAM_END
   else
     error(f"loc argument values limited to `BodyLoc.ENTRANCE_END`, `BodyLoc.CENTER`,  or `BodyLoc.EXIT_END`. Not: {loc}")
   end
@@ -36,7 +36,7 @@ end
 # body_location
 
 """
-    body_location(loc::StreamLoc.T, orientation::Int)::BodyLoc.T
+    body_location(loc::Loc.T, orientation::Int)::BodyLoc.T
 
 Given an element location with respect to machine coordinates,
 along with the element's orientation with respect to machine coordinates, 
@@ -46,20 +46,20 @@ The reverse function is machine_location.
 
 ### Input
 
- - `loc`          Possible values: `StreamLoc.UPSTREAM_END`, `StreamLoc.CENTER`, or `StreamLoc.DOWNSTREAM_END` .
+ - `loc`          Possible values: `Loc.UPSTREAM_END`, `Loc.CENTER`, or `Loc.DOWNSTREAM_END` .
  - `orientation`  Possible values: -1 or +1.
 
 ### Output
 
- - Returns: `BodyLoc.entrance_end`, `StreamLoc.CENTER`, `BodyLoc.EXIT_END`.
+ - Returns: `BodyLoc.entrance_end`, `Loc.CENTER`, `BodyLoc.EXIT_END`.
 """ body_location
 
-function body_location(loc::StreamLoc.T, orientation::Int)
-  if loc == StreamLoc.CENTER; return b_enter; end
+function body_location(loc::Loc.T, orientation::Int)
+  if loc == Loc.CENTER; return b_enter; end
 
-  if loc == StreamLoc.UPSTREAM_END
+  if loc == Loc.UPSTREAM_END
     orientation == 1 ? (return BodyLoc.ENTRANCE_END) : return BodyLoc.EXIT_END
-  elseif loc == StreamLoc.DOWNSTREAM_END
+  elseif loc == Loc.DOWNSTREAM_END
     orientation == 1 ? (return BodyLoc.EXIT_END) : return BodyLoc.ENTRANCE_END
   else
     error(f"ConfusedError: Should not be here! Please report this!")

@@ -40,7 +40,7 @@ function ele_at_offset(reference::Union{Ele,Branch}, offset::Int, wrap::Bool)
         error("Non-zero offset ($offset) not allowed for Governor reference elements ($reference.name).")
 
       elseif branch.type == SuperLordBranch
-        if offset > 0 ? ref = reference.slaves[end] : ref = reference.slaves[1]; end
+        offset > 0 ? ref = reference.slaves[end] : ref = reference.slaves[1]
         branch = ref.branch
         indx = ref.ix_ele + offset
 
@@ -305,7 +305,7 @@ end
 # ele_at_s
 
 """
-    ele_at_s(branch::Branch, s::Real; choose::StreamLoc.T = StreamLoc.UPSTREAM_END, ele_near::ELE = NULL_ELE) 
+    ele_at_s(branch::Branch, s::Real; select::Select.T = Select.UPSTREAM, ele_near::ELE = NULL_ELE) 
                                                                           -> ele_overlap::Ele
 
 Returns lattice element `ele_overlap` that overlaps a given longitudinal s-position. 
@@ -315,9 +315,9 @@ That is, `s` will be in the interval `[ele_overlap.s, ele_overlap.s_downstream]`
 
  - `branch`     Lattice `Branch` to search.
  - `s`          Longitudinal position to match to.
- - `choose`     If there is a choice of elements, which can happen if `s` corresponds to a boundary
-                point between two elements, `choose` is used to pick either the `StreamLoc.UPSTREAM_END` 
-                element (default) or `StreamLoc.DOWNSTREAM_END` element.
+ - `select`     If there is a choice of elements, which can happen if `s` corresponds to a boundary
+                point between two elements, `select` is used to pick either the `Select.UPSTREAM` 
+                element (default) or `Select.DOWNSTREAM` element.
  - `ele_near`   If there are elements with negative drift lengths (generally this will be a
                 `drift` or `patch` element), there might be multiple solutions. If `ele_near`
                 is specified, this routine will choose the solution nearest `ele_near`.
@@ -328,9 +328,9 @@ That is, `s` will be in the interval `[ele_overlap.s, ele_overlap.s_downstream]`
 
 """ ele_at_s
 
-function ele_at_s(branch::Branch, s::Real; choose::StreamLoc.T = StreamLoc.UPSTREAM_END, ele_near::Ele = NULL_ELE)
+function ele_at_s(branch::Branch, s::Real; select::Select.T = Select.UPSTREAM, ele_near::Ele = NULL_ELE)
   check_if_s_in_branch_range(branch, s)
-  if choose != StreamLoc.UPSTREAM_END && choose != StreamLoc.DOWNSTREAM_END; error("Bad `choose` argument: $choose"); end 
+  if select != Select.UPSTREAM && select != Select.DOWNSTREAM; error("Bad `select` argument: $select"); end 
 
   # If ele_near is not set
   if is_null(ele_near)
@@ -340,11 +340,11 @@ function ele_at_s(branch::Branch, s::Real; choose::StreamLoc.T = StreamLoc.UPSTR
     while true
       if n3 == n1 + 1; break; end
       n2 = div(n1 + n3, 2)
-      s < branch.ele[n2].s || (choose == StreamLoc.UPSTREAM_END && branch.ele[n2].s == s) ? n3 = n2 : n1 = n2
+      s < branch.ele[n2].s || (select == Select.UPSTREAM && branch.ele[n2].s == s) ? n3 = n2 : n1 = n2
     end
 
     # Solution is n1 except in one case.
-    if choose == StreamLoc.DOWNSTREAM_END && branch.ele[n3].s == s
+    if select == Select.DOWNSTREAM && branch.ele[n3].s == s
       return branch.ele[n3]
     else
       return branch.ele[n1]
@@ -354,19 +354,19 @@ function ele_at_s(branch::Branch, s::Real; choose::StreamLoc.T = StreamLoc.UPSTR
   # If ele_near is used
   ele = ele_near
   if ele.branch.type <: LordBranch
-    choose == StreamLoc.DOWNSTREAM_END ? ele = ele.slaves[end] : ele = ele.slaves[1]
+    select == Select.DOWNSTREAM ? ele = ele.slaves[end] : ele = ele.slaves[1]
   end
 
 
-  if s > ele.s_downstream || (choose == StreamLoc.DOWNSTREAM_END && s == ele.s_downstream)
+  if s > ele.s_downstream || (select == Select.DOWNSTREAM && s == ele.s_downstream)
     while true
       ele = next_ele(ele)
-      if s < ele.s_downstream || (s == ele.s_downstream && choose == StreamLoc.UPSTREAM_END); return ele; end
+      if s < ele.s_downstream || (s == ele.s_downstream && select == Select.UPSTREAM); return ele; end
     end
 
   else
     while true
-      if s > ele.s || (choose == StreamLoc.DOWNSTREAM_END && ele.s == s); return ele; end
+      if s > ele.s || (select == Select.DOWNSTREAM && ele.s == s); return ele; end
       ele = next_ele(ele, -1)
     end
   end
