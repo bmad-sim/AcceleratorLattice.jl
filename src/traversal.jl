@@ -58,17 +58,17 @@ See the `Region` documentation for more details.
 function Base.iterate(x::Region)
   if :branch ∉ keys(x.start_ele.pdict); error("Start element not associated with a branch"); end
   if :branch ∉ keys(x.end_ele.pdict);   error("End element not associated with a branch"); end
-  x.start_ele.lord_status == super_lord ? start_ele = x.start_ele.slaves[1] : start_ele = x.start_ele
-  x.end_ele.lord_status   == super_lord ? end_ele   = x.end_ele.slaves[1]   : end_ele   = x.end_ele
+  x.start_ele.lord_status == Lord.SUPER ? start_ele = x.start_ele.slaves[1] : start_ele = x.start_ele
+  x.end_ele.lord_status   == Lord.SUPER ? end_ele   = x.end_ele.slaves[1]   : end_ele   = x.end_ele
   if !(start_ele.branch === end_ele.branch); error("Start and end elements are not in the same branch"); end
-  if start_ele.lord_status != NOT_A_LORD; error("Start element may not be a non-super_lord lord."); end
-  if end_ele.lord_status   != NOT_A_LORD; error("End element may not be a non-super_lord lord."); end
+  if start_ele.lord_status != Lord.NOT; error("Start element may not be a non-super_lord lord."); end
+  if end_ele.lord_status   != Lord.NOT; error("End element may not be a non-super_lord lord."); end
   return (start_ele, start_ele)
 end
 
 function Base.iterate(x::Region, ele::Ele)
   end_ele = x.end_ele
-  if x.end_ele.lord_status == super_lord
+  if x.end_ele.lord_status == Lord.SUPER
     x.include_regionend ? end_ele = x.end_ele.save[end] : end_ele = x.end_ele.slaves[1]
   end
   if ele == end_ele && x.include_regionend; return nothing; end

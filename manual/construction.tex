@@ -11,3 +11,10 @@ However, lattice expansion constructs the lattice with copies of qq so changing 
 parameters of qq will not affect any of the copies in the lattice. This is done so that
 parameters in the various qq's in the lattice are independent and an therefore differ from each
 other. 
+
+Branch geometry is inherited from the root line. To use a line with the "wrong" geometry, create
+a new line using the old line with the "correct" geometry. EG
+  ln2 = beamline(ln1.name, [ln1], geometry = CLOSED)
+  lat = expand([ln2])
+
+Note: OPEN and CLOSED are aliases for BranchGeometry.OPEN and BranchGeometry.CLOSED

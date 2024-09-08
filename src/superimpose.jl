@@ -2,8 +2,8 @@
 # superimpose!
 
 """
-    function superimpose!(super_ele::Ele, ref; ele_origin::BodyLoc.T = BodyLoc.StreamLoc.CENTER, 
-                          offset::Real = 0, ref_origin::BodyLoc.T = BodyLoc.StreamLoc.CENTER, 
+    function superimpose!(super_ele::Ele, ref; ele_origin::BodyLoc.T = BodyLoc.CENTER, 
+                          offset::Real = 0, ref_origin::BodyLoc.T = BodyLoc.CENTER, 
                           wrap::Bool = true) where T <: Union{Branch, Ele, Vector{Branch}, Vector{Ele}}
 
 Superimpose a copy (or copies) of the element `super_ele` on a lattice. 
@@ -35,7 +35,7 @@ downstream edge after the branch start edge. If `wrap` = false, extend the latti
 ### Notes
 - Valid `BodyLoc.T` values are:
   - BodyLoc.ENTRANCE_END
-  - BodyLoc.StreamLoc.CENTER
+  - BodyLoc.CENTER
   - BodyLoc.EXIT_END
 
 - Zero length elements in the superposition region will be left alone.
@@ -54,8 +54,8 @@ superposition location is at the exit end of `ref`.
 - The superimposed element will inherit the orientation of the `ref` element.
 """ superimpose!
 
-function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.StreamLoc.CENTER, 
-                      offset::Real = 0, ref_origin::BodyLoc.T = BodyLoc.StreamLoc.CENTER, 
+function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CENTER, 
+                      offset::Real = 0, ref_origin::BodyLoc.T = BodyLoc.CENTER, 
                       wrap::Bool = true) where {E <: Ele, T <: Union{Branch, Ele, Vector{Branch}, Vector{E}}}
   if typeof(ref) == Branch
     ref_ele = ref.ele[1]
@@ -63,7 +63,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.St
     ref_ele = ref
   end
 
-  for this_ref in collect(ref)
+  for this_ref in collect(ref_ele)
     if typeof(this_ref) == Branch
       ref_ele = this_ref.ele[1]
     else
@@ -82,7 +82,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.St
 
     L_super = super_ele.L
     offset = offset * ref_ele.orientation
-    machine_ref_origin = machine_location(ref_origin, ref_ele.orientation)  # Convert from entrance/exit to up/dowstream
+    machine_ref_origin = machine_location(ref_origin, ref_ele.orientation)  # Convert from body entrance/exit to up/dowstream
     machine_ele_origin = machine_location(ele_origin, ref_ele.orientation)
 
     # Insertion of zero length element with zero offset at edge of an element.
@@ -183,37 +183,28 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.St
     n_ele = 0
     for ele in Region(ele1, ele2, false)
       n_ele += 1
-
-      if typeof(ele) == Drift
-        if haskey(ele.private, :lord)
-          lord = ele.private[:lord]
-          ix = findfirst(isequal(ele), lord.private[:slaves])
-          deleteat!(lord.private[:slaves], ix)
-          for (ix, ele2) in enumerate(lord.private[:slaves])
-            ele2.name = "$(lord.name)!$ix"
-          end
-        end
-      else
-        all_drift = false
-      end
+      if typeof(ele) == Drift; all_drift = false; end
     end
 
     #
 
     if all_drift
-      super_ele.ix_ele = ele1.ix_ele
-      branch.ele[ele1.ix_ele] = super_ele
-      if n_ele > 1; deleatat!(branch.ele, super_ele.ix_ele+1:super_ele.ix_ele+n_ele-1); end
-
+      ix_super = ele1.ix_ele
+      super_ele.ix_ele = ix_super
+      branch.ele[ix_super] = super_ele
+      if n_ele > 1; deleatat!(branch.ele, ix_super+1:ix_super+n_ele-1); end
       index_and_s_bookkeeper!(branch)
+      if typeof(branch.ele[ix_super-1]) == Drift; set_drift_slice_names(branch.ele[ix_super-1]); end
+      if typeof(branch.ele[ix_super+1]) == Drift; set_drift_slice_names(branch.ele[ix_super+1]); end
       continue 
     end
 
     # Here if a super_lord element needs to be constructed.
     sbranch = branch.lat.branch[:super_lord]
-    push!(sbranch.ele, super_ele)
-    super_ele.lord_status = super_lord
-    super_ele.pdict[:slaves] = Vector{Ele}()
+    lord1 = copy(super_ele)
+    push!(sbranch.ele, lord1)
+    lord1.lord_status = Lord.SUPER
+    lord1.pdict[:slaves] = Vector{Ele}()
     index_and_s_bookkeeper!(sbranch)
 
     for ele in Region(ele1, ele2, false)
@@ -224,21 +215,21 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.St
         branch.ele[ix_ele] = copy(super_ele)
         ele2 = branch.ele[ix_ele]
         ele2.ix_ele = ix_ele
-        ele2.slave_status = super_slave
+        ele2.slave_status = Slave.SUPER
         ele2.L = ele.L
-        ele2.pdict[:super_lords] = Vector{Ele}([super_ele])
-        push!(super_ele.slaves, ele2)
+        ele2.pdict[:super_lords] = Vector{Ele}([lord1])
+        push!(lord1.slaves, ele2)
 
-      elseif ele.slave_status != super_slave
+      elseif ele.slave_status != Slave.SUPER
         lord2 = ele
         push!(sbranch.ele, lord2)
-        lord2.lord_status = super_lord
-        branch.ele[ix_ele] = UnionEle(name = "", L = ele.L, super_lords = Vector{Ele}([super_ele]))
+        lord2.lord_status = Lord.SUPER
+        branch.ele[ix_ele] = UnionEle(name = "", L = ele.L, super_lords = Vector{Ele}([lord1]))
         slave = branch.ele[ix_ele]
-        slave.slave_status = super_slave
+        slave.slave_status = Slave.SUPER
         lord2.pdict[:slaves] = Vector{Ele}([slave])
         push!(slave.pdict[:super_lords], lord2)
-        push!(super_ele.pdict[:slaves], slave)
+        push!(lord1.pdict[:slaves], slave)
 
       else  # Is super_slave and not Drift
         if typeof(ele) != UnionEle   # That is, has a single super_lord
@@ -250,8 +241,8 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.St
         end
 
         slave = branch.ele[ix_ele]
-        push!(slave.pdict[:super_lords], super_ele)
-        push!(super_ele.pdict[:slaves], slave)
+        push!(slave.pdict[:super_lords], lord1)
+        push!(lord1.pdict[:slaves], slave)
       end
     end
 
