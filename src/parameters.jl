@@ -162,7 +162,7 @@ ele_param_info_dict = Dict(
   :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Element floor psi angle orientation", "rad", :psi),
 
   :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
-  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     StreamLoc.T,          "Reference location on reference element. Default is StreamLoc.CENTER."),
+  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     Loc.T,          "Reference location on reference element. Default is Loc.CENTER."),
   :dr_girder          => ParamInfo(GirderGroup,     Vector{Number},       "3-vector of girder position with respect to ref ele.", "m", :dr),
   :dtheta_girder      => ParamInfo(GirderGroup,     Number,               "Theta angle orientation with respect to ref ele.", "rad", :dtheta),
   :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),

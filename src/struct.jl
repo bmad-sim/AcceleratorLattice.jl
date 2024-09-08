@@ -343,7 +343,7 @@ end
 
 @kwdef mutable struct BeamBeamGroup <: EleParameterGroup
   n_slice::Number = 1
-  z0_crossing::Number = 0       # Weak particle phase space z when strong beam StreamLoc.CENTER passes
+  z0_crossing::Number = 0       # Weak particle phase space z when strong beam Loc.CENTER passes
                                 #   the BeamBeam element.
   repetition_freq:: Number = 0  # Strong beam repetition rate.
   twiss::Twiss = Twiss()        # Strong beam Twiss.
@@ -477,7 +477,7 @@ Girder parameter struct.
 """
 @kwdef mutable struct GirderGroup <: EleParameterGroup
   origin_ele::Ele = NullEle
-  origin_ele_ref_pt::StreamLoc.T = StreamLoc.CENTER
+  origin_ele_ref_pt::Loc.T = Loc.CENTER
   dr::Vector = [0.0, 0.0, 0.0]
   dtheta::Number = 0.0
   dphi::Number = 0.0

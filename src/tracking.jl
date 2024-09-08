@@ -19,5 +19,5 @@ abstract type AbstractTrackPoint end
   direction::Int = 1
   time_dir::Float64 = 1
   species::Species = Species("not_set")
-  location::StreamLoc.T = StreamLoc.UPSTREAM_END
+  location::Loc.T = Loc.UPSTREAM_END
 end
