@@ -236,7 +236,7 @@ end
 
 ele_param_value_str(who::Nothing; default::AbstractString = "???") = default
 ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
-ele_param_value_str(vec_ele::Vector{Ele}; default::AbstractString = "???") = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
+ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T <: Ele = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
 ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
 ele_param_value_str(who; default::AbstractString = "???") = string(who)
@@ -262,7 +262,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     # Print non-group, non-changed parameters first.
     for key in sort(collect(keys(pdict)))
       val = pdict[key]
-      if typeof(val) <: EleParameterGroup || key == :changed || key == :private; continue; end
+      if typeof(val) <: EleParameterGroup || key == :changed; continue; end
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
       kstr = rpad(string(key), nn2)
@@ -277,7 +277,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     # Print element parameter groups (does not include changed)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
-      if !(typeof(group) <: EleParameterGroup) || key == :private; continue; end
+      if !(typeof(group) <: EleParameterGroup); continue; end
       show_elegroup(io, group, docstring, indent = 2)
     end
 
@@ -342,7 +342,9 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool; indent =
   end
 end
 
-function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool)
+function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool; indent = 0)
+  off_str = " "^indent
+
   if length(group.vec) == 0
     println(io, f"{off_str}EMultipoleGroup: No electric multipoles")
     return
@@ -468,16 +470,16 @@ function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 
 end
 
 #---------------------------------------------------------------------------------------------------
-# Show Vector{ele}
+# Show Vector{Ele}
 
-function Base.show(io::IO, eles::Vector{Ele})
-  println(io, f"{length(eles)}-element Vector{{Ele}}:")
+function Base.show(io::IO, eles::Vector{T}) where T <: Ele
+  println(io, f"{length(eles)}-element {typeof(eles)}:")
   for ele in eles
     println(io, " " * ele_name(ele))
   end
 end
 
-Base.show(io::IO, ::MIME"text/plain", eles::Vector{Ele}) = Base.show(io::IO, eles)
+Base.show(io::IO, ::MIME"text/plain", eles::Vector{T}) where T <: Ele = Base.show(io::IO, eles)
 
 #---------------------------------------------------------------------------------------------------
 # Show Lat
@@ -496,10 +498,10 @@ Base.show(io::IO, ::MIME"text/plain", lat::Lat) = Base.show(stdout, lat)
 # Show Branch
 
 function Base.show(io::IO, branch::Branch)
-  length(branch.ele) == 0 ? n = 0 : n = maximum([12, maximum([length(e.name) for e in branch.ele])]) + 2
+  length(branch.ele) == 0 ? n = 0 : n = maximum([18, maximum([length(e.name) for e in branch.ele])]) + 2
   g_str = f"Branch {branch.ix_branch}: {str_quote(branch.name)}"
-  if haskey(branch.pdict, :geometry); g_str = g_str * f"  geometry => {branch.pdict[:geometry]}"; end
-  if n > 0; g_str = rpad(g_str, 48) * "L           s      s_downstream"; end
+  if haskey(branch.pdict, :geometry); g_str = g_str * f", geometry => {branch.pdict[:geometry]}"; end
+  if n > 0; g_str = rpad(g_str, 54) * "L           s      s_downstream"; end
   println(io, "$g_str")
 
   if length(branch.ele) == 0 
@@ -509,7 +511,7 @@ function Base.show(io::IO, branch::Branch)
       end_str = ""
       if branch.type == MultipassLordBranch
         end_str = f"{ele.L:11.6f}"
-        if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
+        if haskey(ele.pdict, :slave); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :slave, default = \"\")}"; end
       elseif haskey(ele.pdict, :LengthGroup)
         s_str = ele_param_value_str(ele, :s, default = "    "*"-"^7, format = "12.6f")
         s_down_str = ele_param_value_str(ele, :s_downstream, default = "    "*"-"^7, format = "12.6f")
@@ -547,7 +549,9 @@ Base.show(io::IO, ::MIME"text/plain", branches::Vector{Branch}) = Base.show(stdo
 # Show Beamline
 
 function Base.show(io::IO, bl::BeamLine)
-  println(io, f"Beamline:  {str_quote(bl.name)}, multipass: {bl.pdict[:multipass]}, orientation: {bl.pdict[:orientation]}")
+  str = ""
+  for (key, value) in bl.pdict; str = str * "$key => $value, "; end
+  println(io, f"Beamline:  {str_quote(bl.name)}, [{str[1:end-2]}]")
   n = 6
   for item in bl.line
     if item isa BeamLineEle
@@ -577,11 +581,11 @@ Base.show(io::IO, ::MIME"text/plain", bl::BeamLine) = Base.show(io, bl)
 #---------------------------------------------------------------------------------------------------
 # Show Dict{String, Vector{Ele}}
 
-function Base.show(io::IO, eled::Dict{String, Vector{Ele}})
-  println(io, f"Dict{{AbstractString, Vector{{Ele}}}} with {length(eled)} entries.")
+function Base.show(io::IO, eled::Dict{String, Vector{T}}) where T <: Ele
+  println(io, f"Dict{{AbstractString, Vector{{T}}}} with {length(eled)} entries.")
 end
 
-Base.show(io::IO, ::MIME"text/plain", eled::Dict{String, Vector{Ele}}) = Base.show(stdout, eled)
+Base.show(io::IO, ::MIME"text/plain", eled::Dict{String, Vector{T}}) where T <: Ele = Base.show(stdout, eled)
 
 #---------------------------------------------------------------------------------------------------
 # list_abstract

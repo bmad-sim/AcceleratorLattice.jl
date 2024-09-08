@@ -1,46 +1,94 @@
 #---------------------------------------------------------------------------------------------------
-# ele_at_index
+# ele_at_offset
 
 """
-    ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true, ele0::Ele = NULL_ELE)  -> ele::Ele
+    ele_at_offset(reference::Union{Ele,Branch}, offset::Int, wrap)  -> ele::Ele
+    ele_at_offset(reference::Union{Ele,Branch}, offset::Int; wrap::Bool = true)  -> ele::Ele
 
-Returns element with index `ix_ele` in branch `branch`.
-If `ele0` is not `NULL_ELE`, `ix_ele` will be offset by `ele0.ix_ele`.
+If `reference` is a `Branch`, this routine returns the element whose index is equal to `offset`.
 
-With `wrap` = `false`, an error is raised if `ix_ele` is out-of-bounds.
+If `reference` is an `Ele`, this routine returns the element with index equal to `reference.ix_ele + offset`
+in the branch containing `reference`. Exceptions: 
+- A non-zero `offset` is not legal for `Governor` elements.
+- If the `reference` is a `multipass_lord`, return the `multipass_lord` whose slaves are all
+  `offset` away from the corresponding slaves of `reference`. If no such `mulitpass_lord` exists,
+  throw an error.
+- If the `reference` is a `super_lord` element the index of the returned element is `N + offset` where, 
+  if `offset` is positive, `N` is the index of the last (that is, downstream) `super_slave` element and,
+  if `index` is negative, `N` is the index of the first (that is, upstream) `super_slave` element.
 
-With `wrap` = `true`, if `ix_ele` is out-of-bounds, will "wrap" around ends of the branch so,
-for a branch with `N` elements,
-`ix_ele = N+1` will return `branch.ele[1]` and `ix_ele = 0` will return `branch.ele[N]`.
-""" ele_at_index
+With `wrap` = `false`, an error is raised if the element index is not in the range `[1, end]` where
+`end` is the index of the last element in `branch.ele[]` array.
 
-function ele_at_index(branch::Branch, ix_ele::Int; wrap::Bool = true, ele0::Ele = NULL_ELE)
-  if ele0 != NULL_ELE; ix_ele = ix_ele + ele0.ix_ele; end
+With `wrap` = `true`, if the  element index is out-of-bounds, the index will be "wrapped around" 
+the ends of the branch so, for example, for a branch with `N` elements,
+`index = N+1` will return `branch.ele[1]` and `index = 0` will return `branch.ele[N]`.
+""" ele_at_offset
+
+function ele_at_offset(reference::Union{Ele,Branch}, offset::Int, wrap::Bool)
+
+  if typeof(reference) == Branch
+    branch = reference
+    indx = offset
+
+  else
+    branch = reference.branch
+    indx = reference.ix_ele + offset
+
+    if offset != 0
+      if branch.type == GovernorBranch
+        error("Non-zero offset ($offset) not allowed for Governor reference elements ($reference.name).")
+
+      elseif branch.type == SuperLordBranch
+        if offset > 0 ? ref = reference.slaves[end] : ref = reference.slaves[1]; end
+        branch = ref.branch
+        indx = ref.ix_ele + offset
+
+      elseif branch.type == MultipassLordBranch
+        slaves = [ele_at_offset(slave, offset, wrap) for slave in reference.slaves]
+        for slave in slaves
+          if !(get(slave, :multipass_lord, NULL_ELE) === get(slaves[1], :multipass_lord, nothing))
+            error("Cannot find multipass_lord at offset ($offset) from element ($(ele_name(reference))).")
+          end
+        end
+        return slave.multipass_lord
+      end
+    end
+  end
+
+  !
 
   n = length(branch.ele)
 
   if wrap
-    if n == 0; error(f"BoundsError: " *           # Happens with lord branch with no lord elements
-              f"Element index: {ix_ele} out of range in branch {branch.ix_branch}: {branch.name}"); end
-    ix_ele = mod(ix_ele-1, n) + 1
-    return branch.ele[ix_ele]
+    if n == 0; error("BoundsError: " *           # Happens with lord branch with no lord elements
+              "Element index: $indx out of range in branch $(branch.ix_branch): $(branch.name)"); end
+    indx = mod(indx-1, n) + 1
+    return branch.ele[indx]
   else
-    if ix_ele < 1 || ix_ele > n; error(f"BoundsError: " * 
-              f"Element index: {ix_ele} out of range in branch {branch.ix_branch}: {branch.name}"); end
-    return branch.ele[ix_ele]
+    if indx < 1 || indx > n; error(f"BoundsError: " * 
+              "Element index: $indx out of range in branch $(branch.ix_branch): $(branch.name)"); end
+    return branch.ele[indx]
   end
+end
+
+#
+
+function ele_at_offset(reference::Union{Ele,Branch}, offset::Int; wrap::Bool = true)
+  return ele_at_offset(reference, offset, wrap)
 end
 
 #---------------------------------------------------------------------------------------------------
 # eles_base
 
 """
-    Internal: function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex})
+    Internal: function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; 
+                                                               wrap::Bool = true)  -> ele_vector::Ele[]
 
 Internal. Called by `eles` function.
 """ eles_base
 
-function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex})
+function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
   julia_regex = (typeof(who) == Regex)
   who = string(who)
   typeof(where_search) == Lat ? branch_vec = where_search.branch : branch_vec = [where_search]
@@ -68,9 +116,9 @@ function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Re
       for ele in branch.ele
         if !haskey(ele.pdict, attrib); continue; end
         if julia_regex
-          if occursin(pattern, ele.pdict[attrib]); push!(eles, ele_offset(ele, offset)); end
+          if occursin(pattern, ele.pdict[attrib]); push!(eles, ele_at_offset(ele, offset, wrap)); end
         else
-          if str_match(pattern, ele.pdict[attrib]); push!(eles, ele_offset(ele, offset)); end
+          if str_match(pattern, ele.pdict[attrib]); push!(eles, ele_at_offset(ele, offset, wrap)); end
         end
       end
     end
@@ -106,7 +154,7 @@ function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Re
     for branch in branch_vec
       if !matches_branch(branch_id, branch); continue; end
       if ix_ele != -1
-        push!(eles, ele_at_index(branch, ix_ele+offset, wrap = false))
+        push!(eles, ele_at_offset(branch, branch.ele[ix_ele], offset, wrap))
         continue
       end
 
@@ -119,7 +167,7 @@ function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Re
           if !str_match(ele_id, ele.name); continue; end
           ix_match += 1
           if nth_match != -1 && ix_match > nth_match; continue; end
-          if ix_match == nth_match || nth_match == -1; push!(eles, ele_at_index(branch, offset, ele0=ele)); end
+          if ix_match == nth_match || nth_match == -1; push!(eles, ele_at_offset(ele, offset, wrap)); end
         end
       end
     end   # branch loop
@@ -132,17 +180,47 @@ end
 # eles
 
 """
-    function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}) -> [ele-array]
+    function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = True)
+                                                                                        -> ele_vector::Ele[]
 
-Returns a vector of all elements that match `who`.
+Returns a vector of all elements that match `who`. 
 
-# 
+There are two types of `who`.
+On type uses a Julia `Regex` expression to match to element names. For example:
+```
+  who = r"q\\d"     # Matches "qN" where "N" is a digit 0-9.
+```
+See the Julia regex documentation for more information.
+
+The other types of matches are those using the "AcceleratorLattice" (AL) regex syntax.
+This syntax has wild card characters “*” and “%”.
+The “*” character will match any number of characters (including zero) while “%” maches to any single character. 
+
+All AL regex expressions are built up from "atomic" expressions. Atomic expressions are of
+one of two forms: One atomic form is:
+```
+  {branch_id>>}{ele_class::}ele_id{#N}{+/-offset}`
+```
+Curly brackets `{...}` denote optional fields.
+- `branch_id`   Optional lattice branch index or name. Alternative is to specify the branch
+  using the `where_search` argument.
+- `ele_class`   Optional element class (EG: `Quadrupole`).
+- `ele_id`      Element name with or element index. The element name can contain wild card characters.
+- `#N`          If present, return only the Nth instance matched to.
+- `+/-offset`   If present, return element(s) whose index is offset from the elements matched to.
+
+Examples:
+```
+  eles(lat, "d")                All elements named "d"
+  eles(lat, "Marker::*")
+  eles(lat, "Marker::*-1")
+  eles(lat, "m1#2")
+  eles(lat, "m1#2+1")
+```
 
 
-Returns a vector of all lattice elements that match element `who` which is in the form:
-  `{branch_id>>}{key::}ele_id{#N}{+/-offset}`
 or
-  `{branch_id>>}attribute->match_str{+/-offset}`
+  `{branch_id>>}attribute->'match_str'{+/-offset}`
 where `attribute` is something like `alias`, `description`, `type`, or any custom field.
 
   key selection EG: "Quadrupole::<list>"
@@ -151,12 +229,16 @@ where `attribute` is something like `alias`, `description`, `type`, or any custo
   intersection  EG: "<list1> & <list2>"
 Note: negation and intersection evaluated left to right
 
-### Input
+## Input
 
 - `where_search` `Lat` or `Branch` to search.
 - `who` `String` or `Regex` to use in the search.
+
+## Notes:
+
+- Element order is not guaranteed. Use
 """ 
-function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex})
+function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
   # Julia regex is simple
   if typeof(who) == Regex; return eles_base(where_search, who); end
 

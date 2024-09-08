@@ -2,7 +2,7 @@
 # machine_location
 
 """
-    machine_location(loc::BodyLoc.T, orientation::Int) -> StreamLoc.T
+    machine_location(loc::BodyLoc.T, orientation::Int)::StreamLoc.T
 
 Given a location with respect to an element's `local` orientation and the element's `orientation`,
 return the equivalent location in machine coordinates.
@@ -12,7 +12,7 @@ The reverse function is body_location.
 ### Input
 
  - `loc`          Location with respect to an element's `local` orientation.
-                     Possible values: `BodyLoc.ENTRANCE_END`, `BodyLoc.StreamLoc.CENTER`, or `BodyLoc.EXIT_END`
+                     Possible values: `BodyLoc.ENTRANCE_END`, `BodyLoc.CENTER`, or `BodyLoc.EXIT_END`
  - `orientation`  Element orientation. Possible values: -1 or +1.
 
 ### Output
@@ -20,15 +20,15 @@ The reverse function is body_location.
  - Returns: `StreamLoc.UPSTREAM_END`, `StreamLoc.CENTER`, or `StreamLoc.DOWNSTREAM_END` (a `StreamLoc.T` value).
 """ machine_location
 
-function machine_location(loc::BodyLoc.T, orientation::Int)
-  if loc == BodyLoc.StreamLoc.CENTER; return StreamLoc.CENTER; end
+function machine_location(loc::BodyLoc.T, orientation::Int)::StreamLoc.T
+  if loc == BodyLoc.CENTER; return StreamLoc.CENTER; end
 
   if loc == BodyLoc.ENTRANCE_END
     orientation == 1 ? (return StreamLoc.UPSTREAM_END) : return StreamLoc.DOWNSTREAM_END
   elseif loc == BodyLoc.EXIT_END
     orientation == 1 ? (return StreamLoc.DOWNSTREAM_END) : return StreamLoc.UPSTREAM_END
   else
-    error(f"loc argument values limited to `BodyLoc.ENTRANCE_END`, `BodyLoc.StreamLoc.CENTER`,  or `BodyLoc.EXIT_END`. Not: {loc}")
+    error(f"loc argument values limited to `BodyLoc.ENTRANCE_END`, `BodyLoc.CENTER`,  or `BodyLoc.EXIT_END`. Not: {loc}")
   end
 end
 
@@ -36,7 +36,7 @@ end
 # body_location
 
 """
-    body_location(loc::StreamLoc.T, orientation::Int) -> BodyLoc.T
+    body_location(loc::StreamLoc.T, orientation::Int)::BodyLoc.T
 
 Given an element location with respect to machine coordinates,
 along with the element's orientation with respect to machine coordinates, 
@@ -46,12 +46,12 @@ The reverse function is machine_location.
 
 ### Input
 
- - `loc`          Possible values: `StreamLoc.UPSTREAM_END`, `BodyLoc.StreamLoc.CENTER`, or `StreamLoc.DOWNSTREAM_END` .
+ - `loc`          Possible values: `StreamLoc.UPSTREAM_END`, `StreamLoc.CENTER`, or `StreamLoc.DOWNSTREAM_END` .
  - `orientation`  Possible values: -1 or +1.
 
 ### Output
 
- - Returns: `entranc_end`, `BodyLoc.StreamLoc.CENTER`, `BodyLoc.EXIT_END`.
+ - Returns: `BodyLoc.entrance_end`, `StreamLoc.CENTER`, `BodyLoc.EXIT_END`.
 """ body_location
 
 function body_location(loc::StreamLoc.T, orientation::Int)

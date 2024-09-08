@@ -19,7 +19,7 @@ end
 # init_superimpose!(Branch, superimpose)
 
 function init_superimpose!(branch::Branch, superimpose::Vector{T}) where T <: Ele
-  if branch.pdict[:type] == LordBranch; return; end
+  if branch.pdict[:type] <: LordBranch; return; end
 
   changed = ChangedLedger(false, true, true, true, true)
   previous_ele = nothing

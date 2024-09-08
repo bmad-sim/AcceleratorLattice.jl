@@ -149,35 +149,33 @@ function split!(branch::Branch, s_split::Real; choose::StreamLoc.T = StreamLoc.U
 
   # An element is split cases:
 
-  # Split case 1: Element is a drift. No super lord issues but need to create a drift structure 
-  # in `branch.drift_saved` so that split drift names can be properly mangled.
+  # Split case 1: Element is a drift. No super lord issues. Need to create a "master drift"
+  # representing the original drift in `branch.drift_masters` so that the names of drift slices can 
+  # be properly formed using a `!N` suffix where N is an integer.
   if typeof(slave1) == Drift
     slave2 = copy(slave1)
     insert!(branch.ele, slave1.ix_ele+1, slave2)  # Just after slave1
 
-    if haskey(slave1.private, :lord) 
-      lord = slave1.private[:lord]
-      ix = findfirst(isequal(slave1), lord.private[:slaves])
-      insert!(lord.private[:slaves], ix+1, slave2)
+    if haskey(slave1.pdict, :drift_master) 
+      master = slave1.pdict[:drift_master]
+      ix = findfirst(isequal(slave1), master.pdict[:slices])
+      insert!(master.pdict[:slices], ix+1, slave2)
     else
-      haskey(branch.pdict, :drift_saved) ? push!(branch.pdict[:drift_saved], Vector{Ele}([copy(slave1)])) : 
-                                                branch.pdict[:drift_saved] = Vector{Ele}([copy(slave1)])
-      lord = branch.pdict[:drift_saved][end]
-      lord.private[:slaves] = [slave1, slave2]
+      haskey(branch.pdict, :drift_masters) ? push!(branch.pdict[:drift_masters], copy(slave1)) : 
+                                                branch.pdict[:drift_masters] = Vector{Ele}([copy(slave1)])
+      master = branch.pdict[:drift_masters][end]
+      master.pdict[:slices] = [slave1, slave2]
     end
 
     slave1 = branch.ele[slave1.ix_ele]
     slave1.L = s_split - slave1.s
     slave2.L = slave1.s_downstream - s_split
 
-    slave1.private[:lord] = lord
-    slave2.private[:lord] = lord
+    slave1.pdict[:drift_master] = master
+    slave2.pdict[:drift_master] = master
 
     index_and_s_bookkeeper!(branch)
-
-    for (ix, ele) in enumerate(lord.private[:slaves])
-      ele.name = "$(lord.name)!$ix" 
-    end
+    set_drift_slice_names(master)
 
     return (slave2, true)
   end
@@ -214,7 +212,7 @@ function split!(branch::Branch, s_split::Real; choose::StreamLoc.T = StreamLoc.U
   slave = copy(slave1)
   pop!(slave.pdict, :multipass_lord, nothing)
   slave.pdict[:super_lords] = Vector{Ele}([lord])
-  slave.slave_status = super_slave
+  slave.slave_status = Slave.SUPER
 
   branch.ele[slave.ix_ele] = slave
   slave2 = copy(slave)
@@ -225,13 +223,44 @@ function split!(branch::Branch, s_split::Real; choose::StreamLoc.T = StreamLoc.U
   sbranch = branch.lat.branch[:super_lord]
   push!(sbranch.ele, lord)
   lord.pdict[:slaves] = Vector{Ele}([slave, slave2])
-  lord.lord_status = super_lord
+  lord.lord_status = Lord.SUPER
 
   index_and_s_bookkeeper!(branch)
   index_and_s_bookkeeper!(sbranch)
   set_super_slave_names!(lord)
 
   return slave2, true
+end
+
+#---------------------------------------------------------------------------------------------------
+# set_drift_slice_names
+
+"""
+"""
+
+function set_drift_slice_names(drift::Drift)
+  # Drift slice case
+
+  if haskey(drift.pdict, :drift_master)
+    set_drift_slice_names(drift.pdict[:drift_master])
+    return
+  end
+
+  # Drift master case
+
+  if !haskey(drift.pdict, :slices); return; end
+
+  n = 0
+  for slice in drift.pdict[:slices]
+    # A slice may have been replaced by an element via superposition so need to check that a
+    # slice still represents a valid element.
+    if !haskey(slice.pdict, :branch); continue; end
+    branch = slice.branch
+    if length(branch.ele) < slice.ix_ele; continue; end
+    if !(branch.ele[slice.ix_ele] === slice); continue; end
+    n += 1
+    slice.name = drift.name * "!$n"
+  end
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -244,7 +273,7 @@ end
 """
 
 function set_super_slave_names!(lord::Ele)
-  if lord.lord_status != super_lord; error(f"Argument is not a super_lord: {ele_name(lord)}"); end
+  if lord.lord_status != Lord.SUPER; error(f"Argument is not a super_lord: {ele_name(lord)}"); end
 
   name_dict = Dict{String,Int}()
   for slave in lord.slaves

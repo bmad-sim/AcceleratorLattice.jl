@@ -119,7 +119,6 @@ function (::Type{T})(; kwargs...) where T <: Ele
   ele = T(Dict{Symbol,Any}())
   pdict = ele.pdict
   pdict[:changed] = Dict{Symbol,Any}()
-  pdict[:private] = Dict{Symbol,Any}()
 
   # Setup parameter groups.
   for group in param_groups_list[typeof(ele)]

@@ -62,7 +62,7 @@ All parameters are optional.
 function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
   bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
   if !haskey(bline.pdict, :orientation); bline.pdict[:orientation] = +1; end
-  if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = open; end
+  if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = OPEN; end
   if !haskey(bline.pdict, :multipass);   bline.pdict[:multipass]   = false; end
 
   for (ix, item) in enumerate(bline.line)
@@ -243,7 +243,7 @@ Used by the `expand` function.
 
 function new_tracking_branch!(lat::Lat, bline::Union{BeamLine, Tuple})
   if typeof(bline) == Tuple{BeginningEle, BeamLine}
-    bline = beamline(bline[2].name, [bline[1], bline[2]])
+    bline = beamline(bline[2].name, [bline[1], bline[2]], geometry = bline[2].pdict[:geometry])
   end
 
   push!(lat.branch, Branch(bline.name, Vector{Ele}(), Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))

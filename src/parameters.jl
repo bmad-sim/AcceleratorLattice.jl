@@ -681,7 +681,7 @@ Dictionary of parameters in the Branch.pdict dict.
 
 branch_param = Dict(
   :ix_branch   => ParamInfo(Nothing, Int,               "Index of branch in containing lat .branch[] array"),
-  :geometry    => ParamInfo(Nothing, EleGeometrySwitch, "BranchGeom.OPEN or BranchGeom.CLOSED Geometry"),
+  :geometry    => ParamInfo(Nothing, BranchGeometry.T,  "BranchGeometry.OPEN  (or OPEN) or BranchGeometry.CLOSED (or CLOSED)"),
   :lat         => ParamInfo(Nothing, Pointer,           "Pointer to lattice containing the branch."),
   :type        => ParamInfo(Nothing, BranchType,        "Either LordBranch or TrackingBranch BranchType enums."),
   :from_ele    => ParamInfo(Nothing, Pointer,           "Element that forks to this branch."),
