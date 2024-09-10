@@ -414,12 +414,13 @@ multipole_param_info(str::AbstractString) = multipole_param_info(Symbol(str))
 # ele_param_info
 
 """
-    ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+    ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false) -> Union{ParamInfo, Nothing}
+    ele_param_info(sym::Symbol, ele::Ele; throw_error = true) -> Union{ParamInfo, Nothing}
 
 Returns information on the element parameter `sym`.
 Returns a `ParamInfo` struct. If no information on `sym` is found, an error is thrown
 or `nothing` is returned.
-""" ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+""" ele_param_info
 
 function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
   if haskey(ele_param_info_dict, sym); (return ele_param_info_dict[sym]); end
@@ -433,15 +434,7 @@ function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = f
   return info
 end
 
-#-
-
-"""
-    ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
-
-Returns information on the element parameter `sym`.
-Returns a `ParamInfo` struct. If no information on `sym` is found or `sym` is not a parameter of `ele`, 
-an error is thrown or `nothing` is returned.
-""" ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
+#
 
 function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
   param_info = ele_param_info(sym, throw_error = throw_error)

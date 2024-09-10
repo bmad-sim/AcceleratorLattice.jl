@@ -83,7 +83,6 @@ end
     Base.get(ele::Ele, sym::Symbol, default)
 
 Element accessor with default. Useful for elements that are not part of a lattice.
-
 """ Base.get_prop(ele::Ele, sym::Symbol, default)
 
 function Base.get(ele::Ele, sym::Symbol, default)
