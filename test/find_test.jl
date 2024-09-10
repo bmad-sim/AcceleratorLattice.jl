@@ -23,21 +23,21 @@ lat = expand("mylat", [(beginning, fodo), (beginning, ln2), ln3]);
 superimpose!(z2, lat.branch[3], offset = 0.1, ele_origin = BodyLoc.ENTRANCE_END)
 superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)
 
-
+eles(lat, "alias=`z1`")
 #---------------------------------------------------------------------------------------------------
 # Notice element d2 has a negative length
 
 b = lat.branch[1]
 
 @testset "ele_at_s" begin
-  @test ele_at_s(b, b.ele[4].s, select = Select.UPSTREAM).ix_ele == 2
-  @test ele_at_s(b, b.ele[4].s, select = Select.DOWNSTREAM).ix_ele == 4
-  @test ele_at_s(b, b.ele[end].s_downstream, select = Select.UPSTREAM).ix_ele == length(b.ele)-1
-  @test ele_at_s(b, b.ele[end].s_downstream, select = Select.DOWNSTREAM).ix_ele == length(b.ele)
-  @test ele_at_s(b, b.ele[17].s, select = Select.UPSTREAM, ele_near = b.ele[11]).ix_ele == 16
-  @test ele_at_s(b, b.ele[17].s, select = Select.DOWNSTREAM, ele_near = b.ele[11]).ix_ele == 17
-  @test ele_at_s(b, b.ele[21].s, select = Select.UPSTREAM, ele_near = b.ele[21]).ix_ele == 20
-  @test ele_at_s(b, b.ele[21].s, select = Select.DOWNSTREAM, ele_near = b.ele[21]).ix_ele == 21
+  @test ele_at_s(b, b.ele[4].s, select = Select.UPSTREAM) === b.ele[2]
+  @test ele_at_s(b, b.ele[4].s, select = Select.DOWNSTREAM) === b.ele[4]
+  @test ele_at_s(b, b.ele[end].s_downstream, select = Select.UPSTREAM) === b.ele[end-1]
+  @test ele_at_s(b, b.ele[end].s_downstream, select = Select.DOWNSTREAM) === b.ele[end]
+  @test ele_at_s(b, b.ele[17].s, select = Select.UPSTREAM, ele_near = b.ele[11]) == b.ele[16]
+  @test ele_at_s(b, b.ele[17].s, select = Select.DOWNSTREAM, ele_near = b.ele[11]) == b.ele[17]
+  @test ele_at_s(b, b.ele[21].s, select = Select.UPSTREAM, ele_near = b.ele[21]) == b.ele[20]
+  @test ele_at_s(b, b.ele[21].s, select = Select.DOWNSTREAM, ele_near = b.ele[21]) == b.ele[21]
 end
 
 @testset "eles" begin
@@ -52,8 +52,13 @@ end
   @test eles(lat, "z1-1") == eles(lat, "1>>4")
   @test eles(lat, "z1+1") == eles(lat, "fodo>>6")
   @test eles(lat, "z2-1") == eles(lat, "ln3>>2")
+  @test eles(lat, "alias=`z1`") == eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
+  @test eles(lat, "alias=`z1` ~fodo>>9 ~fodo>>22") == eles(lat, "fodo>>7, fodo>>15, fodo>>21")
+  @test eles(lat, "alias=`z1` & fodo>>9") == eles(lat, "fodo>>9")
 end
 
+# Function to print "eles" testset RHS. Used to create new tests. Just use the LHS as the argument.
+#
 #function toe(vec)
 #  str = "eles(lat, \""
 #  for ele in vec

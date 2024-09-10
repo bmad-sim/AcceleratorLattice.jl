@@ -2,9 +2,9 @@
 # str_split
 
 """
-    str_split(str::AbstractString, delims::AbstractString; skip_quoted=true, limit::Integer=0) 
+    str_split(str::AbstractString, delims::AbstractString; skip_quoted=true, limit::Integer=0, keep_empty = false) 
     str_split(str::AbstractString, delims::Vector{T}; 
-                                     skip_quoted=true, limit::Integer=0) where T <: AbstractString
+                                     skip_quoted=true, limit::Integer=0, keep_empty = false) where T <: AbstractString
 
 Function to split a string and return a vector of words. 
 Unlike the standard `split` function, the output vector with `str_split` will includ delimiter terms.
@@ -27,9 +27,14 @@ Unlike the standard `split` function, the output vector with `str_split` will in
 - `limit` The maximum vector length of the output vector. `limit = 0` implies no maximum (default)
   If `limit` is non-zero, the last element in the output vector can contain a mix of delimiters
   and not-delimiters
+- `keep_empty` If `true`, remove all empty strings `""`  (no characters) from the output vector. For example:
+```
+        str_split("xy", "xy", keep_empty = true)  ->  ["", "x", "", "y", ""]
+        str_split("xy", "xy", keep_empty = false)  ->  ["x", "y"]
+```
 
 ## Notes
-- A tab character is considered to be the same as a space character.
+- A space delimiter will match to any character `c` with `isspace(c)` returning `true`.
 - If space is a delimiter, multiple spaces are condensed into one except within a quote block.
   Also a space is considered a "minor" delimiter and will be removed if next to another delimiter.
   For example, if `delims` is `", "`, the output vector for `str = "a, b"` will be `["a", ",", "b"]`.
@@ -43,7 +48,7 @@ Unlike the standard `split` function, the output vector with `str_split` will in
 
 
 function str_split(str::AbstractString, delims::Vector{T}; 
-                               skip_quoted=true, limit::Integer=0) where T <: AbstractString
+                       skip_quoted=true, limit::Integer=0, keep_empty = false) where T <: AbstractString
 
   function this_word(a_word, has_blank_delim)
     if has_blank_delim
@@ -76,8 +81,6 @@ function str_split(str::AbstractString, delims::Vector{T};
       continue
     end
 
-    
-
     #
 
     if skip_quoted
@@ -97,15 +100,19 @@ function str_split(str::AbstractString, delims::Vector{T};
 
     elseif !skip_quoted || quote_mark == ' ' || quote_mark == c
       for delim in delims
-        if c != delim[1]; continue; end
+        if delim == " "
+          if !isspace(c); continue; end
+        else
+          if c != delim[1]; continue; end
+        end
 
         n = length(delim)
         if n > 1 && (indx+n-1 > n_str || delim[2:end] != str[indx+1:indx+n-1]) continue; end
 
-        push!(words, this_word(str[ix1_word:indx-1], has_blank_delim))
+        if keep_empty || ix1_word <= indx-1; push!(words, this_word(str[ix1_word:indx-1], has_blank_delim)); end
 
         if limit > 0 && length(words) == limit - 1
-          push!(words, this_word(str[indx:end], has_blank_delim))
+          if keep_empty || indx <= n_str; push!(words, this_word(str[indx:end], has_blank_delim)); end
           return words
         end
 
@@ -114,12 +121,14 @@ function str_split(str::AbstractString, delims::Vector{T};
         n_skip = n - 1
 
         if limit > 0 && length(words) == limit - 1
-          push!(words, this_word(str[ix1_word:end], has_blank_delim))
+          if keep_empty || ix1_word <= n_str
+            push!(words, this_word(str[ix1_word:end], has_blank_delim))
+          end
           return words
         end
 
         if indx+n-1 == n_str
-          push!(words, "")
+          if keep_empty; push!(words, ""); end
           return words
         end
 
@@ -138,8 +147,8 @@ end
 
 #
 
-function str_split(str::AbstractString, delims::AbstractString; skip_quoted=true, limit::Integer=0)
-  str_split(str, [string(z) for z in delims], skip_quoted = skip_quoted, limit = limit)
+function str_split(str::AbstractString, delims::AbstractString; skip_quoted=true, limit::Integer=0, keep_empty = false)
+  str_split(str, [string(z) for z in delims], skip_quoted = skip_quoted, limit = limit, keep_empty = keep_empty)
 end
 
 #---------------------------------------------------------------------------------------------------

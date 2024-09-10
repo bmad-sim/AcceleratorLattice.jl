@@ -125,7 +125,7 @@ function eles_atomic(where_search::Union{Lat,Branch}, who::Union{AbstractString,
     end
 
     if length(chunks) > 4 && chunks[2] == "="
-      if chunks[3] != "`" || chunks[5] != "`" error("Malformed match string for reference element(s): $who"); end
+      if chunks[3] != "`" || chunks[5] != "`" error("Malformed back ticks in element match string: $who"); end
       param_id = Symbol(chunks[1])
       match_str = chunks[4]
       chunks = chunks[6:end]
@@ -135,13 +135,13 @@ function eles_atomic(where_search::Union{Lat,Branch}, who::Union{AbstractString,
     end
 
     if length(chunks) > 0 && chunks[1] == "#"
-      if length(chunks) == 1; error("Malformed match string for reference elements(s): $who"); end
+      if length(chunks) == 1; error("Malformed `#` character in element match string: $who"); end
       nth_instance = integer(chunks[2])
       chunks = chunks[3:end]
     end
 
     if length(chunks) > 0 && (chunks[1] == "-" || chunks[1] == "+")
-      if length(chunks) == 1; error("Malformed match string for reference elements(s): $who"); end
+      if length(chunks) == 1; error("Malformed `-` or `+` character in element match string: $who"); end
       offset = integer(chunks[1] * chunks[2])
       chunks = chunks[3:end]
     end
@@ -176,18 +176,16 @@ function eles_atomic(where_search::Union{Lat,Branch}, who::Union{AbstractString,
           if haskey(ele.pdict, :super_lords)
             for lord in ele.pdict[:super_lords]
               if !(lord.slaves[1] === ele); continue; end
-              if !haskey(lord.pdict, param_id); continue; end
               if !isnothing(ele_type) && Symbol(typeof(lord)) != ele_type; continue; end
-              if !str_match(match_str, lord.pdict[param_id]); continue; end
+              if !str_match(match_str, getproperty(lord, param_id)); continue; end
               ix_match += 1
               if nth_instance != -1 && ix_match > nth_instance; continue; end
               if ix_match == nth_instance || nth_instance == -1; push!(eles, ele_at_offset(lord, offset, wrap)); end
             end
           end
 
-          if !haskey(ele.pdict, param_id); continue; end
           if !isnothing(ele_type) && Symbol(typeof(ele)) != ele_type; continue; end
-          if !str_match(match_str, ele.pdict[param_id]); continue; end
+          if !str_match(match_str, getproperty(ele, param_id)); continue; end
           ix_match += 1
           if nth_instance != -1 && ix_match > nth_instance; continue; end
           if ix_match == nth_instance || nth_instance == -1; push!(eles, ele_at_offset(ele, offset, wrap)); end
@@ -279,14 +277,14 @@ function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex};
     eles2 = eles(where_search, list[2], wrap = wrap)
 
     if list[1] == "&"
-      ele_list = []
+      ele_list = Ele[]
       for ele1 in eles1
         if ele1 in eles2; push!(ele_list, ele1); continue; end
       end
       eles1 = ele_list
 
     elseif list[1] == "~"
-      ele_list = []
+      ele_list = Ele[]
       for ele1 in eles1
         if ele1 ∉ eles2; push!(ele_list, ele1); continue; end
       end
