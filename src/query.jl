@@ -135,10 +135,10 @@ end
 """
     matches_branch(name::AbstractString, branch::Branch)
 
-Returns `true`/`false` if `name` matches/does not match `branch`.
+Tests if `name` matches/does not match `branch`.
 A match can match branch.name or the branch index.
 A blank name matches all branches.
-Bmad standard wildcard characters "*" and "%" can be used.
+Bmad standard wildcard characters `"*"` and `"%"` can be used.
 """ matches_branch
 
 function matches_branch(name::AbstractString, branch::Branch)
@@ -164,3 +164,30 @@ whose length is below min_ele_length. The returned value is `2 * lat.LatticeGlob
 """ min_ele_length
 
 min_ele_length(lat::Lat) = 2 * lat.LatticeGlobal.significant_length
+
+#---------------------------------------------------------------------------------------------------
+# it_ismutable & it_isimmutable
+
+"""
+    function it_ismutable(x)
+
+Work around for the problem that ismutable returns True for strings.
+See: https://github.com/JuliaLang/julia/issues/30210
+""" it_ismutable
+
+function it_ismutable(x)
+  if typeof(x) <: AbstractString; return false; end
+  return ismutable(x)
+end
+
+"""
+    function it_isimmutable(x)
+
+Work around for the problem that isimmutable returns True for strings.
+See: https://github.com/JuliaLang/julia/issues/30210
+""" it_isimmutable
+
+function it_isimmutable(x)
+  if typeof(x) <: AbstractString; return true; end
+  return isimmutable(x)
+end

@@ -23,7 +23,6 @@ lat = expand("mylat", [(beginning, fodo), (beginning, ln2), ln3]);
 superimpose!(z2, lat.branch[3], offset = 0.1, ele_origin = BodyLoc.ENTRANCE_END)
 superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)
 
-eles(lat, "z1+1")
 
 #---------------------------------------------------------------------------------------------------
 # Notice element d2 has a negative length
@@ -42,23 +41,23 @@ b = lat.branch[1]
 end
 
 @testset "eles" begin
-  @test [e.ix_ele for e in eles(lat, "d")] == [8, 20, 2]
-  @test [e.ix_ele for e in eles(lat, "Marker::*")] == [10, 11, 23, 5, 5, 8]
-  @test [e.ix_ele for e in eles(lat, "Marker::*-1")] == [9, 10, 22, 4, 4, 7]
-  @test [e.ix_ele for e in eles(lat, "m1#2")] == [11]
-  @test [e.ix_ele for e in eles(lat, "m1#2+1")] == [12]
-  @test [e.ix_ele for e in eles(lat.branch[5], "d")] == [2]
-  @test [(e.branch.ix_branch, e.ix_ele) for e in eles(lat, "multipass_lord>>d")] == [(5, 2)]
-  @test [e.ix_ele for e in eles(lat, "%d")] == [22, 1, 3]
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
-#  @test [e.ix_ele for e in ] == []
+  @test eles(lat, "d") == eles(lat, "fodo>>8, fodo>>20, multipass_lord>>2")
+  @test eles(lat, "Marker::*") == eles(lat, "fodo>>10, fodo>>11, fodo>>23, ln2>>5, ln3>>5, ln3>>8")
+  @test eles(lat, "Marker::*-1") == eles(lat, "fodo>>9, fodo>>10, fodo>>22, ln2>>4, ln3>>4, ln3>>7")
+  @test eles(lat, "m1#2") == eles(lat, "fodo>>11")
+  @test eles(lat, "m1#2+1") == eles(lat, "fodo>>12")
+  @test eles(lat.branch[5], "d") == eles(lat, "multipass_lord>>2")
+  @test eles(lat, "multipass_lord>>d") == eles(lat, "multipass_lord>>2")
+  @test eles(lat, "%d") == eles(lat, "fodo>>22, multipass_lord>>1, multipass_lord>>3")
+  @test eles(lat, "z1-1") == eles(lat, "1>>4")
+  @test eles(lat, "z1+1") == eles(lat, "fodo>>6")
+  @test eles(lat, "z2-1") == eles(lat, "ln3>>2")
 end
+
+#function toe(vec)
+#  str = "eles(lat, \""
+#  for ele in vec
+#    str *= ele_name(ele, "!#") * ", "
+#  end
+#  print(str[1:end-2] * "\")")
+#end;

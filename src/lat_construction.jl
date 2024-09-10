@@ -246,7 +246,7 @@ function new_tracking_branch!(lat::Lat, bline::Union{BeamLine, Tuple})
     bline = beamline(bline[2].name, [bline[1], bline[2]], geometry = bline[2].pdict[:geometry])
   end
 
-  push!(lat.branch, Branch(bline.name, Vector{Ele}(), Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
+  push!(lat.branch, Branch(bline.name, Ele[], Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
   branch = lat.branch[end]
   branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
@@ -274,7 +274,7 @@ function new_tracking_branch!(lat::Lat, bline::Union{BeamLine, Tuple})
 end
 
 function new_lord_branch!(lat::Lat, name::AbstractString, branch_type::Type{T}) where T <: BranchType
-  push!(lat.branch, Branch(name, Vector{Ele}(), Dict{Symbol,Any}()))
+  push!(lat.branch, Branch(name, Ele[], Dict{Symbol,Any}()))
   branch = lat.branch[end]
   branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
@@ -305,7 +305,7 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 """ expand
 
 function expand(name::AbstractString, root_line::Union{BeamLine,Vector}) 
-  lat = Lat(name, Vector{Branch}(), Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
+  lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
   
   if root_line isa BeamLine
     new_tracking_branch!(lat, root_line)

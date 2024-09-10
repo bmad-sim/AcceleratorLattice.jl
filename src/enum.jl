@@ -12,18 +12,17 @@ return `OPEN` and `CLOSED`.
 
 macro enumit(str::AbstractString)
   eval( Meta.parse("@enumx $str") )
-  str_split = split(str)
-  str2 = join(str_split, ',')
+  str_words = split(str)
+  str2 = join(str_words, ',')
   eval( Meta.parse("export $str2") )
-  s = "Base.string(z::$(str_split[1]).T) = \"$(str_split[1]).\" * string(Symbol(z))"
-  if str_split[1] != "BranchGeometry"; eval( Meta.parse(s) ); end
+  s = "Base.string(z::$(str_words[1]).T) = \"$(str_words[1]).\" * string(Symbol(z))"
+  if str_words[1] != "BranchGeometry"; eval( Meta.parse(s) ); end
 end
 
 @enumit("ApertureShape RECTANGULAR ELLIPTICAL")
 @enumit("BendType SECTOR RECTANGULAR")
 @enumit("BodyLoc ENTRANCE_END CENTER EXIT_END BOTH_ENDS NOWHERE EVERYWHERE")
 @enumit("BranchGeometry OPEN CLOSED")
-## @enumit("EleGeometry STRAIGHT CIRCULAR ZEROLENGTH PATCH GIRDER CRYSTAL MIRROR") # See core.jl
 @enumit("Cavity STANDING_WAVE TRAVELING_WAVE")
 @enumit("SlaveControl DELTA ABSOLUTE NOT_SET")
 @enumit("FieldCalc MAP STANDARD")
@@ -41,4 +40,26 @@ end
 CLOSED::BranchGeometry.T = BranchGeometry.CLOSED
 OPEN::BranchGeometry.T = BranchGeometry.OPEN
 
+
+#---------------------------------------------------------------------------------------------------
+# holly_type
+
+"""
+    holly_type(atype::AbstractString, ctypes::Vector)
+
+Makes an abstract type from the first word and makes concrete types that inherit from the abstract type
+from the other words in the string.
+""" holly_type
+
+function holly_type(atype::AbstractString, ctypes::Vector)
+  eval( Meta.parse("abstract type $atype end") )
+  eval( Meta.parse("export $atype") )
+
+  for ct in ctypes
+    eval( Meta.parse("struct $ct <: $atype; end") )
+  end
+end
+
+holly_type("EleGeometrySwitch", ["Straight", "Circular", "ZeroLength", 
+                                  "PatchGeom", "GirderGeom", "CrystalGeom",  "MirrorGeom"])
 

@@ -68,7 +68,7 @@ All elements with indexes of `ix_ele` and higher are pushed one element down the
 Inserted is a (shallow) copy of `ele` and this copy is returned.
 
  - `adjust_orientation`  If `true`, and the `branch.type` is a `TrackingBranch`, the orientation 
-attribute of `ele` is adjusted to match the neighboring elements.
+parameter of `ele` is adjusted to match the neighboring elements.
 
 """ Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
 

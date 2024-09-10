@@ -888,7 +888,7 @@ The constant NULL_BRANCH is defined as a placeholder for signaling the absense o
 The test is_null(branch) will test if a branch is a NULL_BRANCH.
 """ NULL_BRANCH
 
-const NULL_BRANCH = Branch("NULL_BRANCH", Vector{Ele}(), Dict{Symbol,Any}(:ix_branch => -1))
+const NULL_BRANCH = Branch("NULL_BRANCH", Ele[], Dict{Symbol,Any}(:ix_branch => -1))
 
 #---------------------------------------------------------------------------------------------------
 # Branch types

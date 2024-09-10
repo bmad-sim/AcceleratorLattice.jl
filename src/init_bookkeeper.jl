@@ -73,7 +73,7 @@ function init_ele_bookkeeper!(ele::Controller)
   # Put controls in place
   pdict[:control] = pop!(pdict[:inbox], :control)
   for ctl in pdict[:control]
-    loc = Vector{LatEleLocation}()
+    loc = LatEleLocation[]
     for ele_id in ctl.eles
       if typeof(ele_id) == LatEleLocation
         push!(loc, ele_id)
@@ -128,7 +128,7 @@ function init_multipass_bookkeeper!(lat::Lat)
     delete!(lord.pdict, :multipass_id)
     lord.pdict[:branch] = multipass_branch
     lord.pdict[:ix_ele] = length(multipass_branch.ele)
-    lord.pdict[:slaves] = Vector{Ele}()
+    lord.pdict[:slaves] = Ele[]
     for (ix, ele) in enumerate(val)
       ele.name = ele.name * "!mp" * string(ix)
       ele.pdict[:multipass_lord] = lord
