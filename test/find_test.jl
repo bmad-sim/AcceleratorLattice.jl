@@ -23,7 +23,6 @@ lat = expand("mylat", [(beginning, fodo), (beginning, ln2), ln3]);
 superimpose!(z2, lat.branch[3], offset = 0.1, ele_origin = BodyLoc.ENTRANCE_END)
 superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)
 
-eles(lat, "fodo>>8, fodo>>20, multipass_lord>>2")
 
 #---------------------------------------------------------------------------------------------------
 # Notice element d2 has a negative length
@@ -55,8 +54,6 @@ end
   @test eles(lat, "z2-1") == eles(lat, "ln3>>2")
 end
 
-
-
 #function toe(vec)
 #  str = "eles(lat, \""
 #  for ele in vec
@@ -64,6 +61,3 @@ end
 #  end
 #  print(str[1:end-2] * "\")")
 #end;
-
-# {branch_id>>}{ele_class::}ele_id{#N}{+/-offset}
-# alias = `abc`
