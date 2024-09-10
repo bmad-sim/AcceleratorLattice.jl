@@ -78,11 +78,9 @@ function Base.iterate(x::Region, ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Base.iterate(::BeamLine)
+# collect(::Branch)
 
-"""
-    Base.iterate( [, state]) -> Union{Nothing, Tuple{Any, Any}}
-""" Base.iterate
+Base.collect(b::Branch) = [b]
 
 #---------------------------------------------------------------------------------------------------
 # next_ele

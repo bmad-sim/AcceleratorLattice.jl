@@ -317,17 +317,17 @@ follows:
 %
 \item[$\theta(s)$ Azimuth (yaw) angle:] 
 Angle in the $(X, Z)$ plane between the $Z$--axis and the projection of the $z$--axis onto the $(X,
-Z)$ plane. Corresponds to the \vn{y_rot} element attribute (\sref{s:offset}). A positive angle of
+Z)$ plane. Corresponds to the \vn{y_rot} element parameter (\sref{s:offset}). A positive angle of
 $\theta = \pi/2$ corresponds to the projected $z$--axis pointing in the negative $X$-direction.
 %
 \item[$\phi(s)$ Pitch (elevation) angle:] 
-Angle between the $z$--axis and the $(X,Z)$ plane. Corresponds to the \vn{x_rot} element attribute
+Angle between the $z$--axis and the $(X,Z)$ plane. Corresponds to the \vn{x_rot} element parameter
 (\sref{s:offset}). A positive angle of $\phi = \pi/2$ corresponds to the $z$--axis pointing in the
 positive $Y$ direction.
 %
 \item[$\psi(s)$ Roll angle:] 
 Angle of the $x$--axis with respect to the line formed by the intersection of the $(X, Z)$ plane
-with the $(x, y)$ plane. Corresponds to the \vn{tilt} element attribute (\sref{s:offset}). A
+with the $(x, y)$ plane. Corresponds to the \vn{tilt} element parameter (\sref{s:offset}). A
 positive $\psi$ forms a right--handed screw with the $z$--axis.
 \end{description}
 
@@ -714,8 +714,8 @@ This needs cleanup!!!
 
 \index{rbend!coordinate transformation}\index{sbend!coordinate transformation}
 \index{roll!coordinate transformation}\index{tilt!coordinate transformation}
-For \vn{rbend} and \vn{sbend} elements there is no \vn{tilt} attribute.  Rather, there is the
-\vn{roll} attribute and a \vn{ref_tilt} attribute. The latter affects both the reference orbit and
+For \vn{rbend} and \vn{sbend} elements there is no \vn{tilt} parameter.  Rather, there is the
+\vn{roll} parameter and a \vn{ref_tilt} parameter. The latter affects both the reference orbit and
 the bend position (\sref{s:bend.orient}). Furthermore, \vn{ref_tilt} is calculated with respect to
 the coordinates at the beginning of the bend while, like straight elements, \vn{roll}, \vn{x_rot},
 \vn{y_rot}, and offsets are calculated with respect to the center of the bend. The different reference frame used
@@ -821,7 +821,7 @@ particle}'') through the element with the particle starting on the reference orb
 is equal to the reference energy. The energy of the particle at the downstream end is the reference
 energy of the element. Note: Tracking through an element to determine the reference energy is always
 done with the element turned on independent of the setting of the element's \vn{is_on}
-(\sref{s:is.on}) parameter. Reference energy tracking is also done ignoring any orientation attributes
+(\sref{s:is.on}) parameter. Reference energy tracking is also done ignoring any orientation parameters
 (\sref{s:offset}) and errors like \vn{voltage_err}.
 
 \index{wiggler!reference time}

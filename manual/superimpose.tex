@@ -103,7 +103,7 @@ Branch 1: "z"  geometry => open                 L           s       s_downstream
   superimpose!(ss, ref_ele, offset = 0.2)
 \end{example}
 
-attribute of element \vn{S} superimposes \vn{S} over the lattice \vn{(Q,
+parameter of element \vn{S} superimposes \vn{S} over the lattice \vn{(Q,
 D)}. The placement of \vn{S} is such that the beginning of \vn{S} is coincident with the center of
 \vn{Q} (this is is explained in more detail below). Additionally, a marker \vn{M} is superimposed at
 a distance of +1~meter from the center of \vn{S}. The tracking part of the lattice
@@ -188,7 +188,7 @@ superimpose statement may not be switched off later in the lattice file.
 
 The placement of a superimposed element is illustrated in \fig{f:superimpose}. The placement of a
 superimposed element is determined by three factors: An origin point on the superimposed element, an
-origin point on the reference element, and an offset between the points. The attributes that
+origin point on the reference element, and an offset between the points. The parameters that
 determine these three quantities are:
 \index{ref}\index{offset}
 \index{ref_origin}\index{ele_origin}
@@ -237,7 +237,7 @@ For example, ``ele_origin = beginning'' in the old syntax would be ``ele_beginni
 The element begin superimposed may be any type of element except \vn{drift}, \vn{group},
 \vn{overlay}, and \vn{girder} control elements. The reference element used to position a
 superimposed element may be a \vn{group} or \vn{overlay} element as long as the \vn{group} or
-\vn{overlay} controls the attributes of exactly one element. In this case, the controlled element is
+\vn{overlay} controls the parameters of exactly one element. In this case, the controlled element is
 used as the reference element.
 
 \index{geometry}\index{open}
@@ -338,10 +338,10 @@ elements in the lattice named \vn{a_drft}, the following is not allowed:
   my_oct: octupole, ..., superimpose, ref = a_drft##2  ! This is an error
 \end{example}
 
-When the attributes of a super_slave are computed from the attributes of its super_lords, some types
-of attributes may be ``missing''. For example, it is, in general, not possible to set appropriate
-aperture attributes (\sref{s:limit}) of a super_slave if the lords of the slave have differing
-aperture settings. When doing calculations, \bmad will use the corresponding attributes stored in
+When the parameters of a super_slave are computed from the parameters of its super_lords, some types
+of parameters may be ``missing''. For example, it is, in general, not possible to set appropriate
+aperture parameters (\sref{s:limit}) of a super_slave if the lords of the slave have differing
+aperture settings. When doing calculations, \bmad will use the corresponding parameters stored in
 the lord elements to correctly calculate things.
 
 When superposition is done in a line where there is \vn{element reversal} (\sref{s:ele.reverse}),
@@ -434,8 +434,8 @@ The result is shown in \fig{f:super.ex}C. The tracking part of the lattice will 
 \index{lord_pad1}\index{lord_pad2}
 \vn{Q} and part of \vn{S} have been combined into a jumbo \vn{super_slave} named \vn{Q{\B}S}. Since
 the \vn{super_lord} elements of a jumbo \vn{super_slave} may not completely span the slave two
-attributes of each lord will be set to show the position of the lord within the slave. These two
-attributes are
+parameters of each lord will be set to show the position of the lord within the slave. These two
+parameters are
 \begin{example}
   lord_pad1    ! offset at upstream end
   lord_pad2    ! offset at downstream end
@@ -464,7 +464,7 @@ need to use jumbo elements when superimposing a \vn{marker} element.
 
 \index{field_overlaps}
 Another possible way to handle overlapping fields is to use the \vn{field_overlaps} element
-attribute as discussed in \sref{s:overlap}.
+parameter as discussed in \sref{s:overlap}.
 
 %-----------------------------------------------------------------------------
 \section{Changing Element Lengths when there is Superposition}

@@ -79,202 +79,229 @@ function ele_at_offset(reference::Union{Ele,Branch}, offset::Int; wrap::Bool = t
 end
 
 #---------------------------------------------------------------------------------------------------
-# eles_base
+# eles_atomic
 
 """
-    Internal: function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; 
+    Internal: function eles_atomic(where_search, who::Union{AbstractString,Regex}; 
                                                                wrap::Bool = true)  -> ele_vector::Ele[]
 
-Internal. Called by `eles` function.
-""" eles_base
+Internal function. Called by `eles` function.
+`who` is an "atomic" search string. See the documentation in `eles` for more details.
+""" eles_atomic
 
-function eles_base(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
+function eles_atomic(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
   julia_regex = (typeof(who) == Regex)
-  who = string(who)
-  typeof(where_search) == Lat ? branch_vec = where_search.branch : branch_vec = [where_search]
+
+  if typeof(where_search) == Lat
+    branch_vec = where_search.branch
+  else
+    branch_vec = collect(where_search)
+  end
+
+  branch_id = ""
+  ele_type = nothing
+  param_id = :name
+  match_str = ""
+  offset = 0
+  nth_instance = -1
+
+  # Parse who
+
+  if julia_regex
+    match_str = who
+
+  else
+    this_who = replace(who, "'" => "\'")
+    chunks = str_split(this_who, [">>", "::", "#", "+", "-", "=", "`", " "])
+
+    if length(chunks) > 2 && chunks[2] == ">>"
+      branch_id = chunks[1]
+      chunks = chunks[3:end]
+    end
+
+    if length(chunks) > 2 && chunks[2] == "::"
+      ele_type = Symbol(chunks[1])
+      chunks = chunks[3:end]
+    end
+
+    if length(chunks) > 4 && chunks[2] == "="
+      if chunks[3] != "`" || chunks[5] != "`" error("Malformed match string for reference element(s): $who"); end
+      param_id = Symbol(chunks[1])
+      match_str = chunks[4]
+      chunks = chunks[6:end]
+    else
+      match_str = chunks[1]
+      chunks = chunks[2:end]
+    end
+
+    if length(chunks) > 0 && chunks[1] == "#"
+      if length(chunks) == 1; error("Malformed match string for reference elements(s): $who"); end
+      nth_instance = integer(chunks[2])
+      chunks = chunks[3:end]
+    end
+
+    if length(chunks) > 0 && (chunks[1] == "-" || chunks[1] == "+")
+      if length(chunks) == 1; error("Malformed match string for reference elements(s): $who"); end
+      offset = integer(chunks[1] * chunks[2])
+      chunks = chunks[3:end]
+    end
+  end
+
+  # Search for elements
 
   eles = Ele[]
-  if !julia_regex; who = replace(who, "'" => "\""); end
+  ix_ele = integer(match_str, -1)
 
-  branch_id = ""; offset = 0
-  nth_match = -1
-
-  if occursin(">>", who); branch_id, who = split(who, ">>"); end
-
-  # attrib->pattern construct
-  if occursin("->", who)
-    attrib, pattern = split(who, "->")
-    attrib = Meta.parse(attrib)     # Makes attrib a Symbol
-
-    words = str_split(pattern, "+-")
-    if length(words) == 2 || length(words) > 3; error(f"ParseError: Bad lattice element name: {who}"); end
-    pattern = str_unquote(words[1])
-    if length(words) == 3; offset = parse(Int, words[2]*words[3]); end
-
-    for branch in branch_vec
-      if !matches_branch(branch, branch_id); continue; end
-      for ele in branch.ele
-        if !haskey(ele.pdict, attrib); continue; end
-        if julia_regex
-          if occursin(pattern, ele.pdict[attrib]); push!(eles, ele_at_offset(ele, offset, wrap)); end
-        else
-          if str_match(pattern, ele.pdict[attrib]); push!(eles, ele_at_offset(ele, offset, wrap)); end
-        end
-      end
-    end
-
-  # ele_id or key::ele_id construct
-  else
-    key = nothing
-    if occursin("::", who)
-      key, who = split(who, "::")
-      key = Symbol(key)
-    end
-
-    ix_ele = -1
-    if !julia_regex
-      words = str_split(who, "+-#", doubleup = true)   # EG: ["Marker::*", "-", "1"]
-
-      if length(words) > 2 && occursin(words[end-1], "+-")
-        offset = parse(Int, words[end-1]*words[end])
-        words = words[1:end-2]
-      end
-
-      if length(words) > 2 && words[end-1] == "#"
-        nth_match = parse(Int, words[end])
-        words = words[1:end-2]
-      end
-
-      if length(words) != 1; error(f"ParseError: Bad lattice element name: {who}"); end
-      ele_id = words[1]
-      ix_ele = str_to_int(ele_id, -1)
-      if ix_ele != -1 && nth_match != -1; return eles; end
-    end
-
+  if ix_ele != -1 && param_id == :name
+    if nth_instance != -1; error("Specifying element index and using `#N` construct not allowed in: $who"); end
     for branch in branch_vec
       if !matches_branch(branch_id, branch); continue; end
-      if ix_ele != -1
-        push!(eles, ele_at_offset(branch, branch.ele[ix_ele], offset, wrap))
-        continue
-      end
+      push!(eles, ele_at_offset(branch.ele[ix_ele], offset, wrap))
+    end
+
+  # 
+
+  else
+    for branch in branch_vec
+      if !matches_branch(branch_id, branch); continue; end
+      if !julia_regex && branch_id == "" && branch.type == SuperLordBranch; continue; end
 
       ix_match = 0
       for ele in branch.ele
         if julia_regex
-          if match(ele_id, ele.who); push!(eles, ele); end
+          if match(match_str, ele.name); push!(eles, ele); end
         else
-          if !isnothing(key) && Symbol(typeof(ele)) != key; continue; end
-          if !str_match(ele_id, ele.name); continue; end
+          # Match to super_lord elements in case `#N` construct has been used and the testing order of the 
+          # element is important. To not double count, only check lords where ele is the first super_slave.
+          if haskey(ele.pdict, :super_lords)
+            for lord in ele.pdict[:super_lords]
+              if !(lord.slaves[1] === ele); continue; end
+              if !haskey(lord.pdict, param_id); continue; end
+              if !isnothing(ele_type) && Symbol(typeof(lord)) != ele_type; continue; end
+              if !str_match(match_str, lord.pdict[param_id]); continue; end
+              ix_match += 1
+              if nth_instance != -1 && ix_match > nth_instance; continue; end
+              if ix_match == nth_instance || nth_instance == -1; push!(eles, ele_at_offset(lord, offset, wrap)); end
+            end
+          end
+
+          if !haskey(ele.pdict, param_id); continue; end
+          if !isnothing(ele_type) && Symbol(typeof(ele)) != ele_type; continue; end
+          if !str_match(match_str, ele.pdict[param_id]); continue; end
           ix_match += 1
-          if nth_match != -1 && ix_match > nth_match; continue; end
-          if ix_match == nth_match || nth_match == -1; push!(eles, ele_at_offset(ele, offset, wrap)); end
+          if nth_instance != -1 && ix_match > nth_instance; continue; end
+          if ix_match == nth_instance || nth_instance == -1; push!(eles, ele_at_offset(ele, offset, wrap)); end
         end
       end
-    end   # branch loop
-
-    return eles
+    end
   end
+
+  return eles
 end
 
 #---------------------------------------------------------------------------------------------------
 # eles
 
 """
-    function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = True)
-                                                                                        -> ele_vector::Ele[]
+    function eles(where_search, who::Union{AbstractString,Regex}; wrap::Bool = True) -> Ele[]
 
 Returns a vector of all elements that match `who`. 
 
-There are two types of `who`.
-On type uses a Julia `Regex` expression to match to element names. For example:
-```
-  who = r"q\\d"     # Matches "qN" where "N" is a digit 0-9.
-```
-See the Julia regex documentation for more information.
+## Arguments
+- `where_search`  Where to search. Either a lattice (all branches searched), lattice branch, or 
+  vector of lattice branches.
+- `who`           The string to match elements to. 
+  Either a Julia `Regex` expression to match to element names or a string with matching 
+  governed by the "AcceleratorLattice" (AL) regex syntax (see below).
+- `wrap`          Used if there is an `offset` specified in the search string (see below).
 
-The other types of matches are those using the "AcceleratorLattice" (AL) regex syntax.
-This syntax has wild card characters “*” and “%”.
-The “*” character will match any number of characters (including zero) while “%” maches to any single character. 
+## AL Regex
 
-All AL regex expressions are built up from "atomic" expressions. Atomic expressions are of
-one of two forms: One atomic form is:
+The "AcceleratorLattice" (AL) regex syntax has wild card characters `“*”` and `“%”`.
+The `“*”` character will match any number of characters (including zero) while 
+`“%”` maches to any single character. 
+
+All AL regex expressions are built up from "atomic" expressions of
+the form:
 ```
-  {branch_id>>}{ele_class::}ele_id{#N}{+/-offset}`
+  {branch_id>>}{ele_class::}ele_id{#N}{+/-offset}
 ```
 Curly brackets `{...}` denote optional fields.
 - `branch_id`   Optional lattice branch index or name. Alternative is to specify the branch
-  using the `where_search` argument.
+  using the `where_search` argument. A branch is searched if it matches both `where_search`
+  and `branch_id`. 
 - `ele_class`   Optional element class (EG: `Quadrupole`).
-- `ele_id`      Element name with or element index. The element name can contain wild card characters.
+- `ele_id`      Element name, index, or `parameter='match_str'` construct. 
+  The element name can contain wild card characters.
 - `#N`          If present, return only the Nth instance matched to.
 - `+/-offset`   If present, return element(s) whose index is offset from the elements matched to.
 
-Examples:
+Atomic expressions may be combined using the operators `","` (union), `"~"` (negation) or `"&"` (intersection):
+If there are more than two atomic expressions involved, evaluation is left to right. For example:
 ```
-  eles(lat, "d")                All elements named "d"
-  eles(lat, "Marker::*")
-  eles(lat, "Marker::*-1")
-  eles(lat, "m1#2")
-  eles(lat, "m1#2+1")
+  "<atom1>, <atom2>"              # Union of <atom1> and <atom2>.
+  "<atom1>, <atom2> & <atom3>"    # Intersection of <atom3> with the union of <atom1> and <atom2>.
+  "<atom1> ~<atom2>"              # All elements in <atom1> that are not in <atom2>.
 ```
 
+## Notes
 
-or
-  `{branch_id>>}attribute->'match_str'{+/-offset}`
-where `attribute` is something like `alias`, `description`, `type`, or any custom field.
+- The `parameter='match_str'` construct allows for matching to element parameters other than the element name. 
+  Typically used with the standard element "string parameters" `alias`, `type`, and `description`
+  but matching is not limited to these parameters.
+- If `ele_id` is an integer (element index), Specifying `#N` is not permitted.
 
-  key selection EG: "Quadrupole::<list>"
-  ranges        EG: "<ele1>:<ele2>"
-  negation      EG: "<list1> ~<list2>"
-  intersection  EG: "<list1> & <list2>"
-Note: negation and intersection evaluated left to right
-
-## Input
-
-- `where_search` `Lat` or `Branch` to search.
-- `who` `String` or `Regex` to use in the search.
-
-## Notes:
-
-- Element order is not guaranteed. Use
+## Examples
+```
+  eles(lat, "r>>d")             # All elements named "d" in the branch with name "r".
+  eles(lat, "Marker::*")        # All Marker elements
+  eles(lat, "Marker::%5-1")     # All elements just before Marker elements with two character names
+                                #   ending in the digit "5"
+  eles(lat, "1>>m1#2")          # Second element named "m1" in branch 1.
+  eles(lat.branch[1], "m1#2")   # Equivalent to eles(lat, "1>>m1#2").
+  eles(lat, "alias=`abc`")
+```
 """ 
 function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
   # Julia regex is simple
-  if typeof(who) == Regex; return eles_base(where_search, who); end
+  if typeof(who) == Regex; return eles_atomic(where_search, who); end
 
-  # Intersection
-  list = str_split(who, "~&", limit = 3)
-  if length(list) == 2 || list[1] == "~" || list[1] == "&" || 
-                            (length(list) == 3 && (list[3] == "~" || list[3] == "&"))
-    error(f"ParseError: Cannot parse: {who}")
-  end
+  # Not Julia regex
+  list = str_split(who, "~&,")
 
-  eles1 = eles_base(where_search, list[1])
-  if length(list) == 1; return eles1; end
+  eles1 = eles_atomic(where_search, list[1])
+  list = list[2:end]
 
-  eles2 = eles(lat, list[3])
-  eles = []
+  while true
+    if length(list) == 0; return eles1; end
+    if length(list) == 1; error("Bad `who` argument: $who"); end
 
-  if list[2] == "&"
-    for ele1 in eles1
-      for ele2 in eles2
-        if ele1 === ele2; push!(eles, ele1); continue; end
+    eles2 = eles(where_search, list[2], wrap = wrap)
+
+    if list[1] == "&"
+      ele_list = []
+      for ele1 in eles1
+        if ele1 in eles2; push!(ele_list, ele1); continue; end
       end
+      eles1 = ele_list
+
+    elseif list[1] == "~"
+      ele_list = []
+      for ele1 in eles1
+        if ele1 ∉ eles2; push!(ele_list, ele1); continue; end
+      end
+      eles1 = ele_list
+
+    elseif list[1] == ","
+      eles1 = append!(eles1, eles2)
+
+    else
+      error("ParseError: Cannot parse: $who")
     end
 
-  elseif list[2] == "~"
-    for ele1 in eles1
-      found = false
-      for ele2 in eles2
-        if ele1 === ele2; found = true; continue; end
-      end
-      if !found; push!(eles, ele1); continue; end
-    end
-  else
-    error(f"ParseError: Cannot parse: {who}")
+    list = list[3:end]
   end
 
-  return eles
 end
 
 #---------------------------------------------------------------------------------------------------

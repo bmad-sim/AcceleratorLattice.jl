@@ -48,11 +48,11 @@ an \vn{!mpN} suffix where \vn{N} is an integer.
 These types of elements are known as \vn{multipass_slave} elements. In
 addition to the \vn{multipass_slave} elements there will be a \vn{multipass_lord} element (that doesn't
 get tracked through) called \vn{RF1} in the \vn{multipass_lord} branch of the lattice (\sref{s:lord.slave}).
-Changes to the attributes of the lord \vn{RF1} element will be passed to the slave elements by the \accellat
+Changes to the parameters of the lord \vn{RF1} element will be passed to the slave elements by the \accellat
 bookkeeping routines. Assuming that the phase of \vn{RF1!mp1} gives acceleration, to make \vn{RF1!mp2}
-decelerate, the \vn{multipass_phase} attribute of \vn{RF1!mp2} is set to pi. This is the one attribute
-that \accellat's bookkeeping routines will not touch when transferring attribute values from \vn{RF1} to
-its slaves. Notice that the \vn{multipass_phase} attribute had to be set after the lattice is formed
+decelerate, the \vn{multipass_phase} parameter of \vn{RF1!mp2} is set to pi. This is the one parameter
+that \accellat's bookkeeping routines will not touch when transferring parameter values from \vn{RF1} to
+its slaves. Notice that the \vn{multipass_phase} parameter had to be set after the lattice is formed
 using the \vn{expand} function (\sref{s:expand}). This is true since 
 \vn{RF1!mp2} does not exist before the lattice is expanded. \vn{multipass_phase} is useful with
 relative time tracking \sref{s:rf.time}. However, \vn{multipass_phase} is ``unphysical'' and is just

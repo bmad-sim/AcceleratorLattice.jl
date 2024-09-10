@@ -207,7 +207,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     lord1 = copy(super_ele)
     push!(sbranch.ele, lord1)
     lord1.lord_status = Lord.SUPER
-    lord1.pdict[:slaves] = Vector{Ele}()
+    lord1.pdict[:slaves] = Ele[]
     index_and_s_bookkeeper!(sbranch)
 
     for ele in Region(ele1, ele2, false)

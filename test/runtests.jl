@@ -1,25 +1,23 @@
 using AcceleratorLattice, Test
 
-@testset "AcceleratorLattice" begin
-  t0 = time()
+@testset verbose = true "AcceleratorLattice" begin
+
+  @testset "string_test" begin
+    include("string_test.jl")
+  end
 
   @testset "find_test" begin
-    println("##### Testing find_test.jl...")
-    t = @elapsed include("find_test.jl")
-    println("##### done (took $t seconds).")
+    include("find_test.jl")
   end
 
 #  @testset "lat_construction_test" begin
-#    println("##### Testing lat_construction_test.jl...")
-#    t = @elapsed include("lat_construction_test.jl")
-#    println("##### done (took $t seconds).")
+#    include("lat_construction_test.jl")
 #  end
 
 #  @testset "superimpose_test" begin
-#    println("##### Testing superimpose_test.jl...")
-#    t = @elapsed include("superimpose_test.jl")
-#    println("##### done (took $t seconds).")
+#    include("superimpose_test.jl")
 #  end
 
-  println("##### Running all AcceleratorLattice tests took $(time() - t0) seconds.")
-end
+end;
+
+print("")  # To surpress trailing garbage output
