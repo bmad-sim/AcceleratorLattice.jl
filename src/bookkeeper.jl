@@ -258,7 +258,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup},
     return
   end
 
-  fpg = propagate_ele_geometry(previous_ele.FloorPositionGroup, previous_ele)
+  fpg = propagate_ele_geometry(previous_ele)
   clear_changed!(ele, FloorPositionGroup)
 end
 

@@ -23,11 +23,13 @@ lat = expand("mylat", [(beginning, fodo), (beginning, ln2), ln3]);
 superimpose!(z2, lat.branch[3], offset = 0.1, ele_origin = BodyLoc.ENTRANCE_END)
 superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)
 
-eles(lat, "alias=`z1`")
 #---------------------------------------------------------------------------------------------------
 # Notice element d2 has a negative length
 
 b = lat.branch[1]
+
+# !!! Test ele_at_offset with, EG multipass
+
 
 @testset "ele_at_s" begin
   @test ele_at_s(b, b.ele[4].s, select = Select.UPSTREAM) === b.ele[2]
@@ -66,3 +68,8 @@ end
 #  end
 #  print(str[1:end-2] * "\")")
 #end;
+
+# !!! Need to test that eles can find super_lord if super_slave branch is specified.
+# !!! Need to test that "#N" count is valid with superlord elements.
+# !!! Look at lat_ele_locator for useful documentation to copy to eles doc.
+# !!! Example removing super_slave elements using `~ *!s*` negation.
