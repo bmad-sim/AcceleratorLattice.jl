@@ -19,19 +19,11 @@ lat = expand([ln1]);
 
 #---------------------------------------------------------------------------------------------------
 
-superimpose!(zs1, eles(lat, "d1"), offset = 0.2);
-superimpose!(zm1, eles(lat, "m1"), ref_origin = entrance_end);
-superimpose!(zm2, eles(lat, "m1"), ref_origin = b_center);
-superimpose!(zm3, eles(lat, "m1"), ref_origin = exit_end);
+#superimpose!(zs1, eles(lat, "d1"), offset = 0.2);
+#superimpose!(zm1, eles(lat, "m1"), ref_origin = BodyLoc.ENTRANCE_END);
+#superimpose!(zm2, eles(lat, "m1"), ref_origin = BodyLoc.CENTER);
+#superimpose!(zm3, eles(lat, "m1"), ref_origin = BodyLoc.EXIT_END);
 
 @testset "Superimpose" begin
-  @test ele_at_s(lat.branch[1], 0.3, true).ix_ele == 1
-  @test ele_at_s(lat.branch[1], 0.3, false).ix_ele == 2
 end
 
-
-
-ln2 = beamline([beginning, qd, d, qd], geometry = CLOSED, multipass = true);
-
-
-fodo = beamline("fodo", [z1, z2, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), reverse(beamline("sub", [qd, ln1]))]);

@@ -3,6 +3,7 @@
 
 """
     propagate_ele_geometry(floor_start::FloorPositionGroup, ele::Ele)
+    propagate_ele_geometry(ele::Ele)
 
   Returns the floor position at the end of the element given the floor position at the beginning.
   Normally this routine is called with `floor_start` equal to ele.param[:floor_position].
@@ -18,6 +19,10 @@ the routine ele_geometry_with_misalignments.
 
 
 """ propagate_ele_geometry
+
+function propagate_ele_geometry(ele::Ele)
+  return propagate_ele_geometry(ele_geometry(ele), ele.FloorPositionGroup, ele)
+end
 
 function propagate_ele_geometry(fstart::FloorPositionGroup, ele::Ele)
   return propagate_ele_geometry(ele_geometry(ele), fstart, ele)

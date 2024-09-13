@@ -162,7 +162,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
       insert!(master.pdict[:slices], ix+1, slave2)
     else
       haskey(branch.pdict, :drift_masters) ? push!(branch.pdict[:drift_masters], copy(slave1)) : 
-                                                branch.pdict[:drift_masters] = Vector{Ele}([copy(slave1)])
+                                                  branch.pdict[:drift_masters] = Ele[copy(slave1)]
       master = branch.pdict[:drift_masters][end]
       master.pdict[:slices] = [slave1, slave2]
     end
