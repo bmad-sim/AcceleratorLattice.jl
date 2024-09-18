@@ -501,7 +501,12 @@ function Base.show(io::IO, branch::Branch)
   length(branch.ele) == 0 ? n = 0 : n = maximum([18, maximum([length(e.name) for e in branch.ele])]) + 2
   g_str = f"Branch {branch.ix_branch}: {str_quote(branch.name)}"
   if haskey(branch.pdict, :geometry); g_str = g_str * f", geometry => {branch.pdict[:geometry]}"; end
-  if n > 0; g_str = rpad(g_str, 54) * "L           s      s_downstream"; end
+
+  if n > 0
+    g_str = rpad(g_str, 54) * "L"
+    if branch.type != MultipassLordBranch; g_str = g_str * "           s      s_downstream"; end
+  end
+
   println(io, "$g_str")
 
   if length(branch.ele) == 0 
@@ -511,7 +516,7 @@ function Base.show(io::IO, branch::Branch)
       end_str = ""
       if branch.type == MultipassLordBranch
         end_str = f"{ele.L:11.6f}"
-        if haskey(ele.pdict, :slave); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :slave, default = \"\")}"; end
+        if haskey(ele.pdict, :slaves); end_str = end_str * " "^28 * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
       elseif haskey(ele.pdict, :LengthGroup)
         s_str = ele_param_value_str(ele, :s, default = "    "*"-"^7, format = "12.6f")
         s_down_str = ele_param_value_str(ele, :s_downstream, default = "    "*"-"^7, format = "12.6f")

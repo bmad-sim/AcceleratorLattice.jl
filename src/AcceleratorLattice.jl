@@ -12,6 +12,7 @@ module AcceleratorLattice
   using LinearAlgebra
   using ReferenceFrameRotations
   using EnumX
+  using Random
 
   import Base.Cartesian.lreplace
 
@@ -46,7 +47,7 @@ module AcceleratorLattice
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, LatEleLocation, ele_at_s, add_governor!
-  export eles, next_ele, ele_at_offset
+  export eles, next_ele, ele_at_offset, ele_param_value_str
   export branch, matches_branch, param_groups_list, create_ele_vars
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup, SolenoidGroup

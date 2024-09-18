@@ -979,6 +979,11 @@ Structure holding a beamline.
 - `name::String`
 - `line::Vector{BeamLineItem}`
 - `pdict::Dict{Symbol,Any}`
+
+Standard components are:
+- `orientation`   - +1 or -1
+- `geometry`      - OPEN or CLOSED.
+- `multipass`     - true or false
 """
 mutable struct BeamLine <: BeamLineItem
   name::String

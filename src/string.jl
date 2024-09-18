@@ -186,11 +186,12 @@ end
     str_unquote(str::AbstractString)
 
 Returns string with end quote characters (if they are the same) removed.
+This includes backticks.
 """ str_unquote
 
 function str_unquote(str::AbstractString)
-  if size(str,1) < 2; return str; end
-  if str[1] == str[end] && str[1] in "\"'"
+  if length(str) < 2; return str; end
+  if str[1] == str[end] && str[1] in "\"'`"
     return str[2:end-1]
   else
     return str

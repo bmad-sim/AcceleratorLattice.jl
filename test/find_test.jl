@@ -57,9 +57,13 @@ end
   @test eles(lat, "alias=`z1`") == eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
   @test eles(lat, "alias=`z1` ~fodo>>9 ~fodo>>22") == eles(lat, "fodo>>7, fodo>>15, fodo>>21")
   @test eles(lat, "alias=`z1` & fodo>>9") == eles(lat, "fodo>>9")
+  @test b["z1"] == eles(lat, "super_lord>>3")
+  @test eles(lat, "Quadrupole::* ~*!*") == 
+                eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21, fodo>>22, multipass_lord>>1, multipass_lord>>3")
+  @test_throws ErrorException eles(lat, "quadrupole::*")
 end
 
-# Function to print "eles" testset RHS. Used to create new tests. Just use the LHS as the argument.
+# Function to print right-hand-side for "eles" testset. Used to create new tests. Just use the LHS as the argument.
 #
 #function toe(vec)
 #  str = "eles(lat, \""
@@ -69,7 +73,3 @@ end
 #  print(str[1:end-2] * "\")")
 #end;
 
-# !!! Need to test that eles can find super_lord if super_slave branch is specified.
-# !!! Need to test that "#N" count is valid with superlord elements.
-# !!! Look at lat_ele_locator for useful documentation to copy to eles doc.
-# !!! Example removing super_slave elements using `~ *!s*` negation.

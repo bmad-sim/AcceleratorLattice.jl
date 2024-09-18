@@ -137,41 +137,73 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Base.getindex(branch::Vector{Branch}, ...)
+# Base.getindex(lat::Lat, name::AbstractString)
 
 """
-  Base.getindex(branch::Vector{Branch}, name::Union{Symbol,AbstractString})
+  Base.getindex(lat::Lat}, name::AbstractString)
+
+Match `lat[name]` to either a branch with name `name` or all lattice elements which
+match. See `eles` function for more details on matching to lattice elements.
+""" Base.getindex(lat::Lat, name::AbstractString)
+
+function Base.getindex(lat::Lat, name::AbstractString)
+
+  for br in lat.branch
+    if br.name == name; return br; end
+  end
+
+  return eles(lat, name)
+
+  error(f"No element with name: {name}")
+end
+
+#---------------------------------------------------------------------------------------------------
+# Base.getindex(branch::Vector{Branch}, name::AbstractString)
+
+"""
+  Base.getindex(branch::Vector{Branch}, name::AbstractString)
 
 Match `branch[name]` to branch in `branch[]` array using the names of the branches.
-""" Base.getindex(branch::Vector{Branch}, name::Union{Symbol,AbstractString})
+""" Base.getindex(branch::Vector{Branch}, name::AbstractString)
 
-function Base.getindex(branch::Vector{Branch}, name::Union{Symbol,AbstractString})
-  if typeof(name) == Symbol; name = String(name); end
-
+function Base.getindex(branch::Vector{Branch}, name::AbstractString)
   for br in branch
     if br.name == name; return br; end
   end
 
-  error(f"NoBranch: No branch with name: {name}")
+  error(f"No branch with name: {name}")
+end
+
+#---------------------------------------------------------------------------------------------------
+# Base.getindex(branch::Branch, name::AbstractString)
+
+"""
+  Base.getindex(branch::Branch}, name::AbstractString) -> Ele[]
+
+Match `branch[name]` to all lattice elements in `branch.ele[]` array.
+""" Base.getindex(branch::Branch, name::AbstractString)
+
+function Base.getindex(branch::Branch, name::AbstractString)
+  return eles(branch, name)
+
+  error(f"No element with name: {name}")
 end
 
 #---------------------------------------------------------------------------------------------------
 # Base.getindex(ele::Vector{Ele}, ...)
 
 """
-  Base.getindex(ele::Vector{Ele}, name::Union{Symbol,AbstractString})
+  Base.getindex(ele::Vector{Ele}, name::AbstractString)
 
 Match `ele[name]` to element in `ele[]` array using the names of the elements.
-""" Base.getindex(ele::Vector{Ele}, name::Union{Symbol,AbstractString})
+""" Base.getindex(ele::Vector{Ele}, name::AbstractString)
 
-function Base.getindex(ele::Vector{Ele}, name::Union{Symbol,AbstractString})
-  if typeof(name) == Symbol; name = String(name); end
-
-  for br in ele
-    if br.name == name; return br; end
+function Base.getindex(ele::Vector{Ele}, name::AbstractString)
+  for e in ele
+    if e.name == name; return e; end
   end
 
-  error(f"NoEle: No element with name: {name}")
+  error("No element with name: $name")
 end
 
 #---------------------------------------------------------------------------------------------------
