@@ -180,6 +180,7 @@ function eles_group(where_search::Union{Lat,Branch}, who::Union{AbstractString,R
 
   if length(chunks) > 2 && chunks[2] == "::"
     ele_type = Symbol(chunks[1])
+    if ele_type ∉ Symbol.(subtypes(Ele)); error("Element type not recognized: $ele_type"); end
     chunks = chunks[3:end]
   end
 
@@ -357,6 +358,7 @@ If there are more than two group expressions involved, evaluation is left to rig
   Typically used with the standard element "string parameters" `alias`, `type`, and `description`
   but matching is not limited to these parameters.
 - If `ele_id` is an integer (element index), Specifying `#N` is not permitted.
+- To exclude matches to super slave elements, use `"~*!s"` at the end of an expression.
 
 ## Examples
 ```
@@ -368,6 +370,10 @@ If there are more than two group expressions involved, evaluation is left to rig
   eles(lat.branch[1], "m1#2")   # Equivalent to eles(lat, "1>>m1#2").
   eles(lat, "alias=`abc`")
 ```
+
+Note: The index operator `[...]` is overloaded so that `branch[who]` where `branch` is a `Branch` 
+instance, or `lat[who]` where `lat` is a
+`Lat` instance is the same as `eles(branch, who)` and `eles(lat, who)` respectively.
 """ 
 function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
   # Julia regex is simple

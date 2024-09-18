@@ -6,7 +6,7 @@
                           offset::Real = 0, ref_origin::BodyLoc.T = BodyLoc.CENTER, 
                           wrap::Bool = true) where T <: Union{Branch, Ele, Vector{Branch}, Vector{Ele}}
 
-Superimpose a copy (or copies) of the element `super_ele` on a lattice. 
+Superimpose a copy (or copies) of the element `super_ele` on a lattice.
 If `ref` is a scaler, one superposition is done. 
 If `ref` is a vector, one superposition is done per element of `ref`.
 See the AcceleratorLattice manual for more details.
@@ -203,7 +203,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     end
 
     # Here if a super_lord element needs to be constructed.
-    sbranch = branch.lat.branch[:super_lord]
+    sbranch = branch.lat.branch["super_lord"]
     lord1 = copy(super_ele)
     push!(sbranch.ele, lord1)
     lord1.lord_status = Lord.SUPER

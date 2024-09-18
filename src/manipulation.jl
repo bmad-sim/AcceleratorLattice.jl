@@ -220,7 +220,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   slave.L = s_split - slave1.s 
   slave2.L = slave1.s_downstream - s_split
 
-  sbranch = branch.lat.branch[:super_lord]
+  sbranch = branch.lat.branch["super_lord"]
   push!(sbranch.ele, lord)
   lord.pdict[:slaves] = Vector{Ele}([slave, slave2])
   lord.lord_status = Lord.SUPER
