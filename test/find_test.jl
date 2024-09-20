@@ -12,13 +12,13 @@ using AcceleratorLattice, Test
 @ele z2 = Sextupole(L = 2.2, type = "abc");
 @ele m1 = Marker(type = "qf");
 
-ln1 = beamline("ln1", [qf, d]);
-ln2 = beamline("ln2", [qd, d, qd], geometry = CLOSED, multipass = true);
-ln3 = beamline("ln3", [beginning, d, b1, m1, d3])
+bl = beamline
+ln3 = bl([beginning, d, b1, m1, d3], name = "ln3")
+ln1 = bl([qf, d])
+ln2 = bl([qd, d, qd], geometry = CLOSED, multipass = true)
+fodo = bl([b1, s1, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), d2, reverse(bl([qd, ln1]))])
 
-fodo = beamline("fodo", [b1, s1, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), d2, reverse(beamline("sub", [qd, ln1]))]);
-
-lat = expand("mylat", [(beginning, fodo), (beginning, ln2), ln3]);
+lat = expand("mylat", [bl([beginning, fodo], name = "fodo"), bl([beginning, ln2], name = "ln2"), ln3])
 
 superimpose!(z2, lat.branch[3], offset = 0.1, ele_origin = BodyLoc.ENTRANCE_END)
 superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)

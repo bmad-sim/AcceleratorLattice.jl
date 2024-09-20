@@ -105,7 +105,9 @@ Multipass initialization done during lattice expansion.
 function init_multipass_bookkeeper!(lat::Lat)
   # Sort slaves. multipass_id is an identification tag to enable identifying the set of slaves
   # for a given lord. multipass_id is removed here since it will be no longer needed.
-  mdict = Dict()
+  # The Dict is ordered so that the order of the lords in the lord branch is deterministic.
+
+  mdict = OrderedDict()
   multipass_branch = lat.branch["multipass_lord"]
 
   for branch in lat.branch
@@ -121,7 +123,7 @@ function init_multipass_bookkeeper!(lat::Lat)
     end
   end
 
-  # Create multipass lords
+  # Create multipass lords.
   for (key, val) in mdict
     push!(multipass_branch.ele, deepcopy(val[1]))
     lord = multipass_branch.ele[end]

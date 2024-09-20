@@ -84,12 +84,29 @@ These low level routines (there are several with this signature) are called via 
 
 function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
   for group in param_groups_list[typeof(ele)]
+    if !haskey(ele_param_group_info, group) || !ele_param_group_info[group].bookkeeping_needed; continue; end
+
     try
       elegroup_bookkeeper!(ele, group, changed, previous_ele)
     catch er
       reinstate_changed!(ele, group)    # Try to undo the dammage.
       rethrow(er)
     end
+  end
+
+  # Throw out changed parameters that don't need bookkeeping
+
+  for param in copy(keys(ele.pdict[:changed]))
+    pinfo = ele_param_info(param)
+    if isnothing(pinfo); continue; end
+    group = pinfo.parent_group
+    if group ∉ keys(ele_param_group_info); continue; end
+    if !ele_param_group_info[group].bookkeeping_needed; pop!(ele.pdict[:changed], param); end
+  end
+
+  # Check for unbookkeeped parameters
+  for param in keys(ele.pdict[:changed])
+    println("Unbookkeeped parameter $param in element $(ele_name(ele))")
   end
 end
 
@@ -404,8 +421,10 @@ end
 # clear_changed!
 
 """
+     clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+
 Clear any parameter as having been changed that is associated with `group`.
-"""
+""" clear_changed!
 
 function clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   for param in keys(ele.changed)

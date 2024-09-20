@@ -21,7 +21,6 @@ abstract type BeamLineItem end
     abstract type Ele <: BeamLineItem end
 
 Abstract type from which all concrete lattice element types inherit.
-
 All concreate lattice element types are constructed using the `@construct_ele_type` macro.
 
 All concreate lattice element types have a single field:
@@ -215,6 +214,24 @@ end
 Return corresponding `LatEleLocation` struct.
 """
 LatEleLocation(ele::Ele) = LatEleLocation(ele.ix_ele, ele.branch.ix_branch)
+
+#---------------------------------------------------------------------------------------------------
+# EleParameterGroupInfo
+
+"""
+    struct EleParameterGroupInfo
+
+Struct holding information on a single `EleParameterGroup` group.
+
+## Contains
+- `description::String`      # Descriptive string
+- `bookkeeping_needed::Bool  # If true, this indicates there exists a bookkeeping function for the 
+  parameter group that needs to be called if a parameter of the group is changed.
+"""
+struct EleParameterGroupInfo
+  description::String
+  bookkeeping_needed::Bool
+end
 
 #---------------------------------------------------------------------------------------------------
 # EleParameterGroup
@@ -976,17 +993,18 @@ end
 Structure holding a beamline.
 
 ### Components
-- `name::String`
+- `id::String`                  # ID used for multipass bookkeeping.
 - `line::Vector{BeamLineItem}`
 - `pdict::Dict{Symbol,Any}`
 
 Standard components are:
+- `name`          - String to be used for naming the lattice branch if this is a root branch.
 - `orientation`   - +1 or -1
 - `geometry`      - OPEN or CLOSED.
 - `multipass`     - true or false
 """
 mutable struct BeamLine <: BeamLineItem
-  name::String
+  id::String
   line::Vector{BeamLineItem}
   pdict::Dict{Symbol,Any}
 end
