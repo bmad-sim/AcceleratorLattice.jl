@@ -555,8 +555,10 @@ Base.show(io::IO, ::MIME"text/plain", branches::Vector{Branch}) = Base.show(stdo
 
 function Base.show(io::IO, bl::BeamLine)
   str = ""
-  for (key, value) in bl.pdict; str = str * "$key => $value, "; end
-  println(io, f"Beamline:  {str_quote(bl.name)}, [{str[1:end-2]}]")
+  for (key, value) in bl.pdict
+    typeof(value) == String ? str = str * "$key => $(str_quote(value)), " : str = str * "$key => $value, "
+  end
+  println(io, f"Beamline: [{str[1:end-2]}]")
   n = 6
   for item in bl.line
     if item isa BeamLineEle
@@ -664,7 +666,7 @@ function info(ele_type::Type{T}) where T <: Ele
   end
 
   for group in param_groups_list[ele_type]
-    println("  $(rpad(string(group), 20)) -> $(param_group_info[group])")
+    println("  $(rpad(string(group), 20)) -> $(ele_param_group_info[group].description)")
   end
 end
 
@@ -675,8 +677,8 @@ info(ele::Ele) = info(typeof(ele))
 !-
 
 function info(group::Type{T}) where T <: EleParameterGroup
-  if group in keys(param_group_info)
-    println("$group $(param_group_info[group])")
+  if group in keys(ele_param_group_info)
+    println("$group $(ele_param_group_info[group].description)")
   else
     println("$group")
   end

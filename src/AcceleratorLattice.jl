@@ -13,6 +13,7 @@ module AcceleratorLattice
   using ReferenceFrameRotations
   using EnumX
   using Random
+  using OrderedCollections
 
   import Base.Cartesian.lreplace
 

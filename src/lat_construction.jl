@@ -32,7 +32,7 @@ end
 Creates a `BeamLineItem` that contains an `Ele`, `BeamLine`, or `BeamLineEle`.
 """
 BeamLineItem(x::Ele) = BeamLineEle(x, Dict{Symbol,Any}(:multipass => false, :orientation => +1))
-BeamLineItem(x::BeamLine) = BeamLine(x.name, x.line, deepcopy(x.pdict))
+BeamLineItem(x::BeamLine) = BeamLine(x.id, x.line, deepcopy(x.pdict))
 BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.pdict))
 
 #---------------------------------------------------------------------------------------------------
@@ -59,23 +59,18 @@ Recognized beamline parameters:
 All parameters are optional.
 """ beamline
 
-function beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
-  bline = BeamLine(name, BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
+function beamline(line::Vector{T}; kwargs...) where T <: BeamLineItem
+  bline = BeamLine(randstring(20), BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
   if !haskey(bline.pdict, :orientation); bline.pdict[:orientation] = +1; end
   if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = OPEN; end
   if !haskey(bline.pdict, :multipass);   bline.pdict[:multipass]   = false; end
+  if !haskey(bline.pdict, :name);        bline.pdict[:name] = ""; end
 
   for (ix, item) in enumerate(bline.line)
     item.pdict[:ix_beamline] = ix
   end
 
   return bline
-end
-
-#
-
-function beamline(line::Vector{T}; kwargs...) where T <: BeamLineItem
-  return beamline("anonymous", line, kwargs...)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -106,7 +101,7 @@ function Base.reverse(x::BeamLineEle)
 end
 
 function Base.reverse(beamline::BeamLine)
-  bl = BeamLine(beamline.name, beamline.line, deepcopy(beamline.pdict))
+  bl = BeamLine(beamline.id, beamline.line, deepcopy(beamline.pdict))
   bl.pdict[:orientation] = -bl.pdict[:orientation]
   return bl
 end
@@ -122,7 +117,7 @@ orientation reversal).
 """ reflect
 
 # Note: Here Base.reverse is the Julia defined reversal of a vector and not any of the extended methods. 
-reflect(beamline::BeamLine) = BeamLine(beamline.name * "_mult-1", Base.reverse(beamline.line), beamline.pdict)
+reflect(beamline::BeamLine) = BeamLine(beamline.id * "_m1", Base.reverse(beamline.line), beamline.pdict)
 
 
 """
@@ -135,12 +130,12 @@ Beamline reflection (-) and repetition (*).
 
 Base.:-(beamline::BeamLine) = reflect(beamline)
 
-Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.name * "_mult" * string(n), 
+Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.id * "_m" * string(n), 
                           [(n > 0 ? beamline : reflect(beamline)) for i in 1:abs(n)], beamline.pdict)
                           
 function Base.:*(n::Int, ele::Ele)
   if n < 0; error(f"BoundsError: Negative multiplier does not make sense."); end
-  BeamLine(ele.name * "_mult" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1)
+  BeamLine(ele.id * "_m" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -217,10 +212,10 @@ function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::
 
   if info.multipass_id == []
     if beamline.pdict[:multipass]
-      info.multipass_id = [beamline.name]
+      info.multipass_id = [beamline.id]
     end
   else
-    push!(info.multipass_id, beamline.name * ":" * string(beamline.pdict[:ix_beamline]))
+    push!(info.multipass_id, beamline.id * ":" * string(beamline.pdict[:ix_beamline]))
   end
 
   for item in line
@@ -241,17 +236,13 @@ Adds a `BeamLine` to the lattice creating a new `Branch`.
 Used by the `expand` function.
 """ new_tracking_branch!
 
-function new_tracking_branch!(lat::Lat, bline::Union{BeamLine, Tuple})
-  if typeof(bline) == Tuple{BeginningEle, BeamLine}
-    bline = beamline(bline[2].name, [bline[1], bline[2]], geometry = bline[2].pdict[:geometry])
-  end
-
-  push!(lat.branch, Branch(bline.name, Ele[], Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
+function new_tracking_branch!(lat::Lat, bline::BeamLine)
+  push!(lat.branch, Branch(bline.pdict[:name], Ele[], Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
   branch = lat.branch[end]
   branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = TrackingBranch
-  if branch.name == ""; branch.name = "branch" * string(length(lat.branch)); end
+  if branch.name == ""; branch.name = "b" * string(length(lat.branch)); end
   info = LatConstructionInfo([], bline.pdict[:orientation], 0)
 
   if haskey(bline.pdict, :species_ref); branch.ele[1].species_ref = bline.pdict[:species_ref]; end
