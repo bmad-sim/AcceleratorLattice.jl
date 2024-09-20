@@ -12,7 +12,7 @@ using AcceleratorLattice, Test
 @ele z2 = Sextupole(L = 2.2, type = "abc");
 @ele m1 = Marker(type = "qf");
 
-bl = beamline
+bl = BeamLine
 ln3 = bl([beginning, d, b1, m1, d3], name = "ln3")
 ln1 = bl([qf, d])
 ln2 = bl([qd, d, qd], geometry = CLOSED, multipass = true)

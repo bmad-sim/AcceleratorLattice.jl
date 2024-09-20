@@ -330,13 +330,13 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool; indent =
     return
   end
 
-  println(io, f"{off_str}BMultipoleGroup:")
+  println(io, f"{off_str}BMultipoleGroup:z")
   println(io, f"{off_str}  Order Integrated{lpad(\"Tilt (rad)\",24)}")
   for v in group.vec
     ol = f"{v.order}"
     if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
     uk = units(Symbol(f"Kn{ol}"));  ub = units(Symbol(f"Bn{ol}"))
-    println(io, f"{off_str}{lpad(v.order,9)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
+    println(io, f"{off_str}{lpad(v.order,7)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
                          f"{lpad(v.Kn,24)}  Kn{ol}{lpad(v.Ks,24)}  Ks{ol} ({uk})")
     println(io, off_str * " "^42 * f"{lpad(v.Bn,24)}  Bn{ol}{lpad(v.Bs,24)}  Bs{ol} ({ub})")
   end

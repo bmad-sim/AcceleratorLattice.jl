@@ -36,30 +36,30 @@ BeamLineItem(x::BeamLine) = BeamLine(x.id, x.line, deepcopy(x.pdict))
 BeamLineItem(x::BeamLineEle) = BeamLineEle(x.ele, deepcopy(x.pdict))
 
 #---------------------------------------------------------------------------------------------------
-# beamline
+# BeamLine
 
 """
-    beamline(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
-    beamline(line::Vector{T}; kwargs...) where T <: BeamLineItem
+    BeamLine(name::AbstractString, line::Vector{T}; kwargs...) where T <: BeamLineItem
+    BeamLine(line::Vector{T}; kwargs...) where T <: BeamLineItem
 
-Creates a `beamline` from a vector of `BeamLineItem`s.
+Creates a `BeamLine` from a vector of `BeamLineItem`s.
 
 ### Input
 
-- `name`    Name of created beamline
+- `name`    Name of created `BeamLine`
 - `line`    Vector of `BeamLineItem`s.
 - `kwargs`  Beamline parameters. See below.
 
 ### Notes
 
-Recognized beamline parameters:
+Recognized `BeamLine` parameters:
 - `geometry`      Branch geometry. Can be: `BranchGeom.OPEN` (default) or `BranchGeom.CLOSED`.
 - `orientation`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
 - `multipass`     Multipass line? Default is `false`.
 All parameters are optional.
-""" beamline
+""" BeamLine
 
-function beamline(line::Vector{T}; kwargs...) where T <: BeamLineItem
+function BeamLine(line::Vector{T}; kwargs...) where T <: BeamLineItem
   bline = BeamLine(randstring(20), BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
   if !haskey(bline.pdict, :orientation); bline.pdict[:orientation] = +1; end
   if !haskey(bline.pdict, :geometry);    bline.pdict[:geometry]    = OPEN; end
@@ -81,7 +81,7 @@ end
     reverse(x::BeamLineEle)
     reverse(beamline::BeamLine)
 
-Marks a `Ele`, `BeamLineEle`, or `beamline` as reversed.
+Marks a `Ele`, `BeamLineEle`, or `BeamLine` as reversed.
 
 !! Note:
     For `BeamLine` reversal the `BeamLine` is marked as reversed but not the contained line elements.  
