@@ -50,7 +50,7 @@ module AcceleratorLattice
   export split!, construct_ele_type, LatEleLocation, ele_at_s, add_governor!
   export eles, next_ele, ele_at_offset, ele_param_value_str
   export branch, matches_branch, param_groups_list, create_ele_vars
-  export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup
+  export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup, BeamBeamGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup, SolenoidGroup
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveGroup
   export GirderGroup, LCavityGroup, PatchGroup, RFFieldGroup, RFMasterGroup, ControlSlaveGroup, ControlVarGroup

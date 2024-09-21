@@ -34,7 +34,7 @@ where \vn{eleName} is the name of the element, \vn{eleType} is the type of eleme
 etc. are parameter names and \vn{val1}, \vn{val2}, etc. are the parameter values.
 Example:
 \begin{example}
-  @ele qf = Quadrupole(L = 0.6, K1 = 0.370)
+  @ele qf = Quadrupole(L = 0.6, Kn1 = 0.370)
 \end{example}
 The \vn{@ele} macro will construct a \julia variable with the name \vn{eleName}. 
 Additionally, the element
@@ -63,7 +63,16 @@ Example:
 \label{s:ele.type}
 
 Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
-types which inherit from the abstract type \vn{EleParameterGroup}.
+types which inherit from the abstract type \vn{EleParameterGroup}:
+\begin{example}
+  julia> subtypes(EleParameterGroup)
+  28-element Vector{Any}:
+   AlignmentGroup
+   ApertureGroup
+   BMultipoleGroup
+   ...
+\end{example}
+
 For example, the \vn{LengthGroup} holds the length and s-positions of the element and is defined by:
 \begin{example}
   @kwdef struct LengthGroup <: EleParameterGroup
@@ -77,7 +86,8 @@ The \vn{@kwdef} macro automatically defines a keyword-based constructor for \vn{
 See the Julia manual for more information on \vn{@kwdef}. 
 To see a list of all element parameter groups use the \vn{subtypes(EleParamterGroup)} command.
 To see the components of a given group use the \vn{fieldnames} function. For information on
-a given element parameter use the \vn{info(::Symbol)} function. For example, the information on
+a given element parameter use the \vn{info(::Symbol)} function where the argument is the
+symbol corresponding to the component. For example, the information on
 the \vn{s_downstream} parameter which is a field of the \vn{LengthGroup} is:
 \begin{example}
   julia> info(:s_downstream)
@@ -88,9 +98,12 @@ the \vn{s_downstream} parameter which is a field of the \vn{LengthGroup} is:
     Description:     Longitudinal s-position at the downstream end.
 \end{example}
 Notice that the argument to the \vn{info} function is the symbol associated with the parameter.
-the ``user name'' is the name used when setting the parameter. This is discussed below. For most
-parameters, the user name and the name of the corresponding component in the element parameter
-group is the same. But there are exceptions. For example:
+the ``user name'' is the name used when setting the parameter. For instance, if \vn{q} is a
+lattice element, \vn{q.s_downstream} would be used to access the \vn{s_downstream} component of \vn{q}.
+This works, even though \vn{s_downstream} is not a direct component of an element, since the dot
+selection operator for lattice elements has been overloaded as explained in \sec{s:ele.access}.
+For most parameters, the user name and the name of the corresponding component in the element parameter
+group are the same. However, there are exceptions. For example:
 \begin{example}
   julia> info(:theta)
     User name:       theta_floor
@@ -110,11 +123,10 @@ But the component in the \vn{FloorPositionGroup} is \vn{theta} so
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{Accessing Element Parameters}
+\section{How Element Parameters are Stored in an Element}
 \label{s:ele.access}
 
-All lattice element types have a single field which is a Dict named \vn{pdict} (parameter dict)
-of type \vn{Dict\{Symbol,Any\}}. 
+All lattice element types have a single field of type \vn{Dict\{Symbol,Any\}} named \vn{pdict}.
 The values of \vn{pdict} will, with a few exceptions, be an
 element parameter group. The corresponding key for a parameter group in \vn{pdict} is the symbol associated 
 with the type. For example, a \vn{LengthGroup} struct would be stored in \vn{pdict[:LengthGroup]}.
@@ -123,8 +135,7 @@ To (partially) hide the complexity of parameter groups, the dot selection operat
 This is achieved by overloading the \vn{Base.setproperty} and \vn{Base.getproperty} functions, 
 which get called when the dot selection operator is used.
 For example, if \vn{q} is an element instance, \vn{q.s} will get mapped to \vn{q.pdict[:LengthGroup].s}.
-Additionally, \vn{q.LengthGroup} is mapped to \vn{q.pdict[:LengthGroup]} so \vn{q.LengthGroup.s} is
-equivalent to \vn{q.s}.
+Additionally, \vn{q.LengthGroup} is mapped to \vn{q.pdict[:LengthGroup]}.
 
 Besides simplifying the syntax, overloading the dot selection operator has a second purpose which
 is to allow the \accellat bookkeeping routines to properly do dependent parameter bookkeeping (\sref{param.depend}).
@@ -135,7 +146,7 @@ parameter of an element named \vn{q1}:
                                                      q1.pdict[:Length_group].L
   q1.s_downstream = q1.s + q1.L
 \end{example}
-These two statements are not equivalent however. The difference is that in the first statement when
+These two statements are not equivalent. The difference is that in the first statement when
 \vn{setproperty} is called to handle \vn{q1.pdict}, the code will simply return \vn{q1.pdict} 
 (the code knows that \vn{pdict} is special) and do nothing else. 
 However, with the second statement, \vn{setproperty} not only sets

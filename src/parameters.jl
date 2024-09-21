@@ -68,6 +68,7 @@ ele_param_info_dict = Dict(
 
   :is_on              => ParamInfo(MasterGroup,    Bool,        "Element fields on/off."),
   :field_master       => ParamInfo(MasterGroup,    Bool,        "True: fields are fixed and normalized values change when varying ref energy."),
+  :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup,    Bool, "True: If element is a multipass lord, ref energy is set in lord."),
 
   :species_ref        => ParamInfo(ReferenceGroup, Species,     "Reference species."),
   :species_ref_exit   => ParamInfo(ReferenceGroup, Species,     "Reference species at exit end."),

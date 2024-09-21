@@ -8,9 +8,9 @@
 @ele z2 = Sextupole(Kn2L = 0.2)
 @ele m1 = Marker()
 
+bl = BeamLine
+ln1 = bl([qf, d])
+ln2 = bl([qd, d, qd], geometry = CLOSED, multipass = true)
+fodo = bl("fodo", [z1, z2, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), reverse(bl("sub", [qd, ln1]))])
 
-ln1 = beamline("ln1", [qf, d])
-ln2 = beamline("ln2", [qd, d, qd], geometry = BranchGeometry.CLOSED, multipass = true, begin_ele = begin_ln2)
-fodo = beamline("fodo", [z1, z2, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), reverse(beamline("sub", [qd, ln1]))])
-
-lat = expand("mylat", [beamline("fodo2", [fodo], begin_ele = begin_fodo), ln2])
+lat = expand([bl([begin_fodo, fodo]), bl([begin_ln2, ln2]))

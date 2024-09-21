@@ -1,0 +1,45 @@
+\chapter{Element Parameter Groups}
+\label{c:ele.groups}
+
+Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
+types which is discussed in \sref{s:ele.type}.
+
+Element parameter groups inherit from the abstract type \vn{EleParameterGroup} which
+in turn inherits from \vn{BaseEleParameterGroup}. Some
+parameter groups have sub-group components. These sub-groups also inherit from \vn{BaseEleParameterGroup}.
+
+The parmeters groups are:
+\begin{table}[htb]
+\centering
+{\tt
+\begin{tabular}{llll} \toprule
+  {\it Group}    & {\it Section}         & {\it Group}      & {\it Section}       \\ \midrule
+ AlignmentGroup
+ ApertureGroup
+ BMultipoleGroup
+ BeamBeamGroup
+ BendGroup
+ EMultipoleGroup
+ FloorPositionGroup
+ GirderGroup
+ InitParticleGroup
+ LCavityGroup
+ LengthGroup
+ LordSlaveGroup
+ MasterGroup
+ PatchGroup
+ RFFieldGroup
+ RFGroup
+ RFMasterGroup
+ ReferenceGroup
+ SolenoidGroup
+ StringGroup
+ TrackingGroup
+ TwissGroup
+
+  \bottomrule
+\end{tabular}
+} 
+\caption{Table of element parameter groups.}
+\label{t:particle.classes}
+\end{table}

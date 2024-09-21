@@ -237,12 +237,21 @@ end
 # EleParameterGroup
 
 """
-    abstract type EleParameterGroup
+    abstract type BaseEleParameterGroup
+    abstract type EleParameterGroup <: BaseEleParameterGroup
+    abstract type EleParameterSubGroup <: BaseEleParameterGroup
 
-Base type for all element parameter groups.
-""" EleParameterGroup
+`EleParameterGroup` is the base type for all element parameter groups.
+`EleParameterSubGroup` is the base type for structs that are used as components of an element
+parameter group.
+""" BaseEleParameterGroup, EleParameterGroup, EleParameterSubGroup
 
-abstract type EleParameterGroup end
+abstract type BaseEleParameterGroup end
+abstract type EleParameterGroup <: BaseEleParameterGroup end
+abstract type EleParameterSubGroup <: BaseEleParameterGroup end
+
+
+
 
 #---------------------------------------------------------------------------------------------------
 # AlignmentGroup
@@ -276,54 +285,6 @@ laboratory coordinates.
 end
 
 #---------------------------------------------------------------------------------------------------
-# AmpVsTimeGroup
-
-"""
-    struct ACKickerGroup
-
-Struct to define the time dependent amplitude that modulates the element strength using a set 
-of points spaced in time along with an interpolation method.
-Used with ACKicker elements.
-
-A positive `t_offset` shifts the waveform in the positive time direction.
-""" AmpVsTimeGroup
-
-@kwdef mutable struct AmpPoint <: EleParameterGroup
-  amp::Number = 0         # Amplitude
-  t::Number = 0           # Time
-end
-
-@kwdef mutable struct AmpVsTimeGroup <: EleParameterGroup
-  interpolation::Interpolation.T = Interpolation.SPLINE # Interpolation method between points.
-  t_offset::Number = 0                            # Time offset of the waveform.
-  point::Vector{AmpPoint} = Vector{AmpPoint}()    # Waveform points.
-end
-
-#---------------------------------------------------------------------------------------------------
-# AmpVsFreqGroup
-
-"""
-  struct AmpVsFreqGroup
-
-Struct to define the time dependent amplitude that modulates the element strength as the sum of
-a set of cosines with each cosine having an amplitude, frequency, and phase.
-Used with `ACKicker` elements.
-
-A positive `t_offset` shifts the waveform in the positive time direction.
-""" AmpVsFreqGroup
-
-@kwdef mutable struct FreqPoint
-  amp::Number = 0     
-  freq::Number = 0
-  phase::Number = 0
-end
-
-@kwdef mutable struct AmpVsFreqGroup <: EleParameterGroup
-  t_offset::Number = 0                              # Time offset of the waveform.
-  point::Vector{FreqPoint} = Vector{FreqPoint}()    # Waveform points.
-end
-
-#---------------------------------------------------------------------------------------------------
 # ApertureGroup
 
 """
@@ -350,7 +311,7 @@ end
 
 """ BeamBeamGroup
 
-@kwdef mutable struct Twiss <: EleParameterGroup
+@kwdef mutable struct Twiss <: EleParameterSubGroup
   beta_a::Number = 0
   alpha_a::Number = 0
   beta_b::Number = 0
@@ -363,7 +324,7 @@ end
   z0_crossing::Number = 0       # Weak particle phase space z when strong beam Loc.CENTER passes
                                 #   the BeamBeam element.
   repetition_freq:: Number = 0  # Strong beam repetition rate.
-  twiss::Twiss = Twiss()        # Strong beam Twiss.
+  twiss::Twiss = Twiss()        # Strong beam Twiss at IP.
   sig_x::Number = 0
   sig_y::Number = 0
   sig_z::Number = 0
@@ -410,7 +371,7 @@ Single magnetic multipole of a given order.
 See BMultipoleGroup.
 To switch between integrated and non-integrated, remove old struct first.
 """
-@kwdef mutable struct BMultipole1 <: EleParameterGroup  # A single multipole
+@kwdef mutable struct BMultipole1 <: EleParameterSubGroup  # A single multipole
   Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
   Ks::Number = 0.0                 # EG: "Ks2", "Ks2L"
   Bn::Number = 0.0
@@ -440,7 +401,7 @@ Single electric multipole of a given order.
 See EMultipoleGroup.
 """ EMultipole1
 
-@kwdef mutable struct EMultipole1 <: EleParameterGroup
+@kwdef mutable struct EMultipole1 <: EleParameterSubGroup
   En::Number = 0.0                    # EG: "En2", "En2L"
   Es::Number = 0.0                    # EG: "Es2", "Es2L"
   Etilt::Number = 0.0
@@ -577,6 +538,7 @@ and K-multipols and bend `g` will be varied. Vice versa when `field_master = fal
 """ MasterGroup
 
 @kwdef mutable struct MasterGroup <: EleParameterGroup
+  is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
 end
 
@@ -732,11 +694,12 @@ end
 # TwissGroup
 
 """
+    mutable struct Twiss1 <: EleParameterSubGroup
 Twiss parameters for a single mode.
 
 """ Twiss1
 
-@kwdef mutable struct Twiss1 <: EleParameterGroup
+@kwdef mutable struct Twiss1 <: EleParameterSubGroup
   beta::Number = 0          # Beta Twiss
   alpha::Number = 0         # Alpha Twiss
   gamma::Number = 0         # Gamma Twiss
@@ -753,7 +716,7 @@ Dispersion parameters for a single axis.
 
 """ Dispersion1
 
-@kwdef mutable struct Dispersion1 <: EleParameterGroup
+@kwdef mutable struct Dispersion1 <: EleParameterSubGroup
   eta::Number = 0           # Position dispersion.
   etap::Number = 0          # Momentum dispersion.
   deta_ds::Number = 0       # Dispersion derivative.
@@ -884,10 +847,15 @@ end
 Lattice branch structure. 
 
 ## Fields
-
     name::String
     ele::Vector{Ele}
     pdict::Dict{Symbol,Any}
+
+## Standard pdict fields:
+- `:lat`        - Pointer to containing lattice.
+- `:type`       - `MultipassLordBranch`, `SuperLordBranch`, `GovernorBranch`, or `TrackingBranch`
+- `:ix_branch`  - Index of branch in `lat.branch[]` array.
+- `:geometry`   - `OPEN` or `CLOSED`.
 
 ## Notes
 The constant `NULL_BRANCH` is defined as a placeholder for signaling the absense of a branch.
