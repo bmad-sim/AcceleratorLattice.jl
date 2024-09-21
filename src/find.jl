@@ -423,6 +423,7 @@ end
 """
     branch(lat::Lat, ix::Int)
     branch(lat::Lat, who::AbstractString) 
+    branch(lat::Lat, who::T) where T <: BranchType
 
 Returns the branch in `lat` with index `ix` or name that matches `who`.
 
@@ -439,6 +440,13 @@ function branch(lat::Lat, who::AbstractString)
     if branch.name == who; return branch; end
   end
   error(f"Cannot find branch with name {name} in lattice.")
+end
+
+function branch(lat::Lat, who::Type{T}) where T <: BranchType
+  for branch in lat.branch
+    if branch.pdict[:type] == who; return branch; end
+  end
+  error(f"Cannot find branch with type {name} in lattice.")  
 end
 
 #---------------------------------------------------------------------------------------------------

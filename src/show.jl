@@ -21,7 +21,7 @@ second column.
 When defining custom parameter groups, key/value pairs can be added to `show_column2` as needed.
 """ show_column2
 
-show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}(
+show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol}}(
   AlignmentGroup => Dict{Symbol,Symbol}(
     :offset           => :offset_tot,
     :x_rot            => :x_rot_tot,
@@ -322,6 +322,8 @@ function show_elegroup(io::IO, group::T, docstring::Bool; indent = 0) where T <:
   end
 end
 
+#---------
+
 function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool; indent = 0)
   off_str = " "^indent
 
@@ -330,7 +332,7 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool; indent =
     return
   end
 
-  println(io, f"{off_str}BMultipoleGroup:z")
+  println(io, f"{off_str}BMultipoleGroup:")
   println(io, f"{off_str}  Order Integrated{lpad(\"Tilt (rad)\",24)}")
   for v in group.vec
     ol = f"{v.order}"
@@ -341,6 +343,8 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool; indent =
     println(io, off_str * " "^42 * f"{lpad(v.Bn,24)}  Bn{ol}{lpad(v.Bs,24)}  Bs{ol} ({ub})")
   end
 end
+
+#---------
 
 function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool; indent = 0)
   off_str = " "^indent
@@ -359,6 +363,8 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool; indent =
     println(io, f"{lpad(n,9+indent)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.En,24)}{lpad(v.Es,24)}    En{ol}  Es{ol} ({ue})")
   end
 end
+
+#---------
 
 function show_elegroup(io::IO, group::Vector{ControlVar}; indent = 0)
   println(f"This needs to be coded!")
@@ -394,7 +400,15 @@ function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = 
   end
 
   col2 = show_column2[gtype]
-  nn = max(20, maximum(length.(fieldnames(gtype))))
+  n1 = 20
+  n2 = 20
+  for name in fieldnames(gtype)
+    if name in values(col2)
+      n2 = max(n2, length(name))
+    else
+      n1 = max(n1, length(name))
+    end
+  end
 
   if field_sym == :NONE
     println(io, " "^indent * "$(gtype):")
@@ -412,11 +426,11 @@ function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = 
     if field_sym in values(col2); continue; end         # Second column fields handled with first column ones.
 
     if field_sym in keys(col2)
-      kstr = rpad(full_parameter_name(field_sym, gtype), nn)
+      kstr = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(field)
       str = f"  {kstr} {vstr} {units(field_sym)}"   # First column entry
       field2_sym = col2[field_sym]
-      kstr = rpad(full_parameter_name(field2_sym, gtype), nn)
+      kstr = rpad(full_parameter_name(field2_sym, gtype), n2)
       vstr = ele_param_value_str(Base.getproperty(group, field2_sym))
       str2 = f"  {kstr} {vstr} {units(field2_sym)}" # Second column entry.
       if length(str) > 50 || length(str2) > 50        # If length is too big print in two lines.
@@ -427,7 +441,7 @@ function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = 
       end
 
     else
-      kstr = rpad(full_parameter_name(field_sym, gtype), nn)
+      kstr = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(field)
       println(io, " "^indent * f"  {kstr} {vstr} {units(field_sym)}")
     end

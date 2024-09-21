@@ -35,6 +35,8 @@ This routine needs to be called after any lattice changes and before any trackin
 function bookkeeper!(lat::Lat)
   # Lord bookkeeping
 
+  multipass_bookkeeper!(lat)
+  superimpose_bookkeeper!(lat)
 
   # Tracking branch bookkeeping
   for (ix, branch) in enumerate(lat.branch)
@@ -42,7 +44,38 @@ function bookkeeper!(lat::Lat)
     branch.pdict[:ix_branch] = ix
     bookkeeper!(branch)
   end
-  # Put stuff like ref energy in lords
+end
+
+#---------------------------------------------------------------------------------------------------
+# multipass_bookkeeper!(lat)
+
+"""
+    Internal:  multipass_bookkeeper!(lat)
+
+Bookkeeper to handle changes in multipass lord elements.
+""" multipass_bookkeeper!
+
+function multipass_bookkeeper!(lat)
+  mbranch = branch(lat, MultipassLordBranch)
+  for lord in mbranch.ele
+
+  end 
+end
+
+#---------------------------------------------------------------------------------------------------
+# superimpose_bookkeeper!(lat)
+
+"""
+    Internal:  multipass_bookkeeper!(lat)
+
+Bookkeeper to handle changes in multipass lord elements.
+""" superimpose_bookkeeper!
+
+function superimpose_bookkeeper!(lat)
+  sbranch = branch(lat, SuperLordBranch)
+  for lord in sbranch.ele
+
+  end 
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -179,6 +212,10 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::Chang
   cdict = ele.changed
 
   if haskey(cdict, :L)
+    if ele.slave_status == Slave.MULTIPASS || ele.slave_status == Slave.SUPER
+      ## error("Changing multipole components in multipass or super slave $(ele_name(ele)) not allowed.")
+    end
+
     changed.this_ele_length = true
     changed.s_position = true
     pop!(cdict, :L)
@@ -250,10 +287,23 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   rg.time_ref         = previous_ele.time_ref_exit
   rg.time_ref_exit    = rg.time_ref + ele.L / (c_light * rg.pc_ref / rg.E_tot_ref)
 
-#  # Why was this check put in?
-#  if has_changed(ele, ReferenceGroup)
-#    error(f"ReferenceGroup parameters cannot be set for this element: {ele_name(ele)}")
-#  end
+  # Lord bookkeeping
+
+  if ele.slave_status == Slave.MULTIPASS
+    lord = ele.pdict[:multipass_lord]
+    if lord.pdict[:slaves][1] === ele 
+      lord.ReferenceGroup = rg
+      haskey(lord.pdict, :changed) ? lord.changed = Dict(:ReferenceGroup => "changed") : lord.changed[:ReferenceGroup] = "changed" 
+    end
+  end
+
+  if ele.slave_status == Slave.SUPER
+    for lord in ele.super_lords
+      if !(lord.pdict[:slaves][1] === ele); continue; end
+      lord.ReferenceGroup = rg
+      haskey(lord.pdict, :changed) ? lord.changed = Dict(:ReferenceGroup => "changed") : lord.changed[:ReferenceGroup] = "changed" 
+    end
+  end
 
   clear_changed!(ele, ReferenceGroup)
 end
@@ -367,6 +417,9 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
   bmg = ele.BMultipoleGroup
   cdict = ele.changed
   if !has_changed(ele, BMultipoleGroup) && !changed.this_ele_length && !changed.ref_group; return; end
+  if has_changed(ele, BMultipoleGroup) && (ele.slave_status == Slave.MULTIPASS || ele.slave_status == Slave.SUPER)
+    error("Changing multipole components in multipass or super slave $(ele_name(ele)) not allowed.")
+  end
 
   ff = ele.pc_ref / (c_light * charge(ele.species_ref))
 

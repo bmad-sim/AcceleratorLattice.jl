@@ -132,9 +132,11 @@ function init_multipass_bookkeeper!(lat::Lat)
     lord.pdict[:branch] = multipass_branch
     lord.pdict[:ix_ele] = length(multipass_branch.ele)
     lord.pdict[:slaves] = Ele[]
+    lord.lord_status = Lord.MULTIPASS
     for (ix, ele) in enumerate(val)
       ele.name = ele.name * "!mp" * string(ix)
       ele.pdict[:multipass_lord] = lord
+      ele.slave_status = Slave.MULTIPASS
       push!(lord.pdict[:slaves], ele)
     end
   end

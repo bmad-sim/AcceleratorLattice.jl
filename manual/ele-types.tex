@@ -1,0 +1,81 @@
+\chapter{Lattice Element Types}
+\label{c:ele.types}
+
+%---------------------------------------------------------------------------------------------------
+
+This chapter discusses the various types of elements
+available in \bmadjl.
+Table~\ref{t:particle.classes} lists the elements that can be tracked through.
+Table~\ref{t:control.classes} lists the \vn{controller} element types that can be used for parameter
+control of other elements. 
+
+\begin{table}[htb]
+\centering
+{\tt
+\begin{tabular}{llll} \toprule
+  {\it Element}    & {\it Section}         & {\it Element}      & {\it Section}       \\ \midrule
+  BeamBeam         & \ref{s:beambeam}      &  Lcavity          & \ref{s:lcav}         \\
+  BeginningEle     & \ref{s:begin.ele}     &  Marker            & \ref{s:mark}        \\
+  Bend             & \ref{s:bend}          &  Mask              & \ref{s:mask}        \\
+  Collimator       & \ref{s:col}           &  Match             & \ref{s:match}       \\ 
+  CrabCavity       & \ref{s:crab}          &  NullEle           & \ref{s:null.ele}    \\
+  Custom           & \ref{s:custom}        &  Octupole          & \ref{s:oct}         \\
+  Drift            & \ref{s:drift}         &  Patch             & \ref{s:patch}       \\  
+  EGun             & \ref{s:e.gun}         &  Quadrupole        & \ref{s:quad}        \\ 
+  ElSeparator      & \ref{s:elsep}         &  RFcavity          & \ref{s:rfcav}       \\ 
+  EMField          & \ref{s:em.field}      &  Sextupole         & \ref{s:sex}         \\ 
+  Fiducial         & \ref{s:fiducial}      &  Solenoid          & \ref{s:sol}         \\
+  FloorShift       & \ref{s:floor.ele}     &  Taylor            & \ref{s:taylor}      \\
+  Foil             & \ref{s:foil}          &  ThickMultipole    & \ref{s:thick.mult}  \\
+  Fork             & \ref{s:fork}          &  Undulator         & \ref{s:wiggler}     \\
+  Instrument       & \ref{s:monitor}       &  UnionEle          & \ref{s:union.ele}   \\
+  Kicker           & \ref{s:kicker}        &  Wiggler           & \ref{s:wiggler}     \\
+  \bottomrule
+\end{tabular}
+} 
+\caption{Table of non-controller element types.}
+\label{t:particle.classes}
+\end{table}
+
+\begin{table}[ht]
+\centering
+{\tt
+\begin{tabular}{llll} \toprule
+  {\it Element}  & {\it Section}     & {\it Element}  & {\it Section}    \\ \midrule
+  Controller     & \ref{s:control}     &  Ramper        & \ref{s:ramper}   \\
+  Girder         & \ref{s:girder}    &                &                  \\
+ \\ \bottomrule
+\end{tabular}
+}
+\caption{Table of controller elements.}
+\label{t:control.classes}
+\end{table}
+
+\newpage
+
+%-----------------------------------------------------------------
+\section{BeginningEle}
+\label{s:begin.ele}
+
+A \vn{BeginningEle} element must be present as the first element of every tracking branch.
+(\sref{s:branch.def}).
+
+Element parameter groups associated with a \vn{BeginningEle} are:
+\begin{example}
+  LengthGroup          -> Length and s-position parameters.
+  LordSlaveGroup       -> Element lord and slave status.
+  StringGroup          -> Informational strings.
+  ReferenceGroup       -> Reference energy and species.
+  FloorPositionGroup   -> Global floor position and orientation.
+  TrackingGroup        -> Default tracking settings.
+\end{example}
+
+\newpage
+
+%-----------------------------------------------------------------
+\section{Bend Element}
+\label{s:bend}
+
+A \vn{Bend} type element represents a dipole bend. 
+
+

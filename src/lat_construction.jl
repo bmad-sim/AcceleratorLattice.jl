@@ -57,8 +57,7 @@ Recognized `BeamLine` parameters:
 - `orientation`   Longitudinal orientation. Can be: `+1` (default) or `-1`.
 - `multipass`     Multipass line? Default is `false`.
 All parameters are optional.
-""" BeamLine
-
+"""
 function BeamLine(line::Vector{T}; kwargs...) where T <: BeamLineItem
   bline = BeamLine(randstring(20), BeamLineItem.(line), Dict{Symbol,Any}(kwargs))
   if !haskey(bline.pdict, :orientation); bline.pdict[:orientation] = +1; end
@@ -278,16 +277,15 @@ end
 # expand
 
 """
-    expand(name::AbstractString, root_line::Union{BeamLine,Vector})
-    expand(root_line::Union{BeamLine,Vector{BeamLine}})
+    expand(root_line::Union{BeamLine,Vector}; name = "lat")
 
 Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
 
 ### Input
 
+- root_line   Root beamline(s). 
 - `name`      Optional name put in `lat.name`. If not present or blank (""), `lat.name` will be set
                 to the name of the first branch.
-- root_line   Root beamline(s). 
 
 ### Output
 
@@ -298,16 +296,10 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 function expand(name::AbstractString, root_line::Union{BeamLine,Vector}) 
   lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
   
-  if root_line isa BeamLine
-    new_tracking_branch!(lat, root_line)
-  else
-    for root in root_line
-      new_tracking_branch!(lat, root)
-    end
+  for root in collect(root_line)
+    new_tracking_branch!(lat, root)
   end
   
-  if lat.name == ""; lat.name = lat.branch[1].name; end
-
   # Lord branches
 
   new_lord_branch!(lat, "super_lord", SuperLordBranch)
