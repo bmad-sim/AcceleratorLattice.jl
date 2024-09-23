@@ -38,17 +38,25 @@ This routine needs to be called after any lattice changes and before any trackin
 function bookkeeper!(lat::Lat; check_changed::Bool = true)
   if check_changed; check_changed_parameters(lat); end
 
-  # Lord bookkeeping
+  # Lord bookkeeping at the start involves transferring changes in the lords to the slaves.
 
-  multipass_bookkeeper!(lat)
-  superimpose_bookkeeper!(lat)
+  start_multipass_bookkeeper!(lat)
+  start_superimpose_bookkeeper!(lat)
 
   # Tracking branch bookkeeping
+
   for (ix, branch) in enumerate(lat.branch)
     if branch.type != TrackingBranch; continue; end
     branch.pdict[:ix_branch] = ix
     bookkeeper!(branch)
   end
+
+  # Lord bookkeeping at the end involves making sure that shifts in the reference energy
+  # which have filtered up from the slaves to the lords is handled.
+
+  end_multipass_bookkeeper!(lat)
+  end_superimpose_bookkeeper!(lat)
+
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -79,15 +87,15 @@ function check_changed_parameters(lat::Lat)
 end
 
 #---------------------------------------------------------------------------------------------------
-# multipass_bookkeeper!(lat)
+# start_multipass_bookkeeper!(lat)
 
 """
-    Internal:  multipass_bookkeeper!(lat)
+    Internal:  start_multipass_bookkeeper!(lat)
 
-Bookkeeper to handle changes in multipass lord elements.
-""" multipass_bookkeeper!
+Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lat)`
+""" start_multipass_bookkeeper!
 
-function multipass_bookkeeper!(lat)
+function start_multipass_bookkeeper!(lat)
   mbranch = branch(lat, MultipassLordBranch)
   for lord in mbranch.ele
 
@@ -95,15 +103,47 @@ function multipass_bookkeeper!(lat)
 end
 
 #---------------------------------------------------------------------------------------------------
-# superimpose_bookkeeper!(lat)
+# end_multipass_bookkeeper!(lat)
 
 """
-    Internal:  multipass_bookkeeper!(lat)
+    Internal:  end_multipass_bookkeeper!(lat)
 
-Bookkeeper to handle changes in multipass lord elements.
-""" superimpose_bookkeeper!
+Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lat)`
+""" end_multipass_bookkeeper!
 
-function superimpose_bookkeeper!(lat)
+function end_multipass_bookkeeper!(lat)
+  mbranch = branch(lat, MultipassLordBranch)
+  for lord in mbranch.ele
+
+  end 
+end
+
+#---------------------------------------------------------------------------------------------------
+# start_superimpose_bookkeeper!(lat)
+
+"""
+    Internal:  start_superimpose_bookkeeper!(lat)
+
+Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lat)`
+""" start_superimpose_bookkeeper!
+
+function start_superimpose_bookkeeper!(lat)
+  sbranch = branch(lat, SuperLordBranch)
+  for lord in sbranch.ele
+
+  end 
+end
+
+#---------------------------------------------------------------------------------------------------
+# end_superimpose_bookkeeper!(lat)
+
+"""
+    Internal:  end_superimpose_bookkeeper!(lat)
+
+Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lat)`
+""" end_superimpose_bookkeeper!
+
+function end_superimpose_bookkeeper!(lat)
   sbranch = branch(lat, SuperLordBranch)
   for lord in sbranch.ele
 
@@ -239,12 +279,30 @@ end
 # elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, ...)
 # Low level LengthGroup bookkeeping.
 
+function elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, changed::ChangedLedger, previous_ele::Ele)
+  tg = ele.TrackingGroup
+  cdict = ele.changed
+
+  if haskey(cdict, :num_steps)
+    pop!(cdict, :num_steps)
+    tg.ds_step = ele.L / tg.num_steps
+  end
+
+  if haskey(cdict, :ds_step)
+    pop!(cdict, :ds_step)
+    tg.num_steps = ele.L / tg.ds_step
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, ...)
+# Low level LengthGroup bookkeeping.
+
 function elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, previous_ele::Ele)
   lg = ele.LengthGroup
   cdict = ele.changed
 
   if haskey(cdict, :L)
-
     changed.this_ele_length = true
     changed.s_position = true
     pop!(cdict, :L)

@@ -138,12 +138,12 @@ ele_param_info_dict = Dict(
   :phase_err          => ParamInfo(LCavityGroup,   Number,        "RF phase error.", "rad"),
   :phase_tot          => ParamInfo(LCavityGroup,   Number,        "Actual RF phase. (ref + err)", "rad"),
 
-  :voltage_master     => ParamInfo(RFMasterGroup,  Bool,          "Voltage or gradient is constant with length changes?"),
-  :auto_amp           => ParamInfo(RFMasterGroup,  Number,    
+  :voltage_master     => ParamInfo(RFAutoGroup,  Bool,          "Voltage or gradient is constant with length changes?"),
+  :auto_amp           => ParamInfo(RFAutoGroup,  Number,    
                                   "Correction to the voltage/gradient calculated by the auto scale code.", ""),
-  :auto_phase         => ParamInfo(RFMasterGroup,  Number,        "Correction RF phase calculated by the auto scale code.", "rad"),
-  :do_auto_amp        => ParamInfo(RFMasterGroup,  Bool,          "Autoscale voltage/gradient?"),
-  :do_auto_phase      => ParamInfo(RFMasterGroup,  Bool,          "Autoscale phase?"),
+  :auto_phase         => ParamInfo(RFAutoGroup,  Number,        "Correction RF phase calculated by the auto scale code.", "rad"),
+  :do_auto_amp        => ParamInfo(RFAutoGroup,  Bool,          "Autoscale voltage/gradient?"),
+  :do_auto_phase      => ParamInfo(RFAutoGroup,  Bool,          "Autoscale phase?"),
   :do_auto_scale      => ParamInfo(Nothing,        Bool,          "Used to set do_auto_amp and do_auto_phase both at once.", ""),
 
   :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethod.T,      "Nominal method used for tracking."),
@@ -153,7 +153,7 @@ ele_param_info_dict = Dict(
 
   :aperture_type      => ParamInfo(ApertureGroup,  ApertureShape.T,       "Type of aperture. Default is Elliptical."),
   :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,             "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
-  :offset_moves_aperture 
+  :misalignment_moves_aperture 
                       => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
   :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of horizontal aperture limits.", "m"),
   :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of vertical aperture limits.", "m"),
@@ -554,7 +554,7 @@ param_groups_list = Dict(
     Girder              => [base_group_list...],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
-    LCavity             => [general_group_list..., RFMasterGroup, LCavityGroup, RFCommonGroup],
+    LCavity             => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, LCavityGroup, RFCommonGroup],
     Marker              => [base_group_list...],
     Mask                => [base_group_list...],
     Match               => [base_group_list...],
@@ -565,7 +565,7 @@ param_groups_list = Dict(
     Quadrupole          => [general_group_list...],
     Ramper              => [base_group_list...],
     RFBend              => [base_group_list...],
-    RFCavity            => [general_group_list..., RFMasterGroup, RFCavityGroup, RFCommonGroup],
+    RFCavity            => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFCavityGroup, RFCommonGroup],
     SADMult             => [general_group_list...],
     Sextupole           => [general_group_list...],
     Solenoid            => [general_group_list..., SolenoidGroup],
@@ -600,7 +600,7 @@ ele_param_group_info = Dict(
   ReferenceGroup        => EleParameterGroupInfo("Reference energy and species.", true),
   RFCavityGroup         => EleParameterGroupInfo("`RFCavity` parameters.", true),
   RFCommonGroup         => EleParameterGroupInfo("RF parameters common to both `LCavity` and `RFCavity`.", false),
-  RFMasterGroup         => EleParameterGroupInfo("Contains `voltage_master`, `do_auto_map`, and `do_auto_phase`.", false),
+  RFAutoGroup           => EleParameterGroupInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
   SolenoidGroup         => EleParameterGroupInfo("`Solenoid` parameters.", false),
   StringGroup           => EleParameterGroupInfo("Informational strings.", false),
   TrackingGroup         => EleParameterGroupInfo("Default tracking settings.", false),

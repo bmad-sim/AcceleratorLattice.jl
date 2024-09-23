@@ -263,14 +263,14 @@ Orientation of an element (specifically, orientation of the body coordinates) wi
 laboratory coordinates.
 
 ## Fields
-    offset::Vector = [0.0, 0.0, 0.0]       # [x, y, z] offsets
-    offset_tot::Vector = [0.0, 0.0, 0.0]   # [x, y, z] offsets including Girder misalignment.
-    x_rot::Number = 0                      # x-axis rotation
-    x_rot_tot::Number = 0                  # x-axis rotation including Girder misalignment.
-    y_rot::Number = 0                      # y-axis rotation
-    y_rot_tot::Number = 0                  # y-axis rotation including Girder misalignment.
-    tilt::Number = 0                       # z-axis rotation. Not used by Bend elements.
-    tilt_tot::Number = 0                   # z-axis rottion including Girder misalignment
+- `offset::Vector`       - [x, y, z] offsets
+- `offset_tot::Vector`   - [x, y, z] offsets including Girder misalignment.
+- `x_rot::Number`                      - x-axis rotation
+- `x_rot_tot::Number`                  - x-axis rotation including Girder misalignment.
+- `y_rot::Number`                      - y-axis rotation
+- `y_rot_tot::Number`                  - y-axis rotation including Girder misalignment.
+- `tilt::Number`                       - z-axis rotation. Not used by Bend elements.
+- `tilt_tot::Number`                   - z-axis rottion including Girder misalignment
 """ AlignmentGroup
 
 @kwdef mutable struct AlignmentGroup <: EleParameterGroup
@@ -293,11 +293,11 @@ end
 Vacuum chamber aperture struct.
 
 ## Fields
-    x_limit::Vector = [NaN, NaN]                               # Limits in x-direction
-    y_limit::Vector = [NaN, NaN]                               # Limits in y-direction
-    aperture_shape::ApertureShape.T = ApertureShape.ELLIPTICAL # Aperture shape
-    aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END              # Where aperture is
-    offset_moves_aperture::Bool = true                         # Do element offsets move the aperture?
+- `x_limit::Vector`                               - Limits in x-direction
+- `y_limit::Vector`                               - Limits in y-direction
+- `aperture_shape::ApertureShape.T`               - Aperture shape
+- `aperture_at::BodyLoc.T`                        - Where aperture is
+- `misalignment_moves_aperture::Bool`             - Do element misalignments move the aperture?
 """ ApertureGroup
 
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
@@ -305,7 +305,7 @@ Vacuum chamber aperture struct.
   y_limit::Vector = [NaN, NaN]
   aperture_type::ApertureShape.T = ApertureShape.ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
-  offset_moves_aperture::Bool = true
+  misalignment_moves_aperture::Bool = true
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -486,7 +486,7 @@ end
 
 """
 Used by `LCavity` elements but not `RFCavity` elements.
-See also `RFMasterGroup` and `RFCommonGroup`.
+See also `RFAutoGroup` and `RFCommonGroup`.
 """
 @kwdef mutable struct LCavityGroup <: EleParameterGroup
   voltage_ref::Number = 0.0
@@ -604,7 +604,7 @@ end
 
 RF parameters except for `voltage`,  `gradient` and `phase`.
 Used by both `RFCavity` and `LCavity` elements.
-See also `RFMasterGroup`, `RFCavityGroup`, and `LCavityGroup` structures.
+See also `RFAutoGroup`, `RFCavityGroup`, and `LCavityGroup` structures.
 """ RFCommonGroup
 
 @kwdef mutable struct RFCommonGroup <: EleParameterGroup
@@ -622,7 +622,7 @@ end
     mutable struct RFCavityGroup <: EleParameterGroup
 
 RF voltage parameters. Used by `RFCavity` elements but not `LCavity` elements.
-See also `RFMasterGroup` and `RFCommonGroup`.
+See also `RFAutoGroup` and `RFCommonGroup`.
 """ RFCavityGroup
 
 @kwdef mutable struct RFCavityGroup <: EleParameterGroup
@@ -632,16 +632,15 @@ See also `RFMasterGroup` and `RFCommonGroup`.
 end
 
 #---------------------------------------------------------------------------------------------------
-# RFMasterGroup
+# RFAutoGroup
 
 """
-    mutable struct RFMasterGroup <: EleParameterGroup
+    mutable struct RFAutoGroup <: EleParameterGroup
 
 RF autoscale and voltage_master.
-""" RFMasterGroup
+""" RFAutoGroup
 
-@kwdef mutable struct RFMasterGroup <: EleParameterGroup
-  voltage_master::Bool = false      # Voltage or gradient stay constant with length changes?
+@kwdef mutable struct RFAutoGroup <: EleParameterGroup
   do_auto_amp::Bool = true          # Will autoscaling set auto_amp?
   do_auto_phase::Bool = true        # Will autoscaling set auto_phase?
   auto_amp::Number = 1.0            # Auto amplitude scale value.
