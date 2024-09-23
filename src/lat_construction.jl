@@ -269,7 +269,6 @@ function new_lord_branch!(lat::Lat, name::AbstractString, branch_type::Type{T}) 
   branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = branch_type
-  lat.pdict[Symbol(name)] = branch
   return branch
 end
 
@@ -289,11 +288,11 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 ### Output
 
-- `Lat`       `Lat` instance with expanded beamlines.
+- `Lat`      - `Lat` instance with expanded beamlines.
 
 """ expand
 
-function expand(name::AbstractString, root_line::Union{BeamLine,Vector}) 
+function expand(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat") 
   lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
   
   for root in collect(root_line)
@@ -315,11 +314,4 @@ function expand(name::AbstractString, root_line::Union{BeamLine,Vector})
   lat_sanity_check(lat)
 
   return lat
-end
-
-#---------------------------------------------------------------------------------------------------
-# expand version without lattice name argument.
-
-function expand(root_line::Union{BeamLine,Vector{BeamLine}})
-  expand("", root_line)
 end

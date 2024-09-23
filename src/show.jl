@@ -63,6 +63,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :voltage_ref      => :gradient_ref,
     :voltage_err      => :gradient_err,
     :voltage_tot      => :gradient_tot,
+    :phase_ref        => :phase_err
   ),
 
   LengthGroup => Dict{Symbol,Symbol}(
@@ -99,8 +100,14 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :phase            => :rad2pi,
   ),
 
-  RFMasterGroup => Dict{Symbol,Symbol}(
+  RFCommonGroup => Dict{Symbol,Symbol}(
+    :frequency        => :harmon,
+    :n_cell           => :cavity_type,
+  ),
+
+  RFAutoGroup => Dict{Symbol,Symbol}(
     :do_auto_amp      => :do_auto_phase,
+    :auto_amp         => :auto_phase,
   ),
 
   StringGroup => Dict{Symbol,Symbol}(
@@ -573,7 +580,7 @@ function Base.show(io::IO, bl::BeamLine)
   for (key, value) in bl.pdict
     typeof(value) == String ? str = str * "$key => $(str_quote(value)), " : str = str * "$key => $value, "
   end
-  println(io, f"Beamline: [{str[1:end-2]}]")
+  println(io, f"BeamLine: [{str[1:end-2]}]")
   n = 6
   for item in bl.line
     if item isa BeamLineEle
@@ -746,7 +753,7 @@ function info1(info::ParamInfo)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Documentation on element types
+# Construct documentation on element types
 
 for etype in subtypes(Ele)
   str = """
@@ -759,5 +766,4 @@ $(info(etype, return_str = true))
 """
 
   eval_str("@doc \"\"\"$str\"\"\" $etype")
-
 end

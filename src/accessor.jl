@@ -35,6 +35,24 @@ function Base.getproperty(branch::Branch, sym::Symbol)
 end
 
 #---------------------------------------------------------------------------------------------------
+# Base.getproperty(bl::BeamLine, sym::Symbol) for bl.XXX dot operator overload
+
+"""
+    Base.getproperty(bl::BeamLine, sym::Symbol)
+
+Overloads the dot struct component selection operator so something like `bl.XXX` returns the value of `bl.pdict[:XXX]`. 
+Exceptions are: `bl.name`, `bl.ele`, and `bl.pdict` which do not get redirected.
+
+""" Base.getproperty(bl::BeamLine, sym::Symbol)
+
+function Base.getproperty(bl::BeamLine, sym::Symbol)
+  if sym == :id; return getfield(bl, :id); end
+  if sym == :line; return getfield(bl, :line); end
+  if sym == :pdict; return getfield(bl, :pdict); end
+  return getfield(bl, :pdict)[sym]
+end
+
+#---------------------------------------------------------------------------------------------------
 # Base.getproperty(ele::Ele, sym::Symbol) for ele.XXX dot operator overload
 
 """
@@ -115,6 +133,12 @@ end
 function Base.setproperty!(branch::Branch, sym::Symbol, value)
   if sym == :name; return setfield!(branch, :name, value); end
   if sym == :ele;  return setfield!(branch, :ele, value); end
+  getfield(branch, :pdict)[sym] = value
+end
+
+function Base.setproperty!(bl::BeamLine, sym::Symbol, value)
+  if sym == :id; return setfield!(branch, :id, value); end
+  if sym == :line; return setfield!(branch, :line, value); end
   getfield(branch, :pdict)[sym] = value
 end
 

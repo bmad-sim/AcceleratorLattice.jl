@@ -141,3 +141,19 @@ function quat_angles(q; angles0 = [0.0, 0.0, 0.0])
 end
 
 #---------------------------------------------------------------------------------------------------
+# Base.show(io::IO, q::ReferenceFrameRotations.Quaternion)
+# Standard show for a quaternion has a "Quaternion{Float64}:" prefix added on which is annoying.
+
+function qstr(x::Number)
+  if x < 0
+    return "- $(abs(x))"
+  else
+    return "+ $x"
+  end
+end
+
+function Base.show(io::IO, q::ReferenceFrameRotations.Quaternion{T})  where T <: Number 
+  print(io, "$(q.q0) $(qstr(q.q1))⋅i $(qstr(q.q2))⋅j $(qstr(q.q3))⋅k")
+end 
+
+#---------------------------------------------------------------------------------------------------

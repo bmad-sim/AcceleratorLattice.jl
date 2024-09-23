@@ -2,6 +2,7 @@
     module AcceleratorLattice
 
 Module for instantiating and manipulating lattices for particle beam machines.
+Part of the SciBmad ecosystem of packages for simulation of high energy 
 """
 module AcceleratorLattice
 
