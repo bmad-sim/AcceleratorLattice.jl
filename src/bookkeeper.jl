@@ -23,16 +23,21 @@ end
 # bookkeeper!(Lat)
 
 """
-    function bookkeeper!(lat::Lat)
+    function bookkeeper!(lat::Lat; check_changed::Bool = true)
 
 All Lat bookkeeping. For example, if the reference energy is changed at the start of a branch the 
 bookkeeping code will propagate that change through the reset of the lattice. 
 Also controller bookkeeping will be done. 
 
 This routine needs to be called after any lattice changes and before any tracking is done.
+- `check_changed`   -- Check if it is valid to vary a changed parameter. For example, parameters
+  of a super slave element cannot be directly changed. There generally is no reason to set
+  the argument false. One exception is during lattice expansion.
 """ bookkeeper!(lat::Lat)
 
-function bookkeeper!(lat::Lat)
+function bookkeeper!(lat::Lat; check_changed::Bool = true)
+  if check_changed; check_changed_parameters(lat); end
+
   # Lord bookkeeping
 
   multipass_bookkeeper!(lat)
@@ -43,6 +48,33 @@ function bookkeeper!(lat::Lat)
     if branch.type != TrackingBranch; continue; end
     branch.pdict[:ix_branch] = ix
     bookkeeper!(branch)
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# check_changed_parameters(lat)
+
+"""
+    Internal: check_changed_parameters(lat::Lat)
+
+Check that it is valid to have varied all the parameters in the lattice that have been changed.
+For example, parameters of a super slave element cannot be directly changed.
+"""
+
+function check_changed_parameters(lat::Lat)
+  for branch in lat.branch
+    if branch.type != TrackingBranch && branch.type != SuperLordBranch; continue; end
+    for ele in branch.ele
+      if ele.slave_status != Slave.MULTIPASS && ele.slave_status != Slave.SUPER; continue; end
+      if :changed ∉ keys(ele.pdict); continue; end
+
+      for key in keys(ele.changed)
+        pinfo = ele_param_info(key, throw_error = false)
+        if isnothing(pinfo); continue; end
+        if pinfo.parent_group in [StringGroup]; continue; end
+        error("Changing component $key in multipass or super slave $(ele_name(ele)) not allowed.")
+      end
+    end
   end
 end
 
@@ -212,9 +244,6 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::Chang
   cdict = ele.changed
 
   if haskey(cdict, :L)
-    if ele.slave_status == Slave.MULTIPASS || ele.slave_status == Slave.SUPER
-      ## error("Changing multipole components in multipass or super slave $(ele_name(ele)) not allowed.")
-    end
 
     changed.this_ele_length = true
     changed.s_position = true
@@ -281,11 +310,22 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   rg.species_ref      = previous_ele.species_ref_exit
   rg.species_ref_exit = rg.species_ref
   rg.pc_ref           = previous_ele.pc_ref_exit
-  rg.pc_ref_exit      = rg.pc_ref
   rg.E_tot_ref        = previous_ele.E_tot_ref_exit
-  rg.E_tot_ref_exit   = rg.E_tot_ref
   rg.time_ref         = previous_ele.time_ref_exit
-  rg.time_ref_exit    = rg.time_ref + ele.L / (c_light * rg.pc_ref / rg.E_tot_ref)
+  rg.β_ref            = rg.pc_ref / rg.E_tot_ref
+
+
+  if typeof(ele) == LCavity
+    rg.pc_ref_exit      = rg.pc_ref + ele.voltage_ref
+    rg.E_tot_ref_exit   = E_tot_from_pc(rg.pc_ref_exit, rg.species_ref)
+    rg.time_ref_exit    = rg.time_ref + ele.L * (rg.E_tot_ref + rg.E_tot_ref_exit) / (c_light * (rg.pc_ref + rg.pc_ref_exit))
+  else
+    rg.pc_ref_exit      = rg.pc_ref
+    rg.E_tot_ref_exit   = rg.E_tot_ref
+    rg.time_ref_exit    = rg.time_ref + ele.L / (c_light * rg.pc_ref / rg.E_tot_ref)
+  end
+
+  rg.β_ref_exit = rg.pc_ref_exit / rg.E_tot_ref_exit
 
   # Lord bookkeeping
 
@@ -417,9 +457,6 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
   bmg = ele.BMultipoleGroup
   cdict = ele.changed
   if !has_changed(ele, BMultipoleGroup) && !changed.this_ele_length && !changed.ref_group; return; end
-  if has_changed(ele, BMultipoleGroup) && (ele.slave_status == Slave.MULTIPASS || ele.slave_status == Slave.SUPER)
-    error("Changing multipole components in multipass or super slave $(ele_name(ele)) not allowed.")
-  end
 
   ff = ele.pc_ref / (c_light * charge(ele.species_ref))
 

@@ -63,7 +63,8 @@ Example:
 \label{s:ele.type}
 
 Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
-types which inherit from the abstract type \vn{EleParameterGroup}:
+types which inherit from the abstract type \vn{EleParameterGroup}. To see a list of all
+parameter groups, use the \vn{suptypes} function:
 \begin{example}
   julia> subtypes(EleParameterGroup)
   28-element Vector{Any}:
@@ -72,6 +73,23 @@ types which inherit from the abstract type \vn{EleParameterGroup}:
    BMultipoleGroup
    ...
 \end{example}
+To see the parameter groups associated with a given element type, use the the \vn{info} function:
+\begin{example}
+  julia> info(Quadrupole)
+    LengthGroup          -> Length and s-position parameters.
+    LordSlaveGroup       -> Element lord and slave status.
+    StringGroup          -> Informational strings.
+    ReferenceGroup       -> Reference energy and species.
+    FloorPositionGroup   -> Global floor position and orientation.
+    TrackingGroup        -> Default tracking settings.
+    AlignmentGroup       -> Element position/orientation shift.
+    ApertureGroup        -> Vacuum chamber aperture.
+    MasterGroup          -> Contains field_master parameter.
+    BMultipoleGroup      -> Magnetic multipoles.
+    EMultipoleGroup      -> Electric multipoles.
+\end{example}
+Alternatively, when using the Julia REPL, in help mode typing the name of an element type will give
+the same list.
 
 For example, the \vn{LengthGroup} holds the length and s-positions of the element and is defined by:
 \begin{example}
@@ -101,7 +119,7 @@ Notice that the argument to the \vn{info} function is the symbol associated with
 the ``user name'' is the name used when setting the parameter. For instance, if \vn{q} is a
 lattice element, \vn{q.s_downstream} would be used to access the \vn{s_downstream} component of \vn{q}.
 This works, even though \vn{s_downstream} is not a direct component of an element, since the dot
-selection operator for lattice elements has been overloaded as explained in \sec{s:ele.access}.
+selection operator for lattice elements has been overloaded as explained in \sref{s:ele.access}.
 For most parameters, the user name and the name of the corresponding component in the element parameter
 group are the same. However, there are exceptions. For example:
 \begin{example}

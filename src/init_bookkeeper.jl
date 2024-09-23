@@ -137,6 +137,7 @@ function init_multipass_bookkeeper!(lat::Lat)
       ele.name = ele.name * "!mp" * string(ix)
       ele.pdict[:multipass_lord] = lord
       ele.slave_status = Slave.MULTIPASS
+      if haskey(ele.pdict, :MasterGroup); ele.field_master = true; end
       push!(lord.pdict[:slaves], ele)
     end
   end

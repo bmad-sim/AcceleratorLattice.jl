@@ -1,3 +1,7 @@
+# utilities.jl
+# Utility routines that involve structures from struct.jl
+# Also see core.jl
+
 #---------------------------------------------------------------------------------------------------
 # lat_sanity_check
 
@@ -27,37 +31,10 @@ function lat_sanity_check(lat::Lat)
 end
 
 #---------------------------------------------------------------------------------------------------
+# Base.isless
+# Used to sort output
 
-"""
-Returns the length in characters of the string representation of a Symbol.
-Here the string representation includes the leading colon.
-Example: length(:abc) => 4
-""" Base.length
-
-Base.length(sym::Symbol) = length(repr(sym))
-
-#---------------------------------------------------------------------------------------------------
-# index
-
-"""
-Index of substring in string. Assumes all characters are ASCII.
-Returns 0 if substring is not found
-"""
-
-function index(str::AbstractString, substr::AbstractString)
-  ns = length(substr)
-  for ix in range(1, length(str)-ns+1)
-    if str[ix:ix+ns-1] == substr; return ix; end
-  end
-
-  return 0
-end
-
-#---------------------------------------------------------------------------------------------------
-# "To print memory location of object"
-
-function memloc(@nospecialize(x))
-   y = ccall(:jl_value_ptr, Ptr{Cvoid}, (Any,), x)
-   return repr(UInt64(y))
+function Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterGroup, T2 <: EleParameterGroup}
+  return Symbol(a) < Symbol(b)
 end
 

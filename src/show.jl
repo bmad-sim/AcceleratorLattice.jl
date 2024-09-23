@@ -91,9 +91,10 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :pc_ref           => :pc_ref_exit,
     :E_tot_ref        => :E_tot_ref_exit,
     :time_ref         => :time_ref_exit,
+    :β_ref            => :β_ref_exit,
   ),
 
-  RFFieldGroup => Dict{Symbol,Symbol}(
+  RFCavityGroup => Dict{Symbol,Symbol}(
     :voltage          => :gradient,
     :phase            => :rad2pi,
   ),
@@ -640,11 +641,19 @@ abstract_dict = Dict{Any,String}(
 """
     info(sym::Symbol) -> nothing
     info(str::AbstractString) -> nothing
+    info(ele_type::Type{T}) where T <: Ele
+    info(ele::Ele)
+    info(group::Type{T}) where T <: EleParameterGroup
 
-Prints information about the element parameter represented by `Sym` or `str`.
-# Examples
-    info(:L)      - Prints information on parameter `L`.
-    info("L")     - Same as above.
+Prints information about:
+  + The element parameter represented by `sym` or `str`.
+  + A particular element type given by `ele_type` or the type of `ele`.
+  + A particular element parameter group given by `group`.
+
+## Examples
+    info(:L)          # Prints information on parameter `L`.
+    info("L")         # Same as above.
+    info(LengthGroup) # `LengthGroup` info.
 """ info
 
 function info(sym::Symbol)
@@ -667,28 +676,37 @@ function info(sym::Symbol)
   println(f"No information found on: {sym}")
 end
 
-#-
+#-----
 
 info(str::AbstractString) = info(Symbol(str))
 
-!-
+#-----
 
-function info(ele_type::Type{T}) where T <: Ele
+function info(ele_type::Type{T}; return_str::Bool = false) where T <: Ele
   if ele_type ∉ keys(param_groups_list)
     prinln("No information on $(ele_type)")
     return
   end
 
-  for group in param_groups_list[ele_type]
-    println("  $(rpad(string(group), 20)) -> $(ele_param_group_info[group].description)")
+  if return_str
+    lst = ""
+    for group in sort(param_groups_list[ele_type])
+      lst *= "-  $(rpad(strip_AL(group), 20)) -> $(ele_param_group_info[group].description)\n"
+    end
+    return lst
+
+  else
+    for group in sort(param_groups_list[ele_type])
+      println("  $(rpad(string(group), 20)) -> $(ele_param_group_info[group].description)")
+    end
   end
 end
 
-!-
+#----
 
-info(ele::Ele) = info(typeof(ele))
+info(ele::Ele; return_str::Bool = false) = info(typeof(ele), return_str)
 
-!-
+#----
 
 function info(group::Type{T}) where T <: EleParameterGroup
   if group in keys(ele_param_group_info)
@@ -725,4 +743,21 @@ function info1(info::ParamInfo)
   if info.units != ""; println(f"  Units:           {info.units}"); end
   println(f"  Description:     {info.description}")
   return nothing
+end
+
+#---------------------------------------------------------------------------------------------------
+# Documentation on element types
+
+for etype in subtypes(Ele)
+  str = """
+    mutable struct $(strip_AL(etype)) <: Ele
+
+Type of lattice element.
+
+## Associated parameter groups
+$(info(etype, return_str = true))
+"""
+
+  eval_str("@doc \"\"\"$str\"\"\" $etype")
+
 end

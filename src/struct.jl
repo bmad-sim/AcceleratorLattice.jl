@@ -262,7 +262,7 @@ abstract type EleParameterSubGroup <: BaseEleParameterGroup end
 Orientation of an element (specifically, orientation of the body coordinates) with respect to the 
 laboratory coordinates.
 
-# Fields
+## Fields
     offset::Vector = [0.0, 0.0, 0.0]       # [x, y, z] offsets
     offset_tot::Vector = [0.0, 0.0, 0.0]   # [x, y, z] offsets including Girder misalignment.
     x_rot::Number = 0                      # x-axis rotation
@@ -291,6 +291,13 @@ end
     struct ApertureGroup
 
 Vacuum chamber aperture struct.
+
+## Fields
+    x_limit::Vector = [NaN, NaN]                               # Limits in x-direction
+    y_limit::Vector = [NaN, NaN]                               # Limits in y-direction
+    aperture_shape::ApertureShape.T = ApertureShape.ELLIPTICAL # Aperture shape
+    aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END              # Where aperture is
+    offset_moves_aperture::Bool = true                         # Do element offsets move the aperture?
 """ ApertureGroup
 
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
@@ -478,8 +485,8 @@ end
 # LCavityGroup
 
 """
-Used by LCavity elements. 
-See also RFMasterGroup and RFGroup.
+Used by `LCavity` elements but not `RFCavity` elements.
+See also `RFMasterGroup` and `RFCommonGroup`.
 """
 @kwdef mutable struct LCavityGroup <: EleParameterGroup
   voltage_ref::Number = 0.0
@@ -585,19 +592,22 @@ but with `Converter` or `Foil` Elements they will generally be different.
   E_tot_ref_exit::Number = NaN
   time_ref::Number = 0.0
   time_ref_exit::Number = 0.0
+  β_ref::Number = 0.0
+  β_ref_exit::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
-# RFGroup
+# RFCommonGroup
 
 """
-    mutable struct RFGroup <: EleParameterGroup
+    mutable struct RFCommonGroup <: EleParameterGroup
 
-RF parameters except for voltage and phase.
-See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
-""" RFGroup
+RF parameters except for `voltage`,  `gradient` and `phase`.
+Used by both `RFCavity` and `LCavity` elements.
+See also `RFMasterGroup`, `RFCavityGroup`, and `LCavityGroup` structures.
+""" RFCommonGroup
 
-@kwdef mutable struct RFGroup <: EleParameterGroup
+@kwdef mutable struct RFCommonGroup <: EleParameterGroup
   multipass_phase::Number = 0.0
   frequency::Number = 0.0
   harmon::Number = 0.0
@@ -606,16 +616,16 @@ See also RFMasterGroup, RFFieldGroup, and LCavityGroup structures.
 end
 
 #---------------------------------------------------------------------------------------------------
-# RFFieldGroup
+# RFCavityGroup
 
 """
-    mutable struct RFFieldGroup <: EleParameterGroup
+    mutable struct RFCavityGroup <: EleParameterGroup
 
-RF voltage parameters. Used by RFCavity element.
-See also RFMasterGroup and RFGroup.
-""" RFFieldGroup
+RF voltage parameters. Used by `RFCavity` elements but not `LCavity` elements.
+See also `RFMasterGroup` and `RFCommonGroup`.
+""" RFCavityGroup
 
-@kwdef mutable struct RFFieldGroup <: EleParameterGroup
+@kwdef mutable struct RFCavityGroup <: EleParameterGroup
   voltage::Number = 0.0
   gradient::Number = 0.0
   phase::Number = 0.0

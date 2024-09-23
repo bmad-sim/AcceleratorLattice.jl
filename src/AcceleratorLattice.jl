@@ -21,7 +21,6 @@ module AcceleratorLattice
   include("core.jl")
   include("quaternion.jl")
   include("AtomicAndPhysicalConstants.jl")
-  include("math_base.jl")
   include("struct.jl")
   include("utilities.jl")
   include("string.jl")
@@ -48,12 +47,12 @@ module AcceleratorLattice
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, LatEleLocation, ele_at_s, add_governor!
-  export eles, next_ele, ele_at_offset, ele_param_value_str
-  export branch, matches_branch, param_groups_list, create_ele_vars
+  export eles, next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
+  export branch, matches_branch, param_groups_list, create_ele_vars, eval_str
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup, BeamBeamGroup
-  export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFGroup, SolenoidGroup
+  export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFCommonGroup, SolenoidGroup
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveGroup
-  export GirderGroup, LCavityGroup, PatchGroup, RFFieldGroup, RFMasterGroup, ControlSlaveGroup, ControlVarGroup
+  export GirderGroup, LCavityGroup, PatchGroup, RFCavityGroup, RFMasterGroup, ControlSlaveGroup, ControlVarGroup
   export TwissGroup, Twiss1, InitSpinGroup, InitParticleGroup
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null

@@ -78,6 +78,8 @@ ele_param_info_dict = Dict(
   :pc_ref_exit        => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c at exit end.", "eV"),
   :E_tot_ref_exit     => ParamInfo(ReferenceGroup, Number,      "Reference total energy at exit end.", "eV"),
   :time_ref_exit      => ParamInfo(ReferenceGroup, Number,      "Reference time at exit end.", "sec"),
+  :β_ref              => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c."),
+  :β_ref_exit         => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c at exit end."),
 
   :angle              => ParamInfo(BendGroup,      Number,      "Design bend angle", "rad"),
   :bend_field         => ParamInfo(BendGroup,      Number,      "Design bend field corresponding to g bending", "T"),
@@ -115,16 +117,16 @@ ele_param_info_dict = Dict(
   :user_sets_length   => ParamInfo(PatchGroup,     Bool,           "Does Bmad calculate the patch length?"),
   :ref_coords         => ParamInfo(PatchGroup,     BodyLoc.T,   "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
-  :voltage            => ParamInfo(RFFieldGroup,   Number,        "RF voltage.", "volt"),
-  :gradient           => ParamInfo(RFFieldGroup,   Number,        "RF gradient.", "volt/m"),
-  :phase              => ParamInfo(RFFieldGroup,   Number,        "RF phase.", "rad"),
+  :voltage            => ParamInfo(RFCavityGroup,   Number,        "RF voltage.", "volt"),
+  :gradient           => ParamInfo(RFCavityGroup,   Number,        "RF gradient.", "volt/m"),
+  :phase              => ParamInfo(RFCavityGroup,   Number,        "RF phase.", "rad"),
 
-  :multipass_phase    => ParamInfo(RFGroup,        Number,    
+  :multipass_phase    => ParamInfo(RFCommonGroup,   Number,    
                                   "RF phase which can differ from multipass element to multipass element.", "rad"),
-  :frequency          => ParamInfo(RFGroup,        Number,        "RF frequency.", "Hz"),
-  :harmon             => ParamInfo(RFGroup,        Number,        "RF frequency harmonic number.", ""),
-  :cavity_type        => ParamInfo(RFGroup,        Cavity.T,    "Type of cavity."),
-  :n_cell             => ParamInfo(RFGroup,        Int,           "Number of RF cells."),
+  :frequency          => ParamInfo(RFCommonGroup,   Number,        "RF frequency.", "Hz"),
+  :harmon             => ParamInfo(RFCommonGroup,   Number,        "RF frequency harmonic number.", ""),
+  :cavity_type        => ParamInfo(RFCommonGroup,   Cavity.T,    "Type of cavity."),
+  :n_cell             => ParamInfo(RFCommonGroup,   Int,           "Number of RF cells."),
 
   :voltage_ref        => ParamInfo(LCavityGroup,   Number,        "Reference RF voltage.", "volt"),
   :voltage_err        => ParamInfo(LCavityGroup,   Number,        "RF voltage error.", "volt"),
@@ -275,6 +277,7 @@ Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
 
 function units(param::Symbol)
   info = ele_param_info(param, throw_error = false, include_struct_syms = true)
+  if param in Symbol.(keys(AcceleratorLattice.ele_param_group_info)); return ""; end
   if isnothing(info); (return "?units?"); end
   return info.units
 end
@@ -520,7 +523,7 @@ Order is important. Bookkeeping routines rely on:
  - `LengthGroup` being first (`LengthGroup` bookkeeping may be done a second time if `BendGroup` modifies `L`).
  - `BendGroup` after `ReferenceGroup` and `MasterGroup` (in case the reference energy is changing).
  - `BMultipoleGroup` and `EMultipoleGroup` after `MasterGroup` (in case the reference energy is changing).
- - `RFGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
+ - `RFCommonGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
 """ param_groups_list
 
 base_group_list = [LengthGroup, LordSlaveGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
@@ -551,7 +554,7 @@ param_groups_list = Dict(
     Girder              => [base_group_list...],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
-    LCavity             => [general_group_list..., RFMasterGroup, LCavityGroup, RFGroup],
+    LCavity             => [general_group_list..., RFMasterGroup, LCavityGroup, RFCommonGroup],
     Marker              => [base_group_list...],
     Mask                => [base_group_list...],
     Match               => [base_group_list...],
@@ -562,7 +565,7 @@ param_groups_list = Dict(
     Quadrupole          => [general_group_list...],
     Ramper              => [base_group_list...],
     RFBend              => [base_group_list...],
-    RFCavity            => [general_group_list..., RFMasterGroup, RFFieldGroup, RFGroup],
+    RFCavity            => [general_group_list..., RFMasterGroup, RFCavityGroup, RFCommonGroup],
     SADMult             => [general_group_list...],
     Sextupole           => [general_group_list...],
     Solenoid            => [general_group_list..., SolenoidGroup],
@@ -579,12 +582,12 @@ ele_param_group_info = Dict(
   ApertureGroup         => EleParameterGroupInfo("Vacuum chamber aperture.", false),
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
-  BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Contained in BMultipoleGroup", false),
+  BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Contained in `BMultipoleGroup`", false),
   ChamberWallGroup      => EleParameterGroupInfo("Vacuum chamber wall.", false),
-  ControlSlaveGroup     => EleParameterGroupInfo("Controller or Ramper slave parameters.", false),
-  ControlVarGroup       => EleParameterGroupInfo("Controller or Ramper Variables.", false),
+  ControlSlaveGroup     => EleParameterGroupInfo("`Governor` slave parameters.", false),
+  ControlVarGroup       => EleParameterGroupInfo("`Governor` variables.", false),
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
-  EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Contained in EMultipoleGroup.", false),
+  EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Contained in `EMultipoleGroup`.", false),
   FloorPositionGroup    => EleParameterGroupInfo("Global floor position and orientation.", true),
   GirderGroup           => EleParameterGroupInfo("Girder parameters.", false),
   InitParticleGroup     => EleParameterGroupInfo("Initial particle position and spin.", false),
@@ -595,9 +598,10 @@ ele_param_group_info = Dict(
   MasterGroup           => EleParameterGroupInfo("Contains field_master parameter.", false),
   PatchGroup            => EleParameterGroupInfo("Patch parameters.", false),
   ReferenceGroup        => EleParameterGroupInfo("Reference energy and species.", true),
-  RFGroup               => EleParameterGroupInfo("RF parameters.", false),
-  RFMasterGroup         => EleParameterGroupInfo("Contains voltage_master, do_auto_map, and do_auto_phase.", false),
-  SolenoidGroup         => EleParameterGroupInfo("Solenoid parameters.", false),
+  RFCavityGroup         => EleParameterGroupInfo("`RFCavity` parameters.", true),
+  RFCommonGroup         => EleParameterGroupInfo("RF parameters common to both `LCavity` and `RFCavity`.", false),
+  RFMasterGroup         => EleParameterGroupInfo("Contains `voltage_master`, `do_auto_map`, and `do_auto_phase`.", false),
+  SolenoidGroup         => EleParameterGroupInfo("`Solenoid` parameters.", false),
   StringGroup           => EleParameterGroupInfo("Informational strings.", false),
   TrackingGroup         => EleParameterGroupInfo("Default tracking settings.", false),
 )
