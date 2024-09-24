@@ -174,9 +174,6 @@ ele_param_info_dict = Dict(
   :ksol               => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
   :bsol_field         => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
 
-  :slave              => ParamInfo(ControlSlaveGroup, Vector{ControlSlave}, "Controlled parameters info."),
-  :variable           => ParamInfo(ControlVarGroup,   Vector{ControlVar},   "Controller variables."),
-
   :slave_status       => ParamInfo(LordSlaveGroup,    Slave.T,    "Slave status."),
   :lord_status        => ParamInfo(LordSlaveGroup,    Lord.T,     "Lord status."),
 
@@ -538,7 +535,7 @@ param_groups_list = Dict(
     BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
     Bend                => [general_group_list..., BendGroup, ],
     Collimator          => [base_group_list...],
-    Controller          => [ControlVarGroup, ControlSlaveGroup],
+    Controller          => [],
     Converter           => [base_group_list...],
     CrabCavity          => [base_group_list...],
     Custom              => [base_group_list...],
@@ -584,8 +581,6 @@ ele_param_group_info = Dict(
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
   BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Contained in `BMultipoleGroup`", false),
   ChamberWallGroup      => EleParameterGroupInfo("Vacuum chamber wall.", false),
-  ControlSlaveGroup     => EleParameterGroupInfo("`Governor` slave parameters.", false),
-  ControlVarGroup       => EleParameterGroupInfo("`Governor` variables.", false),
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
   EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Contained in `EMultipoleGroup`.", false),
   FloorPositionGroup    => EleParameterGroupInfo("Global floor position and orientation.", true),

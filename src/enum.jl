@@ -24,7 +24,6 @@ end
 @enumit("BodyLoc ENTRANCE_END CENTER EXIT_END BOTH_ENDS NOWHERE EVERYWHERE")
 @enumit("BranchGeometry OPEN CLOSED")
 @enumit("Cavity STANDING_WAVE TRAVELING_WAVE")
-@enumit("SlaveControl DELTA ABSOLUTE NOT_SET")
 @enumit("FieldCalc MAP STANDARD")
 @enumit("Interpolation LINEAR SPLINE")
 @enumit("Lord NOT SUPER MULTIPASS GOVERNOR") 

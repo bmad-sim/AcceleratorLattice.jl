@@ -192,30 +192,6 @@ NullEle lattice element type used to indicate the absence of any valid element.
 const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL_ELE"))
 
 #---------------------------------------------------------------------------------------------------
-# LatEleLocation
-
-"""
-    struct LatEleLocation
-
-Element location within a lattice.
-
-## Components
-    ix_ele::Int          Element index in branch.ele[] array.
-    ix_branch::Int       Branch index of branch containing the element in lat.branch[] array.
-""" LatEleLocation
-
-struct LatEleLocation
-  ix_ele::Int         # Element index in branch.ele array.
-  ix_branch::Int      # Branch index in lat.branch array.
-end
-
-"""
-    LatEleLocation(ele::Ele)
-Return corresponding `LatEleLocation` struct.
-"""
-LatEleLocation(ele::Ele) = LatEleLocation(ele.ix_ele, ele.branch.ix_branch)
-
-#---------------------------------------------------------------------------------------------------
 # EleParameterGroupInfo
 
 """
@@ -748,104 +724,6 @@ for an element.
   y::Dispersion1 = Dispersion1()      # y-axis
   v_mat::Matrix{Number} = Matrix{Number}(1.0I, 6, 6)  # Coupling matrix
 end
-
-#---------------------------------------------------------------------------------------------------
-# ControlVar
-
-"""
-ControlVar
-"""
-
-@kwdef mutable struct ControlVar
-  name::Symbol = :NotSet
-  value::Number = 0.0
-  old_value::Number = 0.0
-end
-
-#---------------------------------------------------------------------------------------------------
-# ControlVarGroup
-
-@kwdef mutable struct ControlVarGroup <: EleParameterGroup
-  variable::Vector{ControlVar} = Vector{ControlVar}()
-end
-
-#---------------------------------------------------------------------------------------------------
-# ControlSlave
-
-abstract type ControlSlave end
-
-#---------------------------------------------------------------------------------------------------
-# ControlSalveExpression
-
-@kwdef mutable struct ControlSlaveExpression <: ControlSlave
-  eles = []                  # Strings, and/or LatEleLocations
-  ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
-  slave_parameter = nothing
-  exp_str::String = ""
-  exp_parsed = nothing
-  value::Number = 0.0
-  type::SlaveControl.T = SlaveControl.NOT_SET
-end
-
-#---------------------------------------------------------------------------------------------------
-# ControlSlaveKnot
-
-@kwdef mutable struct ControlSlaveKnot  <: ControlSlave
-  eles = []                  # Strings, and/or LatEleLocations
-  ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
-  slave_parameter = nothing
-  x_knot::Vector = Vector()
-  y_knot::Vector = Vector()
-  interpolation::Interpolation.T = Interpolation.SPLINE
-  value::Number = 0.0
-  type::SlaveControl.T = SlaveControl.NOT_SET
-end
-
-#---------------------------------------------------------------------------------------------------
-# ControlSlaveFunction
-
-@kwdef mutable struct ControlSlaveFunction  <: ControlSlave
-  eles = []                  # Strings, and/or LatEleLocations
-  ele_loc::Vector{LatEleLocation} = Vector{LatEleLocation}()
-  slave_parameter = nothing
-  func = nothing
-  value::Number = 0.0
-  type::SlaveControl.T = SlaveControl.NOT_SET
-end
-
-#---------------------------------------------------------------------------------------------------
-# ControlSlaveGroup
-
-mutable struct ControlSlaveGroup  <: EleParameterGroup
-  slave::Vector{T} where T <: ControlSlave
-end
-ControlSlaveGroup() = ControlSlaveGroup(Vector{ControlSlave}())
-
-#---------------------------------------------------------------------------------------------------
-# var
-
-function var(sym::Symbol, val::Number = 0.0, old::Number = NaN) 
-  isnan(old) ? (return ControlVar(sym, val, val)) : (return ControlVar(sym, val, old))
-end
-
-#---------------------------------------------------------------------------------------------------
-# ctrl
-
-function ctrl(type::SlaveControl.T, eles, parameter, expr::AbstractString)
-  if typeof(eles) == String; eles = [eles]; end
-  return ControlSlaveExpression(eles = eles, slave_parameter = parameter, exp_str = expr, type = type)
-end
-
-function ctrl(type::SlaveControl.T, eles, parameter, x_knot::Vector, 
-                                                      y_knot::Vector, interpolation = Spline)
-  if typeof(eles) == String; eles = [eles]; end
-  return ControlSlaveKnot(eles = eles, slave_parameter = parameter, x_knot = x_knot, y_knot = y_knot, type = type)
-end
-
-#function ctrl(custom::Type{Custom}, func::Function; eles = [], parameter = nothing)
-#  if typeof(eles) == String; eles = [eles]; end
-#  cs = ControlSlaveFunction(eles = eles, slave_parameter = parameter, func = func, type = Custom)
-#end
 
 #---------------------------------------------------------------------------------------------------
 # Branch
