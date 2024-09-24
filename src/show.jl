@@ -198,7 +198,6 @@ end
 
 """
     Internal: ele_param_value_str(pdict::Dict, key; default::AbstractString = "???")
-    Internal: ele_param_value_str(vec_var::Vector{ControlVar}; default::AbstractString = "???")
     Internal: ele_param_value_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
     Internal: ... and others too numerous to mention ...
 
@@ -210,23 +209,6 @@ used by the `show` routines for showing element, branch, and lat info.
 function ele_param_value_str(pdict::Dict, key; default::AbstractString = "???")
   who = get(pdict, key, nothing)
   return ele_param_value_str(who, default = default)
-end
-
-function ele_param_value_str(vec_var::Vector{ControlVar}; default::AbstractString = "???")
-  if length(vec_var) == 0; return "No Vars"; end
-  str = ""
-  for var in vec_var
-    str = str * f", {var.name} = {var.value}"
-    if var.old_value != var.value
-      str = str * f" (old = {var.old_value})"
-    end
-  end
-  return "[" * str[3:end] * "]"
-end
-
-function ele_param_value_str(who::Vector{T}; default::AbstractString = "???") where T <: ControlSlave
-  if length(who) == 0; return "No Slave Parameters"; end
-  return f"[{length(who)} ControlSlaves]"
 end
 
 function ele_param_value_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
@@ -370,12 +352,6 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool; indent =
     ue = units(Symbol(f"En{ol}"))
     println(io, f"{lpad(n,9+indent)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.En,24)}{lpad(v.Es,24)}    En{ol}  Es{ol} ({ue})")
   end
-end
-
-#---------
-
-function show_elegroup(io::IO, group::Vector{ControlVar}; indent = 0)
-  println(f"This needs to be coded!")
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -628,19 +604,6 @@ Use the `subtypes(T)` to get a list of types inheriting from abstract type `T`.
 
 function list_abstract
 end
-
-#---------------------------------------------------------------------------------------------------
-# abstract_dict
-
-
-abstract_dict = Dict{Any,String}(
-  BeamLineItem      => "Base type for items that can be in a BeamLine.",
-  Ele               => "Base type for lattice elements.",
-  EleParameterGroup => "Base type for lattice element parameter groups.",
-  ControlSlave      => "Base type for Controller control structs.",
-  AbstractLat       => "Base type for the Lat struct.",
-  Enum              => "Base type for switch group values.",
-)
 
 #---------------------------------------------------------------------------------------------------
 # info

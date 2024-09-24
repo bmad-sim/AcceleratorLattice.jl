@@ -69,28 +69,6 @@ function init_ele_bookkeeper!(ele::Controller)
   pdict = ele.pdict
   if !haskey(pdict[:inbox], :control); error(f"No control vector defined for Controller: {ele.name}."); end
   if !haskey(pdict[:inbox], :variable); error(f"No variable vector defined for Controller: {ele.name}."); end
-
-  # Put controls in place
-  pdict[:control] = pop!(pdict[:inbox], :control)
-  for ctl in pdict[:control]
-    loc = LatEleLocation[]
-    for ele_id in ctl.eles
-      if typeof(ele_id) == LatEleLocation
-        push!(loc, ele_id)
-      elseif typeof(ele_id) == String
-        append!(loc, LatEleLocation.(eles(lat, ele_id)))
-      else
-        error(f"Control ele ID not a string nor a LatEleLocation.")
-      end
-    end
-  end
-
-  # Put variables in place
-  pdict[:variable] = pop!(pdict[:inbox], :variable)
-  for var in pdict[:variable]
-    pdict[:inbox][var.name] = var.value
-    var.value = var.old_value
-  end
 end
 
 #---------------------------------------------------------------------------------------------------
