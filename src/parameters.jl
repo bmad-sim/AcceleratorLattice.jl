@@ -659,19 +659,11 @@ function multipole_index(vec, order)
 end  
 
 #---------------------------------------------------------------------------------------------------
-# BRANCH_PARAM_defaults
-
-"""
-Real parameters have default 0.0 if not specified.
-Note: :geometry is not set for lord branches.
-"""
-BRANCH_PARAM_defaults = Dict(
-  :ix_branch  => "-",
-)
+# BRANCH_PARAM
 
 """
 Dictionary of parameters in the Branch.pdict dict.
-"""
+""" BRANCH_PARAM
 
 BRANCH_PARAM::Dict{Symbol,ParamInfo} = Dict{Symbol,ParamInfo}(
   :ix_branch   => ParamInfo(Nothing, Int,               "Index of branch in containing lat .branch[] array"),
