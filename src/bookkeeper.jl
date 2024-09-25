@@ -23,7 +23,7 @@ end
 # bookkeeper!(Lat)
 
 """
-    function bookkeeper!(lat::Lat; check_changed::Bool = true)
+    bookkeeper!(lat::Lat; check_changed::Bool = true)
 
 All Lat bookkeeping. For example, if the reference energy is changed at the start of a branch the 
 bookkeeping code will propagate that change through the reset of the lattice. 
@@ -90,7 +90,7 @@ end
 # start_multipass_bookkeeper!(lat)
 
 """
-    Internal:  start_multipass_bookkeeper!(lat)
+    Internal: start_multipass_bookkeeper!(lat)
 
 Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lat)`
 """ start_multipass_bookkeeper!
@@ -106,7 +106,7 @@ end
 # end_multipass_bookkeeper!(lat)
 
 """
-    Internal:  end_multipass_bookkeeper!(lat)
+    Internal: end_multipass_bookkeeper!(lat)
 
 Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lat)`
 """ end_multipass_bookkeeper!
@@ -114,7 +114,27 @@ Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::
 function end_multipass_bookkeeper!(lat)
   mbranch = branch(lat, MultipassLordBranch)
   for lord in mbranch.ele
+    cdict = lord.changed
 
+    if haskey(cdict, :ReferenceGroup)
+      if haskey(lord.pdict, :BMultipoleGroup)
+        elegroup_bookkeeper!(lord, BMultipoleGroup, ChangedLedger(ref_group = true), NULL_ELE)
+        for slave in lord.slaves
+          slave.BMultipoleGroup = copy(lord.BMultipoleGroup)
+          elegroup_bookkeeper!(slave, BMultipoleGroup, ChangedLedger(ref_group = true), NULL_ELE)
+        end
+      end
+
+      if haskey(lord.pdict, :EMultipoleGroup)
+        elegroup_bookkeeper!(lord, EMultipoleGroup, ChangedLedger(ref_group = true), NULL_ELE)
+        for slave in lord.slaves
+          slave.EMultipoleGroup = copy(lord.EMultipoleGroup)
+          elegroup_bookkeeper!(slave, EMultipoleGroup, ChangedLedger(ref_group = true), NULL_ELE)
+        end
+      end
+
+      pop!(cdict, :ReferenceGroup)
+    end
   end 
 end
 
@@ -122,7 +142,7 @@ end
 # start_superimpose_bookkeeper!(lat)
 
 """
-    Internal:  start_superimpose_bookkeeper!(lat)
+    Internal: start_superimpose_bookkeeper!(lat)
 
 Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lat)`
 """ start_superimpose_bookkeeper!
@@ -138,7 +158,7 @@ end
 # end_superimpose_bookkeeper!(lat)
 
 """
-    Internal:  end_superimpose_bookkeeper!(lat)
+    Internal: end_superimpose_bookkeeper!(lat)
 
 Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lat)`
 """ end_superimpose_bookkeeper!
@@ -154,7 +174,7 @@ end
 # bookkeeper!(Branch)
 
 """
-    Internal: function bookkeeper!(branch::Branch)
+    Internal: bookkeeper!(branch::Branch)
 
 Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lat)`.
 """ bookkeeper!(branch::Branch)
@@ -219,7 +239,7 @@ end
 # index_and_s_bookkeeper!(Branch)
 
 """
-    Internal: function index_and_s_bookkeeper!(branch::Branch)
+    Internal: index_and_s_bookkeeper!(branch::Branch)
 
 Does "quick" element index and s-position bookkeeping for a given branch.
 Used by lattice manipulation routines that need reindexing but don't need a full bookkeeping.
@@ -466,8 +486,11 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
     bg.angle = L * bg.g
   end
 
-  bg.bend_field = bg.g * ele.pc_ref / (c_light * charge(ele.species_ref))
+  bg.g_tot = bg.g + ele.Kn0
   bg.g == 0 ? bg.rho = Inf : bg.rho = 1.0 / bg.g
+
+  bg.bend_field = bg.g * ele.pc_ref / (c_light * charge(ele.species_ref))
+  bg.bend_field_tot = bg.g_tot * ele.pc_ref / (c_light * charge(ele.species_ref))
 
   if haskey(cdict, :L_chord)
     bg.angle = 2 * asin(bg.L_chord * bg.g / 2)
@@ -502,6 +525,12 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
     bg.e2_rect = bg.e2 + 0.5 * bg.angle
   else
     bg.e2 = bg.e2_rect - 0.5 * bg.angle
+  end
+
+  if bg.fiducial_pt == FiducialPt.NONE || bg.fiducial_pt == FiducialPt.CENTER
+    bg.L_rectangle = bg.L_chord
+  else
+    bg.L_rectangle = bg.L * sinc(bg.angle)
   end
 
   clear_changed!(ele, BendGroup)

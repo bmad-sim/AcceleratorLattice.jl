@@ -2,14 +2,14 @@
 \label{c:ele}
 
 This chapter discusses lattice elements including how to create them and how to manipulate them.
-For a list of lattice elements defined by \accellat, see chapter~\sref{c:ele.types}. 
 
 %---------------------------------------------------------------------------------------------------
 \section{Element Types}
 \label{s:ele.types}
 
-Lattice element types (\vn{Quadrupole}, \vn{RFCavity}, etc.) inherit from the abstract 
-type \vn{Ele}. To see a list of all element types, use the command \vn{subtypes(Ele)}:
+Lattice element types (\vn{Quadrupole}, \vn{RFCavity}, etc.) are structs that inherit from the abstract 
+type \vn{Ele}. Lattice elements documentation is in chapter~\sref{c:ele.types}. 
+In the REPL, to see a list of all element types, use the command \vn{subtypes(Ele)}:
 \begin{example}
   julia> subtypes(Ele)
   41-element Vector\{Any\}:
@@ -59,12 +59,13 @@ Example:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{Element Parameters}
-\label{s:ele.type}
+\section{Element Parameter Groups}
+\label{s:ele.groups}
 
 Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
-types which inherit from the abstract type \vn{EleParameterGroup}. To see a list of all
-parameter groups, use the \vn{suptypes} function:
+structs which inherit from the abstract type \vn{EleParameterGroup}. 
+Element parameter documentation is in Chapter~\sref{c:ele.groups}. In the REPL,
+To see a list of parameter groups, use the \vn{suptypes} function:
 \begin{example}
   julia> subtypes(EleParameterGroup)
   28-element Vector{Any}:
@@ -73,23 +74,33 @@ parameter groups, use the \vn{suptypes} function:
    BMultipoleGroup
    ...
 \end{example}
-To see the parameter groups associated with a given element type, use the the \vn{info} function:
+Chapter~\sref{c:ele.types} documents the parameters groups that are associated with any particular element type.
+In the REPL, the associated parameter groups can be viewed using Julia's help function. Example: 
 \begin{example}
-  julia> info(Quadrupole)
-    LengthGroup          -> Length and s-position parameters.
-    LordSlaveGroup       -> Element lord and slave status.
-    StringGroup          -> Informational strings.
-    ReferenceGroup       -> Reference energy and species.
-    FloorPositionGroup   -> Global floor position and orientation.
-    TrackingGroup        -> Default tracking settings.
-    AlignmentGroup       -> Element position/orientation shift.
-    ApertureGroup        -> Vacuum chamber aperture.
-    MasterGroup          -> Contains field_master parameter.
-    BMultipoleGroup      -> Magnetic multipoles.
-    EMultipoleGroup      -> Electric multipoles.
+  help?> Quadrupole
+    mutable struct Quadrupole <: Ele
+    Type of lattice element.
+
+    Associated parameter groups
+    ===========================
+      •  AlignmentGroup -> Element position/orientation shift.
+      •  ApertureGroup -> Vacuum chamber aperture.
+      •  BMultipoleGroup -> Magnetic multipoles.
+      •  EMultipoleGroup -> Electric multipoles.
+      •  FloorPositionGroup -> Global floor position and orientation.
+      •  LengthGroup -> Length and s-position parameters.
+      •  LordSlaveGroup -> Element lord and slave status.
+      •  MasterGroup -> Contains field_master parameter.
+      •  ReferenceGroup -> Reference energy and species.
+      •  StringGroup -> Informational strings.
+      •  TrackingGroup -> Default tracking settings.
 \end{example}
-Alternatively, when using the Julia REPL, in help mode typing the name of an element type will give
-the same list.
+Alternatively, 
+
+%---------------------------------------------------------------------------------------------------
+\section{Element Parameters}
+\label{s:ele.params}
+
 
 For example, the \vn{LengthGroup} holds the length and s-positions of the element and is defined by:
 \begin{example}

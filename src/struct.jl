@@ -195,13 +195,14 @@ const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL_ELE"))
 # EleParameterGroupInfo
 
 """
-    struct EleParameterGroupInfo
+    Internal: struct EleParameterGroupInfo
 
 Struct holding information on a single `EleParameterGroup` group.
+Used in constructing the `ele_param_group_info` Dict.
 
 ## Contains
-- `description::String`      # Descriptive string
-- `bookkeeping_needed::Bool  # If true, this indicates there exists a bookkeeping function for the 
+- `description::String`      - Descriptive string
+- `bookkeeping_needed::Bool  - If true, this indicates there exists a bookkeeping function for the 
   parameter group that needs to be called if a parameter of the group is changed.
 """
 struct EleParameterGroupInfo
@@ -226,9 +227,6 @@ abstract type BaseEleParameterGroup end
 abstract type EleParameterGroup <: BaseEleParameterGroup end
 abstract type EleParameterSubGroup <: BaseEleParameterGroup end
 
-
-
-
 #---------------------------------------------------------------------------------------------------
 # AlignmentGroup
 
@@ -236,35 +234,35 @@ abstract type EleParameterSubGroup <: BaseEleParameterGroup end
     mutable struct AlignmentGroup <: EleParameterGroup
 
 Orientation of an element (specifically, orientation of the body coordinates) with respect to the 
-laboratory coordinates.
+machine coordinates.
 
 ## Fields
-- `offset::Vector`       - [x, y, z] offsets
-- `offset_tot::Vector`   - [x, y, z] offsets including Girder misalignment.
-- `x_rot::Number`                      - x-axis rotation
-- `x_rot_tot::Number`                  - x-axis rotation including Girder misalignment.
-- `y_rot::Number`                      - y-axis rotation
-- `y_rot_tot::Number`                  - y-axis rotation including Girder misalignment.
-- `tilt::Number`                       - z-axis rotation. Not used by Bend elements.
-- `tilt_tot::Number`                   - z-axis rottion including Girder misalignment
+- `offset::Vector`         - [x, y, z] offsets not including any Girder misalignment
+- `offset_tot::Vector`     - [x, y, z] offsets including Girder misalignment.
+- `x_rot::Number`          - x-axis rotation not including any Girder misalignment
+- `x_rot_tot::Number`      - x-axis rotation including Girder misalignment.
+- `y_rot::Number`          - y-axis rotation not including any Girder misalignment
+- `y_rot_tot::Number`      - y-axis rotation including Girder misalignment.
+- `tilt::Number`           - z-axis rotation not including any Girder misalignment. Not used by Bend elements.
+- `tilt_tot::Number`       - z-axis rottion including Girder misalignment. Not used by Bend elements.
 """ AlignmentGroup
 
 @kwdef mutable struct AlignmentGroup <: EleParameterGroup
-  offset::Vector = [0.0, 0.0, 0.0]       # [x, y, z] offsets
-  offset_tot::Vector = [0.0, 0.0, 0.0]   # [x, y, z] offsets including Girder misalignment.
-  x_rot::Number = 0                      # x-axis rotation
-  x_rot_tot::Number = 0                  # x-axis rotation including Girder misalignment.
-  y_rot::Number = 0                      # y-axis rotation
-  y_rot_tot::Number = 0                  # y-axis rotation including Girder misalignment.
-  tilt::Number = 0                       # z-axis rotation. Not used by Bend elements.
-  tilt_tot::Number = 0                   # z-axis rottion including Girder misalignment
+  offset::Vector = [0.0, 0.0, 0.0] 
+  offset_tot::Vector = [0.0, 0.0, 0.0]
+  x_rot::Number = 0
+  x_rot_tot::Number = 0
+  y_rot::Number = 0
+  y_rot_tot::Number = 0
+  tilt::Number = 0
+  tilt_tot::Number = 0
 end
 
 #---------------------------------------------------------------------------------------------------
 # ApertureGroup
 
 """
-    struct ApertureGroup
+    struct ApertureGroup <: EleParameterGroup
 
 Vacuum chamber aperture struct.
 
@@ -318,7 +316,7 @@ end
 # BendGroup
 
 """
-Bend element parameters.
+    mutable struct BendGroup <: EleParameterGroup
 
 For tracking there is no distinction made between sector like (`BendType.SECTOR`) bends and
 rectangular like (`BendType.RECTANGULAR`) bends. The `bend_type` switch is only important when the
@@ -331,10 +329,13 @@ determined by the `field_master` setting in the MasterGroup struct.
   bend_type::BendType.T = BendType.SECTOR    # Is e or e_rect fixed? Also is len or len_chord fixed?
   angle::Number = 0.0
   rho::Number = Inf
-  g::Number = 0.0                # Note: Old Bmad dg -> K0.
-  bend_field::Number = 0.0       # Always a dependent parameter
+  g::Number = 0.0                # Note: Old Bmad dg -> Kn0.
+  g_tot::Number = 0.0            
+  bend_field::Number = 0.0    
+  bend_field_tot::Number = 0.0   
   L_chord::Number = 0.0
   L_sagitta::Number = 0.0
+  L_rectangle::Number = 0.0
   ref_tilt::Number = 0.0
   e1::Number = 0.0
   e2::Number = 0.0
@@ -344,6 +345,8 @@ determined by the `field_master` setting in the MasterGroup struct.
   fint2::Number = 0.5
   hgap1::Number = 0.0
   hgap2::Number = 0.0
+  fiducial_pt::FiducialPt.T = FiducialPt.NONE
+  exact_multipoles::ExactMultipoles.T = ExactMultipoles.OFF
 end
 
 #---------------------------------------------------------------------------------------------------

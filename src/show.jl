@@ -35,13 +35,16 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
   ),
 
   BendGroup => Dict{Symbol,Symbol}(
-    :g                => :bend_field,
+    :bend_type        => :exact_multipoles,
+    :g                => :g_tot,
     :angle            => :rho,
-    :L_chord          => :L_sagitta,
+    :L_chord          => :L_rectangle,
     :e1               => :e1_rect,
     :e2               => :e2_rect,
     :fint1            => :hgap1,
     :fint2            => :hgap2,
+    :bend_field       => :bend_field_tot,
+    :L_sagitta        => :fiducial_pt,
   ),
 
   Dispersion1 => Dict{Symbol,Symbol}(
