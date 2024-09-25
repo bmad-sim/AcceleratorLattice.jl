@@ -2,11 +2,18 @@
 \label{c:ele.groups}
 
 Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
-types which is discussed in \sref{s:ele.type}.
+types which is discussed in \sref{c:ele}.
 
 Element parameter groups inherit from the abstract type \vn{EleParameterGroup} which
 in turn inherits from \vn{BaseEleParameterGroup}. Some
-parameter groups have sub-group components. These sub-groups also inherit from \vn{BaseEleParameterGroup}.
+parameter groups have sub-group components. These sub-groups also inherit from \vn{BaseEleParameterGroup}:
+\begin{example}
+  abstract type BaseEleParameterGroup end
+  abstract type EleParameterGroup <: BaseEleParameterGroup end
+  abstract type EleParameterSubGroup <: BaseEleParameterGroup end
+\end{example}
+
+All parameter groups have associated docstrings that can be accessed when using the REPL.
 
 The parmeters groups are:
 \begin{table}[htb]
@@ -35,3 +42,20 @@ The parmeters groups are:
 * Note: NaN denotes parameter that is not set.
 
 * beta_ref is a dependent attribute.
+
+%---------------------------------------------------------------------------------------------------
+\section{Enums}
+
+\al uses the package \vn{EnumX.jl} to define enums (enumerated numbers).
+The \vn{\@enumit} macro is used to convert a list into an enum group and export the names.
+\vn\@enumit} also overloads \vn{Base.string} so that something like \vn{string(Lord.NOT)} will 
+return \vn{"Lord.NOT"} instead of just \vn{"NOT"}.
+
+The following enum groups are defined:
+
+%---------------------------------------------------------------------------------------------------
+\section{AlignmentGroup}
+\label{s:align.g}
+
+The alignment group give the orientation of an element (\sref{s:orient}). Specifically, the
+orientation of the elements body coordinates with respect to the machine coordinates.

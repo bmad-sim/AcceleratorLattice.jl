@@ -6,8 +6,7 @@
 
 Makes list into a enum group and exports the names.
 Also overloads Base.string so that something like `string(Lord.NOT)` will return "Lord.NOT"
-instead of just "NOT". Exception: `BranchGeometry.OPEN` and `BranchGeometry.CLOSED` will
-return `OPEN` and `CLOSED`.
+instead of just "NOT".
 """ enumit
 
 macro enumit(str::AbstractString)
@@ -30,14 +29,23 @@ end
 @enumit("Slave NOT SUPER MULTIPASS")
 @enumit("Loc UPSTREAM_END CENTER INSIDE DOWNSTREAM_END")
 @enumit("Select UPSTREAM DOWNSTREAM")
+@enumit("ExactMultipoles OFF HORIZONTALLY_PURE VERTICALLY_PURE")
+@enumit("FiducialPt ENTRANCE_END CENTER EXIT_END NONE")
 
 @enumit("TrackingMethod RUNGE_KUTTA TIME_RUNGE_KUTTA STANDARD")
 @enumit("ParticleState PREBORN ALIVE PRETRACK LOST LOST_NEG_X LOST_POS_X LOST_NEG_Y LOST_POS_Y LOST_PZ LOST_Z")
 
 # Useful abbreviations
 
-CLOSED::BranchGeometry.T = BranchGeometry.CLOSED
-OPEN::BranchGeometry.T = BranchGeometry.OPEN
+"""
+    const CLOSED::BranchGeometry.T = BranchGeometry.CLOSED
+    const OPEN::BranchGeometry.T = BranchGeometry.OPEN
+
+Useful abbreviations since `OPEN` and `CLOSED` are used a lot.
+""" OPEN, CLOSED
+
+const CLOSED::BranchGeometry.T = BranchGeometry.CLOSED
+const OPEN::BranchGeometry.T = BranchGeometry.OPEN
 
 
 #---------------------------------------------------------------------------------------------------
