@@ -4,36 +4,43 @@
 """
     enumit(str::AbstractString)
 
-Makes list into a enum group and exports the names.
-Also overloads Base.string so that something like `string(Lord.NOT)` will return "Lord.NOT"
-instead of just "NOT".
-""" enumit
+Makes a list into an enum group and exports the names. 
+See `EnumX.jl` documentation on details on the properties of the enums.
 
-macro enumit(str::AbstractString)
-  eval( Meta.parse("@enumx $str") )
-  str_words = split(str)
-  str2 = join(str_words, ',')
-  eval( Meta.parse("export $str2") )
-  s = "Base.string(z::$(str_words[1]).T) = \"$(str_words[1]).\" * string(Symbol(z))"
-  if str_words[1] != "BranchGeometry"; eval( Meta.parse(s) ); end
+This function also overloads Base.string so that something like `string(Lord.NOT)` 
+will return "Lord.NOT" instead of just "NOT".
+
+The `str` argument has the same syntax as given in `EnumX`. Example:
+```
+  enumit("Lord NOT SUPER MULTIPASS GOVERNOR")
+```
+
+Also see `enum_add`.
+
+""" 
+function enumit(str::AbstractString)
+  eval_str("@enumx $str")
+  words = split(str)
+  eval( Meta.parse("export $(words[1])") )
+  s = "Base.string(z::$(words[1]).T) = \"$(words[1]).\" * string(Symbol(z))"
+  eval_str(s)
 end
 
-@enumit("ApertureShape RECTANGULAR ELLIPTICAL")
-@enumit("BendType SECTOR RECTANGULAR")
-@enumit("BodyLoc ENTRANCE_END CENTER EXIT_END BOTH_ENDS NOWHERE EVERYWHERE")
-@enumit("BranchGeometry OPEN CLOSED")
-@enumit("Cavity STANDING_WAVE TRAVELING_WAVE")
-@enumit("FieldCalc MAP STANDARD")
-@enumit("Interpolation LINEAR SPLINE")
-@enumit("Lord NOT SUPER MULTIPASS GOVERNOR") 
-@enumit("Slave NOT SUPER MULTIPASS")
-@enumit("Loc UPSTREAM_END CENTER INSIDE DOWNSTREAM_END")
-@enumit("Select UPSTREAM DOWNSTREAM")
-@enumit("ExactMultipoles OFF HORIZONTALLY_PURE VERTICALLY_PURE")
-@enumit("FiducialPt ENTRANCE_END CENTER EXIT_END NONE")
 
-@enumit("TrackingMethod RUNGE_KUTTA TIME_RUNGE_KUTTA STANDARD")
-@enumit("ParticleState PREBORN ALIVE PRETRACK LOST LOST_NEG_X LOST_POS_X LOST_NEG_Y LOST_POS_Y LOST_PZ LOST_Z")
+enumit("ApertureShape RECTANGULAR ELLIPTICAL")
+enumit("BendType SECTOR RECTANGULAR")
+enumit("BodyLoc ENTRANCE_END CENTER EXIT_END BOTH_ENDS NOWHERE EVERYWHERE")
+enumit("BranchGeometry OPEN CLOSED")
+enumit("Cavity STANDING_WAVE TRAVELING_WAVE")
+enumit("Lord NOT SUPER MULTIPASS GOVERNOR") 
+enumit("Slave NOT SUPER MULTIPASS")
+enumit("Loc UPSTREAM_END CENTER INSIDE DOWNSTREAM_END")
+enumit("Select UPSTREAM DOWNSTREAM")
+enumit("ExactMultipoles OFF HORIZONTALLY_PURE VERTICALLY_PURE")
+enumit("FiducialPt ENTRANCE_END CENTER EXIT_END NONE")
+
+enumit("TrackingMethod RUNGE_KUTTA TIME_RUNGE_KUTTA STANDARD")
+enumit("ParticleState PREBORN ALIVE PRETRACK LOST LOST_NEG_X LOST_POS_X LOST_NEG_Y LOST_POS_Y LOST_PZ LOST_Z")
 
 # Useful abbreviations
 
@@ -46,6 +53,37 @@ Useful abbreviations since `OPEN` and `CLOSED` are used a lot.
 
 const CLOSED::BranchGeometry.T = BranchGeometry.CLOSED
 const OPEN::BranchGeometry.T = BranchGeometry.OPEN
+
+#---------------------------------------------------------------------------------------------------
+# enum_add
+
+"""
+    enum_add(str::AbstractString)
+
+Adds values to an existing enum group.
+See `enumit` for details of creating an enum group.
+
+Example: To add to an existing enum group called `ApertureShape` do
+```
+enumit("ApertureShape RECTANGULAR ELLIPTICAL")  # Define ApertureShape group with two values
+enum_add("ApertureShape SHAPE1 SHAPE2")         # Add two more values
+```
+"""
+function enum_add(str::AbstractString)
+  words = split(str)
+  group = eval_str("$(words[1])")
+
+  components = names(group, all = true)
+  # components[1] is something like `Symbol("#93#check_valid#1")` so reject components with `#` char.
+  # Also reject the "T" component since this defines the type.
+  for c in components
+    c_str = string(c)
+    if c_str == "T" || occursin("#", c_str) || c_str == words[1]; continue; end
+    str *= " " * c_str
+  end
+
+  eval_str("@enumx $str")
+end
 
 
 #---------------------------------------------------------------------------------------------------

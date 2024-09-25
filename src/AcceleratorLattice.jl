@@ -18,8 +18,8 @@ module AcceleratorLattice
 
   import Base.Cartesian.lreplace
 
-  include("enum.jl")
   include("core.jl")
+  include("enum.jl")
   include("quaternion.jl")
   include("AtomicAndPhysicalConstants.jl")
   include("struct.jl")
@@ -43,13 +43,14 @@ module AcceleratorLattice
 
   # Note! Element types are exported automatically when constructed
 
-  export memloc, beamline, @ele, @eles, @construct_ele_type, expand, ele_name, show_name, show_ele
+  export memloc, beamline, @ele, @eles, @construct_ele_type, enumit, enum_add
+  export expand, ele_name, show_name, show_ele
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!, set_param!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, ele_at_s, add_governor!
   export eles, next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
-  export branch, matches_branch, param_groups_list, create_ele_vars, eval_str
+  export branch, matches_branch, PARAM_GROUPS_LIST, create_ele_vars, eval_str
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup, BeamBeamGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFCommonGroup, SolenoidGroup
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveGroup
@@ -60,5 +61,5 @@ module AcceleratorLattice
   export struct_sym_to_user_sym, multipole!, index, integer, quat_angles
   export machine_location, body_location, EleRegion, multipole_param_info
   export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
-  export str_split, str_match, str_unquote, str_quote, str_to_int
+  export str_split, str_match, str_unquote, str_quote, str_to_int, OPEN, CLOSED
 end # module

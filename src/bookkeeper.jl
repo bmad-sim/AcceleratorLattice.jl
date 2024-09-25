@@ -208,8 +208,8 @@ These low level routines (there are several with this signature) are called via 
 """ bookkeeper!(ele::Ele)
 
 function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
-  for group in param_groups_list[typeof(ele)]
-    if !haskey(ele_param_group_info, group) || !ele_param_group_info[group].bookkeeping_needed; continue; end
+  for group in PARAM_GROUPS_LIST[typeof(ele)]
+    if !haskey(ELE_PARAM_GROUP_INFO, group) || !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed; continue; end
 
     try
       elegroup_bookkeeper!(ele, group, changed, previous_ele)
@@ -225,8 +225,8 @@ function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
     pinfo = ele_param_info(param)
     if isnothing(pinfo); continue; end
     group = pinfo.parent_group
-    if group ∉ keys(ele_param_group_info); continue; end
-    if !ele_param_group_info[group].bookkeeping_needed; pop!(ele.pdict[:changed], param); end
+    if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end
+    if !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed; pop!(ele.pdict[:changed], param); end
   end
 
   # Check for unbookkeeped parameters
