@@ -118,7 +118,6 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
   ),
 
   TrackingGroup => Dict{Symbol,Symbol}(
-    :tracking_method  => :field_calc,
     :num_steps        => :ds_step,
   ),
 
@@ -656,21 +655,21 @@ info(str::AbstractString) = info(Symbol(str))
 #-----
 
 function info(ele_type::Type{T}; return_str::Bool = false) where T <: Ele
-  if ele_type ∉ keys(param_groups_list)
+  if ele_type ∉ keys(PARAM_GROUPS_LIST)
     prinln("No information on $(ele_type)")
     return
   end
 
   if return_str
     lst = ""
-    for group in sort(param_groups_list[ele_type])
-      lst *= "-  $(rpad(strip_AL(group), 20)) -> $(ele_param_group_info[group].description)\n"
+    for group in sort(PARAM_GROUPS_LIST[ele_type])
+      lst *= "-  $(rpad(strip_AL(group), 20)) -> $(ELE_PARAM_GROUP_INFO[group].description)\n"
     end
     return lst
 
   else
-    for group in sort(param_groups_list[ele_type])
-      println("  $(rpad(string(group), 20)) -> $(ele_param_group_info[group].description)")
+    for group in sort(PARAM_GROUPS_LIST[ele_type])
+      println("  $(rpad(string(group), 20)) -> $(ELE_PARAM_GROUP_INFO[group].description)")
     end
   end
 end
@@ -682,8 +681,8 @@ info(ele::Ele; return_str::Bool = false) = info(typeof(ele), return_str)
 #----
 
 function info(group::Type{T}) where T <: EleParameterGroup
-  if group in keys(ele_param_group_info)
-    println("$group $(ele_param_group_info[group].description)")
+  if group in keys(ELE_PARAM_GROUP_INFO)
+    println("$group $(ELE_PARAM_GROUP_INFO[group].description)")
   else
     println("$group")
   end

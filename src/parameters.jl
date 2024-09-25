@@ -30,8 +30,8 @@ abstract type Pointer end
 end
 
 
-# `:XXX` indicates that the struct_sym will be the same as the key in ele_param_info_dict.
-# And `:Z` is always replaced by the key in ele_param_info_dict.
+# `:XXX` indicates that the struct_sym will be the same as the key in ELE_PARAM_INFO_DICT.
+# And `:Z` is always replaced by the key in ELE_PARAM_INFO_DICT.
 
 ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :XXX, nothing, :Z)
 ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :XXX, nothing, :Z)
@@ -39,17 +39,17 @@ ParamInfo(parent, kind, description, units, struct_sym) = ParamInfo(parent, kind
 ParamInfo(parent, kind, description, units, struct_sym, sub_struct) = ParamInfo(parent, kind, description, units, struct_sym, sub_struct, :Z)
 
 #---------------------------------------------------------------------------------------------------
-# ele_param_info_dict
+# ELE_PARAM_INFO_DICT
 
 # Note: ":XXX" will get replaced by the key (user name) below so that, for example, 
-# ele_param_info_dict[:field_master].struct_sym will have the value :field_master.
+# ELE_PARAM_INFO_DICT[:field_master].struct_sym will have the value :field_master.
 
 """
 Dictionary of parameter types. Keys are user names (which can be different from corresponding group name). 
 EG: theta_floor user name corresponds to theta in the FloorPositionGroup.
-""" ele_param_info_dict
+""" ELE_PARAM_INFO_DICT
 
-ele_param_info_dict = Dict(
+ELE_PARAM_INFO_DICT = Dict(
   :name               => ParamInfo(Nothing,        String,        "Name of the element."),
   :ix_ele             => ParamInfo(Nothing,        Int,           "Index of element in containing branch.ele[] array."),
   :branch             => ParamInfo(Nothing,        Branch,        "Pointer to branch element is in."),
@@ -151,8 +151,6 @@ ele_param_info_dict = Dict(
   :do_auto_phase      => ParamInfo(RFAutoGroup,  Bool,             "Autoscale phase?"),
   :do_auto_scale      => ParamInfo(Nothing,        Bool,           "Used to set do_auto_amp and do_auto_phase both at once.", ""),
 
-  :tracking_method    => ParamInfo(TrackingGroup,  TrackingMethod.T,      "Nominal method used for tracking."),
-  :field_calc         => ParamInfo(TrackingGroup,  FieldCalc.T,           "Nominal method used for calculating the EM field."),
   :num_steps          => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
   :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
@@ -228,10 +226,9 @@ ele_param_info_dict = Dict(
   :eta_y              => ParamInfo(TwissGroup,  Number,             "Y-mode position dispersion.", "m", :eta, T->T.y),
   :etap_y             => ParamInfo(TwissGroup,  Number,             "Y-mode momentum dispersion.", "", :etap, T->T.y),
   :deta_ds_y          => ParamInfo(TwissGroup,  Number,             "Y-mode dispersion derivative.", "", :deta_ds, T->T.y),
-
 )
 
-for (key, info) in ele_param_info_dict
+for (key, info) in ELE_PARAM_INFO_DICT
   if info.struct_sym == :XXX; info.struct_sym = key; end
   info.user_sym = key
 end
@@ -253,12 +250,12 @@ end
 """
 Map struct symbol to user symbol(s). Example: `:r` => `[:r_floor]`.
 A vector is used since the struct symbol maps to multiple user symbols.
-This mapping only covers stuff in ele_param_info_dict so this mapping does not, for example, cover multipoles.
+This mapping only covers stuff in ELE_PARAM_INFO_DICT so this mapping does not, for example, cover multipoles.
 """ struct_sym_to_user_sym
 
 struct_sym_to_user_sym = Dict{Symbol,Any}()
 
-for (param, info) in ele_param_info_dict
+for (param, info) in ELE_PARAM_INFO_DICT
   if info.struct_sym in keys(struct_sym_to_user_sym)
     push!(struct_sym_to_user_sym[info.struct_sym], param)
   else
@@ -279,7 +276,7 @@ Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
 
 function units(param::Symbol)
   info = ele_param_info(param, throw_error = false, include_struct_syms = true)
-  if param in Symbol.(keys(AcceleratorLattice.ele_param_group_info)); return ""; end
+  if param in Symbol.(keys(AcceleratorLattice.ELE_PARAM_GROUP_INFO)); return ""; end
   if isnothing(info); (return "?units?"); end
   return info.units
 end
@@ -429,9 +426,9 @@ or `nothing` is returned.
 """ ele_param_info
 
 function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
-  if haskey(ele_param_info_dict, sym); (return ele_param_info_dict[sym]); end
+  if haskey(ELE_PARAM_INFO_DICT, sym); (return ELE_PARAM_INFO_DICT[sym]); end
   if include_struct_syms && sym in keys(struct_sym_to_user_sym)
-    return ele_param_info_dict[struct_sym_to_user_sym[sym][1]]
+    return ELE_PARAM_INFO_DICT[struct_sym_to_user_sym[sym][1]]
   end
 
   # Is a multipole? Otherwise unrecognized.
@@ -448,7 +445,7 @@ function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
 
   if typeof(param_info.parent_group) <: Vector
     for parent in param_info.parent_group
-      if parent in param_groups_list[typeof(ele)]
+      if parent in PARAM_GROUPS_LIST[typeof(ele)]
         param_info.parent_group = parent
         return param_info
       end
@@ -457,7 +454,7 @@ function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
     error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")
 
   else
-    if param_info.parent_group in param_groups_list[typeof(ele)] || 
+    if param_info.parent_group in PARAM_GROUPS_LIST[typeof(ele)] || 
                                         param_info.parent_group == Nothing; return param_info; end
     error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")   
   end
@@ -518,7 +515,7 @@ function set_integrated!(ele::Ele, group::EMultipoleGroup, order::Int, integrate
 end
 
 #---------------------------------------------------------------------------------------------------
-# param_groups_list
+# PARAM_GROUPS_LIST
 
 """
 Table of what element groups are associated with what element types.
@@ -527,15 +524,14 @@ Order is important. Bookkeeping routines rely on:
  - `BendGroup` after `ReferenceGroup` and `MasterGroup` (in case the reference energy is changing).
  - `BMultipoleGroup` and `EMultipoleGroup` after `MasterGroup` (in case the reference energy is changing).
  - `RFCommonGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
-""" param_groups_list
+""" PARAM_GROUPS_LIST
 
 base_group_list = [LengthGroup, LordSlaveGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 general_group_list = [base_group_list..., alignment_group_list..., multipole_group_list...]
 
-param_groups_list = Dict(  
-  Dict(
+PARAM_GROUPS_LIST = Dict(  
     ACKicker            => [base_group_list...],
     BeamBeam            => [base_group_list...],
     BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
@@ -577,10 +573,9 @@ param_groups_list = Dict(
     Undulator           => [base_group_list...],
     UnionEle            => [base_group_list..., alignment_group_list...],
     Wiggler             => [base_group_list...],
-  )
 )
 
-ele_param_group_info = Dict(
+ELE_PARAM_GROUP_INFO = Dict(
   AlignmentGroup        => EleParameterGroupInfo("Element position/orientation shift.", false),
   ApertureGroup         => EleParameterGroupInfo("Vacuum chamber aperture.", false),
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
@@ -664,21 +659,13 @@ function multipole_index(vec, order)
 end  
 
 #---------------------------------------------------------------------------------------------------
-# branch_param_defaults
-
-"""
-Real parameters have default 0.0 if not specified.
-Note: :geometry is not set for lord branches.
-"""
-branch_param_defaults = Dict(
-  :ix_branch  => "-",
-)
+# BRANCH_PARAM
 
 """
 Dictionary of parameters in the Branch.pdict dict.
-"""
+""" BRANCH_PARAM
 
-branch_param = Dict(
+BRANCH_PARAM::Dict{Symbol,ParamInfo} = Dict{Symbol,ParamInfo}(
   :ix_branch   => ParamInfo(Nothing, Int,               "Index of branch in containing lat .branch[] array"),
   :geometry    => ParamInfo(Nothing, BranchGeometry.T,  "BranchGeometry.OPEN  (or OPEN) or BranchGeometry.CLOSED (or CLOSED)"),
   :lat         => ParamInfo(Nothing, Pointer,           "Pointer to lattice containing the branch."),

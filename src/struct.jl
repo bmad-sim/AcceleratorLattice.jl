@@ -120,7 +120,7 @@ function (::Type{T})(; kwargs...) where T <: Ele
   pdict[:changed] = Dict{Symbol,Any}()
 
   # Setup parameter groups.
-  for group in param_groups_list[typeof(ele)]
+  for group in PARAM_GROUPS_LIST[typeof(ele)]
     pdict[Symbol(group)] = group()
   end
 
@@ -198,7 +198,7 @@ const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL_ELE"))
     Internal: struct EleParameterGroupInfo
 
 Struct holding information on a single `EleParameterGroup` group.
-Used in constructing the `ele_param_group_info` Dict.
+Used in constructing the `ELE_PARAM_GROUP_INFO` Dict.
 
 ## Contains
 - `description::String`      - Descriptive string
@@ -666,8 +666,6 @@ Sets the nominal values for tracking prameters.
 """ TrackingGroup
 
 @kwdef mutable struct TrackingGroup <: EleParameterGroup
-  tracking_method::TrackingMethod.T = TrackingMethod.STANDARD
-  field_calc::FieldCalc.T = FieldCalc.STANDARD
   num_steps::Int   = -1
   ds_step::Number = NaN
 end

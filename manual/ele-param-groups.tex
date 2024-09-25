@@ -45,13 +45,126 @@ The parmeters groups are:
 
 %---------------------------------------------------------------------------------------------------
 \section{Enums}
+\label{s:enums}
 
-\al uses the package \vn{EnumX.jl} to define enums (enumerated numbers).
-The \vn{\@enumit} macro is used to convert a list into an enum group and export the names.
-\vn\@enumit} also overloads \vn{Base.string} so that something like \vn{string(Lord.NOT)} will 
-return \vn{"Lord.NOT"} instead of just \vn{"NOT"}.
+\accellat uses the package \vn{EnumX.jl} to define enums (enumerated numbers).
+Essentially what happens is that for each enum group there is a group name, For example \vn{BendType},
+along with a set of values which, for \vn{BendType}, is \vn{SECTOR} and \vn{RECTANGULAR}. Values
+are always referred to by their "full" name which in this example is \vn{BendType.SECTOR} and
+\vn{BendType.RECTANGULAR}. Exception: \vn{BranchGeometry.CLOSED} and \vn{BranchGeometry.OPEN} are
+used often enough so that the constants \vn{OPEN} and \vn{CLOSED} are defined.
 
-The following enum groups are defined:
+The group name followed by a \vn{.T} suffix denotes the enum type.
+For example:
+\begin{example}
+  struct ApertureGroup <: EleParameterGroup
+    aperture_type::ApertureShape.T = ApertureShape.ELLIPTICAL
+    aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
+    ...
+\end{example}
+
+The \vn{enumit} function is used to convert a list into an enum group and export the names.
+The \vn{enumit} function also overloads \vn{Base.string} so that something like \vn{string(Lord.NOT)} will 
+return \vn{"Lord.NOT"} instead of just \vn{"NOT"} (an issue with the EnumX.jl package). See the
+documentation for \vn{enumit} for more details.
+
+The \vn{enum_add} function is used to add values to an existing enum group. See the documentation for
+\vn{enum_add} for more details. This function is used with code extensions to customize \accellat.
+
+
+Below is a list of enum groups defined in \accellat. 
+\begin{description}
+%
+\item[ApertureShape] --- The shape of an aperture.\Newline 
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  RECTANGULAR & --- Rectangular shape \\
+  ELLIPTICAL  & --- Elliptical shape \\
+\end{tabular}
+%
+\item[BendType] --- Type of Bend element magnet.\Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  SECTOR      & --- Sector shape\\
+  RECTANGULAR & --- Rectangular shape \\
+\end{tabular}
+%
+\item[BodyLoc] --- Longitudinal location with respect to element's body coordinates.\Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  ENTRANCE_END & --- Body entrance end \\
+  CENTER       & --- Element center \\
+  EXIT_END     & --- Body exit end \\
+  BOTH_ENDS    & --- Both ends \\
+  NOWHERE      & --- No location \\
+  EVERYWHERE   & --- Everywhere \\
+\end{tabular}
+%
+\item[BranchGeometry] --- Geometry of a lattice branch\Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  OPEN    & --- Open geometry like a Linac. \\
+  CLOSED  & --- Closed geometry like a storage ring.
+\end{tabular}
+%
+\item[Cavity] --- Type of RF cavity. \Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  STANDING_WAVE   & --- Standing wave cavity \\
+  TRAVELING_WAVE  & --- Traveling wave cavity \\
+\end{tabular}
+%
+\item[Lord] --- Type of lord an element is \Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  NOT       & --- Not a lord \\
+  SUPER     & --- Super lord \\
+  MULTIPASS & --- Multipass lord \\
+  GOVERNOR  & --- Girder and other "minor" lords \\ 
+\end{tabular}
+%
+\item[Slave] --- Type of slave an element is \Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  NOT       & --- Not a slave \\
+  SUPER     & --- Super slave \\
+  MULTIPASS & --- Multipass slave \\
+\end{tabular}
+%
+\item[Loc] --- Longitudinal location with respect to element's machine coordinates. \Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  UPSTREAM_END   & --- Upstream element end\\
+  CENTER         & --- center of element \\
+  INSIDE         & --- Somewhere inside \\
+  DOWNSTREAM_END & --- Downstream element end \\
+\end{tabular}
+%
+\item[Select] --- Specifies where to select if there is a choice of elements or positions. \Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  UPSTREAM   & --- Select upstream \\
+  DOWNSTREAM & --- Select downstream \\
+\end{tabular}
+%
+\item[ExactMultipoles] --- How multipoles are handled in a Bend element \Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  OFF               & --- Bend curvature not taken into account. \\
+  HORIZONTALLY_PURE & --- Multipole coefficients interpreted being as being horizontally pure. \\
+  VERTICALLY_PURE   & --- Multipole coefficients interpreted being as being vertically pure. \\
+\end{tabular}
+%
+\item[FiducialPt] Fiducial point location with respect to element's machine coordinates. \Newline
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  ENTRANCE_END & --- Entrance end of element \\
+  CENTER       & --- Center of element \\
+  EXIT_END     & --- Exit end of element \\
+  NONE         & --- No point chosen \\
+\end{tabular}
+%
+\end{description}
 
 %---------------------------------------------------------------------------------------------------
 \section{AlignmentGroup}
