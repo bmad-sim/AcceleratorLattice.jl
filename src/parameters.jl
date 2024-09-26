@@ -49,7 +49,7 @@ Dictionary of parameter types. Keys are user names (which can be different from 
 EG: theta_floor user name corresponds to theta in the FloorPositionGroup.
 """ ELE_PARAM_INFO_DICT
 
-ELE_PARAM_INFO_DICT = Dict(
+ELE_PARAM_INFO_DICT::Dict{Symbol,ParamInfo} = Dict(
   :name               => ParamInfo(Nothing,        String,        "Name of the element."),
   :ix_ele             => ParamInfo(Nothing,        Int,           "Index of element in containing branch.ele[] array."),
   :branch             => ParamInfo(Nothing,        Branch,        "Pointer to branch element is in."),
