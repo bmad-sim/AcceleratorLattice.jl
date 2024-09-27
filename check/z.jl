@@ -3,11 +3,12 @@ using AcceleratorLattice
 @ele dd = Drift(L = 12)
 @ele ss = Solenoid(L = 1)
 @ele zz = Solenoid(L = 1)
-@ele bb = BeginningEle(species_ref = species("proton"), pc_ref = 1e11)
+@ele bb = BeginningEle(species_ref = Species("proton"), pc_ref = 1e11)
 
-zline = beamline("z", [bb, qq, dd]);
-zline = beamline("z", [bb, dd]);
-lat = expand("lat", zline);
+bl = BeamLine
+zline = bl([bb, qq, dd]);
+zline = bl([bb, dd]);
+lat = expand([zline]);
 
 show(lat)
 

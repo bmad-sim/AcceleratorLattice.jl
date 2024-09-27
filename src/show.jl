@@ -228,6 +228,7 @@ end
 
 ele_param_value_str(who::Nothing; default::AbstractString = "???") = default
 ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
+ele_param_value_str(species::Species; default::AbstractString = "???") = "Species(\"" * full_name(species) * "\")"
 ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T <: Ele = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
 ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
@@ -374,7 +375,7 @@ end
 #---------------------------------------------------------------------------------------------------
 # show_elegroup_wo_doc
 
-function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = :NONE) where T <: EleParameterGroup
+function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = :NONE) where T <: BaseEleParameterGroup
   gtype = typeof(group)
   if gtype ∉ keys(show_column2)
     if field_sym == :NONE
@@ -443,7 +444,7 @@ For fields where the user name is different (EG: `r_floor` and `r` in a FloorPos
 return the string `struct_name (user_name)` (EG: `r (r_floor)`).
 """ full_parameter_name
 
-function full_parameter_name(field, group::Type{T}) where T <: EleParameterGroup
+function full_parameter_name(field, group::Type{T}) where T <: BaseEleParameterGroup
   if field ∉ keys(struct_sym_to_user_sym); return String(field); end
 
   for sym in struct_sym_to_user_sym[field]
