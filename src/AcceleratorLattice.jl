@@ -6,7 +6,8 @@ Part of the SciBmad ecosystem of packages for simulation of high energy
 """
 module AcceleratorLattice
 
-  ## using OffsetArrays
+  import Base.Cartesian.lreplace
+
   using InteractiveUtils      # Defines subtypes function
   using PyFormattedStrings
   using Accessors
@@ -15,13 +16,29 @@ module AcceleratorLattice
   using EnumX
   using Random
   using OrderedCollections
+  using AtomicAndPhysicalConstants
 
-  import Base.Cartesian.lreplace
+  # AtomicAndPhysicalConstants
+
+  setunits()
+
+  function __init__()
+    setunits()
+  end
+
+  for name in names(AtomicAndPhysicalConstants)
+    eval(Meta.parse("export $name"))
+  end
+
+  mass(species::Species) = massof(species)
+  charge(species::Species) = chargeof(species)
+
+  #
 
   include("core.jl")
   include("enum.jl")
   include("quaternion.jl")
-  include("AtomicAndPhysicalConstants.jl")
+##  include("AtomicAndPhysicalConstants.jl")
   include("struct.jl")
   include("utilities.jl")
   include("string.jl")
@@ -44,7 +61,7 @@ module AcceleratorLattice
   # Note! Element types are exported automatically when constructed
 
   export memloc, beamline, @ele, @eles, @construct_ele_type, enumit, enum_add
-  export expand, ele_name, show_name, show_ele
+  export expand, ele_name, show_name, show_ele, E_tot, pc
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!, set_param!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
@@ -62,4 +79,5 @@ module AcceleratorLattice
   export machine_location, body_location, EleRegion, multipole_param_info
   export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
   export str_split, str_match, str_unquote, str_quote, str_to_int, OPEN, CLOSED
+
 end # module

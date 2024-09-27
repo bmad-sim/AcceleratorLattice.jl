@@ -4,26 +4,8 @@
 
 \vspace*{-0.3in}
 \bmad uses three coordinate systems as illustrated in \fig{f:coords}. First, the \vn{global} (also
-called ``\vn{floor}'') coordinates are independent of the accelerator. Thus such things as the
+called ``\vn{floor}'') coordinates are independent of the placement accelerator. Things such as the
 building the accelerator is in may be described using \vn{global} coordinates.
-
-It is not convenient to describe the position of the beam using the \vn{global} coordinate system so
-a ``\vn{machine}'' coordinate system is used (\sref{s:local.coords}).  This curvilinear coordinate
-system defines the nominal position of the lattice elements.  The relationship between the
-\vn{machine} and \vn{global} coordinate systems is described in \sref{s:global}.
-
-The ``nominal'' position of a lattice element is the position of the element without what are called
-``misalignments'' (that is, position and orientation shifts). Each lattice element has ``\vn{element
-body}'' (or just ``\vn{body}'') 
-coordinates which are attached to the physical element. That is, the electric and magnetic
-fields of an element are described with respect to \vn{body} coordinates.  If there are no
-misalignments, the \vn{body} coordinates are aligned with \vn{local} coordinates which
-are the same as \vn{machine} coordinates except that $s = 0$ in \vn{local} coordinates is at the beginning of the non-misaligned
-element and $s = 0$ in machine coordinates is at the beginning of the line.
-The transformation between \vn{machine} and \vn{body} coordinates is given in
-\sref{s:lab.body.transform}.
-The $x=y=0$ curved line of the
-machine coordinate system is known as the ``\vn{reference orbit}''.
 
 \begin{figure}[!b]
   \centering
@@ -32,18 +14,36 @@ machine coordinate system is known as the ``\vn{reference orbit}''.
 {The \vn{global} (or ``\vn{floor}'') coordinate system
 is independent of the accelerator.  The \vn{machine} curvilinear coordinate system follows the bends
 of the accelerator.  Each lattice element has \vn{element body} coordinates which, if the element is
-not ``misaligned'' is the same as the \vn{local} coordinates. 
+not ``misaligned'' is the same as the \vn{machine} coordinates. 
 \vn{Local} coordinates are the same as \vn{machine} coordinates
-except that $s = 0$ in \vn{local} coordinates is at the beginning of the non-misaligned
+except that $s = 0$ in \vn{machine} coordinates is at the beginning of the non-misaligned
 element and $s = 0$ in machine coordinates is at the beginning
 of the line. The $x=y=0$ curved line of the
 machine coordinate system is known as the ``reference orbit''.}
   \label{f:coords}
 \end{figure}
 
+It is not convenient to describe the position of a particle beam using the \vn{global} coordinate system so
+a ``\vn{machine}'' coordinate system is used (\sref{s:machine.coords}).  This curvilinear coordinate
+system defines the nominal position of the lattice elements.  The relationship between the
+\vn{machine} and \vn{global} coordinate systems is described in \sref{s:global}.
+
+The ``nominal'' position of a lattice element is the position of the element without any
+position and orientation shifts (\sref{s:align.g}) which are sometimes referred to as ``misalignments''. 
+Each lattice element has ``\vn{element body}'' (or just ``\vn{body}'') 
+coordinates which are attached to the physical element. The electric and magnetic
+fields of an element are described with respect to \vn{body} coordinates.  If there are no
+misalignments, the \vn{body} coordinates are aligned with the 
+\vn{local} coordinates except that $s = 0$ in \vn{machine} coordinates is at the beginning of the non-misaligned
+element and $s = 0$ in machine coordinates is at the beginning of the line.
+The transformation between \vn{machine} and \vn{body} coordinates is given in
+\sref{s:lab.body.transform}.
+The $x=y=0$ curved line of the
+machine coordinate system is known as the ``\vn{reference orbit}''.
+
 %-----------------------------------------------------------------------------
 \section{Machine Coordinates and Reference Orbit}
-\label{s:local.coords}
+\label{s:machine.coords}
 
 %-----------------------------------------------------------------------------
 \subsection{The Reference Orbit}
@@ -53,26 +53,26 @@ machine coordinate system is known as the ``reference orbit''.}
 
 \begin{figure}[tb]
   \centering
-  \includegraphics[width=6in]{local-coords.pdf}
-  \caption[The local Reference System.]
-{The local reference coordinate system. By construction, a particle's $z$ coordinate is zero.  This
+  \includegraphics[width=6in]{machine-coords.pdf}
+  \caption[The machine Reference System.]
+{The machine reference coordinate system. By construction, a particle's $z$ coordinate is zero.  This
 is not to be confused with the phase space $z$ coordinate (\sref{s:phase.space}). The curvature
 vector $\bfg$ lies in the $x$-$y$ plane and has a magnitude of $1/\rho$ where $\rho$ is the bending
 radius. A) The $z$-axis will normally be parallel to the $s$-axis. B) For \vn{reversed} elements it
 will be antiparallel. In both cases, the particle and reference particle are traveling in the
 direction of greater $s$.}
-  \label{f:local.coords}
+  \label{f:machine.coords}
 \end{figure}
 
-The \vn{local reference orbit} is the curved path used to define a coordinate system for describing
-a particle's position as shown in \fig{f:local.coords}. The reference orbit is also used for
+The \vn{machine reference orbit} is the curved path used to define a coordinate system for describing
+a particle's position as shown in \fig{f:machine.coords}. The reference orbit is also used for
 orientating lattice elements in space. At a given time $t$, a particle's position can be described
 by a point $\calO$ on the reference orbit a distance $s$ relative to the reference orbit's zero
 position plus a transverse $(x,y)$ offset. The point $\calO$ on the reference orbit is used as the
-origin of the local $(x, y, z)$ coordinate system with the $z$--axis tangent to the reference
+origin of the machine $(x, y, z)$ coordinate system with the $z$--axis tangent to the reference
 orbit. The $z$--axis will generally be pointing in the direction of increasing $s$
-(\fig{f:local.coords}A) but, as discussed below, will point counter to $s$ for elements that are
-\vn{reversed} (\fig{f:local.coords}B). The $x$ and $y$--axes are perpendicular to the reference
+(\fig{f:machine.coords}A) but, as discussed below, will point counter to $s$ for elements that are
+\vn{reversed} (\fig{f:machine.coords}B). The $x$ and $y$--axes are perpendicular to the reference
 orbit and, by construction, the particle is always at $z = 0$. The coordinate system so constructed
 is called the \vn{``local coordinate system''} or sometimes the \vn{``machine coordinate
 system''} when there is need to distinguish it from the \vn{``element body coordinate system''}

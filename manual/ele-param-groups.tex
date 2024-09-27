@@ -151,8 +151,8 @@ Below is a list of enum groups defined in \accellat.
 \hspace*{-20pt}
 \begin{tabular}{ll}
   OFF               & --- Bend curvature not taken into account. \\
-  HORIZONTALLY_PURE & --- Multipole coefficients interpreted being as being horizontally pure. \\
-  VERTICALLY_PURE   & --- Multipole coefficients interpreted being as being vertically pure. \\
+  HORIZONTALLY_PURE & --- Coefficients correspond to horizontally pure multipoles. \\
+  VERTICALLY_PURE   & --- Coefficients correspond to vertically pure multipoles. \\
 \end{tabular}
 %
 \item[FiducialPt] Fiducial point location with respect to element's machine coordinates. \Newline
@@ -170,5 +170,9 @@ Below is a list of enum groups defined in \accellat.
 \section{AlignmentGroup}
 \label{s:align.g}
 
-The alignment group give the orientation of an element (\sref{s:orient}). Specifically, the
-orientation of the elements body coordinates with respect to the machine coordinates.
+The alignment group gives the offset and angular orientation of an element (\sref{s:orient}). 
+
+
+Specifically, the
+orientation of the elements body coordinates with respect to the machine coordinates. 
+

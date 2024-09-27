@@ -1,7 +1,7 @@
 using AcceleratorLattice, Test
 
 @eles begin
-  beginning = BeginningEle(s = 0.3, pc_ref = 1e7, species_ref = species("electron"))
+  beginning = BeginningEle(s = 0.3, pc_ref = 1e7, species_ref = Species("electron"))
   q1 = Quadrupole(L = 0.6, x_rot = 2, alias = "qz", Ks8L = 123, tilt8 = 2)
   q2 = Quadrupole(L = 0.6, Kn1 = -0.3);
   d1 = Drift(L = 1.0);

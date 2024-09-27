@@ -4,6 +4,7 @@
 
 #---------------------------------------------------------------------------------------------------
 # Exceptions
+# Not currently used. May be removed at a later date.
 
 struct InfiniteLoop <: Exception;   msg::String; end
 struct RangeError <: Exception;     msg::String; end
@@ -12,6 +13,54 @@ struct SwitchError <: Exception; msg::String; end
 struct StringParseError <: Exception; msg::String; end
 
 abstract type Error end
+
+#---------------------------------------------------------------------------------------------------
+# E_tot
+
+"""
+   E_tot(species::Species; pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+Returns the total energy (in `eV`). Only one of the optional arguments pc, β, E_kinetic, or γ should be set.
+
+Also see the functions `pc`, `β`, `β1`, `E_kinetic`, and `γ`
+""" E_tot 
+
+function E_tot(species::Species; pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+  if pc != NaN
+    return sqrt(pc^2 + mass(species)^2)
+  elseif β != NaN
+    return mass(species) / sqrt(1 - β^2)
+  elseif E_kinetic != NaN
+    return E_kinetic + mass(species)
+  elseif γ != NaN
+    return γ * mass(species)
+  else
+    error("Not one of pc, β, E_kinetic, nor γ set.")
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# pc
+
+"""
+   pc(species::Species; E_tot::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+Returns the total energy (in `eV`). Only one of the optional arguments pc, β, E_kinetic, or γ should be set.
+
+Also see the functions `E_tot`, `β`, `β1`, `E_kinetic`, and `γ`
+""" pc
+
+function pc(species::Species, E_tot::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+  if E_tot != NaN
+    return sqrt(E_tot^2 - mass(species)^2)
+  elseif β != NaN
+    return β * mass(species) / sqrt(1 - β^2)
+  elseif E_kinetic != NaN
+    return sqrt((E_kinetic + mass(species))^2 - mass(species)^2)
+  elseif γ != NaN
+    return mass(species) * sqrt(γ^2 - 1)
+  else
+    error("Not one of E_tot, β, E_kinetic, nor γ set.")
+  end
+end
 
 #---------------------------------------------------------------------------------------------------
 # eval_str

@@ -366,9 +366,9 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
     if haskey(cdict, :pc_ref) && haskey(cdict, :E_tot_ref)
       error(f"Beginning element has both pc_ref and E_tot_ref set in {ele_name(ele)}")
     elseif haskey(cdict, :E_tot_ref)
-      rg.pc_ref = pc_from_E_tot(rg.E_tot_ref, rg.species_ref)
+      rg.pc_ref = pc(rg.species_ref, E_tot = rg.E_tot_ref)
     elseif  haskey(cdict, :pc_ref)
-      rg.E_tot_ref = E_tot_from_pc(rg.pc_ref, rg.species_ref)
+      rg.E_tot_ref = E_tot(rg.species_ref, pc = rg.pc_ref)
     elseif rg.pc_ref == NaN && rg.E_tot_ref == NaN
       error(f"Neither pc_ref nor E_tot_ref set for: {ele_name(ele)}")
     end
