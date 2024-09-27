@@ -1,6 +1,6 @@
 using AcceleratorLattice, Test
 
-@ele beginning = BeginningEle(s = 0.3, pc_ref = 1e7, species_ref = species("electron"));
+@ele beginning = BeginningEle(s = 0.3, pc_ref = 1e7, species_ref = Species("electron"));
 @ele qf = Quadrupole(L = 0.6, alias = "z1");
 @ele qd = Quadrupole(L = 0.6, description = "z2");
 @ele d = Drift(L = 0.4);

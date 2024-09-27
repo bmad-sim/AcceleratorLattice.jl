@@ -236,7 +236,7 @@ end
 #---------------------------------------------------------------------------------------------------
 # has_parent_group
 
-function has_parent_group(pinfo::ParamInfo, group::Type{T}) where T <: EleParameterGroup
+function has_parent_group(pinfo::ParamInfo, group::Type{T}) where T <: BaseEleParameterGroup
   if typeof(pinfo.parent_group) <: Vector
     return group in pinfo.parent_group
   else
