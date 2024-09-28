@@ -13,7 +13,7 @@ beam machine is to be simulated. In this case the lattice file might look like:
   ring1 = beamline("r1", [..., IR_region, ...])
   ring2 = beamline("r2", [..., reverse(IR_region), ...])
   IR_region = beamline("IR", [Q1, ....])
-  lat = expand("dual_ring", [ring1, ring2])
+  lat = Lat("dual_ring", [ring1, ring2])
 \end{example}
 [The \vn{reverse} construct means go through the line backwards (\sref{s:ele.reverse})] 
 In this case, the \vn{Q1} element in \vn{ring1} and the
@@ -32,7 +32,7 @@ The lattice file might look like:
   @ele RF1 = LCavity(...)
   linac = beamline["linac", [RF1, ...], multipass = true)
   erl_line = beamline("erl", [linac, ..., linac])
-  lat = expand("erl", [erl_line])
+  lat = Lat("erl", [erl_line])
   rf1p2 = find_ele(lat, "RF1!mp1")
   rf1p2.multipass_phase = pi
 \end{example}
@@ -66,7 +66,7 @@ physically distinct. Example:
 \begin{example}
   m_line = beamline("m", [A, A, B], multipass = true)
   u_line = beamline("u", [m_line, m_line])
-  lat = expand("lat", [u_line])
+  lat = Lat("lat", [u_line])
 \end{example}
 In this example, branch 1 of the lattice is:
 \begin{example}
@@ -87,7 +87,7 @@ line. For example:
   a_line = beamline("a", [A])
   m_line = beamline("m", [a_line, a_line], multipass = true)
   u_line = beamline("u", [m_line, m_line])
-  lat = expand("lat", [u_line])
+  lat = Lat("lat", [u_line])
 \end{example}
 In this example, \vn{a_line}, which is a subline of the multipass \vn{m_line}, is {\em not}
 designated \vn{multipass} and the result is the same as the previous example where \vn{m_line} was
@@ -101,7 +101,7 @@ lines. Additionally, multipass can be used with line reversal (\sref{s:ele.rever
   m2_line = beamline("m2", m_line)
   @ele P = patch(...)  # Reflection patch
   u_line = beamline("u", [m_line, P, reverse(m2_line)])
-  lat = expand("lat", [u_line])
+  lat = Lat("lat", [u_line])
 \end{example}
 Here the tracking part of the lattice is
 \begin{example}
@@ -146,7 +146,7 @@ As a final example, consider the case where a subline of a multipass line is als
   a_line = beamline("a", [A], multipass = true)
   m_line = beamline("m", [a_line, a_line, B], multipass = true)
   u_line = beamline("u", [m_line, m_line])
-  lat = expand("lat", [u_line])
+  lat = Lat("lat", [u_line])
 \end{example}
 In this case, branch 1 of the lattice will be:
 \begin{example}
@@ -162,7 +162,7 @@ one element, a multipass lord is not constructed. For example:
 \begin{example}
   m_line = beamline("m", [A, A, B], multipass = true)
   u_line = beamline([m_line])
-  lat = expand("lat", [u_line])
+  lat = Lat("lat", [u_line])
 \end{example}
 In this example no multipass lords are constructed and the lattice is simply
 \begin{example}

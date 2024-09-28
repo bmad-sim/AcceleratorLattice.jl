@@ -15,7 +15,7 @@ using AcceleratorLattice, Test
 end;
 
 ln1 = BeamLine([beginning, d1, d2, d1, m1, d3]);
-lat = expand([ln1]);
+lat = Lat([ln1]);
 
 #---------------------------------------------------------------------------------------------------
 

@@ -12,7 +12,7 @@ using AcceleratorLattice
 
 ln1 = beamline("ln1", [p_begin, qf, d]);
 ln2 = beamline("ln2", [e_begin, qd, d, qd], geometry = closed);
-lat = expand("mylat", [ln1, ln2]);
+lat = Lat("mylat", [ln1, ln2]);
 
 slave_list = [
   ctrl(absolute, "z1", :L, "2*vv+gg"),

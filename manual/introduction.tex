@@ -186,7 +186,7 @@ a bend:
   @ele b = Bend(L = 1.2, angle = 0.001)
 
   a_line = beamline("simple_line", [begin_ele, q, d, b])
-  lat = expand("simple_lat", [a_line])
+  lat = Lat("simple_lat", [a_line])
 \end{example}
 
 %---------------------------------------------------------------------------

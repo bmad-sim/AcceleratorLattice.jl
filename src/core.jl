@@ -19,20 +19,22 @@ abstract type Error end
 
 """
    E_tot(species::Species; pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
-Returns the total energy (in `eV`). Only one of the optional arguments pc, β, E_kinetic, or γ should be set.
+Returns the total energy (in `eV`). One and only one of the optional arguments pc, β, E_kinetic, or γ should be set.
 
 Also see the functions `pc`, `β`, `β1`, `E_kinetic`, and `γ`
 """ E_tot 
 
 function E_tot(species::Species; pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
-  if pc != NaN
-    return sqrt(pc^2 + mass(species)^2)
-  elseif β != NaN
-    return mass(species) / sqrt(1 - β^2)
-  elseif E_kinetic != NaN
-    return E_kinetic + mass(species)
-  elseif γ != NaN
-    return γ * mass(species)
+  m = mass(species)
+
+  if !isnan(pc)
+    return sqrt(pc^2 + m^2)
+  elseif !isnan(β)
+    return m / sqrt(1 - β^2)
+  elseif !isnan(E_kinetic)
+    return E_kinetic + m
+  elseif !isnan(γ)
+    return γ * m
   else
     error("Not one of pc, β, E_kinetic, nor γ set.")
   end
@@ -43,24 +45,139 @@ end
 
 """
    pc(species::Species; E_tot::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
-Returns the total energy (in `eV`). Only one of the optional arguments pc, β, E_kinetic, or γ should be set.
+Returns the total energy (in `eV`). One and only one of the optional arguments E_tot, β, E_kinetic, or γ should be set.
 
 Also see the functions `E_tot`, `β`, `β1`, `E_kinetic`, and `γ`
 """ pc
 
-function pc(species::Species, E_tot::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
-  if E_tot != NaN
-    return sqrt(E_tot^2 - mass(species)^2)
-  elseif β != NaN
-    return β * mass(species) / sqrt(1 - β^2)
-  elseif E_kinetic != NaN
-    return sqrt((E_kinetic + mass(species))^2 - mass(species)^2)
-  elseif γ != NaN
-    return mass(species) * sqrt(γ^2 - 1)
+function pc(species::Species; E_tot::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+  m = mass(species)
+
+  if !isnan(E_tot)
+    return sqrt(E_tot^2 - m^2)
+  elseif !isnan(β)
+    return β * m / sqrt(1 - β^2)
+  elseif !isnan(E_kinetic)
+    return sqrt((E_kinetic + m)^2 - m^2)
+  elseif !isnan(γ)
+    return m * sqrt(γ^2 - 1)
   else
     error("Not one of E_tot, β, E_kinetic, nor γ set.")
   end
 end
+
+#---------------------------------------------------------------------------------------------------
+# β
+
+"""
+   β(species::Species; E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+Returns the velocity `β` = `v/c`. One and only one of the optional arguments E_tot, pc, E_kinetic, or γ should be set.
+
+Also see the functions `E_tot`, `pc`, `β1`, `E_kinetic`, and `γ`
+""" β
+
+function β(species::Species; E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+  m = mass(species)
+
+  if !isnan(E_tot)
+    return sqrt(1 - (m / E_tot)^2)
+  elseif !isnan(pc)
+    return 1 / sqrt(1 + (m / pc)^2)
+  elseif !isnan(E_kinetic)
+    f = m / (E_kinetic + m)
+    return sqrt(1 - f^2)
+  elseif !isnan(γ)
+    return sqrt(1 - 1/γ^2)
+  else
+    error("Not one of E_tot, pc, E_kinetic, nor γ set.")
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# β1
+
+"""
+   β1(species::Species; E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+Returns the quantity `1 - β` = `1 - v/c`. In the high energy limit, this is `1/(2γ^2)`.
+β1 is computed such that in the high energy limit, round off error is not a problem.
+One and only one of the optional arguments E_tot, pc, E_kinetic, or γ should be set.
+
+Also see the functions `E_tot`; `pc`, `β`, `E_kinetic`, and `γ`
+""" β1
+
+function β1(species::Species; E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+  m = mass(species)
+
+  if !isnan(E_tot)
+    mm2 = (m / E_tot)^2
+    return  mm2 / (1 + sqrt(1 - mm2))
+  elseif !isnan(pc)
+    m = m
+    return m^2 / (sqrt(m^2 + pc^2) * (sqrt(m^2 + pc^2) + pc))
+  elseif !isnan(E_kinetic)
+    mm2 = (m / (E_kinetic + m))^2
+    return  mm2 / (1 + sqrt(1 - mm2))
+  elseif !isnan(γ)
+    mm2 = 1 / γ^2
+    return  mm2 / (1 + sqrt(1 - mm2))
+  else
+    error("Not one of E_tot, pc, E_kinetic, nor γ set.")
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# E_kinetic
+
+"""
+   E_kinetic(species::Species; E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, γ::Number = NaN)
+Returns the kinetic energy in `eV`.
+One and only one of the optional arguments E_tot, pc, β, or γ should be set.
+
+Also see the functions `E_tot`; `pc`, `β`, `β1`, and `γ`
+""" E_kinetic
+
+function E_kinetic(species::Species; E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, γ::Number = NaN)
+  m = mass(species)
+
+  if !isnan(pc)
+    return pc^2 / (sqrt(pc^2 + m^2) + m)
+  elseif !isnan(β)
+    return m * β^2 / (sqrt(1 - β^2) * (1 + sqrt(1 - β^2)))
+  elseif !isnan(E_tot)
+    return E_tot - m
+  elseif !isnan(γ)
+    return m * (γ - 1)
+  else
+    error("Not one of pc, β, E_tot, nor γ set.")
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# γ
+
+"""
+   γ(species::Species; E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN)
+Returns the total energy (in `eV`). One and only one of the optional arguments E_tot, pc, β, or E_kinetic should be set.
+
+Also see the functions `pc`, `β`, `β1`, `E_kinetic`, and `γ`
+""" γ 
+
+function γ(species::Species; E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN)
+  m = mass(species)
+
+  if !isnan(pc)
+    return sqrt((pc/m)^2 + 1)
+  elseif !isnan(β)
+    return  1 / sqrt(1 - β^2)
+  elseif !isnan(E_kinetic)
+    return 1 + E_kinetic / m
+  elseif !isnan(E_tot)
+    return E_tot / m
+  else
+    error("Not one of pc, β, E_kinetic, nor γ set.")
+  end
+end
+
 
 #---------------------------------------------------------------------------------------------------
 # eval_str

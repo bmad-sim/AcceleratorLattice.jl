@@ -2,6 +2,10 @@ using AcceleratorLattice, Test
 
 @testset verbose = true "AcceleratorLattice" begin
 
+  @testset "core_test" begin
+    include("core_test.jl")
+  end
+
   @testset "string_test" begin
     include("string_test.jl")
   end

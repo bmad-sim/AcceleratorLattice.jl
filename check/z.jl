@@ -8,7 +8,7 @@ using AcceleratorLattice
 bl = BeamLine
 zline = bl([bb, qq, dd]);
 zline = bl([bb, dd]);
-lat = expand([zline]);
+lat = Lat([zline]);
 
 show(lat)
 
