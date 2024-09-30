@@ -361,7 +361,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
     if rg.species_ref == Species("NotSet"); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
     rg.species_ref_exit = rg.species_ref
 
-    rg.time_ref_exit = rg.time_ref
+    rg.time_ref_downstream = rg.time_ref
 
     if haskey(cdict, :pc_ref) && haskey(cdict, :E_tot_ref)
       error(f"Beginning element has both pc_ref and E_tot_ref set in {ele_name(ele)}")
@@ -373,8 +373,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
       error(f"Neither pc_ref nor E_tot_ref set for: {ele_name(ele)}")
     end
 
-    rg.pc_ref_exit = rg.pc_ref
-    rg.E_tot_ref_exit = rg.E_tot_ref
+    rg.pc_ref_downstream = rg.pc_ref
+    rg.E_tot_ref_downstream = rg.E_tot_ref
 
     clear_changed!(ele, ReferenceGroup)
     return
@@ -387,23 +387,23 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
 
   rg.species_ref      = previous_ele.species_ref_exit
   rg.species_ref_exit = rg.species_ref
-  rg.pc_ref           = previous_ele.pc_ref_exit
-  rg.E_tot_ref        = previous_ele.E_tot_ref_exit
-  rg.time_ref         = previous_ele.time_ref_exit
+  rg.pc_ref           = previous_ele.pc_ref_downstream
+  rg.E_tot_ref        = previous_ele.E_tot_ref_downstream
+  rg.time_ref         = previous_ele.time_ref_downstream
   rg.β_ref            = rg.pc_ref / rg.E_tot_ref
 
 
   if typeof(ele) == LCavity
-    rg.pc_ref_exit      = rg.pc_ref + ele.voltage_ref
-    rg.E_tot_ref_exit   = E_tot_from_pc(rg.pc_ref_exit, rg.species_ref)
-    rg.time_ref_exit    = rg.time_ref + ele.L * (rg.E_tot_ref + rg.E_tot_ref_exit) / (c_light * (rg.pc_ref + rg.pc_ref_exit))
+    rg.pc_ref_downstream      = rg.pc_ref + ele.voltage_ref
+    rg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
+    rg.time_ref_downstream    = rg.time_ref + ele.L * (rg.E_tot_ref + rg.E_tot_ref_downstream) / (c_light * (rg.pc_ref + rg.pc_ref_downstream))
   else
-    rg.pc_ref_exit      = rg.pc_ref
-    rg.E_tot_ref_exit   = rg.E_tot_ref
-    rg.time_ref_exit    = rg.time_ref + ele.L / (c_light * rg.pc_ref / rg.E_tot_ref)
+    rg.pc_ref_downstream      = rg.pc_ref
+    rg.E_tot_ref_downstream   = rg.E_tot_ref
+    rg.time_ref_downstream    = rg.time_ref + ele.L / (c_light * rg.pc_ref / rg.E_tot_ref)
   end
 
-  rg.β_ref_exit = rg.pc_ref_exit / rg.E_tot_ref_exit
+  rg.β_ref_downstream = rg.pc_ref_downstream / rg.E_tot_ref_downstream
 
   # Lord bookkeeping
 
@@ -534,6 +534,30 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
   end
 
   clear_changed!(ele, BendGroup)
+end
+
+#---------------------------------------------------------------------------------------------------
+# elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, ...)
+# SolenoidGroup bookkeeping.
+
+function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, changed::ChangedLedger, previous_ele::Ele)
+  sg = ele.SolenoidGroup
+  cdict = ele.changed
+  if !has_changed(ele, SolenoidGroup) && !changed.ref_group; return; end
+
+  ff = ele.pc_ref / (c_light * charge(ele.species_ref))
+
+  if has_key(cdict, :Ksol)
+    sg.Bsol = sg.Ksol * ff
+  elseif has_key(cdict, :Bsol)
+    sg.Ksol = sg.Bsol / ff
+  elseif ele.field_master   # Ref energy has changed
+    sg.Ksol = sg.Bsol / ff
+  else
+    sg.Bsol = sg.Ksol * ff
+  end
+
+  clear_changed!(ele, SolenoidGroup)
 end
 
 #---------------------------------------------------------------------------------------------------

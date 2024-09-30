@@ -4,7 +4,7 @@
 \section{Introduction}
 
 This chapter is an introduction to, the \accellat package which is part of the
-greater \bmadjl ecosystem of toolkits and programs for accelerator simulations. With \accellat,
+greater \scibmad ecosystem of toolkits and programs for accelerator simulations. With \accellat,
 lattices can be constructed and manipulated. Essentially, a \vn{lattice} instance contains
 a set of ``\vn{branches}'' and a branch contains 
 an array of lattice \vn{elements} with each element representing an object like a magnet
@@ -18,7 +18,7 @@ to dump lines enabling a single lattice to be used as the basis of start-to-end 
 
 The sole purpose of the \accellat package is to implement methods for lattice construction.
 Other stuff, like tracking and lattice analysis (for example, calculating
-closed orbits and Twiss functions), is left to other packages in the \bmadjl ecosystem.
+closed orbits and Twiss functions), is left to other packages in the \scibmad ecosystem.
 
 %---------------------------------------------------------------------------
 \section{Documentation}
@@ -33,10 +33,10 @@ via using Julia's REPL.
 %---------------------------------------------------------------------------
 \section{Brief History}
 
-\bmadjl has it's origins in the "Fortran Bmad"\cite{Sagan:Bmad2006} ecosystem of toolkits and programs developed over several
+\scibmad has it's origins in the "\Bmad"\cite{Sagan:Bmad2006} ecosystem of toolkits and programs developed over several
 decades at Cornell University. Although the two share a similar name, {\bf the code of the two are
 completely separate}. That being said, the development of \accellat is heavily influenced by the 
-experience --- both good and bad --- in the development and use of Fortran \bmad as well as experience
+experience --- both good and bad --- in the development and use of  \bmad as well as experience
 with other accelerator simulation programs.
 
 The \julia language itself is used as the basis for constructing lattices with \accellat. 
@@ -44,10 +44,10 @@ Other simulation programs
 have similarly utilized the underlying programming language for constructing 
 lattices\cite{Appleby:Merlin2020,Iadarola:Xsuite2023}. This is in marked contrast to many accelerator
 simulation programs such programs as MAD\cite{Grote:MAD1989}, Elegant\cite{Borland:Elegant2000}, and
-Fortran Bmad. 
+Bmad. 
 By using Julia for the lattice language, the user will automatically have access to such features 
 as plotting, optimization packages, linear algebra packages, etc. 
-This gives a massive boost to the versatility and usability of any \bmadjl simulation program.
+This gives a massive boost to the versatility and usability of any \scibmad simulation program.
 Moreover, maintainability is greatly enhanced due to the reduction in the amount of code that needs
 to be developed.
 
@@ -55,7 +55,7 @@ to be developed.
 \section{Acknowledgements}
 
 Thanks must go to the people who have contributed to this effort and without
-whom \bmadjl would only be a shadow of what it is today: 
+whom \scibmad would only be a shadow of what it is today: 
 
 \'Etienne Forest (aka Patrice Nishikawa),
 Dan Abell,
@@ -186,66 +186,74 @@ a bend:
   @ele b = Bend(L = 1.2, angle = 0.001)
 
   a_line = beamline("simple_line", [begin_ele, q, d, b])
-  lat = expand("simple_lat", [a_line])
+  lat = Lat("simple_lat", [a_line])
 \end{example}
 
 %---------------------------------------------------------------------------
-\section{Differences From Fortran Bmad}
+\section{Differences From Bmad}
 
-Some differences between \accellat and Fortran \bmad to
-be kept in mind when comparing the two:
+There are many differences between \accellat and \bmad. Many of of these will be fairly
+obvious. 
+Some differences to be aware of:
 \begin{description}
 \item
-Fortran \bmad is generally case insensitive (except for things like file names). \accellat, like
+\bmad is generally case insensitive (except for things like file names). \accellat, like
 the Julia language, is case sensitive.
 %
-With Fortran \bmad, the branch array within a lattice and the element array within a branch is
-indexed from zero. With \bmadjl, indexing of \vn{Lat.branch[]} and \vn{branch.ele[]} is 
+With \bmad, the branch array within a lattice and the element array within a branch is
+indexed from zero. With \scibmad, indexing of \vn{Lat.branch[]} and \vn{branch.ele[]} is 
 from one conforming to the Julia standard.
 %
 \item
-The Fortran \bmad names for the coordinate systems (\sref{s:coords}) was somewhat different and not
+The \bmad names for the coordinate systems (\sref{s:coords}) was somewhat different and not
 always consistent. The \vn{global} and \vn{element body} names are the same but \vn{machine}
-coordinates are called the \vn{laboratory} in Fortran \bmad.
+coordinates are called the \vn{laboratory} in \bmad.
 %
 \item
-Evaluation was at the downstream end (\sref{s:conventions}) in Fortran \bmad not the upstream end.
+Evaluation was at the downstream end (\sref{s:conventions}) in \bmad not the upstream end.
 %
 \item
-With Fortran \bmad a value for any aperture limits of zero means the limit does not exist.
+With \bmad a value for any aperture limits of zero means the limit does not exist.
 with \accellat a value of \vn{NaN} means the aperture does not exist. Additionally, with
-Fortran \bmad a positive value for \vn{x1_limit} or \vn{y1_limit} meant that the aperture was
+\bmad a positive value for \vn{x1_limit} or \vn{y1_limit} meant that the aperture was
 on the negative side of the \vn{x-axis} or \vn{y-axis} respectively. With \accellat, a positive
 value for \vn{x_limit[1]} or \vn{y_limit[1]} means the aperture is on the positive side of 
 of the \vn{x-axis} or \vn{y-axis} respectively. This makes the notation consistent across 
 the different ways to specify apertures (compare with \vn{Mask} element syntax.).
 %
 \item
-Fortran \bmad does not allow redefinition of named variables nor elements. \accellat allows this.
+For misalignment of a Bend element, with the \accellat package the reference point is at the center 
+of the chord between the entrance and exit end. 
+Under \bmad, the reference point is at the center of the reference trajectory arc between the entrance
+and the exit. An additional difference is that the \bmad \vn{roll} misalignment is called \vn{tilt}
+under \accellat.
 %
 \item
-With Fortran \bmad, the beginning and end elements are implicitly inserted into a branch line.
+\bmad does not allow redefinition of named variables nor elements. \accellat allows this.
+%
+\item
+With \bmad, the beginning and end elements are implicitly inserted into a branch line.
 With \accellat, only an end element will be implicitly inserted if the end of the beamline is
 not a marker. 
-Also with Fortran \bmad the beginning element is always named \vn{Beginning}. 
+Also with \bmad the beginning element is always named \vn{Beginning}. 
 %
 \item
 Restrictions on the order of statements used to create a lattice are different. 
-For example, in Fortran \bmad, a statement defining a lattice element can be placed anywhere
+For example, in \bmad, a statement defining a lattice element can be placed anywhere
 except if there is an \vn{expand_lattice} statement and the element is not being used
 with superposition in which case the element definition must be before the \vn{expand_lattice}
 statement. With \accellat, element definitions must come before the element is used in a line
 or used to define a control element.
 %
 \item
-With Fortran \bmad superposition of two non-drift elements, if there existed the appropriate
+With \bmad superposition of two non-drift elements, if there existed the appropriate
 combined type, will result in a \vn{super_slave} of the appropriate combined type. For example,
 a \vn{solenoid} superimposed over a \vn{quadrupole} would give a \vn{sol_quad} \vn{super_slave} with
 \vn{solenoid} and \vn{quadrupole} \vn{super_lords}. The problem here is that calculation of the
 \vn{super_slave} parameters may not be possible. For example if the \vn{super_lord}
 elements are misaligned, in general it is not possible to compute a corresponding \vn{super_slave}
 misalignment. To avoid this, \accellat creates a \vn{UnionEle} \vn{super_slave} element
-(which in Fortran \bmad is known as a ``jumbo'' \vn{super_slave}).
+(which in \bmad is known as a ``jumbo'' \vn{super_slave}).
 %
 \end{description}
 

@@ -32,6 +32,7 @@ module AcceleratorLattice
 
   mass(species::Species) = massof(species)
   charge(species::Species) = chargeof(species)
+  export mass, charge
 
   #
 
@@ -61,7 +62,7 @@ module AcceleratorLattice
   # Note! Element types are exported automatically when constructed
 
   export memloc, beamline, @ele, @eles, @construct_ele_type, enumit, enum_add
-  export expand, ele_name, show_name, show_ele, E_tot, pc
+  export ele_name, show_name, show_ele, E_tot, E_kinetic, pc, β, β1, γ
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!, set_param!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform

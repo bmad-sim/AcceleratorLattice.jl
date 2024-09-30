@@ -5,7 +5,7 @@
     Internal: init_superimpose!(lat::Lat, superimpose::Vector{T}) where T <: Ele
     Internal: init_superimpose!(branch::Branch, superimpose::Vector{T}) where T <: Ele
 
-Internal routine called by `expand` to do initial bookkeeping 
+Internal routine called by `Lat()` to do initial bookkeeping 
 superpositions, reference energy propagation, etc.
 """ init_superimpose!
 

@@ -147,7 +147,7 @@ end
 Adds a `BeamLineEle` to a `Branch` under construction. The `info` argument passes on parameters
 from the beamline containing the `BeamLineEle`.
 
-This routine is used by the `expand` function.
+This routine is used by the `Lat` function.
 """ add_beamline_ele_to_branch!
 
 function add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
@@ -176,7 +176,7 @@ end
 
 Adds a single item of a `BeamLine` line to the `Branch` under construction.
 
-Used by expand call chain and is not of general interest.
+Used by Lat() call chain and is not of general interest.
 """ add_beamline_item_to_branch!
 
 function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
@@ -198,7 +198,7 @@ end
 
 Add the elements in a `BeamLine.line` to a `Branch` under construction.
 
-Used by the `expand` function.
+Used by the `Lat` function.
 """ add_beamline_line_to_branch!
 
 function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
@@ -232,7 +232,7 @@ end
 
 Adds a `BeamLine` to the lattice creating a new `Branch`.
 
-Used by the `expand` function.
+Used by the `Lat` function.
 """ new_tracking_branch!
 
 function new_tracking_branch!(lat::Lat, bline::BeamLine)
@@ -273,10 +273,10 @@ function new_lord_branch!(lat::Lat, name::AbstractString, branch_type::Type{T}) 
 end
 
 #---------------------------------------------------------------------------------------------------
-# expand
+# Lat
 
 """
-    expand(root_line::Union{BeamLine,Vector}; name = "lat")
+    Lat(root_line::Union{BeamLine,Vector}; name = "lat")
 
 Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
 
@@ -290,9 +290,9 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 - `Lat`      - `Lat` instance with expanded beamlines.
 
-""" expand
+""" Lat(root_line::Union{BeamLine,Vector})
 
-function expand(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat") 
+function Lat(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat") 
   lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
   
   for root in collect(root_line)

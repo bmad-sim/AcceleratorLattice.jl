@@ -15,7 +15,7 @@ other.
 Branch geometry is inherited from the root line. To use a line with the "wrong" geometry, create
 a new line using the old line with the "correct" geometry. EG
   ln2 = beamline(ln1.name, [ln1], geometry = CLOSED)
-  lat = expand([ln2])
+  lat = Lat([ln2])
 
 Note: OPEN and CLOSED are aliases for BranchGeometry.OPEN and BranchGeometry.CLOSED
 

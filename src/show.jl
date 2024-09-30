@@ -31,7 +31,8 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
 
   ApertureGroup => Dict{Symbol,Symbol}(
     :x_limit          => :y_limit,
-    :aperture_at      => :aperture_type,
+    :aperture_shape   => :misalignment_moves_aperture,
+
   ),
 
   BendGroup => Dict{Symbol,Symbol}(
@@ -86,16 +87,16 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :offset           => :tilt,
     :x_rot            => :y_rot,
     :E_tot_offset     => :t_offset,
-    :E_tot_exit       => :pc_exit,
+    :E_tot_downstream => :pc_downstream,
     :flexible         => :User_sets_length,
   ),
 
   ReferenceGroup => Dict{Symbol,Symbol}(
     :species_ref      => :species_ref_exit,
-    :pc_ref           => :pc_ref_exit,
-    :E_tot_ref        => :E_tot_ref_exit,
-    :time_ref         => :time_ref_exit,
-    :β_ref            => :β_ref_exit,
+    :pc_ref           => :pc_ref_downstream,
+    :E_tot_ref        => :E_tot_ref_downstream,
+    :time_ref         => :time_ref_downstream,
+    :β_ref            => :β_ref_downstream,
   ),
 
   RFCavityGroup => Dict{Symbol,Symbol}(
@@ -111,6 +112,10 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
   RFAutoGroup => Dict{Symbol,Symbol}(
     :do_auto_amp      => :do_auto_phase,
     :auto_amp         => :auto_phase,
+  ),
+
+  SolenoidGroup => Dict{Symbol,Symbol}(
+    :Ksol             => :Bsol,
   ),
 
   StringGroup => Dict{Symbol,Symbol}(

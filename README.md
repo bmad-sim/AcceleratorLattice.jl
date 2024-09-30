@@ -27,7 +27,7 @@ using AcceleratorLattice
 end
 
 aline= BeamLine([begin0, qf, d, b1])
-lat = expand([aline])
+lat = Lat([aline])
 ```
 The result is:
 ```

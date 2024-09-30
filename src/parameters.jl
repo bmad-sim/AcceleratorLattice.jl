@@ -31,7 +31,7 @@ end
 
 
 # `:XXX` indicates that the struct_sym will be the same as the key in ELE_PARAM_INFO_DICT.
-# And `:Z` is always replaced by the key in ELE_PARAM_INFO_DICT.
+# `:Z` is always replaced by the key in ELE_PARAM_INFO_DICT.
 
 ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :XXX, nothing, :Z)
 ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :XXX, nothing, :Z)
@@ -68,18 +68,18 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :is_on              => ParamInfo(MasterGroup,    Bool,          "Element fields on/off."),
   :field_master       => ParamInfo(MasterGroup,    Bool,          "True: fields are fixed and normalized values change when varying ref energy."),
-  :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup,  Bool, "True: If element is a multipass lord, ref energy is set in lord."),
+  :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup, Bool, "True: If element is a multipass lord, ref energy is set in lord."),
 
-  :species_ref        => ParamInfo(ReferenceGroup, Species,       "Reference species."),
-  :species_ref_exit   => ParamInfo(ReferenceGroup, Species,       "Reference species at exit end."),
-  :pc_ref             => ParamInfo(ReferenceGroup, Number,        "Reference momentum * c.", "eV"),
-  :E_tot_ref          => ParamInfo(ReferenceGroup, Number,        "Reference total energy.", "eV"),
-  :time_ref           => ParamInfo(ReferenceGroup, Number,        "Reference time.", "sec"),
-  :pc_ref_exit        => ParamInfo(ReferenceGroup, Number,        "Reference momentum * c at exit end.", "eV"),
-  :E_tot_ref_exit     => ParamInfo(ReferenceGroup, Number,        "Reference total energy at exit end.", "eV"),
-  :time_ref_exit      => ParamInfo(ReferenceGroup, Number,        "Reference time at exit end.", "sec"),
-  :β_ref              => ParamInfo(ReferenceGroup, Number,        "Reference velocity/c."),
-  :β_ref_exit         => ParamInfo(ReferenceGroup, Number,        "Reference velocity/c at exit end."),
+  :species_ref          => ParamInfo(ReferenceGroup, Species,     "Reference species."),
+  :species_ref_exit     => ParamInfo(ReferenceGroup, Species,     "Reference species at exit end."),
+  :pc_ref               => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c.", "eV"),
+  :E_tot_ref            => ParamInfo(ReferenceGroup, Number,      "Reference total energy.", "eV"),
+  :time_ref             => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
+  :pc_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c at downstream end.", "eV"),
+  :E_tot_ref_downstream => ParamInfo(ReferenceGroup, Number,      "Reference total energy at downstream end.", "eV"),
+  :time_ref_downstream  => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
+  :β_ref                => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c."),
+  :β_ref_downstream     => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c at downstream end."),
 
   :angle              => ParamInfo(BendGroup,      Number,        "Design bend angle", "rad"),
   :bend_field         => ParamInfo(BendGroup,      Number,        "Design bend field corresponding to g bending strength", "T"),
@@ -105,12 +105,12 @@ ELE_PARAM_INFO_DICT = Dict(
   :fiducial_pt        => ParamInfo(BendGroup,      FiducialPt.T,  "Fiducial point used with variation of bend parameters."),
   :exact_multipoles   => ParamInfo(BendGroup,      ExactMultipoles.T, "Are multipoles treated exactly?"),
 
-  :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "3-Vector of [x, y, z] element offsets.", "m"),
+  :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "[x, y, z] element offset.", "m"),
   :x_rot    => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis element rotation.", "rad"),
   :y_rot    => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-axis element rotation.", "rad"),
   :tilt     => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Z-axis element rotation.", "rad"),
 
-  :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "Offset including Girder orientation.", "m"),
+  :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m"),
   :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad"),
   :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad"),
   :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad"),
@@ -118,8 +118,8 @@ ELE_PARAM_INFO_DICT = Dict(
   :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
   :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
   :pc_exit            => ParamInfo(PatchGroup,     Number,         "Reference momentum at exit end.", "eV"),
+  :L_user             => ParamInfo(PatchGroup,     Number,         "User set length.", "m"),
   :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
-  :user_sets_length   => ParamInfo(PatchGroup,     Bool,           "Does Bmad calculate the patch length?"),
   :ref_coords         => ParamInfo(PatchGroup,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
   :voltage            => ParamInfo(RFCavityGroup,   Number,        "RF voltage.", "volt"),
@@ -154,7 +154,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :num_steps          => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
   :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
-  :aperture_type      => ParamInfo(ApertureGroup,  ApertureShape.T,       "Type of aperture. Default is Elliptical."),
+  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape.T,       "Shape of aperture. Default is Elliptical."),
   :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,             "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
   :misalignment_moves_aperture 
                       => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
@@ -174,8 +174,8 @@ ELE_PARAM_INFO_DICT = Dict(
   :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),
   :dpsi_girder        => ParamInfo(GirderGroup,     Number,               "Psi angle orientation with respect to ref ele.", "rad", :dpsi),
 
-  :ksol               => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
-  :bsol_field         => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
+  :Ksol               => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
+  :Bsol               => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
 
   :slave_status       => ParamInfo(LordSlaveGroup,    Slave.T,    "Slave status."),
   :lord_status        => ParamInfo(LordSlaveGroup,    Lord.T,     "Lord status."),
@@ -216,8 +216,6 @@ ELE_PARAM_INFO_DICT = Dict(
   :eta_c              => ParamInfo(TwissGroup,  Number,             "C-mode position dispersion.", "m", :eta, T->T.c),
   :etap_c             => ParamInfo(TwissGroup,  Number,             "C-mode momentum dispersion.", "", :etap, T->T.c),
   :deta_ds_c          => ParamInfo(TwissGroup,  Number,             "C-mode dispersion derivative.", "", :deta_ds, T->T.c),
-
-  :v_mat              => ParamInfo(TwissGroup,  Matrix{Number},     "Normal mode 6x6 coupling matrix", ""),
 
   :eta_x              => ParamInfo(TwissGroup,  Number,             "X-mode position dispersion.", "m", :eta, T->T.x),
   :etap_x             => ParamInfo(TwissGroup,  Number,             "X-mode momentum dispersion.", "", :etap, T->T.x),
