@@ -170,8 +170,36 @@ Below is a list of enum groups defined in \accellat.
 \section{AlignmentGroup}
 \label{s:align.g}
 
-The alignment group gives the offset and angular orientation of an element (\sref{s:orient}). 
+\begin{figure}
+\centering \includegraphics{alignment-ref.pdf} \caption[Element alignment]  
+{Interpreting phase space $z$ at constant velocity: A) The change in $z$ going through
+an element of length $L_0$ is $L_0 - L_p$.  B) At constant time, $z$ is the longitudinal distance
+between the reference particle and the particle.}  \label{f:alignment}
+\end{figure}
 
+
+The alignment group gives the alignment (position and angular orientation) of the physical element 
+relative to the nominal position defined by the machine coordinates (\sref{s:orient}).
+Alignment is specified with respect to the ``alignment reference point'' of an element as shown
+in. For straight 
+
+
+
+The parameters of the \vn{AlignmentGroup} can be divided into two sub-groups. One group has a \vn{_tot} suffix:
+\begin{example}
+  `offset_tot::Vector`     - [x, y, z] offsets including Girder misalignments. \\
+  `x_rot_tot::Number`      - Rotation around the x-axis including Girder misalignment. \\
+  `y_rot_tot::Number`      - Rotation around the z-axis including Girder misalignment. \\
+  `tilt_tot::Number`       - Rotation around the z-axis including Girder misalignment. Not used by Bend elements. \\
+\end{example}
+These parameters give the alignment of the body coordinates at the center of the element with 
+with respect to the machine coordinates at the center of the the non-misaligned element.
+
+
+
+The other sub-group of parameters do not have a \vn{_tot} suffix:
+\begin{example}
+\end{example}
 
 Specifically, the
 orientation of the elements body coordinates with respect to the machine coordinates. 
