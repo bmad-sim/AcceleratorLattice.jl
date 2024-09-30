@@ -34,8 +34,7 @@ Each lattice element has ``\vn{element body}'' (or just ``\vn{body}'')
 coordinates which are attached to the physical element. The electric and magnetic
 fields of an element are described with respect to \vn{body} coordinates.  If there are no
 misalignments, the \vn{body} coordinates are aligned with the 
-\vn{local} coordinates except that $s = 0$ in \vn{machine} coordinates is at the beginning of the non-misaligned
-element and $s = 0$ in machine coordinates is at the beginning of the line.
+\vn{machine} coordinates.
 The transformation between \vn{machine} and \vn{body} coordinates is given in
 \sref{s:lab.body.transform}.
 The $x=y=0$ curved line of the
@@ -74,8 +73,8 @@ orbit. The $z$--axis will generally be pointing in the direction of increasing $
 (\fig{f:machine.coords}A) but, as discussed below, will point counter to $s$ for elements that are
 \vn{reversed} (\fig{f:machine.coords}B). The $x$ and $y$--axes are perpendicular to the reference
 orbit and, by construction, the particle is always at $z = 0$. The coordinate system so constructed
-is called the \vn{``local coordinate system''} or sometimes the \vn{``machine coordinate
-system''} when there is need to distinguish it from the \vn{``element body coordinate system''}
+is called the \vn{``machine coordinate system''} when there is need to distinguish it from the 
+\vn{``element body coordinate system''}
 (\sref{s:coords}) which is attached to the physical element. There is a separate reference orbit
 for each branch (\sref{s:branch.def}) of a lattice.
 
@@ -88,7 +87,7 @@ centered with respect to the reference curve. However, by specifying offsets, ro
 curve. Shifting a physical magnet with respect to its reference curve generally means that the
 reference curve does {\em not} correspond to the orbit that any actual particle could travel.
 
-Do not confuse this reference orbit (which defines the local coordinate system) with the reference
+Do not confuse this reference orbit (which defines the machine coordinate system) with the reference
 orbit about which the transfer maps are calculated (\sref{s:twiss}). The former is fixed by the
 lattice while the latter can be any arbitrary orbit.
 
@@ -241,11 +240,11 @@ setting \vn{x_rot} to \vn{pi}) would also produce a plausible geometry.
 \begin{figure}[bt]
   \centering
   \includegraphics[width=5in]{patch-problem.pdf}
-  \caption[The local reference coordinates in a \vn{patch} element.]
-{The local reference coordinates in a \vn{patch} element. The \vn{patch} element, shown
+  \caption[The machine reference coordinates in a \vn{patch} element.]
+{The machine reference coordinates in a \vn{Patch} element. The \vn{patch} element, shown
 schematically as an irregular quadrilateral, is sandwiched between elements \vn{ele_a} and
 \vn{ele_b}. \vn{L} is the length of the \vn{patch}. In this example, the \vn{patch} has a finite
-\vn{y_rot}.}
+\vn{y_rot}. 
   \label{f:patch.prob}
 \end{figure}
 
@@ -259,14 +258,14 @@ Generally, if a particle is reasonably near the reference orbit, there is a one-
 between the particle's position and $(x, y, s)$ coordinates. A \vn{patch} (\sref{s:patch}) elements
 with a non-zero \vn{x_rot} or non-zero \vn{y_rot} breaks the one-to-one mapping. This is
 illustrated in \fig{f:patch.prob}.  The \vn{patch} element, shown schematically as an, irregular
-quadrilateral, is sandwiched between elements \vn{ele_a} and \vn{ele_b}. The local coordinate system
+quadrilateral, is sandwiched between elements \vn{ele_a} and \vn{ele_b}. The machine coordinate system
 with origin at $\alpha$ are the coordinates at the end of \vn{ele_a}. The coordinates at the end of
 the \vn{patch} has its origin labeled $\gamma$. By convention, the length of the patch \vn{L} is
 taken to be the longitudinal distance from $\alpha$ to $\gamma$ with the \vn{patch}'s exit
 coordinates defining the longitudinal direction. The ``beginning'' point of the \vn{patch} on the
 reference orbit a distance \vn{L} from point $\gamma$ is labeled $\beta$ in the figure.
 
-In the local $(x, y, s)$ coordinate system a particle at $\alpha$ will have some value $s = s_0$. A
+In the machine $(x, y, s)$ coordinate system a particle at $\alpha$ will have some value $s = s_0$. A
 particle at point $\beta$ will have the same value $s = s_0$ and a particle at $\gamma$ will have $s
 = s_1 = s_0 + L$. A particle at point $r_a$ in \fig{f:patch.prob} illustrates the problem of
 assigning $(x, y, s)$ coordinates to a given position. If the particle is considered to be within
@@ -297,7 +296,7 @@ tracking.
   \centering
   \includegraphics{global-coords.pdf}
   \caption[The Global Coordinate System]{
-The local (reference) coordinate system (purple), which is a function of $s$ along the reference
+The machine (reference) coordinate system (purple), which is a function of $s$ along the reference
 orbit, is described in the global coordinate system (black) by a position $(X(s), Y(s), Z(s))$ and
 and by angles $\theta(s)$, $\phi(s)$, and $\psi(s)$.
   }
@@ -305,13 +304,13 @@ and by angles $\theta(s)$, $\phi(s)$, and $\psi(s)$.
 \end{figure}
 
 The Cartesian \vn{global} coordinate system, also called the `floor'' coordinate system, is the
-coordinate system ``attached to the earth'' that is used to describe the local coordinate
+coordinate system ``attached to the earth'' that is used to describe the machine coordinate
 system. Following the \mad\ convention, the \vn{global} coordinate axis are labeled $(X, Y,
 Z)$. Conventionally, $Y$ is the ``vertical'' coordinate and $(X, Z)$ are the ``horizontal''
-coordinates. To describe how the local coordinate system is oriented within the global coordinate
-system, each point on the $s$-axis of the local coordinate system is characterized by its $(X, Y,
+coordinates. To describe how the machine coordinate system is oriented within the global coordinate
+system, each point on the $s$-axis of the machine coordinate system is characterized by its $(X, Y,
 Z)$ position and by three angles $\theta(s)$, $\phi(s)$, and $\psi(s)$ that describe the orientation
-of the local coordinate axes as shown in \fig{f:global.coords}. These three angles are defined as
+of the machine coordinate axes as shown in \fig{f:global.coords}. These three angles are defined as
 follows:
 \begin{description}
 %
@@ -353,7 +352,7 @@ Following \mad, the global position of an element is characterized by a vector $
   \end{pmatrix}
 \end{equation}
 The orientation of an element is described by a unitary rotation matrix $\bfW$. The column vectors
-of $\bfW$ are the unit vectors spanning the local coordinate axes in the order $(x, y, z)$. $\bfW$
+of $\bfW$ are the unit vectors spanning the machine coordinate axes in the order $(x, y, z)$. $\bfW$
 can be expressed in terms of the orientation angles $\theta$, $\phi$, and $\psi$ via the formula
 \begin{align}
   \bfW &= \bfR_{y}(\theta) \; \bfR_{x}(-\phi) \; \bfR_{z}(\psi) 
@@ -422,7 +421,7 @@ lattice and iteratively using the equations
     \label{wws}
 \end{align}
 $\bfL_i$ is the displacement vector for the $i$\Th element and matrix $\bfS_i$ is the rotation of
-the local reference system of the exit end with respect to the entrance end. For clarity, the
+the machine reference system of the exit end with respect to the entrance end. For clarity, the
 subscript $i$ in the equations below will be dripped. For all elements whose reference orbit through
 them is a straight line, the corresponding $\bfL$ and $\bfS$ are
 \begin{equation}
@@ -448,7 +447,7 @@ Where $L$ is the length of the element.
 \caption[Orientation of a Bend.] 
   {
 A) Rotation axes (bold arrows) for four different \vn{ref_tilt} angles of $\theta_t$ = 0, $\pm
-\pi/2$, and $\pi$. $(x_0, y_0, z_0)$ are the local coordinates at the entrance end of the bend with
+\pi/2$, and $\pi$. $(x_0, y_0, z_0)$ are the machine coordinates at the entrance end of the bend with
 the $z_0$ axis being directed into the page. Any rotation axis will be displaced by a distance of
 the bend radius \vn{rho} from the origin. B) The $(x, y, z)$ coordinates at the exit end of the bend
 for the same four \vn{ref_tilt} angles. In this case the bend angle is taken to be $\pi/2$.
@@ -463,7 +462,7 @@ for the same four \vn{ref_tilt} angles. In this case the bend angle is taken to 
 For a \vn{bend}, the axis of rotation is dependent upon the bend's \vn{ref_tilt} angle
 (\sref{s:offset}) as shown in \fig{f:tilt.bend}A. The axis of rotation points in the negative $y_0$
 direction for \vn{ref_tilt} = 0 and is offset by the bend radius \vn{rho}. Here $(x_0, y_0, z_0)$
-are the local coordinates at the entrance end of the bend with the $z_0$ axis being directed into
+are the machine coordinates at the entrance end of the bend with the $z_0$ axis being directed into
 the page in the figure.  For a non-zero \vn{ref_tilt}, the rotation axis is itself rotated about the
 $z_0$ axis by the value of \vn{ref_tilt}. \fig{f:tilt.bend}B shows the exit coordinates for four
 different values of \vn{ref_tilt} and for a bend angle \vn{angle} of $\pi/2$.  Notice that for a
@@ -496,10 +495,10 @@ Note: An alternative equation for \vn{\bfS} for a bend is
 \end{equation}
 
 The bend transformation above is so constructed that the transformation is equivalent to rotating
-the local coordinate system around an axis that is perpendicular to the plane of the bend. This
+the machine coordinate system around an axis that is perpendicular to the plane of the bend. This
 rotation axis is invariant under the bend transformation. For example, for $\theta_t = 0$ (or $\pi$)
-the $y$-axis is the rotation axis and the $y$-axis of the local coordinates before the bend will be
-parallel to the $y$-axis of the local coordinates after the bend as shown in \fig{f:tilt.bend}. That
+the $y$-axis is the rotation axis and the $y$-axis of the machine coordinates before the bend will be
+parallel to the $y$-axis of the machine coordinates after the bend as shown in \fig{f:tilt.bend}. That
 is, a lattice with only bends with $\theta_t = 0$ or $\pi$ will lie in the horizontal plane (this
 assuming that the $y$-axis starts out pointing along the $Y$-axis as it does by default).  For
 $\theta_t = \pm\pi/2$, the bend axis is the $x$-axis. A value of $\theta_t = +\pi/2$ represents a
@@ -510,7 +509,7 @@ downward pointing bend.
 \caption[Mirror and crystal geometry] {Mirror and crystal geometry.  The geometry shown here is
 appropriate for a \vn{ref_tilt} angle of $\theta_t = 0$.  $\theta_g$ is the bend angle of the
 incoming (entrance) ray, and $\alpha_b$ is the total bend angle of the reference trajectory. A)
-Geometry for a mirror or a Bragg crystal. Point $\calO$ is the origin of both the local coordinates
+Geometry for a mirror or a Bragg crystal. Point $\calO$ is the origin of both the machine coordinates
 just before and just after the reflection/diffraction. B) Geometry for a Laue crystal.  Point
 $\calO_{out}$ is the origin of the coordinates just after diffraction is displaced from the origin
 $\calO_{in}$ just before diffraction due to the finite thickness of the crystal. here the bend
@@ -561,7 +560,7 @@ reference orbit is modeled as a zero length bend with $\bftilde L = (0, 0, 0)$, 
 \fig{f:mirror}A. Shown in the figure is the geometry appropriate for a \vn{ref_tilt} angle of
 $\theta_t = 0$ (the rotation axis is here the $y$-axis). Since the mirror or crystal element is
 modeled to be of zero length, the origin points (marked $\calO$ in the figure) of the entrance and
-exit local coordinates are the same. For Laue diffraction, the only difference is that $\bftilde L$
+exit machine coordinates are the same. For Laue diffraction, the only difference is that $\bftilde L$
 is non-zero due to the finite thickness of the crystal as shown in \fig{f:mirror}B. This results in
 a separation between the entrance coordinate origin $\calO_{in}$ and the exit coordinate origin
 $\calO_{out}$.
@@ -580,9 +579,9 @@ perpendicular to the surface.
 For Laue diffraction, the user has the option of using the undiffracted beam (shown in red) as the
 reference trajectory.
 
-The orientation of the exit coordinates (the local coordinates after the reflection) are only
+The orientation of the exit coordinates (the machine coordinates after the reflection) are only
 affected by the element's \vn{ref_tilt} and bend angle parameters and is independent of all other
-parameters such as the radius of curvature of the surface, etc. The local $z$-axis of the entrance
+parameters such as the radius of curvature of the surface, etc. The machine $z$-axis of the entrance
 coordinates along with the $z$-axis of the exit coordinates define a plane which is called the
 element's \vn{bend plane}.  For a mirror, the graze angle is a parameter supplied by the user. For a
 crystal, the Bragg angles are calculated so that the reference trajectory is in the middle of the
@@ -659,7 +658,7 @@ The \vn{element body} coordinates are the coordinate system attached to an eleme
 misalignments, where \vn{``misalignments''} are here defined to be any offset, or rotation
 (\sref{s:offset}), the \vn{machine} coordinates (\sref{s:ref}) and \vn{element body} coordinates
 are the same. With misalignments, the transformation between \vn{machine} and \vn{element body}
-coordinates depends upon whether the local coordinate system is straight (\sref{s:straight.mis}) or
+coordinates depends upon whether the machine coordinate system is straight (\sref{s:straight.mis}) or
 bent (\sref{s:bend.mis}).
 
 When tracking a particle through an element, the particle starts at the \vn{nominal}
@@ -851,7 +850,7 @@ For charged particles (more correctly, for everything but photons (\sref{s:photo
   \Bf r(s) = (x, p_x, y, p_y, z, p_z)
 \end{equation}
 The longitudinal position $s$ is the independent variable instead of the time. $x$ and $y$, are the
-transverse coordinates of the particle as shown in~\fig{f:local.coords}A. Note that $x$ and $y$ are
+transverse coordinates of the particle as shown in~\fig{f:machine.coords}A. Note that $x$ and $y$ are
 independent of the position of the reference particle.
 
 The phase space momenta $p_x$ and $p_y$ are normalized by the reference (sometimes called the
@@ -893,7 +892,7 @@ time, $z$ is the longitudinal distance between the particle and the reference pa
 particle.
 
 Do not confuse the phase space $z$ with the $z$ that is the particle's longitudinal coordinate in
-the local reference frame as shown in \fig{f:local.coords}. By construction, this latter $z$ is
+the machine reference frame as shown in \fig{f:machine.coords}. By construction, this latter $z$ is
 always zero.
 
 Notice that if a particle gets an instantaneous longitudinal kick so that $\beta$ is discontinuous
