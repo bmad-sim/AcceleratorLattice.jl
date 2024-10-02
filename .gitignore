@@ -11,7 +11,6 @@ manual/AcceleratorLattice.bcf
 manual/AcceleratorLattice.blg
 manual/*.aux
 docs/build/
-/Manifest.toml
 .DS_Store
 .vscode
 *~

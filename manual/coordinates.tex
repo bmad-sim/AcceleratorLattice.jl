@@ -15,23 +15,22 @@ building the accelerator is in may be described using \vn{global} coordinates.
 is independent of the accelerator.  The \vn{machine} curvilinear coordinate system follows the bends
 of the accelerator.  Each lattice element has \vn{element body} coordinates which, if the element is
 not ``misaligned'' is the same as the \vn{machine} coordinates. 
-\vn{Local} coordinates are the same as \vn{machine} coordinates
-except that $s = 0$ in \vn{machine} coordinates is at the beginning of the non-misaligned
-element and $s = 0$ in machine coordinates is at the beginning
-of the line. The $x=y=0$ curved line of the
+The $x=y=0$ curved line of the
 machine coordinate system is known as the ``reference orbit''.}
   \label{f:coords}
 \end{figure}
 
-It is not convenient to describe the position of a particle beam using the \vn{global} coordinate system so
+It is inconvenient to describe the position of a particle beam using the 
+\vn{global} coordinate system so
 a ``\vn{machine}'' coordinate system is used (\sref{s:machine.coords}).  This curvilinear coordinate
 system defines the nominal position of the lattice elements.  The relationship between the
 \vn{machine} and \vn{global} coordinate systems is described in \sref{s:global}.
 
 The ``nominal'' position of a lattice element is the position of the element without any
-position and orientation shifts (\sref{s:align.g}) which are sometimes referred to as ``misalignments''. 
+position and orientation shifts (\sref{s:align.g}) 
+which are sometimes referred to as ``misalignments''. 
 Each lattice element has ``\vn{element body}'' (or just ``\vn{body}'') 
-coordinates which are attached to the physical element. The electric and magnetic
+coordinates which are attached to the physical element and the electric and magnetic
 fields of an element are described with respect to \vn{body} coordinates.  If there are no
 misalignments, the \vn{body} coordinates are aligned with the 
 \vn{machine} coordinates.
@@ -53,8 +52,8 @@ machine coordinate system is known as the ``\vn{reference orbit}''.
 \begin{figure}[tb]
   \centering
   \includegraphics[width=6in]{machine-coords.pdf}
-  \caption[The machine Reference System.]
-{The machine reference coordinate system. By construction, a particle's $z$ coordinate is zero.  This
+  \caption[Reference coordinate system.]
+{The reference coordinate system. By construction, a particle's $z$ coordinate is zero.  This
 is not to be confused with the phase space $z$ coordinate (\sref{s:phase.space}). The curvature
 vector $\bfg$ lies in the $x$-$y$ plane and has a magnitude of $1/\rho$ where $\rho$ is the bending
 radius. A) The $z$-axis will normally be parallel to the $s$-axis. B) For \vn{reversed} elements it
@@ -71,7 +70,8 @@ position plus a transverse $(x,y)$ offset. The point $\calO$ on the reference or
 origin of the machine $(x, y, z)$ coordinate system with the $z$--axis tangent to the reference
 orbit. The $z$--axis will generally be pointing in the direction of increasing $s$
 (\fig{f:machine.coords}A) but, as discussed below, will point counter to $s$ for elements that are
-\vn{reversed} (\fig{f:machine.coords}B). The $x$ and $y$--axes are perpendicular to the reference
+longitudinally \vn{reversed} in orientation (\fig{f:machine.coords}B). 
+The $x$ and $y$--axes are perpendicular to the reference
 orbit and, by construction, the particle is always at $z = 0$. The coordinate system so constructed
 is called the \vn{``machine coordinate system''} when there is need to distinguish it from the 
 \vn{``element body coordinate system''}
@@ -80,12 +80,9 @@ for each branch (\sref{s:branch.def}) of a lattice.
 
 \index{x_offset}\index{y_offset}
 \index{x_rot}\index{y_rot}\index{wiggler}
-Notice that, in a \vn{wiggler}, the reference orbit, which is a straight line, does {\em not}
-correspond to the orbit that any actual particle could travel. Typically the physical element is
-centered with respect to the reference curve. However, by specifying offsets, rotations (See
-\sref{s:offset}), the physical element may be arbitrarily shifted with respect to its reference
-curve. Shifting a physical magnet with respect to its reference curve generally means that the
-reference curve does {\em not} correspond to the orbit that any actual particle could travel.
+The reference orbit may not correspond to the orbit that any actual particle could travel.
+A common example is the \vn{wiggler} element where particles always oscillate about the reference
+orbit which is a straight line.
 
 Do not confuse this reference orbit (which defines the machine coordinate system) with the reference
 orbit about which the transfer maps are calculated (\sref{s:twiss}). The former is fixed by the
@@ -177,7 +174,8 @@ greater $s$) from the beginning element than the \vn{upstream} end of the elemen
 in the $+s$ direction, so particles will enter an element at the upstream end and exit at the
 downstream end.
 
-Normally, the \vn{upstream} end is the same as the element's \vn{entrance} end (\fig{f:ele.coord.frame}) and the
+Normally, the \vn{upstream} end is the same as the element's \vn{entrance} end 
+(\fig{f:ele.coord.frame}) and the
 \vn{downstream} end is the same as the element's \vn{exit} end. However, if an element is reversed
 (\sref{s:ele.reverse}), the element's \vn{exit} end will be \vn{upstream} end and the element's
 \vn{entrance} end will be the \vn{downstream} end. That is, for a reversed element, particles 
@@ -244,13 +242,13 @@ setting \vn{x_rot} to \vn{pi}) would also produce a plausible geometry.
 {The machine reference coordinates in a \vn{Patch} element. The \vn{patch} element, shown
 schematically as an irregular quadrilateral, is sandwiched between elements \vn{ele_a} and
 \vn{ele_b}. \vn{L} is the length of the \vn{patch}. In this example, the \vn{patch} has a finite
-\vn{y_rot}. 
+\vn{y_rot}.}
   \label{f:patch.prob}
 \end{figure}
 
 %-----------------------------------------------------------------------------
 %-----------------------------------------------------------------------------
-\subsection{Patch Element Local Coordinates}
+\subsection{Patch Element Coordinates}
 \label{s:patch.prob}
 \index{patch}
 
@@ -358,11 +356,13 @@ can be expressed in terms of the orientation angles $\theta$, $\phi$, and $\psi$
   \bfW &= \bfR_{y}(\theta) \; \bfR_{x}(-\phi) \; \bfR_{z}(\psi) 
   \label{wwww} \\
   &= \begin{pmatrix}
-    \cos\theta \cos\psi - \sin\theta \sin\phi \sin\psi & -\cos\theta \sin\psi - \sin\theta \sin\phi \cos\psi & 
-                                                                                          \sin\theta \cos\phi \\
+    \cos\theta \cos\psi - \sin\theta \sin\phi \sin\psi & 
+        -\cos\theta \sin\psi - \sin\theta \sin\phi \cos\psi & 
+         \sin\theta \cos\phi \\
     \cos\phi \sin\psi & \cos\phi \cos\psi & \sin\phi \\
-   -\cos\theta \sin\phi \sin\psi - \sin\theta \cos\psi & \sin\theta \sin\psi - \cos\theta \sin\phi \cos\psi & 
-                                                                                          \cos\theta \cos\phi 
+   -\cos\theta \sin\phi \sin\psi - \sin\theta \cos\psi & 
+         \sin\theta \sin\psi - \cos\theta \sin\phi \cos\psi & 
+         \cos\theta \cos\phi 
   \end{pmatrix}
   \nonumber
 \end{align}
@@ -567,8 +567,10 @@ $\calO_{out}$.
 
 In all cases, the total bending angle is
 \begin{align}
-  \alpha_b &= \text{bragg_angle_in} + \text{bragg_angle_out} &&\text{! Crystal, graze_angle_in} = 0 \CRNO
-  \alpha_b &= \text{graze_angle_in} + \text{graze_angle_out} &&\text{! Crystal, graze_angle_in} \ne 0 \CRNO
+  \alpha_b &= \text{bragg_angle_in} + \text{bragg_angle_out} &&
+                  \text{! Crystal, graze_angle_in} = 0 \CRNO
+  \alpha_b &= \text{graze_angle_in} + \text{graze_angle_out} &&
+                   \text{! Crystal, graze_angle_in} \ne 0 \CRNO
   \alpha_b &= 2 \, \text{graze_angle}                        &&\text{! Mirror}
   \label{agg}
 \end{align}
@@ -624,7 +626,8 @@ analogous to \Eqs{swww}. Explicitly:
       \text{dx_origin} \\ \text{dy_origin} \\ \text{dz_origin}
     \end{pmatrix}
     \CRNO
-  \bfS &= \bfR_{y} (\text{dtheta_origin}) \; \bfR_{-x} (\text{dphi_origin}) \; \bfR_{z} (\text{dpsi_origin})
+  \bfS &= \bfR_{y} (\text{dtheta_origin}) \; \bfR_{-x} (\text{dphi_origin}) \; 
+    \bfR_{z} (\text{dpsi_origin})
 \end{align}
 
 %-----------------------------------------------------------------------------
@@ -717,7 +720,8 @@ For \vn{rbend} and \vn{sbend} elements there is no \vn{tilt} parameter.  Rather,
 \vn{roll} parameter and a \vn{ref_tilt} parameter. The latter affects both the reference orbit and
 the bend position (\sref{s:bend.orient}). Furthermore, \vn{ref_tilt} is calculated with respect to
 the coordinates at the beginning of the bend while, like straight elements, \vn{roll}, \vn{x_rot},
-\vn{y_rot}, and offsets are calculated with respect to the center of the bend. The different reference frame used
+\vn{y_rot}, and offsets are calculated with respect to the center of the bend. 
+The different reference frame used
 for \vn{ref_tilt} versus everything else means that five transformations are needed to get from the
 machine frame to the element body frame (see \Eq{llee}). Symbolically:
 \begin{equation}
@@ -737,7 +741,8 @@ machine frame or an element frame so hence the use of a different symbol $\Omega
 the $\Lambda_\text{mid} \longrightarrow \Omega_\text{mid}$ transformation is
 \begin{align}
   \bfL &= \bfL_\text{off} + 
-    \left[ \bfR_z(\text{roll}) - \Bf1 \right] \; \bfR_z(\theta_t) \; \bfR_{y}(\alpha_b/2) \; \bfL_c \CRNO
+    \left[ \bfR_z(\text{roll}) - \Bf1 \right] \; \bfR_z(\theta_t) \; \bfR_{y}(\alpha_b/2) \; 
+      \bfL_c \CRNO
   \bfS &= \bfR_{y}(\text{y_rot}) \; \bfR_{x}(\text{x_rot}) \; \bfR_z(\text{roll})
   \label{lcmis}
 \end{align}
@@ -775,8 +780,8 @@ $\theta_t \rightarrow 0$ and $\alpha_b \rightarrow L/\rho$.
 
 Notice that with this definition of how elements are misaligned, the position of the center of a
 misaligned element depends only on the offsets and \vn{roll}, and is independent of any rotations. 
-Also the orientation of an element depends only on the \vn{x_rot}, \vn{y_rot}, \vn{roll}, and \vn{ref_tilt}, and is
-independent of the offsets.
+Also the orientation of an element depends only on the \vn{x_rot}, \vn{y_rot}, \vn{roll}, 
+and \vn{ref_tilt}, and is independent of the offsets.
 
 %-----------------------------------------------------------------------------
 \section{Phase Space Coordinates}
@@ -931,8 +936,8 @@ identical.
 
 \index{paraxial approximation}
 \index{bmad_standard!tracking method}
-The relationship, between the phase space momenta and the slopes $x' \equiv dx/ds$ and $y' \equiv dy/ds$
-is
+The relationship, between the phase space momenta and the slopes $x' \equiv dx/ds$ and 
+$y' \equiv dy/ds$ is
 \begin{align}
   x' &= \frac{p_x}{\sqrt{(1 + p_z)^2 - p_x^2 - p_y^2}} \, (1 + g x) \\
   y' &= \frac{p_y}{\sqrt{(1 + p_z)^2 - p_x^2 - p_y^2}} \, (1 + g x) 
