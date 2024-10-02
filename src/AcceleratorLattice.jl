@@ -20,10 +20,10 @@ module AcceleratorLattice
 
   # AtomicAndPhysicalConstants
 
-  setunits()
+  setunits(PARTICLE_PHYSICS, print_units = false)
 
   function __init__()
-    setunits()
+    setunits(PARTICLE_PHYSICS, print_units = false)
   end
 
   for name in names(AtomicAndPhysicalConstants)
