@@ -27,13 +27,14 @@ There are three main sources of documentation of the \accellat package.
 One source is this PDF manual which gives in-depth documentationon. 
 A second source is the web based introduction and overview guide.
 Finally, functions, structs and other objects are documented in the code files themselves. 
-Taking advantage of Julia's built-in documentation system, this code-file documentation can be accessed
-via using Julia's REPL.
+Taking advantage of Julia's built-in documentation system, this code-file documentation 
+can be accessed via using Julia's REPL.
 
 %---------------------------------------------------------------------------
 \section{Brief History}
 
-\scibmad has it's origins in the "\Bmad"\cite{Sagan:Bmad2006} ecosystem of toolkits and programs developed over several
+\scibmad has it's origins in the "\bmad"\cite{Sagan:Bmad2006} ecosystem of toolkits and programs 
+developed over several
 decades at Cornell University. Although the two share a similar name, {\bf the code of the two are
 completely separate}. That being said, the development of \accellat is heavily influenced by the 
 experience --- both good and bad --- in the development and use of  \bmad as well as experience
@@ -222,9 +223,9 @@ of the \vn{x-axis} or \vn{y-axis} respectively. This makes the notation consiste
 the different ways to specify apertures (compare with \vn{Mask} element syntax.).
 %
 \item
-For misalignment of a Bend element, with the \accellat package the reference point is at the center 
-of the chord between the entrance and exit end. 
-Under \bmad, the reference point is at the center of the reference trajectory arc between the entrance
+\accellat defines the reference point for misalignment of a Bend element as the center 
+of the chord between the entrance and exit end points. 
+With \bmad, the reference point is at the center of the reference trajectory arc between the entrance
 and the exit. An additional difference is that the \bmad \vn{roll} misalignment is called \vn{tilt}
 under \accellat.
 %
