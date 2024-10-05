@@ -1,4 +1,7 @@
 #---------------------------------------------------------------------------------------------------
+# Defines the types used throughout the package.
+
+#---------------------------------------------------------------------------------------------------
 # BeamLineItem
 
 """
@@ -201,9 +204,9 @@ Struct holding information on a single `EleParameterGroup` group.
 Used in constructing the `ELE_PARAM_GROUP_INFO` Dict.
 
 ## Contains
-- `description::String`      - Descriptive string
-- `bookkeeping_needed::Bool  - If true, this indicates there exists a bookkeeping function for the 
-  parameter group that needs to be called if a parameter of the group is changed.
+• `description::String`      - Descriptive string. \\
+• `bookkeeping_needed::Bool  - If true, this indicates there exists a bookkeeping function for the 
+  parameter group that needs to be called if a parameter of the group is changed. \\
 """
 struct EleParameterGroupInfo
   description::String
@@ -277,7 +280,7 @@ Vacuum chamber aperture struct.
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
   x_limit::Vector = [NaN, NaN]
   y_limit::Vector = [NaN, NaN]
-  aperture_shape::ApertureShape = ELLIPTICAL
+  aperture_shape::typeof(ApertureShape) = ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
   misalignment_moves_aperture::Bool = true
 end
@@ -453,7 +456,7 @@ end
 Vector of Electric multipoles.
 
 ## Field
-• `vec::Vector{EMultipole1}`  - Vector of multipoles.
+• `vec::Vector{EMultipole1}`  - Vector of multipoles. \\
 """
 @kwdef mutable struct EMultipoleGroup <: EleParameterGroup
   vec::Vector{EMultipole1} = Vector{EMultipole1}([])         # Vector of multipoles. 
@@ -608,9 +611,9 @@ end
 
 ## Fields
 • `is_on::Bool`         - Turns on or off the fields in an element. When off, the element looks like a drift. \\
-• `field_master::Bool`  - The setting of this matters when there is a change in reference energy.
+• `field_master::Bool`  - The setting of this matters when there is a change in reference energy. 
 In this case, if `field_master` = true, magnetic multipoles and Bend unnormalized fields will be held constant
-and normalized field strengths willbe varied. Vice versa when `field_master` is `false`.
+and normalized field strengths willbe varied. Vice versa when `field_master` is `false`. \\
 """ MasterGroup
 
 @kwdef mutable struct MasterGroup <: EleParameterGroup
@@ -893,10 +896,10 @@ Lattice branch structure.
     pdict::Dict{Symbol,Any}
 
 ## Standard pdict fields:
-- `:lat`        - Pointer to containing lattice.
-- `:type`       - `MultipassLordBranch`, `SuperLordBranch`, `GovernorBranch`, or `TrackingBranch`
-- `:ix_branch`  - Index of branch in `lat.branch[]` array.
-- `:geometry`   - `OPEN` or `CLOSED`.
+• `:lat`        - Pointer to containing lattice. \\
+• `:geometry`   - `OPEN` or `CLOSED`. \\
+• `:type`       - `MultipassLordBranch`, `SuperLordBranch`, `GovernorBranch`, or `TrackingBranch`.  \\
+• `:ix_branch`  - Index of branch in `lat.branch[]` array. \\
 
 ## Notes
 The constant `NULL_BRANCH` is defined as a placeholder for signaling the absense of a branch.
@@ -959,10 +962,11 @@ abstract type AbstractLat end
 
 Lattice structure.
 
-## Components:
--  `name::String`
--  `branch::Vector{Branch}`
--  `pdict::Dict{Symbol,Any}`
+## Fields
+
+•  `name::String`. \\
+•  `branch::Vector{Branch}`. \\
+•  `pdict::Dict{Symbol,Any}`. \\
 """
 mutable struct Lat <: AbstractLat
   name::String
@@ -978,9 +982,9 @@ end
 
 An item in a `BeamLine.line[]` array that represents a lattice element.
 
-### Components
-- `ele::Ele`
-- `pdict::Dict{Symbol,Any}`
+## Fields
+• `ele::Ele` \\
+• `pdict::Dict{Symbol,Any}` \\
 
 Essentially, `BeamLineEle` is an `Ele` along with some extra information stored in the `pdict` Dict
 component. The extra information is the element's orientation and multipass state.
@@ -1001,16 +1005,17 @@ end
 
 Structure holding a beamline.
 
-### Components
-- `id::String`                  # ID used for multipass bookkeeping.
-- `line::Vector{BeamLineItem}`
-- `pdict::Dict{Symbol,Any}`
+## Fields
 
-Standard components are:
-- `name`          - String to be used for naming the lattice branch if this is a root branch.
-- `orientation`   - +1 or -1
-- `geometry`      - OPEN or CLOSED.
-- `multipass`     - true or false
+• `id::String`                  - ID stringused for multipass bookkeeping. \\
+• `line::Vector{BeamLineItem}`  - Vector of beam line components. \\
+• `pdict::Dict{Symbol,Any}`     - Extra information. See below. \\
+
+Standard components of `pdict` are:
+• `name`          - String to be used for naming the lattice branch if this is a root branch. \\
+• `orientation`   - +1 or -1. \\
+• `geometry`      - `OPEN` or `CLOSED`. \\
+• `multipass`     - `true` or `false`. \\
 """
 mutable struct BeamLine <: BeamLineItem
   id::String

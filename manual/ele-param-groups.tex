@@ -84,13 +84,6 @@ The \vn{enum_add} function is used to add values to an existing enum group. See 
 Below is a list of enum groups defined in \accellat. 
 \begin{description}
 %
-\item[ApertureShape] --- The shape of an aperture.\Newline 
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  RECTANGULAR & --- Rectangular shape \\
-  ELLIPTICAL  & --- Elliptical shape \\
-\end{tabular}
-%
 \item[BendType] --- Type of Bend element magnet.\Newline
 \hspace*{-20pt}
 \begin{tabular}{ll}
@@ -174,6 +167,33 @@ Below is a list of enum groups defined in \accellat.
 \end{tabular}
 %
 \end{description}
+
+%---------------------------------------------------------------------------------------------------
+\section{Holy Traits}
+\label{s:holy.traits}
+
+\vn{Holy traits} (named after Tim Holy) are a design pattern in Julia that that behave similarly
+to \vn{enums} (\sref{s:enum}). A Holy trait group consists of an abstract type with a set of values
+(traits) which are structs that inherit from the abstract type.
+
+The advantage of Holy traits is that they can be used with function dispatch. The disadvantage is
+that the same Holy trait value name cannot be used with multiple groups.
+
+There is a convenience function \vn{holy_traits} which will define a traits group, export the names,
+and create a docstring for the group. Values can be added to an existing group by defining a 
+new struct that inherits from the group abstract type.
+
+\begin{description}
+%
+\item[ApertureShape] --- The shape of an aperture.\Newline 
+\hspace*{-20pt}
+\begin{tabular}{ll}
+  RECTANGULAR & --- Rectangular shape \\
+  ELLIPTICAL  & --- Elliptical shape \\
+\end{tabular}
+%
+\end{description}
+
 
 %---------------------------------------------------------------------------------------------------
 \section{AlignmentGroup}
