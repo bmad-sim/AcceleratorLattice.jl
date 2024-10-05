@@ -270,14 +270,14 @@ Vacuum chamber aperture struct.
 • `x_limit::Vector`                         - `[x-, x+]` Limits in x-direction. \\
 • `y_limit::Vector`                         - `[y-, y+]` Limits in y-direction. \\
 • `aperture_shape::ApertureShape.T`         - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
-• `aperture_at::BodyLoc.T`                  - Where aperture is. \\
+• `aperture_at::BodyLoc.T`                  - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
 • `misalignment_moves_aperture::Bool`       - Do element misalignments move the aperture? \\
 """ ApertureGroup
 
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
   x_limit::Vector = [NaN, NaN]
   y_limit::Vector = [NaN, NaN]
-  aperture_shape::ApertureShape.T = ApertureShape.ELLIPTICAL
+  aperture_shape::ApertureShape = ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
   misalignment_moves_aperture::Bool = true
 end

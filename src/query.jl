@@ -88,10 +88,11 @@ end
 
 "Geometry type. Returns a EleGeometrySwitch"
 function ele_geometry(ele::Ele)
-  if ele isa Bend; return Circular; end
-  if ele isa Patch; return PatchLike; end
-  if typeof(ele) <: Union{Marker, Mask, Multipole}; return ZeroLength; end
-  if ele isa Girder; return GirderLike; end
+  if ele isa Bend; return CIRCULAR; end
+  if ele isa Patch; return PATCH_GEOMETRY; end
+  if typeof(ele) <: Union{Marker, Mask, Multipole}; return ZERO_LENGTH; end
+  if ele isa Girder; return GIRDER_GEOMETRY; end
+  if ele isa Crystal; return CRYSTAL_GEOMETRY; end
   return Straight
 end
 

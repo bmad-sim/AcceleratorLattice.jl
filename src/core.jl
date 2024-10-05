@@ -19,12 +19,15 @@ abstract type Error end
 
 """
    E_tot(species::Species; pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
-Returns the total energy (in `eV`). One and only one of the optional arguments pc, β, E_kinetic, or γ should be set.
+   
+Returns the total energy (in `eV`).
+One and only one of the optional arguments pc, β, E_kinetic, or γ should be set.
 
 Also see the functions `pc`, `β`, `β1`, `E_kinetic`, and `γ`
 """ E_tot 
 
-function E_tot(species::Species; pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+function E_tot(species::Species; 
+                    pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
   m = mass(species)
 
   if !isnan(pc)
@@ -45,12 +48,15 @@ end
 
 """
    pc(species::Species; E_tot::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
-Returns the total energy (in `eV`). One and only one of the optional arguments E_tot, β, E_kinetic, or γ should be set.
+   
+Returns the total energy (in `eV`). 
+One and only one of the optional arguments E_tot, β, E_kinetic, or γ should be set.
 
 Also see the functions `E_tot`, `β`, `β1`, `E_kinetic`, and `γ`
 """ pc
 
-function pc(species::Species; E_tot::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+function pc(species::Species; 
+                  E_tot::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
   m = mass(species)
 
   if !isnan(E_tot)
@@ -71,12 +77,15 @@ end
 
 """
    β(species::Species; E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
-Returns the velocity `β` = `v/c`. One and only one of the optional arguments E_tot, pc, E_kinetic, or γ should be set.
+   
+Returns the velocity `β` = `v/c`. 
+One and only one of the optional arguments E_tot, pc, E_kinetic, or γ should be set.
 
 Also see the functions `E_tot`, `pc`, `β1`, `E_kinetic`, and `γ`
 """ β
 
-function β(species::Species; E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+function β(species::Species; 
+                E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
   m = mass(species)
 
   if !isnan(E_tot)
@@ -105,7 +114,8 @@ One and only one of the optional arguments E_tot, pc, E_kinetic, or γ should be
 Also see the functions `E_tot`; `pc`, `β`, `E_kinetic`, and `γ`
 """ β1
 
-function β1(species::Species; E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
+function β1(species::Species; 
+                E_tot::Number = NaN, pc::Number = NaN, E_kinetic::Number = NaN, γ::Number = NaN)
   m = mass(species)
 
   if !isnan(E_tot)
@@ -130,13 +140,15 @@ end
 
 """
    E_kinetic(species::Species; E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, γ::Number = NaN)
+   
 Returns the kinetic energy in `eV`.
 One and only one of the optional arguments E_tot, pc, β, or γ should be set.
 
 Also see the functions `E_tot`; `pc`, `β`, `β1`, and `γ`
 """ E_kinetic
 
-function E_kinetic(species::Species; E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, γ::Number = NaN)
+function E_kinetic(species::Species; 
+                          E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, γ::Number = NaN)
   m = mass(species)
 
   if !isnan(pc)
@@ -157,12 +169,15 @@ end
 
 """
    γ(species::Species; E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN)
-Returns the total energy (in `eV`). One and only one of the optional arguments E_tot, pc, β, or E_kinetic should be set.
+   
+Returns the total energy (in `eV`). 
+One and only one of the optional arguments E_tot, pc, β, or E_kinetic should be set.
 
 Also see the functions `pc`, `β`, `β1`, `E_kinetic`, and `γ`
 """ γ 
 
-function γ(species::Species; E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN)
+function γ(species::Species; 
+               E_tot::Number = NaN, pc::Number = NaN, β::Number = NaN, E_kinetic::Number = NaN)
   m = mass(species)
 
   if !isnan(pc)

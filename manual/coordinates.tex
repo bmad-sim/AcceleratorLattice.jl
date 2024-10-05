@@ -112,7 +112,7 @@ exit frame may be arbitrarily positioned with respect to the entrance frame.}
 \index{sbend}\index{rbend}
 \index{crystal}\index{mirror}\index{entrance_end}
 \index{exit_end}\index{patch}\index{floor_shift}
-One way of thinking about the reference orbit and the machine coordinates is to imagine that each
+One way of thinking about the reference orbit and machine coordinates is to imagine that each
 element is like a LEGO block with an ``\vn{entrance}'' and an ``\vn{exit}'' coordinate frame as
 illustrated in \fig{f:ele.coord.frame}\footnote
   {
@@ -120,16 +120,18 @@ Thanks to Dan Abell for this analogy.
   }. 
 These coordinate frames are attached to the element. that is, things like electric and magnetic
 fields, apertures, etc., are described with respect to the entrance and exit coordinates.  Thus, for
-example, the \vn{e1} edge of a bend (\sref{s:bend}) is always at the \vn{entrance} face and the
+example, the \vn{e1} edge of a \vn{Bend} (\sref{s:bend}) is always at the \vn{entrance} face and the
 \vn{e2} is always at the \vn{exit} face. Most elements have a ``straight'' geometry as shown in
 \fig{f:ele.coord.frame}A. That is, the reference orbit through the element is a straight line
-segment with the $x$ and $y$ axes always pointing in the same direction.  For a \vn{bend} element
+segment with the $x$ and $y$ axes always pointing in the same direction.  For a \vn{Bend} element
 (\sref{s:bend}), the reference orbit is a segment of a circular arc as shown in
 \fig{f:ele.coord.frame}B. With the \vn{ref_tilt} parameter of a bend set to zero, the rotation axis
-between the entrance and exit frames is parallel to the $y$-axis (\sref{s:global}). For \vn{patch}
-(\sref{s:patch}), and \vn{floor_shift} (\sref{s:floor.ele}) elements, the exit face can can
-arbitrarily oriented with respect to the entrance end. In this case, the reference orbit between the
-entrance and exit faces is not defined.
+between the entrance and exit frames is parallel to the $y$-axis (\sref{s:global}). For \vn{Patch}
+(\sref{s:patch}), and \vn{floor_shift} (\sref{s:floorshift}) elements, the exit face can can
+arbitrarily oriented with respect to the entrance end. For the \vn{FloorShift} element the
+interior reference orbit between the
+entrance and exit faces is not defined. For the \vn{Patch} element, the interior reference orbit 
+is dependent upon certain \vn{Patch} element parameter settings.
 
 %-----------------------------------------------------------------------------
 \subsection{Reference Orbit and Machine Coordinates Construction}
@@ -156,13 +158,14 @@ is always out of the page.}
 
 \index{root branch}
 Assuming for the moment that there are no \vn{fiducial} elements present, the construction of the
-reference orbit starts at the \vn{beginning_ele} element (\sref{s:begin.ele}) at the start of a
+reference orbit starts at the \vn{BeginningEle} element (\sref{s:begin.ele}) at the start of a
 branch. If the branch is a \vn{root} branch (\sref{s:lattice.def}), The orientation of the beginning
-element within the global coordinate system (\sref{s:coords}) can be set via the appropriate
+element within the global coordinate system (\sref{s:coords}) can be fixed by setting 
+FloorPositionGroup parameters (\sref{floor.g}
 positioning statements (\sref{s:beginning}). If the branch is not a \vn{root} branch, the position
 of the beginning element is determined by the position of the \vn{fork} or \vn{photon_fork} element
 from which the branch forks from. Unless set otherwise in the lattice file, $s = 0$ at the
-\vn{beginning_ele} element.
+\vn{BeginningEle} element.
 
 If there are \vn{fiducial} elements, the machine coordinates are constructed beginning at these
 elements.
@@ -215,8 +218,8 @@ case that a reflection patch is needed between reversed and unreversed elements
 Notes:
 \begin{itemize}
 \item
-If the first element after the \vn{beginning_ele} element at the start of a branch is reversed, the
-\vn{beginning_ele} element will be marked as reversed so that a reflection patch is not needed in
+If the first element after the \vn{BeginningEle} element at the start of a branch is reversed, the
+\vn{BeginningEle} element will be marked as reversed so that a reflection patch is not needed in
 this circumstance.
 \item
 Irrespective of whether elements are reversed or not, the machine $(x,y,z)$ coordinate system
@@ -591,11 +594,11 @@ Darwin curve. Calculation of the Bragg angles for a crystal is given in
 Section~\sref{s:crystal.ref}.
 
 %-----------------------------------------------------------------------------
-\subsection{Patch and Floor_Shift Elements Entrance to Exit Transformation}
+\subsection{Patch and FloorShift Elements Entrance to Exit Transformation}
 \label{s:patch.coords}
 
-\index{patch!coordinate transformation}\index{floor_shift!coordinate transformation}
-For \vn{patch} (\sref{s:patch}) and \vn{floor_shift} (\sref{s:floor.ele}) elements, the shift in the
+\index{patch!coordinate transformation}\index{floorshift!coordinate transformation}
+For \vn{patch} (\sref{s:patch}) and \vn{FloorShift} (\sref{s:floor.ele}) elements, the shift in the
 exit end reference coordinates is given by \Eqs{vwlv} and \eq{wws} with
 \begin{align}
   \bfL &= 
@@ -607,10 +610,10 @@ exit end reference coordinates is given by \Eqs{vwlv} and \eq{wws} with
   \label{swww}
 \end{align}
 
-The difference here between \vn{patch} and \vn{floor_shift} elements is that, with a \vn{patch}
-element, the shift is relative to the exit end of the previous element while, for a \vn{floor_shift}
+The difference here between \vn{patch} and \vn{SloorShift} elements is that, with a \vn{patch}
+element, the shift is relative to the exit end of the previous element while, for a \vn{FloorShift}
 element, the shift is relative to the reference point on the origin element specified by the
-\vn{origin_ele} parameter of the \vn{floor_shift}.
+\vn{origin_ele} parameter of the \vn{FloorShift}.
 
 %-----------------------------------------------------------------------------
 \subsection{Fiducial and Girder Elements Origin Shift Transformation}
