@@ -22,17 +22,17 @@ The parmeters groups are:
 {\tt
 \begin{tabular}{llll} \toprule
   {\it Group}        & {\it Section}         & {\it Group}      & {\it Section}         \\ \midrule
- AlignmentGroup      & \sref{s:align.g}      & ApertureGroup    & \sref{s:apert.g}      \\
- BMultipoleGroup     & \sref{s:bmult.g}      & BeamBeamGroup    & \sref{s:bb.g}         \\
- BendGroup           & \sref{s:bend.g}       & EMultipoleGroup  & \sref{s:emult.g}      \\
- FloorPositionGroup  & \sref{s:floor.g}      & GirderGroup      & \sref{s:girder.g}     \\
- InitParticleGroup   & \sref{s:initp.g}      & LCavityGroup     & \sref{s:lcav.g}       \\
- LengthGroup         & \sref{s:length.g}     & LordSlaveGroup   & \sref{s:lord.slave.g} \\
- MasterGroup         & \sref{s:master.g}     & PatchGroup       & \sref{s:patch.g}      \\
- RFFieldGroup        & \sref{s:rffield.g}    & RFGroup          & \sref{s:rf.g}         \\
- RFMasterGroup       & \sref{s:rfmaster.g}   & ReferenceGroup   & \sref{s:ref.g}        \\
- SolenoidGroup       & \sref{s:sol.g}        & StringGroup      & \sref{s:string.g}     \\
- TrackingGroup       & \sref{s:track.g}      & TwissGroup       & \sref{s:twiss.g}      \\
+ AlignmentGroup      & \sref{s:align.g}      & LordSlaveGroup      & \sref{s:lord.slave.g} \\
+ ApertureGroup       & \sref{s:apert.g}      & MasterGroup         & \sref{s:master.g}     \\
+ BMultipoleGroup     & \sref{s:bmult.g}      & PatchGroup          & \sref{s:patch.g}      \\ 
+ BeamBeamGroup       & \sref{s:bb.g}         & RFFieldGroup        & \sref{s:rffield.g}    \\
+ BendGroup           & \sref{s:bend.g}       & RFGroup             & \sref{s:rf.g}         \\ 
+ EMultipoleGroup     & \sref{s:emult.g}      & RFMasterGroup       & \sref{s:rfmaster.g}   \\
+ FloorPositionGroup  & \sref{s:floor.g}      & ReferenceGroup      & \sref{s:ref.g}        \\
+ GirderGroup         & \sref{s:girder.g}     & SolenoidGroup       & \sref{s:sol.g}        \\
+ InitParticleGroup   & \sref{s:initp.g}      & StringGroup         & \sref{s:string.g}     \\
+ LCavityGroup        & \sref{s:lcav.g}       & TrackingGroup       & \sref{s:track.g}      \\
+ LengthGroup         & \sref{s:length.g}     & TwissGroup          & \sref{s:twiss.g}      \\ 
   \bottomrule
 \end{tabular}
 } 
@@ -40,9 +40,17 @@ The parmeters groups are:
 \label{t:particle.groups}
 \end{table}
 
+
 * Note: NaN denotes parameter that is not set.
 
 * beta_ref is a dependent attribute.
+
+
+
+ 
+
+
+
 
 %---------------------------------------------------------------------------------------------------
 \section{Enums}
@@ -64,10 +72,10 @@ For example:
     ...
 \end{example}
 
-The \vn{enumit} function is used to convert a list into an enum group and export the names.
-The \vn{enumit} function also overloads \vn{Base.string} so that something like \vn{string(Lord.NOT)} 
+The \vn{enum} function is used to convert a list into an enum group and export the names.
+The \vn{enum} function also overloads \vn{Base.string} so that something like \vn{string(Lord.NOT)} 
 will return \vn{"Lord.NOT"} instead of just \vn{"NOT"} (an issue with the EnumX.jl package). 
-See the documentation for \vn{enumit} for more details.
+See the documentation for \vn{enum} for more details.
 
 The \vn{enum_add} function is used to add values to an existing enum group. See the documentation for
 \vn{enum_add} for more details. This function is used with code extensions to customize \accellat.
@@ -219,4 +227,89 @@ The total alignment is computed by \accellat based upon the relative alignment a
 of any \vn{Girder}. \vn{Girder} elements themselves also have both relative and total
 alignments since Girders can support other Girders.
 
+
+%---------------------------------------------------------------------------------------------------
+\section{ApertureGroup}
+\label{s:aperture.g}
+
+
+%---------------------------------------------------------------------------------------------------
+\section{BMultipoleGroup}
+\label{s:bmultipole.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{BeamBeamGroup}
+\label{s:beam.beam.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{BendGroup}
+\label{s:bend.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{EMultipoleGroup}
+\label{s:emulitipole.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{FloorPositionGroup}
+\label{s:floor.position.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{GirderGroup}
+\label{s:girder.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{InitParticleGroup}
+\label{s:init.particle.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{LCavityGroup}
+\label{s:lcavity.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{LengthGroup}
+\label{s:length.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{LordSlaveGroup}
+\label{s:lord.slave.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{MasterGroup}
+\label{s:master.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{PatchGroup}
+\label{s:patch.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{RFFieldGroup}
+\label{s:rffield.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{RFGroup}
+\label{s:rf.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{RFMasterGroup}
+\label{s:rfmaster.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{ReferenceGroup}
+\label{s:reference.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{SolenoidGroup}
+\label{s:solenoid.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{StringGroup}
+\label{s:string.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{TrackingGroup}
+\label{s:tracking.g}
+
+%---------------------------------------------------------------------------------------------------
+\section{TwissGroup}
+\label{s:twiss.g}
 

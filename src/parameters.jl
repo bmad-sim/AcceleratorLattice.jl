@@ -57,6 +57,16 @@ ELE_PARAM_INFO_DICT = Dict(
   :super_lords        => ParamInfo(Nothing,        Vector{Ele},   "Array of element's super_lords. Will not be present if no lords exist."),
   :slaves             => ParamInfo(Nothing,        Vector{Ele},   "Array of slaves of element. Will not be present if no slaves exist."),
 
+  :offset             => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "[x, y, z] element offset.", "m"),
+  :x_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis element rotation.", "rad"),
+  :y_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-axis element rotation.", "rad"),
+  :tilt               => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Z-axis element rotation.", "rad"),
+
+  :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m"),
+  :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad"),
+  :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad"),
+  :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad"),
+
   :type               => ParamInfo(StringGroup,    String,        "Type of element. Set by User and ignored the code."),
   :alias              => ParamInfo(StringGroup,    String,        "Alias name. Set by User and ignored by the code."),
   :description        => ParamInfo(StringGroup,    String,        "Descriptive info. Set by User and ignored by the code."),
@@ -105,16 +115,6 @@ ELE_PARAM_INFO_DICT = Dict(
   :fiducial_pt        => ParamInfo(BendGroup,      FiducialPt.T,  "Fiducial point used with variation of bend parameters."),
   :exact_multipoles   => ParamInfo(BendGroup,      ExactMultipoles.T, "Are multipoles treated exactly?"),
 
-  :offset   => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "[x, y, z] element offset.", "m"),
-  :x_rot    => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis element rotation.", "rad"),
-  :y_rot    => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-axis element rotation.", "rad"),
-  :tilt     => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Z-axis element rotation.", "rad"),
-
-  :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m"),
-  :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad"),
-  :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad"),
-  :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad"),
-
   :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
   :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
   :pc_exit            => ParamInfo(PatchGroup,     Number,         "Reference momentum at exit end.", "eV"),
@@ -154,7 +154,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :num_steps          => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
   :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
 
-  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape.T,       "Shape of aperture. Default is Elliptical."),
+  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,         "Shape of aperture. Default is ELLIPTICAL."),
   :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,             "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
   :misalignment_moves_aperture 
                       => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),

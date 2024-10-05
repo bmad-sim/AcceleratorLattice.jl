@@ -20,10 +20,10 @@ module AcceleratorLattice
 
   # AtomicAndPhysicalConstants
 
-  setunits()
+  setunits(PARTICLE_PHYSICS, print_units = false)
 
   function __init__()
-    setunits()
+    setunits(PARTICLE_PHYSICS, print_units = false)
   end
 
   for name in names(AtomicAndPhysicalConstants)
@@ -39,7 +39,6 @@ module AcceleratorLattice
   include("core.jl")
   include("enum.jl")
   include("quaternion.jl")
-##  include("AtomicAndPhysicalConstants.jl")
   include("struct.jl")
   include("utilities.jl")
   include("string.jl")

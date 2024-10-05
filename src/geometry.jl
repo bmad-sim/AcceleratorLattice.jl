@@ -28,16 +28,16 @@ function propagate_ele_geometry(fstart::FloorPositionGroup, ele::Ele)
   return propagate_ele_geometry(ele_geometry(ele), fstart, ele)
 end
 
-function propagate_ele_geometry(::Type{ZeroLength}, fstart::FloorPositionGroup, ele::Ele)
+function propagate_ele_geometry(::Type{ZERO_LENGTH}, fstart::FloorPositionGroup, ele::Ele)
   return fstart
 end
 
-function propagate_ele_geometry(::Type{Straight}, fstart::FloorPositionGroup, ele::Ele)
+function propagate_ele_geometry(::Type{STRAIGHT}, fstart::FloorPositionGroup, ele::Ele)
   r_floor = fstart.r + rot(fstart.q, [0.0, 0.0, ele.L])
   return FloorPositionGroup(r_floor, fstart.q, fstart.theta, fstart.phi, fstart.psi)
 end
 
-function propagate_ele_geometry(::Type{Circular}, fstart::FloorPositionGroup, ele::Ele)
+function propagate_ele_geometry(::Type{CIRCULAR}, fstart::FloorPositionGroup, ele::Ele)
   bend::BendGroup = ele.BendGroup
   (r_trans, q_trans) = ele_floor_transform(bend, ele.L)
   r_floor = fstart.r + rot(fstart.q, r_trans)
@@ -45,15 +45,15 @@ function propagate_ele_geometry(::Type{Circular}, fstart::FloorPositionGroup, el
   return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart)...)
 end
 
-function propagate_ele_geometry(::Type{PatchGeom}, fstart::FloorPositionGroup, ele::Ele)
+function propagate_ele_geometry(::Type{PATCH_GEOMETRY}, fstart::FloorPositionGroup, ele::Ele)
   error("Not yet implemented!")
 end
 
-function propagate_ele_geometry(::Type{GirderGeom}, fstart::FloorPositionGroup, ele::Ele)
+function propagate_ele_geometry(::Type{GIRDER_GEOMETRY}, fstart::FloorPositionGroup, ele::Ele)
   error("Not yet implemented!")
 end
 
-function propagate_ele_geometry(::Type{CrystalGeom}, fstart::FloorPositionGroup, ele::Ele)
+function propagate_ele_geometry(::Type{CRYSTAL_GEOMETRY}, fstart::FloorPositionGroup, ele::Ele)
   error("Not yet implemented!")
 end
 
