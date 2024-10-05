@@ -60,7 +60,7 @@ module AcceleratorLattice
 
   # Note! Element types are exported automatically when constructed
 
-  export memloc, beamline, @ele, @eles, @construct_ele_type, enumit, enum_add
+  export memloc, beamline, @ele, @eles, @construct_ele_type, enum, enum_add
   export ele_name, show_name, show_ele, E_tot, E_kinetic, pc, β, β1, γ
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!, set_param!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
@@ -76,7 +76,7 @@ module AcceleratorLattice
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
   export struct_sym_to_user_sym, multipole!, index, integer, quat_angles
-  export machine_location, body_location, EleRegion, multipole_param_info
+  export machine_location, body_location, EleRegion, multipole_param_info, holy_traits
   export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
   export str_split, str_match, str_unquote, str_quote, str_to_int, OPEN, CLOSED
 

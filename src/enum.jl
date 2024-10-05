@@ -1,3 +1,5 @@
+# Defines enums and Holy traits.
+
 #---------------------------------------------------------------------------------------------------
 # enum
 
@@ -16,13 +18,13 @@ The `str` argument has the same syntax as given in `EnumX`. Example:
 ```
 This will create a `Lord` emum group with values `Lord.NOT`, `Lord.SUPER`, and `Lord.MULTIPASS`
 
-Also see `enum_add` and `holy_type`
+Also see `enum_add` and `holy_traits`
 
 """ 
 function enum(str::AbstractString)
   eval_str("@enumx $str")
   words = split(str)
-  eval( Meta.parse("export $(words[1])") )
+  eval_str("export $(words[1])")
   s = "Base.string(z::$(words[1]).T) = \"$(words[1]).\" * string(Symbol(z))"
   eval_str(s)
 end
@@ -58,7 +60,7 @@ const OPEN::BranchGeometry.T = BranchGeometry.OPEN
 """
     enum_add(str::AbstractString)
 
-Adds values to an existing enum group.
+Adds values to an existing enum group and exports the names.
 See `enum` for details of creating an enum group.
 
 ## Example 
@@ -82,37 +84,52 @@ function enum_add(str::AbstractString)
   end
 
   eval_str("@enumx $str")
+  return nothing
 end
 
 
 #---------------------------------------------------------------------------------------------------
-# holly_type
+# holy_traits
 
 """
-    holly_type(atype::AbstractString, ctypes::Vector)
+    holy_traits(atype::AbstractString, values::Vector, descrip::AbstractString = "")
 
-Makes an abstract type from the first word and makes concrete types that inherit from the abstract type
-from the other words in the string. This group can be used like an `enum` group. 
-The difference is that `holly_type` values can be used with dispatching.
-The drawback is that the same struct name cannot be used with different groups.
+Makes an abstract type from `atype` and makes concrete types (called ``values'' or ``traits'') 
+from the `values`. 
+The values inherit from `atype`. This group can be used like an `enum` group. 
+The difference is that `holy_traits` values can be used with function dispatching.
+The drawback is that the same value name cannot be used with different Holy trait groups.
+
+`descrip` is a descriptive string used in creating a docstring.
+
+`atype` and all `values` will be exported.
 
 ## Example
 ```
-holly_type("ApertureShape" ["RECTANGULAR", "ELLIPTICAL")
+holy_traits("ApertureShape" ["RECTANGULAR", "ELLIPTICAL"], "Shape of aperture.")
 ```
 This will create structs `RECTANGULAR`, `ELLIPTICAL` which inherit from `ApertureShape`.
-""" holly_type
+""" holy_traits
 
-function holly_type(atype::AbstractString, ctypes::Vector)
-  eval( Meta.parse("abstract type $atype end") )
-  eval( Meta.parse("export $atype") )
+function holy_traits(atype::AbstractString, values::Vector, descrip::AbstractString = "")
+  eval_str("abstract type $atype end")
+  eval_str("export $atype")
+  doc = "    abstract type $atype <: Any\n"
 
-  for ct in ctypes
-    eval( Meta.parse("struct $ct <: $atype; end") )
+  for ct in values
+    eval_str("struct $ct <: $atype; end")
+    eval_str("export $ct")
+    doc = doc * "    struct $ct <: $atype\n"
   end
+  
+  doc = doc * descrip * " Used with Holy traits pattern."  
+  eval_str("@doc \"\"\"$doc\"\"\" $atype, $(join(values, ','))")
+  
+  return nothing
 end
 
-holly_type("EleGeometrySwitch", ["STRAIGHT", "CIRCULAR", "ZERO_LENGTH", 
-                   "PATCH_GEOMETRY", "GIRDER_GEOMETRY", "CRYSTAL_GEOMETRY",  "MIRROR_GEOMETRY"])
+holy_traits("EleGeometrySwitch", ["STRAIGHT", "CIRCULAR", "ZERO_LENGTH", 
+                   "PATCH_GEOMETRY", "GIRDER_GEOMETRY", "CRYSTAL_GEOMETRY",  "MIRROR_GEOMETRY"], 
+                   "Element geometry.")
 
-holly_type("ApertureShape", ["RECTANGULAR", "ELLIPTICAL"])
+holy_traits("ApertureShape", ["RECTANGULAR", "ELLIPTICAL"], "Aperture shape.")

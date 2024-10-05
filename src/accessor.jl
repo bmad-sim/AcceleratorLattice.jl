@@ -1,3 +1,5 @@
+# Accessor functions to customize how things like `ele.XXX` where `ele` is an `Ele` instance.
+
 #---------------------------------------------------------------------------------------------------
 # Base.getproperty(lat::Lat, sym::Symbol) for lat.XXX dot operator overload
 
@@ -171,14 +173,11 @@ match. See `eles` function for more details on matching to lattice elements.
 """ Base.getindex(lat::Lat, name::AbstractString)
 
 function Base.getindex(lat::Lat, name::AbstractString)
-
   for br in lat.branch
     if br.name == name; return br; end
   end
 
   return eles(lat, name)
-
-  error(f"No element with name: {name}")
 end
 
 #---------------------------------------------------------------------------------------------------

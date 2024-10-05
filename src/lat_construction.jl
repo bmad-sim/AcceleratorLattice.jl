@@ -276,7 +276,7 @@ end
 # Lat
 
 """
-    Lat(root_line::Union{BeamLine,Vector}; name = "lat")
+    Lat(root_line::Union{BeamLine,Vector}; name = "lat") -> Lat
 
 Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
 
@@ -294,7 +294,7 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 function Lat(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat") 
   lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
-  
+
   for root in collect(root_line)
     new_tracking_branch!(lat, root)
   end
@@ -310,8 +310,19 @@ function Lat(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat")
   end
 
   init_multipass_bookkeeper!(lat)
+  lat
   bookkeeper!(lat, check_changed = false)
   lat_sanity_check(lat)
+
+  for branch in lat.branch
+    if branch.type == LordBranch
+      branch.changed_ele = Ele[]
+    else
+      branch.min_ele_changed = -1
+      branch.max_ele_changed = -1
+    end
+  end
+  lat.bookkeeper_on = true
 
   return lat
 end
