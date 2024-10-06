@@ -393,7 +393,7 @@ Used by `BMultipoleGroup`.
 • `Bs::Number`                 - Skew field component. \\
 • `tilt::Number`               - Rotation of multipole around `z`-axis. \\
 • `order::Int`                 - Multipole order. \\
-• `integrated::Bool`           - Integrated or not? Also determines what stays constant with length changes. \\
+• `integrated::Union{Bool,Nothing}` - Integrated or not? Also determines what stays constant with length changes. \\
 """
 @kwdef mutable struct BMultipole1 <: EleParameterSubGroup  # A single multipole
   Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
@@ -402,7 +402,7 @@ Used by `BMultipoleGroup`.
   Bs::Number = 0.0  
   tilt::Number = 0.0
   order::Int   = -1         # Multipole order
-  integrated::Bool = false  # Also determines what stays constant with length changes.
+  integrated::Union{Bool,Nothing} = nothing  # Also determines what stays constant with length changes.
 end
 
 #---------------------------------------------------------------------------------------------------

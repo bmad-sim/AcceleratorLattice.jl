@@ -301,7 +301,7 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 function Lat(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat") 
   lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
   lat.doing_bookkeeping = false
-  lat.autobookeeping = false
+  lat.autobookkeeping = false
   
   for root in collect(root_line)
     new_tracking_branch!(lat, root)
@@ -317,6 +317,6 @@ function Lat(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat")
   bookkeeper!(lat, check_changed = false)
   lat_sanity_check(lat)
 
-  lat.autobookkeeping = true
+  lat.autobookkeeping = false
   return lat
 end

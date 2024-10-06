@@ -451,7 +451,7 @@ function lat_branch(lat::Lat, who::Type{T}) where T <: BranchType
 end
 
 function lat_branch(ele::Ele)
-  if haskey(ele.pdict, :branch) return ele.pdict[:branch]
+  if haskey(ele.pdict, :branch); return ele.pdict[:branch]; end
   return nothing
 end
 

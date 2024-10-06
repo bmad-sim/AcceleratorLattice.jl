@@ -85,7 +85,7 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   # Does ele.pdict[sym] exist? 
   if haskey(pdict, sym)   
     # Do bookkeeping but only if element is in a lattice.
-    if !isnothing(branch) && branch.lat.autobookkeeper; bookkeeper!(branch.lat); end
+    if !isnothing(branch) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
     return pdict[sym]
   end
   
@@ -100,7 +100,7 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   end
 
   # Do bookkeeping but only if element is in a lattice.
-  if !isnothing(branch) && branch.lat.autobookkeeper; bookkeeper!(branch.lat); end
+  if !isnothing(branch) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   
   return get_elegroup_param(ele, pdict[parent], pinfo)
 end
