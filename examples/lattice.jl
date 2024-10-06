@@ -10,17 +10,9 @@ using AcceleratorLattice
 
 # Define beamlines and lattice 
 
-ln1 = beamline("ln1", [p_begin, qf, d]);
-ln2 = beamline("ln2", [e_begin, qd, d, qd], geometry = closed);
-lat = Lat("mylat", [ln1, ln2]);
-
-slave_list = [
-  ctrl(absolute, "z1", :L, "2*vv+gg"),
-  ctrl(delta, "z2", :Kn2l, "3*gg+vv"),
-];
-
-@ele c1 = Controller(slave = slave_list, variable = [var(:gg, 1, 2), var(:vv)]);
-add_governor!(lat, c1);
+ln1 = BeamLine([p_begin, qf, d]);
+ln2 = BeamLine([e_begin, qd, d, qd], geometry = closed);
+lat = Lat([ln1, ln2]);
 
 superimpose!(b1, ref_ele = lat.branch[2].ele[3], offset = 0.2, ref_origin = entrance_end);
 superimpose!(m, ref_ele = lat.branch[1].ele[1], offset = 0.2, ref_origin = entrance_end);

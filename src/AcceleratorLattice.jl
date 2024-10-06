@@ -30,8 +30,11 @@ module AcceleratorLattice
     eval(Meta.parse("export $name"))
   end
 
-  mass(species::Species) = massof(species)
-  charge(species::Species) = chargeof(species)
+#  mass(species::Species) = massof(species)
+#  charge(species::Species) = chargeof(species)
+
+  mass(species::Species) = 510998.95069
+  charge(species::Species) = -1
   export mass, charge
 
   #
@@ -50,7 +53,6 @@ module AcceleratorLattice
   include("superimpose.jl")
   include("tracking.jl")
   include("show.jl")
-  include("init_bookkeeper.jl")
   include("bookkeeper.jl")
   include("lat_construction.jl")
   include("input_output.jl")

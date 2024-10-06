@@ -71,7 +71,9 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     end
 
     # Get insertion branch
-    if !haskey(ref_ele.pdict, :branch); error("Reference element: $(ref_ele.name) does is not part of a lattice."); end
+    if !haskey(ref_ele.pdict, :branch)
+      error("Reference element: $(ref_ele.name) does is not part of a lattice.")
+    end
     branch = ref_ele.branch
     if branch.type <: LordBranch 
       branch = ref_ele.slaves[1].branch
@@ -82,7 +84,8 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
 
     L_super = super_ele.L
     offset = offset * ref_ele.orientation
-    machine_ref_origin = machine_location(ref_origin, ref_ele.orientation)  # Convert from body entrance/exit to up/dowstream
+    # Convert from body entrance/exit to up/dowstream
+    machine_ref_origin = machine_location(ref_origin, ref_ele.orientation)  
     machine_ele_origin = machine_location(ele_origin, ref_ele.orientation)
 
     # Insertion of zero length element with zero offset at edge of an element.
@@ -101,8 +104,8 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     # Super_ele end locations: s1 and s2.
     if branch.type <: LordBranch
       if machine_ref_origin == Loc.UPSTREAM_END; s1 = ref_ele.slaves[1].s
-      elseif machine_ref_origin == Loc.CENTER;   s1 = 0.5 * (ref_ele.slaves[1].s + ref_ele.slaves[end].s_downstream)
-      else;                                  s1 = ref_ele.slaves[end].s_downstream
+      elseif machine_ref_origin == Loc.CENTER; s1 = 0.5 * (ref_ele.slaves[1].s + ref_ele.slaves[end].s_downstream)
+      else;                                    s1 = ref_ele.slaves[end].s_downstream
       end
     else    # Not a lord branch
       if machine_ref_origin == Loc.UPSTREAM_END; s1 = ref_ele.s

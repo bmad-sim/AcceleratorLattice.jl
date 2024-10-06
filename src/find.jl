@@ -418,35 +418,41 @@ function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex};
 end
 
 #---------------------------------------------------------------------------------------------------
-# branch
+# lat_branch
 
 """
-    branch(lat::Lat, ix::Int)
-    branch(lat::Lat, who::AbstractString) 
-    branch(lat::Lat, who::T) where T <: BranchType
+    lat_branch(lat::Lat, ix::Int)
+    lat_branch(lat::Lat, who::AbstractString) 
+    lat_branch(lat::Lat, who::T) where T <: BranchType
+    lat_branch(ele::Lat)
 
-Returns the branch in `lat` with index `ix` or name that matches `who`.
-
+With `lat` as first argument: Returns the branch in `lat` with index `ix` or name that matches `who`.
+With `ele` as first argumnet: Returns the branch `ele` is in.
 Returns `nothing` if no branch can be matched.
-""" branch
+""" lat_branch
 
-function branch(lat::Lat, ix::Int) 
+function lat_branch(lat::Lat, ix::Int) 
   if ix < 1 || ix > length(lat.branch); error(f"Branch index {ix} out of bounds."); end
   return lat.branch[ix]
 end
 
-function branch(lat::Lat, who::AbstractString) 
+function lat_branch(lat::Lat, who::AbstractString) 
   for branch in lat.branch
     if branch.name == who; return branch; end
   end
   error(f"Cannot find branch with name {name} in lattice.")
 end
 
-function branch(lat::Lat, who::Type{T}) where T <: BranchType
+function lat_branch(lat::Lat, who::Type{T}) where T <: BranchType
   for branch in lat.branch
     if branch.pdict[:type] == who; return branch; end
   end
   error(f"Cannot find branch with type {name} in lattice.")  
+end
+
+function lat_branch(ele::Ele)
+  if haskey(ele.pdict, :branch); return ele.pdict[:branch]; end
+  return nothing
 end
 
 #---------------------------------------------------------------------------------------------------

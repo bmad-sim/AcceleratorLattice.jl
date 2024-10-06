@@ -68,8 +68,8 @@ Algorithm for what to return for `ele.XXX`:
   1. If `XXX` is a *registered* component of the Element group `GGG`, return `ele.pdict[:GGG].XXX`. 
   1. If none of the above, throw an error.
 
-Exceptions: Something like `ele.K2L` is handled specially since storage for this parameter may
-not exist (parameter is stored in `ele.pdict[BMultipoleGroup].vec(N).K2` where `N` is some integer).
+Exceptions: Something like `ele.Kn2L` is handled specially since storage for this parameter may
+not exist (parameter is stored in `ele.pdict[BMultipoleGroup].vec(N).Kn` where `N` is some integer).
 
 Also: If `XXX` corresponds to a vector, create `ele.changed[:XXX]` to signal that the vector may have 
 been modified. This is necessary due to how something like `ele.pdict[:GGG].XXX[2] = ...` is evaluated.
@@ -80,8 +80,15 @@ Also see: `get_elegroup_param`
 function Base.getproperty(ele::Ele, sym::Symbol)
   if sym == :pdict; return getfield(ele, :pdict); end
   pdict::Dict{Symbol,Any} = getfield(ele, :pdict)
-  if haskey(pdict, sym); return pdict[sym]; end                  # Does ele.pdict[sym] exist?    
-
+  branch = lat_branch(ele)
+  
+  # Does ele.pdict[sym] exist? 
+  if haskey(pdict, sym)   
+    # Do bookkeeping but only if element is in a lattice.
+    if !isnothing(branch) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
+    return pdict[sym]
+  end
+  
   # Look for `sym` as part of an ele group
   pinfo = ele_param_info(sym)
   parent = Symbol(pinfo.parent_group)
@@ -92,7 +99,9 @@ function Base.getproperty(ele::Ele, sym::Symbol)
     pdict[:changed][sym] = getfield(pdict[parent], pinfo.struct_sym)
   end
 
-  #
+  # Do bookkeeping but only if element is in a lattice.
+  if !isnothing(branch) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
+  
   return get_elegroup_param(ele, pdict[parent], pinfo)
 end
 
@@ -152,13 +161,26 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
   ## if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
 
   parent = pinfo.parent_group
-  # All parameters that do not have a parent ( EG: super_lord) are not "normal" and setting 
+  # All parameters that do not have a parent struct are not "normal" and setting 
   # them does not have to be recorded in pdict[:changed]. 
   if parent == Nothing
     pdict[sym] = value
   else
     pdict[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(parent)], pinfo)
     set_elegroup_param!(ele, pdict[Symbol(parent)], pinfo, value)
+
+    # Record changes for bookkeeping.
+    # There is no bookkeeping done for elements outside of a lattice.
+    # Also if bookkeeping is in process, no need to record changes.
+    branch = lat_branch(ele)
+    if !isnothing(branch) && branch.lat.doing_bookkeeping == false
+      if branch.type == TrackingBranch
+        branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ele.ix_ele)
+        branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ele.ix_ele)
+      else
+        push!(branch.changed_ele, ele)
+      end
+    end
   end
 end
 
