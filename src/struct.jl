@@ -895,11 +895,16 @@ Lattice branch structure.
     ele::Vector{Ele}
     pdict::Dict{Symbol,Any}
 
-## Standard pdict fields:
+## Standard pdict keys:
 • `:lat`        - Pointer to containing lattice. \\
 • `:geometry`   - `OPEN` or `CLOSED`. \\
-• `:type`       - `MultipassLordBranch`, `SuperLordBranch`, `GovernorBranch`, or `TrackingBranch`.  \\
+• `:type`       - `MultipassLordBranch`, `SuperLordBranch`, `GirderBranch`, or `TrackingBranch`.  \\
 • `:ix_branch`  - Index of branch in `lat.branch[]` array. \\
+• `:ix_ele_min_changed` - For tracking branches: Minimum index of elements where parameter changes have been made.
+  Set to `typemax(Int)` if no elements have been modified.
+• `:ix_ele_max_changed` - For tracking branches: Maximum index of elements where parameter changes have been made.
+  Set to `0` if no elements have been modified.
+• `:changed_ele`        - `Set{Ele}` For lord branches: Set of elements whose parameters have been modified.
 
 ## Notes
 The constant `NULL_BRANCH` is defined as a placeholder for signaling the absense of a branch.
@@ -928,7 +933,9 @@ abstract type TrackingBranch <: BranchType end
 
 struct MultipassLordBranch <: LordBranch; end
 struct SuperLordBranch <: LordBranch; end
-struct GovernorBranch <: LordBranch; end
+struct GirderBranch <: LordBranch; end
+
+struct GovernorBranch <: LordBranch; end  # This may never be used!
 
 #---------------------------------------------------------------------------------------------------
 # LatticeGlobal
@@ -964,9 +971,15 @@ Lattice structure.
 
 ## Fields
 
-•  `name::String`. \\
-•  `branch::Vector{Branch}`. \\
-•  `pdict::Dict{Symbol,Any}`. \\
+• `name::String`. \\
+• `branch::Vector{Branch}`. \\
+• `pdict::Dict{Symbol,Any}`. \\
+
+## Standard pdict keys
+
+• `:doing_bookkeeping`    - Bool: In the process of bookkeeping?
+• `:autobookkeeping`      - Bool: Automatic bookkeeping enabled?
+
 """
 mutable struct Lat <: AbstractLat
   name::String

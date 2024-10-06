@@ -260,6 +260,11 @@ function new_tracking_branch!(lat::Lat, bline::BeamLine)
   # Beginning and end elements inherit orientation from neighbor elements.
   branch.ele[1].pdict[:LengthGroup].orientation = branch.ele[2].pdict[:LengthGroup].orientation
   branch.ele[end].pdict[:LengthGroup].orientation = branch.ele[end-1].pdict[:LengthGroup].orientation
+
+  branch.ix_ele_min_changed = 1
+  branch.ix_ele_max_changed = length(branch.ele)
+  index_and_s_bookkeeper!(branch)
+
   return nothing
 end
 
@@ -269,6 +274,7 @@ function new_lord_branch!(lat::Lat, name::AbstractString, branch_type::Type{T}) 
   branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = branch_type
+  branch.changed_ele = Set{Ele}()
   return branch
 end
 
@@ -294,7 +300,9 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 function Lat(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat") 
   lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
-
+  lat.doing_bookkeeping = false
+  lat.autobookeeping = false
+  
   for root in collect(root_line)
     new_tracking_branch!(lat, root)
   end
@@ -303,26 +311,12 @@ function Lat(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat")
 
   new_lord_branch!(lat, "super_lord", SuperLordBranch)
   new_lord_branch!(lat, "multipass_lord", MultipassLordBranch)
-  new_lord_branch!(lat, "governor", GovernorBranch)
-
-  for branch in lat.branch
-    index_and_s_bookkeeper!(branch)
-  end
+  new_lord_branch!(lat, "girder_lord", GirderBranch)
 
   init_multipass_bookkeeper!(lat)
-  lat
   bookkeeper!(lat, check_changed = false)
   lat_sanity_check(lat)
 
-  for branch in lat.branch
-    if branch.type == LordBranch
-      branch.changed_ele = Ele[]
-    else
-      branch.min_ele_changed = -1
-      branch.max_ele_changed = -1
-    end
-  end
-  lat.bookkeeper_on = true
-
+  lat.autobookkeeping = true
   return lat
 end
