@@ -79,12 +79,9 @@ Note: All element parameter groups associated with the element type will be cons
 above example,`q1` above will have `q1.LengthGroup` (equivalent to `q1.pdict[:LengthGroup]`) created.
 """
 macro ele(expr)
-  if expr.head != :(=); error("Missing equals sign '=' after element name. " * 
-                               "Expecting something like: \"q1 = Quadrupole(...)\""); end
+  expr.head == :(=) || error("Missing equals sign '=' after element name. " * 
+                               "Expecting something like: \"q1 = Quadrupole(...)\"")
   name = expr.args[1]
-  ### if isdefined(@__MODULE__, name)
-  ###   error(f"Element already defined: {name}. Use @ele_redef if you really want to redefine.")
-  ### end
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
   return esc(expr)   # This will call the constructor below
 end
@@ -246,8 +243,10 @@ machine coordinates.
 • `x_rot_tot::Number`      - Rotation around the x-axis including Girder misalignment. \\
 • `y_rot::Number`          - Rotation around the y-axis not including any Girder misalignments. \\
 • `y_rot_tot::Number`      - Rotation around the z-axis including Girder misalignment. \\
-• `tilt::Number`           - Rotation around the z-axis not including any Girder misalignment. Not used by Bend elements. \\
-• `tilt_tot::Number`       - Rotation around the z-axis including Girder misalignment. Not used by Bend elements. \\
+• `tilt::Number`           - Rotation around the z-axis not including any Girder misalignment. 
+  Not used by Bend elements. \\
+• `tilt_tot::Number`       - Rotation around the z-axis including Girder misalignment. 
+  Not used by Bend elements. \\
 """ AlignmentGroup
 
 @kwdef mutable struct AlignmentGroup <: EleParameterGroup
@@ -322,7 +321,8 @@ end
     mutable struct BendGroup <: EleParameterGroup
 
 ## Fields
-• `bend_type::BendType.T`     - Is e or e_rect fixed? Also is len or len_chord fixed? Default is `BendType.SECTOR`. \\
+• `bend_type::BendType.T`     - Is e or e_rect fixed? 
+  Also is len or len_chord fixed? Default is `BendType.SECTOR`. \\
 • `angle::Number`             - Design bend angle. \\
 • `rho::Number`               - Design bend radius. \\
 • `g::Number`                 - Design bend strength. Note: Old Bmad `dg -> Kn0`. \\
@@ -341,7 +341,8 @@ end
 • `fint2::Number`             - Field integral at exit end. Default value is `0.5`. \\
 • `hgap1::Number`             - Pole gap at entrance end. \\
 • `hgap2::Number`             - Pole gap at exit end. \\
-• `fiducial_pt::FiducialPt.T` - Fiducial point used when the bend geometry is varied. Default is `FiducialPt.NONE`. \\
+• `fiducial_pt::FiducialPt.T` - Fiducial point used when the bend geometry is varied. 
+  Default is `FiducialPt.NONE`. \\
 • `exact_multipoles::ExactMultipoles.T` - Field multipoles treatment. Default is `ExactMultipoles.OFF`. \\
 
 ## Notes
@@ -393,7 +394,8 @@ Used by `BMultipoleGroup`.
 • `Bs::Number`                 - Skew field component. \\
 • `tilt::Number`               - Rotation of multipole around `z`-axis. \\
 • `order::Int`                 - Multipole order. \\
-• `integrated::Union{Bool,Nothing}` - Integrated or not? Also determines what stays constant with length changes. \\
+• `integrated::Union{Bool,Nothing}` - Integrated or not? 
+  Also determines what stays constant with length changes. \\
 """
 @kwdef mutable struct BMultipole1 <: EleParameterSubGroup  # A single multipole
   Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
@@ -401,7 +403,7 @@ Used by `BMultipoleGroup`.
   Bn::Number = 0.0
   Bs::Number = 0.0  
   tilt::Number = 0.0
-  order::Int   = -1         # Multipole order
+  order::Int   = -1                # Multipole order
   integrated::Union{Bool,Nothing} = nothing  # Also determines what stays constant with length changes.
 end
 
@@ -436,7 +438,8 @@ Used by `EMultipoleGroup`.
 • `Es::Number`                  - Skew fieldEG component. EG: "Es2", "Es2L" \\
 • `Etilt::Number`               - Rotation of multipole around `z`-axis. \\
 • `order::Int`                  - Multipole order. \\
-• `integrated::Bool`            - Integrated field or not?. Also determines what stays constant with length changes. \\
+• `integrated::Bool`            - Integrated field or not?. 
+  Also determines what stays constant with length changes. \\
 """ EMultipole1
 
 @kwdef mutable struct EMultipole1 <: EleParameterSubGroup

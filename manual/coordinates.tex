@@ -102,16 +102,13 @@ lattice while the latter can be any arbitrary orbit.
 fit together to form the reference orbit along with the machine coordinate system. How elements
 join together is determined in part by their entrance and exit coordinate frames. A) For
 straight line elements the entrance and exit frames are colinear. B) For bends elements, the two
-frames are rotated with respect to each other. C) For \vn{patch} and \vn{floor_shift} elements the
+frames are rotated with respect to each other. C) For \vn{Patch} and \vn{floor_shift} elements the
 exit frame may be arbitrarily positioned with respect to the entrance frame.}
   \label{f:ele.coord.frame}
   \end{figure}
 
 %--------------------------------------
 
-\index{sbend}\index{rbend}
-\index{crystal}\index{mirror}\index{entrance_end}
-\index{exit_end}\index{patch}\index{floor_shift}
 One way of thinking about the reference orbit and machine coordinates is to imagine that each
 element is like a LEGO block with an ``\vn{entrance}'' and an ``\vn{exit}'' coordinate frame as
 illustrated in \fig{f:ele.coord.frame}\footnote
@@ -157,18 +154,15 @@ is always out of the page.}
 %-----------------------------------------------------------------------------
 
 \index{root branch}
-Assuming for the moment that there are no \vn{fiducial} elements present, the construction of the
+Assuming for the moment that there are no \vn{Fiducial} elements present, the construction of the
 reference orbit starts at the \vn{BeginningEle} element (\sref{s:begin.ele}) at the start of a
 branch. If the branch is a \vn{root} branch (\sref{s:lattice.def}), The orientation of the beginning
 element within the global coordinate system (\sref{s:coords}) can be fixed by setting 
-FloorPositionGroup parameters (\sref{floor.g}
-positioning statements (\sref{s:beginning}). If the branch is not a \vn{root} branch, the position
-of the beginning element is determined by the position of the \vn{fork} or \vn{photon_fork} element
-from which the branch forks from. Unless set otherwise in the lattice file, $s = 0$ at the
-\vn{BeginningEle} element.
-
-If there are \vn{fiducial} elements, the machine coordinates are constructed beginning at these
-elements.
+FloorPositionGroup parameters (\sref{s:floor.position.g}) in the \vn{BeginningEle} element.
+If the branch is not a \vn{root} branch, the position
+of the beginning element is determined by the position of the \vn{Fork} element
+from which the branch forks from. The default value of $s$ at the \vn{BeginningEle} element is zero
+for both root and non-root branches.
 
 Once the beginning element in a branch is positioned, succeeding elements are concatenated together
 to form the machine coordinates. All elements have an ``\vn{upstream}'' and a ``\vn{downstream}''
@@ -176,6 +170,9 @@ end as shown in \fig{f:patch.between}A. The \vn{downstream} end of an element is
 greater $s$) from the beginning element than the \vn{upstream} end of the element.  Particles travel
 in the $+s$ direction, so particles will enter an element at the upstream end and exit at the
 downstream end.
+
+If there are \vn{Fiducial} elements, the machine coordinates are constructed beginning at these
+elements working both forwards and backwards along the branch.
 
 Normally, the \vn{upstream} end is the same as the element's \vn{entrance} end 
 (\fig{f:ele.coord.frame}) and the
@@ -197,12 +194,12 @@ This is illustrated in \fig{f:patch.between}. \fig{f:patch.between}A shows the g
 with the downstream frame of element \vn{A} mated to the upstream frame of element \vn{B}.
 Figures~\ref{f:patch.between}B-C show branches constructed from the following lattice file:
 \begin{example}
-  @ele dft = drift(L = 2)
-  @ele bnd = bend(l = 2, g = pi/12)
-  @ele p = patch(x_rot = pi)                   ! Reflection patch.
-  BL = beamline("BL", [dft, bnd])              ! No reversal.
-  CL = beamline("CL", [dft, reverse(bnd)])     ! Illegal. Do not use!
-  DL = beamline("DL", [dft, p, reverse(bnd)])  ! Valid.
+  @ele dft = Drift(L = 2)
+  @ele bnd = Bend(l = 2, g = pi/12)
+  @ele p = Patch(x_rot = pi)             ! Reflection patch.
+  BL = BeamLine([dft, bnd])              ! No reversal.
+  CL = BeamLine([dft, reverse(bnd)])     ! Illegal. Do not use!
+  DL = BeamLine([dft, p, reverse(bnd)])  ! Valid.
 \end{example}
 The $(x,z)$ coordinates are drawn at the entrance end of the elements and $z$ will always point
 towards the element's exit end.  \fig{f:patch.between}B shows the branch constructed from
@@ -226,10 +223,10 @@ Irrespective of whether elements are reversed or not, the machine $(x,y,z)$ coor
 at all $s$-positions will always be a right-handed coordinate system.
 \item
 Care must be take when using reversed elements. For example, if the field of the \vn{bnd} element in
-\vn{B_line} is appropriate for, say, electrons, that is, electrons will be bent in a clockwise
-fashion going through \vn{bnd}, then an electron going through \vn{D_line} will be lost in the bend
+\vn{BL} is appropriate for, say, electrons, that is, electrons will be bent in a clockwise
+fashion going through \vn{bnd}, then an electron going through \vn{DL} will be lost in the bend
 (the $y$-axis and hence the field is in the same direction for both cases so electrons will still be
-bent in a clockwise fashion but with \vn{D_line} a particle needs to be bent counterclockwise to get
+bent in a clockwise fashion but with \vn{DL} a particle needs to be bent counterclockwise to get
 through the bend). To get a particle through the bend, positrons must be used.
 \item
 A reflection patch that rotated the coordinates, for example, around the $x$-axis by 180\Deg (by
@@ -241,10 +238,10 @@ setting \vn{x_rot} to \vn{pi}) would also produce a plausible geometry.
 \begin{figure}[bt]
   \centering
   \includegraphics[width=5in]{patch-problem.pdf}
-  \caption[The machine reference coordinates in a \vn{patch} element.]
-{The machine reference coordinates in a \vn{Patch} element. The \vn{patch} element, shown
+  \caption[The machine reference coordinates in a \vn{Patch} element.]
+{The machine reference coordinates in a \vn{Patch} element. The \vn{Patch} element, shown
 schematically as an irregular quadrilateral, is sandwiched between elements \vn{ele_a} and
-\vn{ele_b}. \vn{L} is the length of the \vn{patch}. In this example, the \vn{patch} has a finite
+\vn{ele_b}. \vn{L} is the length of the \vn{Patch}. In this example, the \vn{Patch} has a finite
 \vn{y_rot}.}
   \label{f:patch.prob}
 \end{figure}
@@ -256,14 +253,14 @@ schematically as an irregular quadrilateral, is sandwiched between elements \vn{
 \index{patch}
 
 Generally, if a particle is reasonably near the reference orbit, there is a one-to-one mapping
-between the particle's position and $(x, y, s)$ coordinates. A \vn{patch} (\sref{s:patch}) elements
+between the particle's position and $(x, y, s)$ coordinates. A \vn{Patch} (\sref{s:patch}) elements
 with a non-zero \vn{x_rot} or non-zero \vn{y_rot} breaks the one-to-one mapping. This is
-illustrated in \fig{f:patch.prob}.  The \vn{patch} element, shown schematically as an, irregular
+illustrated in \fig{f:patch.prob}.  The \vn{Patch} element, shown schematically as an, irregular
 quadrilateral, is sandwiched between elements \vn{ele_a} and \vn{ele_b}. The machine coordinate system
 with origin at $\alpha$ are the coordinates at the end of \vn{ele_a}. The coordinates at the end of
-the \vn{patch} has its origin labeled $\gamma$. By convention, the length of the patch \vn{L} is
-taken to be the longitudinal distance from $\alpha$ to $\gamma$ with the \vn{patch}'s exit
-coordinates defining the longitudinal direction. The ``beginning'' point of the \vn{patch} on the
+the \vn{Patch} has its origin labeled $\gamma$. By convention, the length of the patch \vn{L} is
+taken to be the longitudinal distance from $\alpha$ to $\gamma$ with the \vn{Patch}'s exit
+coordinates defining the longitudinal direction. The ``beginning'' point of the \vn{Patch} on the
 reference orbit a distance \vn{L} from point $\gamma$ is labeled $\beta$ in the figure.
 
 In the machine $(x, y, s)$ coordinate system a particle at $\alpha$ will have some value $s = s_0$. A
@@ -273,19 +270,19 @@ assigning $(x, y, s)$ coordinates to a given position. If the particle is consid
 the region of \vn{ele_a}, the particle's $s$ position will be $s_{a2}$ which is greater than the
 value $s_0$ at the exit end of the element. This contradicts the expectation that particles within
 \vn{ele_a} will have $s \le s_0$.  If, on the other hand, the particle is considered to be within
-the \vn{patch} region, the particle's $s$ position will be $s_{a1}$ which is less than the value
+the \vn{Patch} region, the particle's $s$ position will be $s_{a1}$ which is less than the value
 $s_0$ at the entrance to the patch. This contradicts the expectation that a particles within the
-\vn{patch} will have $s \ge s_0$.
+\vn{Patch} will have $s \ge s_0$.
 
-To resolve this problem, \bmad considers a particle at position $r_a$ to be within the \vn{patch}
+To resolve this problem, \bmad considers a particle at position $r_a$ to be within the \vn{Patch}
 region. This means that there is, in theory, no lower limit to the $s$-position that a particle in
-the \vn{patch} region can have. This also implies that there is a discontinuity in the $s$-position
+the \vn{Patch} region can have. This also implies that there is a discontinuity in the $s$-position
 of a particle crossing the exit face of \vn{ele1}. Typically, when particles are translated from the
-exit face of one element to the exit face of the next, this \vn{patch} problem does not appear. It
+exit face of one element to the exit face of the next, this \vn{Patch} problem does not appear. It
 only appears when the track between faces is considered.
 
 Notice that a particle at position $r_b$ in \fig{f:patch.prob} can simultaneously be considered to
-be in either \vn{ele_a} or the \vn{patch}. While this creates an ambiguity it does not complicate
+be in either \vn{ele_a} or the \vn{Patch}. While this creates an ambiguity it does not complicate
 tracking.
 
 %-----------------------------------------------------------------------------
@@ -460,8 +457,6 @@ for the same four \vn{ref_tilt} angles. In this case the bend angle is taken to 
 
 %-----------------------------------------------------------------------
 
-\index{rbend}\index{sbend}
-\index{rho}\index{tilt}\index{angle}
 For a \vn{bend}, the axis of rotation is dependent upon the bend's \vn{ref_tilt} angle
 (\sref{s:offset}) as shown in \fig{f:tilt.bend}A. The axis of rotation points in the negative $y_0$
 direction for \vn{ref_tilt} = 0 and is offset by the bend radius \vn{rho}. Here $(x_0, y_0, z_0)$
@@ -598,7 +593,7 @@ Section~\sref{s:crystal.ref}.
 \label{s:patch.coords}
 
 \index{patch!coordinate transformation}\index{floorshift!coordinate transformation}
-For \vn{patch} (\sref{s:patch}) and \vn{FloorShift} (\sref{s:floor.ele}) elements, the shift in the
+For \vn{Patch} (\sref{s:patch}) and \vn{FloorShift} (\sref{s:floor.ele}) elements, the shift in the
 exit end reference coordinates is given by \Eqs{vwlv} and \eq{wws} with
 \begin{align}
   \bfL &= 
@@ -610,7 +605,7 @@ exit end reference coordinates is given by \Eqs{vwlv} and \eq{wws} with
   \label{swww}
 \end{align}
 
-The difference here between \vn{patch} and \vn{SloorShift} elements is that, with a \vn{patch}
+The difference here between \vn{Patch} and \vn{SloorShift} elements is that, with a \vn{Patch}
 element, the shift is relative to the exit end of the previous element while, for a \vn{FloorShift}
 element, the shift is relative to the reference point on the origin element specified by the
 \vn{origin_ele} parameter of the \vn{FloorShift}.
@@ -629,7 +624,7 @@ analogous to \Eqs{swww}. Explicitly:
       \text{dx_origin} \\ \text{dy_origin} \\ \text{dz_origin}
     \end{pmatrix}
     \CRNO
-  \bfS &= \bfR_{y} (\text{dtheta_origin}) \; \bfR_{-x} (\text{dphi_origin}) \; 
+  \bfS &= \bfR_{y} (\text{dtheta_origin}) \; \bfR_{x} (\text{-dphi_origin}) \; 
     \bfR_{z} (\text{dpsi_origin})
 \end{align}
 
@@ -639,7 +634,7 @@ analogous to \Eqs{swww}. Explicitly:
 \index{patch!reflection}
 
 A \vn{Patch} (or a series of patches) that reflects the direction of the \vn{z}-axis is called a
-\vn{reflection} \vn{patch}. By ``reflected direction'' it is meant that the dot product $\Bf z_1
+\vn{reflection} \vn{Patch}. By ``reflected direction'' it is meant that the dot product $\Bf z_1
 \cdot \Bf z_2$ is negative where $\Bf z_1$ is the $z$-axis vector at the \vn{entrance} face and $\Bf
 z_2$ is the $z$-axis vector at the \vn{exit} face. This condition is equivalent to the condition
 that the associated $\bfS$ matrix (see \Eq{swww}) satisfy:
@@ -715,28 +710,59 @@ non-bend misaligned element depends only on the offsets, and is independent of t
 \subsection{Bend Element Misalignment Transformation}
 \label{s:bend.mis}
 
-This needs cleanup!!!
-
-\index{rbend!coordinate transformation}\index{sbend!coordinate transformation}
-\index{roll!coordinate transformation}\index{tilt!coordinate transformation}
-For \vn{rbend} and \vn{sbend} elements there is no \vn{tilt} parameter.  Rather, there is the
-\vn{roll} parameter and a \vn{ref_tilt} parameter. The latter affects both the reference orbit and
+For \vn{Bend} elements there is a \vn{ref_tilt} as well as a \vn{tilt} parameter.
+The former affects both the reference orbit and
 the bend position (\sref{s:bend.orient}). Furthermore, \vn{ref_tilt} is calculated with respect to
-the coordinates at the beginning of the bend while, like straight elements, \vn{roll}, \vn{x_rot},
-\vn{y_rot}, and offsets are calculated with respect to the center of the bend. 
+the coordinates at the beginning of the bend while \vn{tilt}, \vn{x_rot},
+\vn{y_rot}, and offsets are calculated with respect to the center of the chord connecting the
+ends of the bend (\sref{s:align.g}). 
 The different reference frame used
 for \vn{ref_tilt} versus everything else means that five transformations are needed to get from the
 machine frame to the element body frame (see \Eq{llee}). Symbolically:
 \begin{equation}
-  \Lambda_s \longrightarrow \Lambda_\text{mid} 
-  \longrightarrow \Omega_\text{mid} \longrightarrow \Omega_0
-  \longrightarrow E_0 \longrightarrow E_s
+  \Lambda_s \longrightarrow \Lambda_0 \longrightarrow
+  \Xi_0 \longrightarrow \Xi_\text{mid} \longrightarrow 
+  \Omega_\text{c,mid} \longrightarrow \Omega_{c,0} \longrightarrow 
+  \Omega_{0} \longrightarrow E_0 \longrightarrow E_s
 \end{equation}
 
-The first transformation, $\Lambda_s$ to $\Lambda_\text{mid}$, from machine coordinates at a
-distance $s$ from the beginning of the element to machine coordinates at the center the bend is a
+\begin{enumerate}
+\item $\Lambda_s \longrightarrow \Lambda_0$ \\
+In machine coordinates, transform from $\Lambda_s$, the coordinates at a
+distance $s$ from the beginning of the element, to $\Lambda_0$ the machine coordinates at the 
+beginning of the element. This is a
 rotation around the center of curvature of the bend and is given by \Eqs{vwlv} and \eq{wws} with
-\Eqs{ustt} and \eq{lrztt} with the substitution $\alpha_b \rightarrow (L/2 - s)/\rho$.
+\Eqs{ustt} and \eq{lrztt} with the substitution $\alpha_b \rightarrow -s/\rho$.
+%
+\item $\Lambda_0 \longrightarrow \Xi_0$
+Transform from $\Lambda_s$ to $\Xi_0$ which is the ``chord''
+coordinate system obtained by rotating $\Lambda_0$ around the axis perpendicular to the bend 
+plane such that the $z$ axis of $\Xi_0$ is parallel to the chord. The transformation
+is given by \Eqs{vwlv} with $L = (0, 0, 0)$ and $S$ given by and \eq{wws} and \eq{ustt} with
+$\alpha_b \rightarrow \alpha_b/2$
+%
+\item $\Xi_0 \longrightarrow \Xi_\text{mid}$
+In chord coordinates, translate from the beginning of the chord to the end of the chord.
+The transformation is given by \Eq{l00l} with $L \rightarrow L_c/2$ and $L_c$ is the chord
+length.
+%
+\item $\Xi_\text{mid} \longrightarrow \Omega_\text{c,mid}$
+Transform from chord coordinates at the center of the chord to body coordinates at the same point.
+This is the same transform as used for straight elements:
+\begin{align}
+  \bfL &= 
+    \begin{pmatrix} 
+      \text{x_offset} \\ \text{y_offset} \\ \text{z_offset} 
+    \end{pmatrix}
+    \CRNO
+  \bfS &= \bfR_{y} (\text{x_rot}) \; \bfR_{x} (\text{y_rot}) \; \bfR_{z} (\text{tilt})
+  \label{swwwbend}
+\end{align}
+%
+\item $\Omega_{c,0} \longrightarrow \Omega_{0}$
+%
+\end{enumerate}
+
 
 The second transformation $\Lambda_\text{mid}$ to $\Omega_\text{mid}$ at the center of the element
 adds in the misalignments (Note that the coordinate frame $\Omega_\text{mid}$ is neither a
