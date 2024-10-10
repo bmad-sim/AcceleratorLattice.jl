@@ -206,7 +206,9 @@ new struct that inherits from the group abstract type.
 about which the element alignment is calculated. 
 A) For straight elements, the reference point is in the center of the element. 
 For \vn{Bend} elements, the reference point is at the midpoint of the chord connecting
-the entrance point to the exit point.
+the entrance point to the exit point. The drawing for the bend is valid for a \vn{ref_tilt}
+of zero. For non-zero \vn{ref_tilt}, the outward direction from the bend center will not be
+the $x$-axis. 
 }  \label{f:alignment}
 \end{figure}
 
@@ -220,7 +222,11 @@ the entrance point to the exit point.
 The alignment group gives the alignment (position and angular orientation) of the physical element 
 relative to the nominal position defined by the machine coordinates (\sref{s:orient}).
 Alignment is specified with respect to the ``alignment reference point'' of an element as shown
-in Fig~\ref{s:alignment}. 
+in Fig~\ref{s:alignment}. The \vn{Bend} reference point is chosen to be the center of the chord
+connecting the two ends. 
+This reference point was chosen over using the midpoint on the reference orbit arc since a 
+common simulation problem is to simulate a bend with a \vn{tilt} keeping the entrance and exit
+endpoints fixed.
 
 The parameters of the \vn{AlignmentGroup} can be divided into two sub-groups. 
 One group has a \vn{_tot} suffix:

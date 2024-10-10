@@ -734,20 +734,21 @@ beginning of the element. This is a
 rotation around the center of curvature of the bend and is given by \Eqs{vwlv} and \eq{wws} with
 \Eqs{ustt} and \eq{lrztt} with the substitution $\alpha_b \rightarrow -s/\rho$.
 %
-\item $\Lambda_0 \longrightarrow \Xi_0$
+\item $\Lambda_0 \longrightarrow \Xi_0$ \\
 Transform from $\Lambda_s$ to $\Xi_0$ which is the ``chord''
 coordinate system obtained by rotating $\Lambda_0$ around the axis perpendicular to the bend 
 plane such that the $z$ axis of $\Xi_0$ is parallel to the chord. The transformation
 is given by \Eqs{vwlv} with $L = (0, 0, 0)$ and $S$ given by and \eq{wws} and \eq{ustt} with
 $\alpha_b \rightarrow \alpha_b/2$
 %
-\item $\Xi_0 \longrightarrow \Xi_\text{mid}$
+\item $\Xi_0 \longrightarrow \Xi_\text{mid}$ \\
 In chord coordinates, translate from the beginning of the chord to the end of the chord.
 The transformation is given by \Eq{l00l} with $L \rightarrow L_c/2$ and $L_c$ is the chord
 length.
 %
-\item $\Xi_\text{mid} \longrightarrow \Omega_\text{c,mid}$
-Transform from chord coordinates at the center of the chord to body coordinates at the same point.
+\item $\Xi_\text{mid} \longrightarrow \Omega_\text{c,mid}$ \\
+Transform from chord coordinates at the center of the chord to ``misaligned chord coordinates''
+at the same point.
 This is the same transform as used for straight elements:
 \begin{align}
   \bfL &= 
@@ -759,58 +760,31 @@ This is the same transform as used for straight elements:
   \label{swwwbend}
 \end{align}
 %
-\item $\Omega_{c,0} \longrightarrow \Omega_{0}$
+\item $\Omega_{c,mid} \longrightarrow \Omega_{c,0}$ \\
+Transform in misaligned chord coordinates from the center of the chord back to the beginning of the
+chord. This is the reverse of $\Xi_0 \longrightarrow \Xi_\text{mid}$. In this case
+$L \rightarrow -L_c/2$
 %
-\end{enumerate}
-
-
-The second transformation $\Lambda_\text{mid}$ to $\Omega_\text{mid}$ at the center of the element
-adds in the misalignments (Note that the coordinate frame $\Omega_\text{mid}$ is neither a
-machine frame or an element frame so hence the use of a different symbol $\Omega$). Explicitly,
-the $\Lambda_\text{mid} \longrightarrow \Omega_\text{mid}$ transformation is
-\begin{align}
-  \bfL &= \bfL_\text{off} + 
-    \left[ \bfR_z(\text{roll}) - \Bf1 \right] \; \bfR_z(\theta_t) \; \bfR_{y}(\alpha_b/2) \; 
-      \bfL_c \CRNO
-  \bfS &= \bfR_{y}(\text{y_rot}) \; \bfR_{x}(\text{x_rot}) \; \bfR_z(\text{roll})
-  \label{lcmis}
-\end{align}
-where
-\begin{equation}
-  \bfL_c = 
-    \begin{pmatrix}
-      \rho (\cos(\alpha_b/2) - 1) \\ 0 \\ \rho \, \sin(\alpha_b/2)
-    \end{pmatrix}
-  , \qquad
-  \bfL_\text{off} = 
-    \begin{pmatrix} 
-      \text{x_offset} \\ \text{y_offset} \\ \text{z_offset} 
-    \end{pmatrix}
-\end{equation}
-The reason why $\bfL$ has a different form from straight line elements is due to the fact that the
-axis of rotation for a \vn{roll} is displaced from the $z$-axis of the coordinate system at the
-center of the bend (see \fig{f:roll}).
-
-The third transformation from $\Omega_\text{mid}$ to $\Omega_0$ is like the first transformation and
-rotates from the center of the bend to the beginning. Again \Eqs{ustt} and \eq{lrztt} are used with
-the substitution $\alpha_b \rightarrow -L/2\rho$.
-
-The fourth transformation $\Omega_0$ to $E_0$ tilts the reference frame by an amount \vn{ref_tilt}:
+\item $\Omega_{c,0} \longrightarrow \Omega_{0}$ \\
+Rotate from misaligned chord coordinates at the entrance end to coordinates 
+so that the $z$-axis is parallel to the body coordinates (tangent to the arc). 
+This is the reverse of $\Lambda_0 \longrightarrow \Xi_0$. In this case $\alpha_b \rightarrow -\alpha_b/2$
+%
+\item $\Omega_{0} \longrightarrow E_0$ \\
+Tilt (rotate around the $z$-axis) by an amount \vn{ref_tilt} which brings the coordinate system to
+correspond to body coordinates at the entrance of the element.
 \begin{equation}
   \bfL = 0, \quad
   \bfS = \bfR_{z}(\theta_t)
   \label{l0sr}
 \end{equation}
-
-The fifth and final transformation, $E_0$ to $E_s$, like the first and third, rotates around the
-center of the bend but in this case, since we are dealing with element coordinates, the
-\vn{ref_tilt} is ignored.  That is, \Eqs{ustt} and \eq{lrztt} are used with the substitutions
+%
+\item $E_0 \longrightarrow E_s$ \\
+Rotate around the
+center of the bend. \Eqs{ustt} and \eq{lrztt} are used with the substitutions
 $\theta_t \rightarrow 0$ and $\alpha_b \rightarrow L/\rho$.
-
-Notice that with this definition of how elements are misaligned, the position of the center of a
-misaligned element depends only on the offsets and \vn{roll}, and is independent of any rotations. 
-Also the orientation of an element depends only on the \vn{x_rot}, \vn{y_rot}, \vn{roll}, 
-and \vn{ref_tilt}, and is independent of the offsets.
+%
+\end{enumerate}
 
 %-----------------------------------------------------------------------------
 \section{Phase Space Coordinates}
