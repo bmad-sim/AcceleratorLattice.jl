@@ -148,7 +148,6 @@ end
 @construct_ele_type BeginningEle
 @construct_ele_type Bend
 @construct_ele_type Collimator
-@construct_ele_type Controller    # Controller
 @construct_ele_type Converter
 @construct_ele_type CrabCavity
 @construct_ele_type Custom
@@ -161,7 +160,7 @@ end
 @construct_ele_type FloorShift
 @construct_ele_type Foil
 @construct_ele_type Fork
-@construct_ele_type Girder        # Controller
+@construct_ele_type Girder
 @construct_ele_type Instrument
 @construct_ele_type Kicker
 @construct_ele_type LCavity
@@ -173,7 +172,6 @@ end
 @construct_ele_type Octupole
 @construct_ele_type Patch
 @construct_ele_type Quadrupole
-@construct_ele_type Ramper        # Controller
 @construct_ele_type RFBend
 @construct_ele_type RFCavity
 @construct_ele_type SADMult

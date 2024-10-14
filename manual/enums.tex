@@ -1,0 +1,163 @@
+\chapter{Enums and Holy Traits}
+\label{c:enums}
+
+Enums (\sref{s:enums}) and Holy traits (\sref{s:holy}) are used to define ``switches'' which are
+variables whose value can be one of a set of named constants. 
+A web search will provide documentation. 
+
+The advantage of Holy traits is that they can be used with function dispatch. The disadvantage is
+that the same Holy trait value name cannot be used with multiple groups.
+
+%---------------------------------------------------------------------------------------------------
+\section{Enums}
+\label{s:enums}
+
+\accellat uses the package \vn{EnumX.jl} to define enums (enumerated numbers).
+Essentially what happens is that for each enum group there is a group name, For example \vn{BendType},
+along with a set of values which, for \vn{BendType}, is \vn{SECTOR} and \vn{RECTANGULAR}. Values
+are always referred to by their "full" name which in this example is \vn{BendType.SECTOR} and
+\vn{BendType.RECTANGULAR}. Exception: \vn{BranchGeometry.CLOSED} and \vn{BranchGeometry.OPEN} are
+used often enough so that the constants \vn{OPEN} and \vn{CLOSED} are defined.
+
+The group name followed by a \vn{.T} suffix denotes the enum type.
+For example:
+\begin{example}
+  struct ApertureGroup <: EleParameterGroup
+    aperture_type::ApertureShape.T = ApertureShape.ELLIPTICAL
+    aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
+    ...
+\end{example}
+
+The \vn{enum} function is used to convert a list into an enum group and export the names.
+The \vn{enum} function also overloads \vn{Base.string} so that something like \vn{string(Lord.NOT)} 
+will return \vn{"Lord.NOT"} instead of just \vn{"NOT"} (an issue with the EnumX.jl package). 
+See the documentation for \vn{enum} for more details.
+
+The \vn{enum_add} function is used to add values to an existing enum group. See the documentation for
+\vn{enum_add} for more details. This function is used with code extensions to customize \accellat.
+
+
+List of enum groups defined in \accellat:
+\begin{description}[leftmargin=1em]
+%
+\item[BendType] --- Type of Bend element magnet. \Newline
+\vskip -2ex
+\begin{tabular}{ll}
+  .SECTOR      & --- Sector shape \\
+  .RECTANGULAR & --- Rectangular shape \\
+\end{tabular} 
+\hfill \break \vskip -1.2ex
+There is no difference between \vn{SECTOR} and \vn{RECTANGULAR} bends except in the case where
+the bend curvature is varied. In this case, for a \vn{SECTOR} bend the face angles \vn{e1} and
+\vn{e2} are held constant and \vn{e1_rect} and \vn{e2_rect} are varied to keep ...
+\vskip 3ex
+%
+\item[BodyLoc] --- Longitudinal location with respect to element's body coordinates.\Newline
+\vskip -2ex
+\begin{tabular}{ll}
+  .ENTRANCE_END & --- Body entrance end \\
+  .CENTER       & --- Element center \\
+  .EXIT_END     & --- Body exit end \\
+  .BOTH_ENDS    & --- Both ends \\
+  .NOWHERE      & --- No location \\
+  .EVERYWHERE   & --- Everywhere \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+%
+\item[BranchGeometry] --- Geometry of a lattice branch\Newline
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  .OPEN    & --- Open geometry like a Linac. \\
+  .CLOSED  & --- Closed geometry like a storage ring.
+\end{tabular}
+\hfill \break \vskip -1.2ex
+%
+\item[Cavity] --- Type of RF cavity. \Newline
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  .STANDING_WAVE   & --- Standing wave cavity \\
+  .TRAVELING_WAVE  & --- Traveling wave cavity \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+%
+\item[Lord] --- Type of lord an element is \Newline
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  .NOT       & --- Not a lord \\
+  .SUPER     & --- Super lord \\
+  .MULTIPASS & --- Multipass lord \\
+  .GOVERNOR  & --- Girder and other "minor" lords \\ 
+\end{tabular}
+\hfill \break \vskip -1.2ex
+%
+\item[Slave] --- Type of slave an element is \Newline
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  .NOT       & --- Not a slave \\
+  .SUPER     & --- Super slave \\
+  .MULTIPASS & --- Multipass slave \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+%
+\item[Loc] --- Longitudinal location with respect to element's machine coordinates. \Newline
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  .UPSTREAM_END   & --- Upstream element end\\
+  .CENTER         & --- center of element \\
+  .INSIDE         & --- Somewhere inside \\
+  .DOWNSTREAM_END & --- Downstream element end \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+%
+\item[Select] --- Specifies where to select if there is a choice of elements or positions. \Newline
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  .UPSTREAM   & --- Select upstream \\
+  .DOWNSTREAM & --- Select downstream \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+%
+\item[ExactMultipoles] --- How multipoles are handled in a Bend element \Newline
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  .OFF               & --- Bend curvature not taken into account. \\
+  .HORIZONTALLY_PURE & --- Coefficients correspond to horizontally pure multipoles. \\
+  .VERTICALLY_PURE   & --- Coefficients correspond to vertically pure multipoles. \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+%
+\item[FiducialPt] Fiducial point location with respect to element's machine coordinates. \Newline
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  .ENTRANCE_END & --- Entrance end of element \\
+  .CENTER       & --- Center of element \\
+  .EXIT_END     & --- Exit end of element \\
+  .NONE         & --- No point chosen \\
+\end{tabular}
+%
+\end{description}
+
+%---------------------------------------------------------------------------------------------------
+\section{Holy Traits}
+\label{s:holy}
+
+\vn{Holy traits} (named after Tim Holy) are a design pattern in Julia that that behave similarly
+to \vn{enums} (\sref{s:enum}). A Holy trait group consists of an abstract type with a set of values
+(traits) which are structs that inherit from the abstract type.
+
+There is a convenience function \vn{holy_traits} which will define a traits group, export the names,
+and create a docstring for the group. Values can be added to an existing group by defining a 
+new struct that inherits from the group abstract type.
+
+\begin{description}
+%
+\item[ApertureShape] --- The shape of an aperture.\Newline 
+\vspace*{-5pt}
+\begin{tabular}{ll}
+  RECTANGULAR & --- Rectangular shape \\
+  ELLIPTICAL  & --- Elliptical shape \\
+\end{tabular}
+%
+\end{description}
+
+
