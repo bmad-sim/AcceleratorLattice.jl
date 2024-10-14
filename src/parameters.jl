@@ -282,11 +282,7 @@ end
 #-
 
 function units(param::Symbol, eletype::Type{T}) where T <: Ele
-  if eletype == Controller || eletype == Ramper
-    return ""
-  else
-    return units(param)
-  end
+  return units(param)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -299,11 +295,7 @@ function description(key)
 end
 
 function description(key, eletype::Type{T}) where T <: Ele
-  if eletype == Controller || eletype == Ramper
-    return "" 
-  else
-    return description(key)
-  end
+  return description(key)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -535,7 +527,6 @@ PARAM_GROUPS_LIST = Dict(
     BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
     Bend                => [general_group_list..., BendGroup, ],
     Collimator          => [base_group_list...],
-    Controller          => [],
     Converter           => [base_group_list...],
     CrabCavity          => [base_group_list...],
     Custom              => [base_group_list...],
@@ -560,7 +551,6 @@ PARAM_GROUPS_LIST = Dict(
     Octupole            => [general_group_list...],
     Patch               => [base_group_list..., PatchGroup],
     Quadrupole          => [general_group_list...],
-    Ramper              => [base_group_list...],
     RFBend              => [base_group_list...],
     RFCavity            => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFCavityGroup, RFCommonGroup],
     SADMult             => [general_group_list...],

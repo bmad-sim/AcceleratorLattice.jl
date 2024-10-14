@@ -669,7 +669,8 @@ function info(ele_type::Type{T}; return_str::Bool = false) where T <: Ele
   if return_str
     lst = ""
     for group in sort(PARAM_GROUPS_LIST[ele_type])
-      lst *= "-  $(rpad(strip_AL(group), 20)) -> $(ELE_PARAM_GROUP_INFO[group].description)\n"
+      name = "`$(strip_AL(group))`"
+      lst *= "•  $(rpad(name, 20)) -> $(ELE_PARAM_GROUP_INFO[group].description)\\\n"
     end
     return lst
 
@@ -724,11 +725,11 @@ function info1(info::ParamInfo)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Construct documentation on element types
+# Construct documentation for element types
 
 for etype in subtypes(Ele)
-  str = """
-    mutable struct $(strip_AL(etype)) <: Ele
+  global ele_docstring = """
+      mutable struct $(strip_AL(etype)) <: Ele
 
 Type of lattice element.
 
@@ -736,5 +737,5 @@ Type of lattice element.
 $(info(etype, return_str = true))
 """
 
-  eval_str("@doc \"\"\"$str\"\"\" $etype")
+  eval(Meta.parse("@doc ele_docstring $etype"))
 end

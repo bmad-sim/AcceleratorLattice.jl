@@ -37,7 +37,7 @@ can be accessed via using Julia's REPL.
 developed over several
 decades at Cornell University. Although the two share a similar name, {\bf the code of the two are
 completely separate}. That being said, the development of \accellat is heavily influenced by the 
-experience --- both good and bad --- in the development and use of  \bmad as well as experience
+experience --- both good and bad --- in the development and use of \bmad as well as experience
 with other accelerator simulation programs.
 
 The \julia language itself is used as the basis for constructing lattices with \accellat. 
@@ -194,8 +194,7 @@ a bend:
 \section{Differences From Bmad}
 
 There are many differences between \accellat and \bmad. Many of of these will be fairly
-obvious. 
-Some differences to be aware of:
+obvious. Some differences to be aware of:
 \begin{description}
 \item
 \bmad is generally case insensitive (except for things like file names). \accellat, like
@@ -236,15 +235,15 @@ under \accellat.
 With \bmad, the beginning and end elements are implicitly inserted into a branch line.
 With \accellat, only an end element will be implicitly inserted if the end of the beamline is
 not a marker. 
-Also with \bmad the beginning element is always named \vn{Beginning}. 
+Also with \bmad the beginning element is always named \vn{Beginning} while with \accellat there
+is no restriction on the name. 
 %
 \item
 Restrictions on the order of statements used to create a lattice are different. 
 For example, in \bmad, a statement defining a lattice element can be placed anywhere
 except if there is an \vn{expand_lattice} statement and the element is not being used
 with superposition in which case the element definition must be before the \vn{expand_lattice}
-statement. With \accellat, element definitions must come before the element is used in a line
-or used to define a control element.
+statement. With \accellat, element definitions must come before the element is used in a line.
 %
 \item
 With \bmad superposition of two non-drift elements, if there existed the appropriate
@@ -254,8 +253,17 @@ a \vn{solenoid} superimposed over a \vn{quadrupole} would give a \vn{sol_quad} \
 \vn{super_slave} parameters may not be possible. For example if the \vn{super_lord}
 elements are misaligned, in general it is not possible to compute a corresponding \vn{super_slave}
 misalignment. To avoid this, \accellat creates a \vn{UnionEle} \vn{super_slave} element
-(which in \bmad is known as a ``jumbo'' \vn{super_slave}).
+(which in \bmad is known as a ``jumbo'' \vn{super_slave}). It is up to the tracking routines to
+figure out how to track though a \vn{UnionEle}
 %
+\item
+In \vn{Bmad} there are two types of bends called \vn{sbend} and \vn{rbend}. 
+This organization was inherited from \vn{MAD}. While both \vn{sbends} and \vn{rbends}
+represent the same physical type of bend, the two have different ways to specify the bend parameters. 
+This can be confusing since \vn{rbends} and \vn{sbends} use the same names for different parameters.
+For example, the length \vn{l} for an \vn{sbend} is the arc length but for an \vn{rbend} it is the
+chord length. To avoid confusion, \accellat combines the two into a single \vn{Bend} type with
+distinct parameter names. For example, \vn{L} is the arc length and \vn{L_chord} is the chord length.
 \end{description}
 
 

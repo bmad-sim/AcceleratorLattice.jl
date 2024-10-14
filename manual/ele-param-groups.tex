@@ -14,186 +14,44 @@ These sub-groups also inherit from \vn{BaseEleParameterGroup}:
   abstract type EleParameterSubGroup <: BaseEleParameterGroup end
 \end{example}
 
-All parameter groups have associated docstrings that can be accessed when using the REPL.
+Notes:
+\begin{itemize}
+%
+\item
+All parameter groups have associated docstrings that can be accessed using the REPL help system.
+%
+\item
+NaN denotes parameter that is not set.
+%
+\item
+Parameters marked ``dependent'' are parameters calculated by \accellat and not settable by the User.
+%
+\end{itemize}
+
 
 The parmeters groups are:
 \begin{table}[htb]
 \centering
 {\tt
 \begin{tabular}{llll} \toprule
-  {\it Group}        & {\it Section}         & {\it Group}      & {\it Section}         \\ \midrule
- AlignmentGroup      & \sref{s:align.g}      & LordSlaveGroup      & \sref{s:lord.slave.g} \\
- ApertureGroup       & \sref{s:apert.g}      & MasterGroup         & \sref{s:master.g}     \\
- BMultipoleGroup     & \sref{s:bmult.g}      & PatchGroup          & \sref{s:patch.g}      \\ 
- BeamBeamGroup       & \sref{s:bb.g}         & RFFieldGroup        & \sref{s:rffield.g}    \\
- BendGroup           & \sref{s:bend.g}       & RFGroup             & \sref{s:rf.g}         \\ 
- EMultipoleGroup     & \sref{s:emult.g}      & RFMasterGroup       & \sref{s:rfmaster.g}   \\
- FloorPositionGroup  & \sref{s:floor.g}      & ReferenceGroup      & \sref{s:ref.g}        \\
- GirderGroup         & \sref{s:girder.g}     & SolenoidGroup       & \sref{s:sol.g}        \\
- InitParticleGroup   & \sref{s:initp.g}      & StringGroup         & \sref{s:string.g}     \\
- LCavityGroup        & \sref{s:lcav.g}       & TrackingGroup       & \sref{s:track.g}      \\
- LengthGroup         & \sref{s:length.g}     & TwissGroup          & \sref{s:twiss.g}      \\ 
+  {\it Group}        & {\it Section}             & {\it Group}         & {\it Section}         \\ \midrule
+ AlignmentGroup      & \sref{s:align.g}          & LordSlaveGroup      & \sref{s:lord.slave.g} \\
+ ApertureGroup       & \sref{s:aperture.g}       & MasterGroup         & \sref{s:master.g}     \\
+ BMultipoleGroup     & \sref{s:bmultipole.g}     & PatchGroup          & \sref{s:patch.g}      \\ 
+ BeamBeamGroup       & \sref{s:beam.beam.g}      & RFCommonGroup       & \sref{s:rfcommon.g}   \\
+ BendGroup           & \sref{s:bend.g}           & RFCavityGroup       & \sref{s:rfcavity.g}    \\ 
+ EMultipoleGroup     & \sref{s:emultipole.g}     & RFAutoGroup         & \sref{s:rfauto.g}   \\
+ FloorPositionGroup  & \sref{s:floor.pos.g}      & ReferenceGroup      & \sref{s:reference.g}  \\
+ GirderGroup         & \sref{s:girder.g}         & SolenoidGroup       & \sref{s:solenoid.g}   \\
+ InitParticleGroup   & \sref{s:init.particle.g}  & StringGroup         & \sref{s:string.g}     \\
+ LCavityGroup        & \sref{s:lcavity.g}        & TrackingGroup       & \sref{s:tracking.g}   \\
+ LengthGroup         & \sref{s:length.g}         & TwissGroup          & \sref{s:twiss.g}      \\ 
   \bottomrule
 \end{tabular}
 } 
 \caption{Table of element parameter groups.}
 \label{t:particle.groups}
 \end{table}
-
-
-* Note: NaN denotes parameter that is not set.
-
-* beta_ref is a dependent attribute.
-
-
-
- 
-
-
-
-
-%---------------------------------------------------------------------------------------------------
-\section{Enums}
-\label{s:enums}
-
-\accellat uses the package \vn{EnumX.jl} to define enums (enumerated numbers).
-Essentially what happens is that for each enum group there is a group name, For example \vn{BendType},
-along with a set of values which, for \vn{BendType}, is \vn{SECTOR} and \vn{RECTANGULAR}. Values
-are always referred to by their "full" name which in this example is \vn{BendType.SECTOR} and
-\vn{BendType.RECTANGULAR}. Exception: \vn{BranchGeometry.CLOSED} and \vn{BranchGeometry.OPEN} are
-used often enough so that the constants \vn{OPEN} and \vn{CLOSED} are defined.
-
-The group name followed by a \vn{.T} suffix denotes the enum type.
-For example:
-\begin{example}
-  struct ApertureGroup <: EleParameterGroup
-    aperture_type::ApertureShape.T = ApertureShape.ELLIPTICAL
-    aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
-    ...
-\end{example}
-
-The \vn{enum} function is used to convert a list into an enum group and export the names.
-The \vn{enum} function also overloads \vn{Base.string} so that something like \vn{string(Lord.NOT)} 
-will return \vn{"Lord.NOT"} instead of just \vn{"NOT"} (an issue with the EnumX.jl package). 
-See the documentation for \vn{enum} for more details.
-
-The \vn{enum_add} function is used to add values to an existing enum group. See the documentation for
-\vn{enum_add} for more details. This function is used with code extensions to customize \accellat.
-
-
-Below is a list of enum groups defined in \accellat. 
-\begin{description}
-%
-\item[BendType] --- Type of Bend element magnet.\Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  SECTOR      & --- Sector shape\\
-  RECTANGULAR & --- Rectangular shape \\
-\end{tabular}
-%
-\item[BodyLoc] --- Longitudinal location with respect to element's body coordinates.\Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  ENTRANCE_END & --- Body entrance end \\
-  CENTER       & --- Element center \\
-  EXIT_END     & --- Body exit end \\
-  BOTH_ENDS    & --- Both ends \\
-  NOWHERE      & --- No location \\
-  EVERYWHERE   & --- Everywhere \\
-\end{tabular}
-%
-\item[BranchGeometry] --- Geometry of a lattice branch\Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  OPEN    & --- Open geometry like a Linac. \\
-  CLOSED  & --- Closed geometry like a storage ring.
-\end{tabular}
-%
-\item[Cavity] --- Type of RF cavity. \Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  STANDING_WAVE   & --- Standing wave cavity \\
-  TRAVELING_WAVE  & --- Traveling wave cavity \\
-\end{tabular}
-%
-\item[Lord] --- Type of lord an element is \Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  NOT       & --- Not a lord \\
-  SUPER     & --- Super lord \\
-  MULTIPASS & --- Multipass lord \\
-  GOVERNOR  & --- Girder and other "minor" lords \\ 
-\end{tabular}
-%
-\item[Slave] --- Type of slave an element is \Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  NOT       & --- Not a slave \\
-  SUPER     & --- Super slave \\
-  MULTIPASS & --- Multipass slave \\
-\end{tabular}
-%
-\item[Loc] --- Longitudinal location with respect to element's machine coordinates. \Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  UPSTREAM_END   & --- Upstream element end\\
-  CENTER         & --- center of element \\
-  INSIDE         & --- Somewhere inside \\
-  DOWNSTREAM_END & --- Downstream element end \\
-\end{tabular}
-%
-\item[Select] --- Specifies where to select if there is a choice of elements or positions. \Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  UPSTREAM   & --- Select upstream \\
-  DOWNSTREAM & --- Select downstream \\
-\end{tabular}
-%
-\item[ExactMultipoles] --- How multipoles are handled in a Bend element \Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  OFF               & --- Bend curvature not taken into account. \\
-  HORIZONTALLY_PURE & --- Coefficients correspond to horizontally pure multipoles. \\
-  VERTICALLY_PURE   & --- Coefficients correspond to vertically pure multipoles. \\
-\end{tabular}
-%
-\item[FiducialPt] Fiducial point location with respect to element's machine coordinates. \Newline
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  ENTRANCE_END & --- Entrance end of element \\
-  CENTER       & --- Center of element \\
-  EXIT_END     & --- Exit end of element \\
-  NONE         & --- No point chosen \\
-\end{tabular}
-%
-\end{description}
-
-%---------------------------------------------------------------------------------------------------
-\section{Holy Traits}
-\label{s:holy.traits}
-
-\vn{Holy traits} (named after Tim Holy) are a design pattern in Julia that that behave similarly
-to \vn{enums} (\sref{s:enum}). A Holy trait group consists of an abstract type with a set of values
-(traits) which are structs that inherit from the abstract type.
-
-The advantage of Holy traits is that they can be used with function dispatch. The disadvantage is
-that the same Holy trait value name cannot be used with multiple groups.
-
-There is a convenience function \vn{holy_traits} which will define a traits group, export the names,
-and create a docstring for the group. Values can be added to an existing group by defining a 
-new struct that inherits from the group abstract type.
-
-\begin{description}
-%
-\item[ApertureShape] --- The shape of an aperture.\Newline 
-\hspace*{-20pt}
-\begin{tabular}{ll}
-  RECTANGULAR & --- Rectangular shape \\
-  ELLIPTICAL  & --- Elliptical shape \\
-\end{tabular}
-%
-\end{description}
-
 
 %---------------------------------------------------------------------------------------------------
 \section{AlignmentGroup}
@@ -277,7 +135,7 @@ alignments since Girders can support other Girders.
 
 %---------------------------------------------------------------------------------------------------
 \section{FloorPositionGroup}
-\label{s:floor.position.g}
+\label{s:floor.pos.g}
 
 %---------------------------------------------------------------------------------------------------
 \section{GirderGroup}
@@ -308,16 +166,16 @@ alignments since Girders can support other Girders.
 \label{s:patch.g}
 
 %---------------------------------------------------------------------------------------------------
-\section{RFFieldGroup}
-\label{s:rffield.g}
+\section{RFCommonGroup}
+\label{s:rfcommon.g}
 
 %---------------------------------------------------------------------------------------------------
-\section{RFGroup}
-\label{s:rf.g}
+\section{RFCavityGroup}
+\label{s:rfcavity.g}
 
 %---------------------------------------------------------------------------------------------------
-\section{RFMasterGroup}
-\label{s:rfmaster.g}
+\section{RFAutoGroup}
+\label{s:rfauto.g}
 
 %---------------------------------------------------------------------------------------------------
 \section{ReferenceGroup}

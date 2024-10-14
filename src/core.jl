@@ -198,10 +198,10 @@ end
 # eval_str
 
 """
-    function eval_str(str::AbstractString)
+    eval_str(str::AbstractString)
 
 Evaluates a string. Short for `eval(Meta.parse(str))`.
-"""
+""" eval_str
 
 eval_str(str::AbstractString) = eval(Meta.parse(str))
 
