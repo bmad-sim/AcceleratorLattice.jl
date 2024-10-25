@@ -56,6 +56,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :multipass_lord     => ParamInfo(Nothing,        Ele,           "Element's multipass_lord. Will not be present if no lord exists."),
   :super_lords        => ParamInfo(Nothing,        Vector{Ele},   "Array of element's super_lords. Will not be present if no lords exist."),
   :slaves             => ParamInfo(Nothing,        Vector{Ele},   "Array of slaves of element. Will not be present if no slaves exist."),
+  :amp_function       => ParamInfo(Nothing,        Function,      "Amplitude function."),
 
   :offset             => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "[x, y, z] element offset.", "m"),
   :x_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis element rotation.", "rad"),
@@ -111,7 +112,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :hgap               => ParamInfo(Nothing,        Number,        "Used to set hgap1 and hgap2 both at once.", ""),
   :hgap1              => ParamInfo(BendGroup,      Number,        "Bend entrance edge pole gap height.", "m"),
   :hgap2              => ParamInfo(BendGroup,      Number,        "Bend exit edge pole gap height.", "m"),
-  :bend_type          => ParamInfo(BendGroup,      BendType.T,    "Sets how face angles varies with bend angle."),
+  :bend_type          => ParamInfo(BendGroup,      BendType.T,    "Sets the \"logical\" shape of a bend."),
   :fiducial_pt        => ParamInfo(BendGroup,      FiducialPt.T,  "Fiducial point used with variation of bend parameters."),
   :exact_multipoles   => ParamInfo(BendGroup,      ExactMultipoles.T, "Are multipoles treated exactly?"),
 
@@ -143,45 +144,46 @@ ELE_PARAM_INFO_DICT = Dict(
   :phase_err          => ParamInfo(LCavityGroup,   Number,         "RF phase error.", "rad"),
   :phase_tot          => ParamInfo(LCavityGroup,   Number,         "Actual RF phase. (ref + err)", "rad"),
 
-  :voltage_master     => ParamInfo(RFAutoGroup,  Bool,             "Voltage or gradient is constant with length changes?"),
-  :auto_amp           => ParamInfo(RFAutoGroup,  Number,    
+  :voltage_master     => ParamInfo(RFAutoGroup,    Bool,           "Voltage or gradient is constant with length changes?"),
+  :auto_amp           => ParamInfo(RFAutoGroup,    Number,    
                                   "Correction to the voltage/gradient calculated by the auto scale code.", ""),
-  :auto_phase         => ParamInfo(RFAutoGroup,  Number,           "Correction RF phase calculated by the auto scale code.", "rad"),
-  :do_auto_amp        => ParamInfo(RFAutoGroup,  Bool,             "Autoscale voltage/gradient?"),
-  :do_auto_phase      => ParamInfo(RFAutoGroup,  Bool,             "Autoscale phase?"),
+  :auto_phase         => ParamInfo(RFAutoGroup,    Number,         "Correction RF phase calculated by the auto scale code.", "rad"),
+  :do_auto_amp        => ParamInfo(RFAutoGroup,    Bool,           "Autoscale voltage/gradient?"),
+  :do_auto_phase      => ParamInfo(RFAutoGroup,    Bool,           "Autoscale phase?"),
   :do_auto_scale      => ParamInfo(Nothing,        Bool,           "Used to set do_auto_amp and do_auto_phase both at once.", ""),
 
-  :num_steps          => ParamInfo(TrackingGroup,  Int,                   "Nominal number of tracking steps."),
-  :ds_step            => ParamInfo(TrackingGroup,  Number,                "Nominal distance between tracking steps.", "m"),
+  :num_steps          => ParamInfo(TrackingGroup,  Int,               "Nominal number of tracking steps."),
+  :ds_step            => ParamInfo(TrackingGroup,  Number,            "Nominal distance between tracking steps.", "m"),
 
-  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,         "Shape of aperture. Default is ELLIPTICAL."),
-  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,             "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
+  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,     "Shape of aperture. Default is ELLIPTICAL."),
+  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,         "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
   :misalignment_moves_aperture 
-                      => ParamInfo(ApertureGroup,  Bool,                  "Does moving the element move the aperture?"),
-  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of horizontal aperture limits.", "m"),
-  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},        "2-Vector of vertical aperture limits.", "m"),
+                      => ParamInfo(ApertureGroup,  Bool,              "Does moving the element move the aperture?"),
+  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "2-Vector of horizontal aperture limits.", "m"),
+  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "2-Vector of vertical aperture limits.", "m"),
+  :vertex             => ParamInfo(ApertureGroup,  Vector{Vertex1},   "Array of aperture vertexes."),
 
-  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "3-vector of element floor position.", "m", :r),
-  :q_floor            => ParamInfo(FloorPositionGroup, Vector{Number},    "Element quaternion orientation.", "", :q),
-  :theta_floor        => ParamInfo(FloorPositionGroup, Number,            "Element floor theta angle orientation", "rad", :theta),
-  :phi_floor          => ParamInfo(FloorPositionGroup, Number,            "Element floor phi angle orientation", "rad", :phi),
-  :psi_floor          => ParamInfo(FloorPositionGroup, Number,            "Element floor psi angle orientation", "rad", :psi),
+  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number},"3-vector of element floor position.", "m", :r),
+  :q_floor            => ParamInfo(FloorPositionGroup, Vector{Number},"Element quaternion orientation.", "", :q),
+  :theta_floor        => ParamInfo(FloorPositionGroup, Number,        "Element floor theta angle orientation", "rad", :theta),
+  :phi_floor          => ParamInfo(FloorPositionGroup, Number,        "Element floor phi angle orientation", "rad", :phi),
+  :psi_floor          => ParamInfo(FloorPositionGroup, Number,        "Element floor psi angle orientation", "rad", :psi),
 
-  :origin_ele         => ParamInfo(GirderGroup,     Ele,                  "Coordinate reference element."),
-  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     Loc.T,                "Reference location on reference element. Default is Loc.CENTER."),
-  :dr_girder          => ParamInfo(GirderGroup,     Vector{Number},       "3-vector of girder position with respect to ref ele.", "m", :dr),
-  :dtheta_girder      => ParamInfo(GirderGroup,     Number,               "Theta angle orientation with respect to ref ele.", "rad", :dtheta),
-  :dphi_girder        => ParamInfo(GirderGroup,     Number,               "Phi angle orientation with respect to ref ele.", "rad", :dphi),
-  :dpsi_girder        => ParamInfo(GirderGroup,     Number,               "Psi angle orientation with respect to ref ele.", "rad", :dpsi),
+  :origin_ele         => ParamInfo(GirderGroup,     Ele,              "Coordinate reference element."),
+  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     Loc.T,            "Reference location on reference element. Default is Loc.CENTER."),
+  :dr_girder          => ParamInfo(GirderGroup,     Vector{Number},   "3-vector of girder position with respect to ref ele.", "m", :dr),
+  :dtheta_girder      => ParamInfo(GirderGroup,     Number,           "Theta angle orientation with respect to ref ele.", "rad", :dtheta),
+  :dphi_girder        => ParamInfo(GirderGroup,     Number,           "Phi angle orientation with respect to ref ele.", "rad", :dphi),
+  :dpsi_girder        => ParamInfo(GirderGroup,     Number,           "Psi angle orientation with respect to ref ele.", "rad", :dpsi),
 
-  :Ksol               => ParamInfo(SolenoidGroup,   Number,               "Solenoid strength.", "1/m"),
-  :Bsol               => ParamInfo(SolenoidGroup,   Number,               "Solenoid field.", "T"),
+  :Ksol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid strength.", "1/m"),
+  :Bsol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid field.", "T"),
 
-  :slave_status       => ParamInfo(LordSlaveGroup,    Slave.T,    "Slave status."),
-  :lord_status        => ParamInfo(LordSlaveGroup,    Lord.T,     "Lord status."),
+  :slave_status       => ParamInfo(LordSlaveGroup,    Slave.T,        "Slave status."),
+  :lord_status        => ParamInfo(LordSlaveGroup,    Lord.T,         "Lord status."),
 
-  :spin               => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle spin"),
-  :orbit              => ParamInfo(InitParticleGroup,   Vector{Number},     "Initial particle position."),
+  :spin               => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle spin"),
+  :orbit              => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle position."),
 
   :beta               => ParamInfo(Twiss1,      Number,             "Beta Twiss parameter.", "m"),
   :alpha              => ParamInfo(Twiss1,      Number,             "Alpha Twiss parameter.", ""),
@@ -519,22 +521,19 @@ Order is important. Bookkeeping routines rely on:
 base_group_list = [LengthGroup, LordSlaveGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
+bmultipole_group_list = [MasterGroup, BMultipoleGroup]
 general_group_list = [base_group_list..., alignment_group_list..., multipole_group_list...]
 
 PARAM_GROUPS_LIST = Dict(  
-    ACKicker            => [base_group_list...],
+    ACKicker            => [base_group_list..., alignment_group_list..., bmultipole_group_list...],
     BeamBeam            => [base_group_list...],
     BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
-    Bend                => [general_group_list..., BendGroup, ],
+    Bend                => [general_group_list..., BendGroup],
     Collimator          => [base_group_list...],
     Converter           => [base_group_list...],
     CrabCavity          => [base_group_list...],
-    Custom              => [base_group_list...],
-    Crystal             => [base_group_list...],
     Drift               => [base_group_list...],
     EGun                => [base_group_list...],
-    ElectricSeparator   => [base_group_list...],
-    EMField             => [base_group_list...],
     Fiducial            => [base_group_list...],
     FloorShift          => [base_group_list...],
     Foil                => [base_group_list...],
@@ -551,9 +550,7 @@ PARAM_GROUPS_LIST = Dict(
     Octupole            => [general_group_list...],
     Patch               => [base_group_list..., PatchGroup],
     Quadrupole          => [general_group_list...],
-    RFBend              => [base_group_list...],
     RFCavity            => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFCavityGroup, RFCommonGroup],
-    SADMult             => [general_group_list...],
     Sextupole           => [general_group_list...],
     Solenoid            => [general_group_list..., SolenoidGroup],
     Taylor              => [base_group_list...],
@@ -655,7 +652,7 @@ Dictionary of parameters in the Branch.pdict dict.
 
 BRANCH_PARAM::Dict{Symbol,ParamInfo} = Dict{Symbol,ParamInfo}(
   :ix_branch   => ParamInfo(Nothing, Int,               "Index of branch in containing lat .branch[] array"),
-  :geometry    => ParamInfo(Nothing, BranchGeometry.T,  "BranchGeometry.OPEN  (or OPEN) or BranchGeometry.CLOSED (or CLOSED)"),
+  :geometry    => ParamInfo(Nothing, BranchGeometry.T,  "BranchGeometry OPEN (default) or CLOSED."),
   :lat         => ParamInfo(Nothing, Pointer,           "Pointer to lattice containing the branch."),
   :type        => ParamInfo(Nothing, BranchType,        "Either LordBranch or TrackingBranch BranchType enums."),
   :from_ele    => ParamInfo(Nothing, Pointer,           "Element that forks to this branch."),

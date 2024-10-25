@@ -1,3 +1,5 @@
+using AcceleratorLattice
+
 # Create a list of element groups for an element type for insertion into the element types chapter.
 
 section_dict = Dict(
@@ -23,9 +25,7 @@ SolenoidGroup       => "s:solenoid.g",
 StringGroup         => "s:string.g",     
 TrackingGroup       => "s:tracking.g",   
 TwissGroup          => "s:twiss.g", 
-)     
-
-Base.isless(x::Ele, y::Ele) = isless(string(x), string(y))
+)
 
 for etype in subtypes(Ele)
   n = 0
@@ -33,25 +33,27 @@ for etype in subtypes(Ele)
     n = max(n, length("$(strip_AL(group))"))
   end
 
-
-  lst = "\\begin{example}\n"
+  lst = "Element parameter groups associated with this element type are:\n" *
+        raw"\TOPrule" * "\n" *
+        raw"\begin{example}" * "\n"
   for group in sort(PARAM_GROUPS_LIST[etype])
     name = "$(strip_AL(group))"
     lst *= "  $(rpad(name, n)) -> $(ELE_PARAM_GROUP_INFO[group].description) \\sref{$(section_dict[group])} \n"
   end
-  lst *= "\\end{example}"
-
+  lst *= raw"\end{example}" * "\n" *
+         raw"\BOTTOMrule" * "\n"
   println("\n\n" * string(etype) * "\n")
   print(lst)
 end
 
+#----------------------------------------------------------
 
 function infoz(ele_type::Type{T}) where T <: Ele
-    lst = ""
-    for group in sort(PARAM_GROUPS_LIST[ele_type])
-      name = "`$(strip_AL(group))`"
-      lst *= "•  $(rpad(name, 20)) -> $(ELE_PARAM_GROUP_INFO[group].description)\\\n"
-    end
-    return lst
+  lst = ""
+  for group in sort(PARAM_GROUPS_LIST[ele_type])
+    name = "`$(strip_AL(group))`"
+    lst *= "•  $(rpad(name, 20)) -> $(ELE_PARAM_GROUP_INFO[group].description)\\\n"
+  end
+  return lst
 end
 

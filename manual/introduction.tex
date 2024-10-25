@@ -93,9 +93,6 @@ A \vn{using} statement must be given before using \accellat in Julia
 This manual has the following conventions:
 \begin{description}
 %
-\item[Types:]
-\vn{Types} are also referred to as \vn{structs}.
-%
 \item[Type fields:]
 \vn{Fields} of a type are also referred to as \vn{components} or \vn{parameters}.
 A component \vn{c} of a type \vn{S} can be referred to as \vn{S.c}. In the case
@@ -110,14 +107,18 @@ is an array, the notation \vn{S.c[]} can be used to emphasize this.
 \label{s:element.def}
 
 The basic building block used to describe an accelerator is the lattice \vn{element}. An
-element can be a something physical that particles travel through like a bending magnet, a
-quadrupole, a diffracting crystal. Besides ``tracking'' elements, there are \vn{controller},
-elements that can be used for parameter control of other elements.
-For special situations there are ``\vn{super_lord}'' and ``\vn{multipass_lord}'' elements (\ref{})
-which are used for bookkeeping purposes when element parameters are modified in the lattice.
+element is generally something physical like a bending magnet or a
+quadrupole, or a diffracting crystal. 
 
-All lattice elements are of types that inherit from the abstract type \vn{Ele}.
-Chapter~\sref{c:ele.types} lists the different element types that \bmad knows about.
+Lattice elements can be divided into two classes.
+One class are the elements that particles are tracked through. These ``tracking'' elements are
+contained in the ``tracking branches'' (\sref{s:branch.def}) of the lattice. Other elements, 
+called ``\vn{lord}'' elements, are used to
+represent relationships between elements. ``\vn{Super_lord}'' elements (\sref{c:super}) are
+used when elements overlap spatially. ``\vn{Multipass_lord}'' elements (\ref{c:multipass})
+are used when a beam goes through the same elements multiple times like in a recirculating Linac
+or when different beam go through the same elements like in the interaction region of a
+colliding beam machine.
 
 %---------------------------------------------------------------------------
 \section{Lattice Branches}

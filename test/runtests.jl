@@ -2,16 +2,20 @@ using AcceleratorLattice, Test
 
 @testset verbose = true "AcceleratorLattice" begin
 
+  @testset "accessor_test" begin
+    include("accessor_test.jl")
+  end
+
   @testset "core_test" begin
     include("core_test.jl")
   end
 
-  @testset "string_test" begin
-    include("string_test.jl")
-  end
-
   @testset "find_test" begin
     include("find_test.jl")
+  end
+
+  @testset "string_test" begin
+    include("string_test.jl")
   end
 
   @testset "superimpose_test" begin

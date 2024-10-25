@@ -62,7 +62,7 @@ module AcceleratorLattice
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, ele_at_s, add_governor!
   export eles, next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
-  export branch, matches_branch, PARAM_GROUPS_LIST, create_ele_vars, eval_str
+  export branch, matches_branch, create_ele_vars, eval_str, Vertex1
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup, BeamBeamGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, StringGroup, RFCommonGroup, SolenoidGroup
   export TrackingGroup, ChamberWallGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveGroup
@@ -74,6 +74,6 @@ module AcceleratorLattice
   export machine_location, body_location, EleRegion, multipole_param_info, holy_traits
   export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
   export str_split, str_match, str_unquote, str_quote, str_to_int, OPEN, CLOSED
-  export ELE_PARAM_GROUP_INFO
+  export ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST
 
 end # module
