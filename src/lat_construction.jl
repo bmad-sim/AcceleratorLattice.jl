@@ -282,7 +282,8 @@ end
 # Lat
 
 """
-    Lat(root_line::Union{BeamLine,Vector}; name = "lat") -> Lat
+    Lat(root_lines::Vector{BeamLine}; name = "lat") -> Lat
+    Lat(root_line::BeamLine; name = "lat") -> Lat
 
 Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
 
@@ -296,14 +297,16 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 - `Lat`      - `Lat` instance with expanded beamlines.
 
-""" Lat(root_line::Union{BeamLine,Vector})
+""" Lat(root_line::BeamLine), Lat(root_lines::Vector{BeamLine})
 
-function Lat(root_line::Union{BeamLine,Vector}; name::AbstractString = "lat") 
+Lat(root_line::BeamLine; name = "lat") = Lat([root_line], name = name)
+
+function Lat(root_lines::Vector{BeamLine}; name::AbstractString = "lat") 
   lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
   lat.doing_bookkeeping = false
   lat.autobookkeeping = false
   
-  for root in collect(root_line)
+  for root in root_lines
     new_tracking_branch!(lat, root)
   end
   

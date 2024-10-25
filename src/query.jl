@@ -92,7 +92,7 @@ function ele_geometry(ele::Ele)
   if ele isa Patch; return PATCH_GEOMETRY; end
   if typeof(ele) <: Union{Marker, Mask, Multipole}; return ZERO_LENGTH; end
   if ele isa Girder; return GIRDER_GEOMETRY; end
-  if ele isa Crystal; return CRYSTAL_GEOMETRY; end
+  ## if ele isa Crystal; return CRYSTAL_GEOMETRY; end
   return STRAIGHT
 end
 

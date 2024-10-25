@@ -660,13 +660,13 @@ info(str::AbstractString) = info(Symbol(str))
 
 #-----
 
-function info(ele_type::Type{T}; return_str::Bool = false) where T <: Ele
+function info(ele_type::Type{T}; output_str::Bool = false) where T <: Ele
   if ele_type ∉ keys(PARAM_GROUPS_LIST)
-    prinln("No information on $(ele_type)")
+    println("No information on $(ele_type)")
     return
   end
 
-  if return_str
+  if output_str
     lst = ""
     for group in sort(PARAM_GROUPS_LIST[ele_type])
       name = "`$(strip_AL(group))`"
@@ -683,13 +683,13 @@ end
 
 #----
 
-info(ele::Ele; return_str::Bool = false) = info(typeof(ele), return_str)
+#info(ele::Ele; output_str::Bool = false) = info(typeof(ele), output_str)
 
 #----
 
 function info(group::Type{T}) where T <: EleParameterGroup
   if group in keys(ELE_PARAM_GROUP_INFO)
-    println("$group $(ELE_PARAM_GROUP_INFO[group].description)")
+    println("$(group): $(ELE_PARAM_GROUP_INFO[group].description)")
   else
     println("$group")
   end
@@ -699,11 +699,18 @@ function info(group::Type{T}) where T <: EleParameterGroup
     if isnothing(info)
       println("  $param")
     else
-      str = rpad("$param::$(info.kind)", 30)
-      info.user_sym == info.struct_sym ? str2 = "" : str2 = "User sym = $(info.user_sym)"
-      println("  $str  $(info.description) ($(info.units))  $str2")
+      str = "  " * rpad("$param::$(info.kind)", 30) * info.description
+      if info.units != ""; str *= " ($(info.units))"; end
+      if info.user_sym != info.struct_sym  str  *= "  User sym = $(info.user_sym)"; end
+      println(str)
     end
   end
+
+  println("\nFound in:")
+  for (ele_type, glist) in sort!(OrderedDict(PARAM_GROUPS_LIST))
+    if group in glist; println("    " * string(ele_type)); end
+  end
+
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -728,14 +735,15 @@ end
 # Construct documentation for element types
 
 for etype in subtypes(Ele)
+  # Need to make ele_docstring global so the eval_str below will work (using $ele_docstring did not work).
   global ele_docstring = """
       mutable struct $(strip_AL(etype)) <: Ele
 
-Type of lattice element.
+Type of lattice element. $(ELE_TYPE_INFO[etype])
 
 ## Associated parameter groups
-$(info(etype, return_str = true))
+$(info(etype, output_str = true))
 """
 
-  eval(Meta.parse("@doc ele_docstring $etype"))
+  eval_str("@doc ele_docstring $etype")
 end

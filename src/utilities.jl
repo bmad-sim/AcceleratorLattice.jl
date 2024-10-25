@@ -38,3 +38,4 @@ function Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterGroup, T
   return Symbol(a) < Symbol(b)
 end
 
+Base.isless(x::Type{T}, y::Type{U}) where {T <: Ele, U <: Ele} = isless(string(x), string(y))

@@ -51,17 +51,23 @@ Base.collect(x::T) where T <: Ele = [x]
 # construct_ele_type
 
 """
-    macro construct_ele_type(type_name) -> nothing
+    macro construct_ele_type(type_name, doc::String) -> nothing
+    ELE_TYPE_INFO = Dict{DataType,String}()
 
-Constructor for element types. Example:
-    @construct_ele_type Drift
-Result: Drift struct is defined.
-""" construct_ele_type
+Constructor for element types and a Dict for storing a descriptive string. Example:
+```
+    @construct_ele_type Drift  "Field free region."
+```
+Result: `Drift` struct is defined and `ELE_TYPE_INFO[Drift]` holds the `doc` string.
+""" construct_ele_type, ELE_TYPE_INFO
 
-macro construct_ele_type(type_name)
+ELE_TYPE_INFO = Dict{DataType,String}()
+
+macro construct_ele_type(type_name, doc::String)
   eval( Meta.parse("mutable struct $type_name <: Ele; pdict::Dict{Symbol,Any}; end") )
   str_type = String("$type_name")
   eval( Meta.parse("export $str_type") )
+  eval( Meta.parse("ELE_TYPE_INFO[$type_name] = \"$doc\""))
   return nothing
 end
 
@@ -143,45 +149,39 @@ end
 #---------------------------------------------------------------------------------------------------
 # Construct ele types
 
-@construct_ele_type ACKicker
-@construct_ele_type BeamBeam
-@construct_ele_type BeginningEle
-@construct_ele_type Bend
-@construct_ele_type Collimator
-@construct_ele_type Converter
-@construct_ele_type CrabCavity
-@construct_ele_type Custom
-@construct_ele_type Crystal       # Photonic
-@construct_ele_type Drift
-@construct_ele_type EGun
-@construct_ele_type ElectricSeparator
-@construct_ele_type EMField
-@construct_ele_type Fiducial
-@construct_ele_type FloorShift
-@construct_ele_type Foil
-@construct_ele_type Fork
-@construct_ele_type Girder
-@construct_ele_type Instrument
-@construct_ele_type Kicker
-@construct_ele_type LCavity
-@construct_ele_type Marker
-@construct_ele_type Mask
-@construct_ele_type Match
-@construct_ele_type Multipole
-@construct_ele_type NullEle
-@construct_ele_type Octupole
-@construct_ele_type Patch
-@construct_ele_type Quadrupole
-@construct_ele_type RFBend
-@construct_ele_type RFCavity
-@construct_ele_type SADMult
-@construct_ele_type Sextupole
-@construct_ele_type Solenoid
-@construct_ele_type Taylor
-@construct_ele_type ThickMultipole
-@construct_ele_type Undulator
-@construct_ele_type UnionEle
-@construct_ele_type Wiggler
+@construct_ele_type ACKicker            "Time varying kicker."
+@construct_ele_type BeamBeam            "Colliding beam element."
+@construct_ele_type BeginningEle        "Initial element at start of a branch."
+@construct_ele_type Bend                "Dipole bend."
+@construct_ele_type Collimator          "Collimation element."
+@construct_ele_type Converter           "Target to produce new species."
+@construct_ele_type CrabCavity          "RF crab cavity." 
+@construct_ele_type Drift               "Field free region."
+@construct_ele_type EGun                "Electron gun."
+@construct_ele_type Fiducial            "Global coordinate system fiducial point."
+@construct_ele_type FloorShift          "Global coordinates shift."
+@construct_ele_type Foil                "Strips electrons from an atom."
+@construct_ele_type Fork                "Connect branches together."
+@construct_ele_type Girder              "Support element."
+@construct_ele_type Instrument          "Measurement element."
+@construct_ele_type Kicker              "Particle kicker element."
+@construct_ele_type LCavity             "Linac accelerating RF cavity."
+@construct_ele_type Marker              "Zero length element to mark a particular position."
+@construct_ele_type Mask                "Zero length collimator."
+@construct_ele_type Match               "Orbit, Twiss, and dispersion matching element."
+@construct_ele_type Multipole           "Zero length multipole."
+@construct_ele_type NullEle             "Placeholder element used for bookkeeping."
+@construct_ele_type Octupole            "Octupole elemnt."
+@construct_ele_type Patch               "Reference orbit shift."
+@construct_ele_type Quadrupole          "Quadrupole element."
+@construct_ele_type RFCavity            "RF cavity element."
+@construct_ele_type Sextupole           "Sextupole element."
+@construct_ele_type Solenoid            "Solenoid."
+@construct_ele_type Taylor              "General Taylor map element."
+@construct_ele_type ThickMultipole      "Multipole with non-zero length."
+@construct_ele_type Undulator           "Undulator."
+@construct_ele_type UnionEle            "Container element for overlapping elements." 
+@construct_ele_type Wiggler             "Wiggler."
 
 """
 NullEle lattice element type used to indicate the absence of any valid element.
@@ -219,6 +219,12 @@ end
 `EleParameterGroup` is the base type for all element parameter groups.
 `EleParameterSubGroup` is the base type for structs that are used as components of an element
 parameter group.
+
+To see in which element types contain a given parameter group, use the `info(::EleParameterGroup)`
+method. To see what parameter groups are contained in a Example:
+```
+    info(AlignmentGroup)      # List element types that contain AlignmentGroup
+```
 """ BaseEleParameterGroup, EleParameterGroup, EleParameterSubGroup
 
 abstract type BaseEleParameterGroup end
@@ -231,8 +237,17 @@ abstract type EleParameterSubGroup <: BaseEleParameterGroup end
 """
     mutable struct AlignmentGroup <: EleParameterGroup
 
-Orientation of an element (specifically, orientation of the body coordinates) with respect to the 
-machine coordinates.
+Orientation of an element. 
+
+The fields with the `_tot` suffix describe alignment of the element's
+body coordinates with respect to machine coordinates. These fields are calculated by `AcceleratorLattice.`
+
+The fields without the `_tot` suffix are set by the User. If the element is supported on a `Girder`,
+these fields describe the alignment of the element's
+body coordinates with respect to the body coordinates of the `Girder`. If there is no supporting 
+`Girder`, these fields describe alignment of the element's
+body coordinates with respect to machine coordinates and, in this case, have identical values with
+the corresponding `_tot` fields.
 
 ## Fields
 • `offset::Vector`         - [x, y, z] offsets not including any Girder misalignments. \\
@@ -259,6 +274,33 @@ machine coordinates.
 end
 
 #---------------------------------------------------------------------------------------------------
+# Vertex1
+
+"""
+  struct Vertex1 <: EleParameterSubGroup
+
+Single vertex. An array of vertices can be used to construct an aperture.
+If `radius_x`, and `radius_y` )and possibly `tilt`) are set, this specifies the shape of the elliptical arc
+of the chamber wall from the vertex point to the next vertex point. 
+If not set, the chamber wall from the vertex to the next vertex is a straight line.
+
+## Fields
+• `x::Number`             - X-coordinate of vertex point.
+• `y::Number`             - Y-coordinate of vertex point.
+• `radius_x::Number`      - Horizontal ellipse radius.
+• `radius_y::Number`      - Vertical ellipse radius.
+• `tilt::Number`          - Tilt of ellipse.
+""" Vertex1
+
+@kwdef mutable struct Vertex1 <: EleParameterSubGroup
+  x::Number = NaN
+  y::Number = NaN
+  radius_x::Number = NaN
+  radius_y::Number = NaN
+  tilt::Number = NaN
+end
+
+#---------------------------------------------------------------------------------------------------
 # ApertureGroup
 
 """
@@ -269,6 +311,7 @@ Vacuum chamber aperture struct.
 ## Fields
 • `x_limit::Vector`                         - `[x-, x+]` Limits in x-direction. \\
 • `y_limit::Vector`                         - `[y-, y+]` Limits in y-direction. \\
+• `vertex::Vector{Vertex1}`                 - Array of vertexes used with `ApertureShape.VERTEX`. \\
 • `aperture_shape::ApertureShape.T`         - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
 • `aperture_at::BodyLoc.T`                  - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
 • `misalignment_moves_aperture::Bool`       - Do element misalignments move the aperture? \\
@@ -277,6 +320,7 @@ Vacuum chamber aperture struct.
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
   x_limit::Vector = [NaN, NaN]
   y_limit::Vector = [NaN, NaN]
+  vertex::Vector{Vertex1} = Vector{Vertex1}()
   aperture_shape::typeof(ApertureShape) = ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
   misalignment_moves_aperture::Bool = true
@@ -350,7 +394,8 @@ bend angle or length is varied. See the documentation for details.
 
 Whether `bend_field` or `g` is held constant when the reference energy is varied is
 determined by the `field_master` setting in the MasterGroup struct.
-"""
+""" BendGroup
+
 @kwdef mutable struct BendGroup <: EleParameterGroup
   bend_type::BendType.T = BendType.SECTOR 
   angle::Number = 0.0

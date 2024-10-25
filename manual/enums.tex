@@ -36,106 +36,191 @@ See the documentation for \vn{enum} for more details.
 The \vn{enum_add} function is used to add values to an existing enum group. See the documentation for
 \vn{enum_add} for more details. This function is used with code extensions to customize \accellat.
 
+%---------------------------------------------------------------------------------------------------
+\subsection{BendType Enum Group}
+\label{s:bendtype}
+\vspace*{-2ex}
 
-List of enum groups defined in \accellat:
-\begin{description}[leftmargin=1em]
-%
-\item[BendType] --- Type of Bend element magnet. \Newline
-\vskip -2ex
+Type of Bend element. Possible values: \\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .SECTOR      & --- Sector shape \\
-  .RECTANGULAR & --- Rectangular shape \\
+  BendType &  \\
+  \indnt .SECTOR      & --- Sector shape \\
+  \indnt .RECTANGULAR & --- Rectangular shape \\
 \end{tabular} 
 \hfill \break \vskip -1.2ex
-There is no difference between \vn{SECTOR} and \vn{RECTANGULAR} bends except in the case where
-the bend curvature is varied. In this case, for a \vn{SECTOR} bend the face angles \vn{e1} and
-\vn{e2} are held constant and \vn{e1_rect} and \vn{e2_rect} are varied to keep ...
-\vskip 3ex
-%
-\item[BodyLoc] --- Longitudinal location with respect to element's body coordinates.\Newline
-\vskip -2ex
+
+\vn{BendType} is used with the \vn{bend_type} parameter of the \vn{BendGroup} parameter group
+(\sref{s:bend.g}). The \vn{bend_type} parameter gives the ``logical'' shape of the bend.
+The setting of \vn{bend_type} is only relavent when the bend curvature is varied.
+See \sref{s:bend.g} for more details.
+
+%---------------------------------------------------------------------------------------------------
+\subsection{BodyLoc Enum Group}
+\label{s:bodyloc}
+\vspace*{-2ex}
+
+Longitudinal location with respect to an element's body coordinates.
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .ENTRANCE_END & --- Body entrance end \\
-  .CENTER       & --- Element center \\
-  .EXIT_END     & --- Body exit end \\
-  .BOTH_ENDS    & --- Both ends \\
-  .NOWHERE      & --- No location \\
-  .EVERYWHERE   & --- Everywhere \\
+  BodyLoc & \\
+  \indnt .ENTRANCE_END & --- Body entrance end \\
+  \indnt .CENTER       & --- Element center \\
+  \indnt .EXIT_END     & --- Body exit end \\
+  \indnt .BOTH_ENDS    & --- Both ends \\
+  \indnt .NOWHERE      & --- No location \\
+  \indnt .EVERYWHERE   & --- Everywhere \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
-%
-\item[BranchGeometry] --- Geometry of a lattice branch\Newline
-\vspace*{-5pt}
+
+\vn{BodyLoc} enums are are useful to locate things that are ``attached'' to an element.
+For example, specifying where apertures are placed.
+
+%---------------------------------------------------------------------------------------------------
+\subsection{BranchGeometry Enum Group}
+\label{s:branchgeometry}
+\vspace*{-2ex}
+
+Geometry of a lattice branch. Used for setting a branche's \vn{geometry} parameter. 
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .OPEN    & --- Open geometry like a Linac. \\
-  .CLOSED  & --- Closed geometry like a storage ring.
+  BranchGeometry & \\
+  \indnt .OPEN    & --- Open geometry like a Linac. Default \\
+  \indnt .CLOSED  & --- Closed geometry like a storage ring.
 \end{tabular}
 \hfill \break \vskip -1.2ex
-%
-\item[Cavity] --- Type of RF cavity. \Newline
-\vspace*{-5pt}
+
+A branch with a \vn{CLOSED} geometry is something like a storage ring where the particle beam
+recirculates through the machine. A branch with an \vn{OPEN} geometry is something like a linac.
+In this case, the initial Twiss parameters need to be
+specified at the beginning of the branch. If the
+\vn{geometry} is not specified, \vn{OPEN} is the default.
+
+Since the geometry is widely used, \vn{OPEN} and \vn{CLOSED} have been defined and
+can be used in place of \vn{BranchGeometry.OPEN} and \vn{BranchGeometry.CLOSED}.
+
+Notice that by specifying a \vn{CLOSED} geometry, it does {\em not} mean that the downstream end of
+the last element of the branch has the same global coordinates (\sref{s:global}) as the global
+coordinates at the beginning. Setting the geometry to \vn{CLOSED} simply signals to a program to
+compute the periodic orbit and periodic Twiss parameters as opposed to calculating orbits and Twiss
+parameters based upon initial orbit and Twiss parameters given at the beginning of the branch.  Indeed,
+it is sometimes convenient to treat branches as closed even though there is no closure in the global
+coordinate sense. For example, when a machine has a number of repeating ``periods'', it may be
+convenient to only use one period in a simulation. Since \accellat ignores closure in the global
+coordinate sense, it is up to the lattice designer to ensure that a branch is truly geometrically
+closed if that is desired.
+
+%---------------------------------------------------------------------------------------------------
+\subsection{Cavity Enum Group}
+\label{s:cavity}
+\vspace*{-2ex}
+
+Type of RF cavity.
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .STANDING_WAVE   & --- Standing wave cavity \\
-  .TRAVELING_WAVE  & --- Traveling wave cavity \\
+  Cavity & \\
+  \indnt .STANDING_WAVE   & --- Standing wave cavity \\
+  \indnt .TRAVELING_WAVE  & --- Traveling wave cavity \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
-%
-\item[Lord] --- Type of lord an element is \Newline
-\vspace*{-5pt}
+
+
+%---------------------------------------------------------------------------------------------------
+\subsection{Lord Enum Group}
+\label{s:lord}
+\vspace*{-2ex}
+
+Type of lord an element is.
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .NOT       & --- Not a lord \\
-  .SUPER     & --- Super lord \\
-  .MULTIPASS & --- Multipass lord \\
-  .GOVERNOR  & --- Girder and other "minor" lords \\ 
+  Lord & \\
+  \indnt .NOT       & --- Not a lord \\
+  \indnt .SUPER     & --- Super lord \\
+  \indnt .MULTIPASS & --- Multipass lord \\
+  \indnt .GOVERNOR  & --- Girder and other "minor" lords \\ 
 \end{tabular}
 \hfill \break \vskip -1.2ex
-%
-\item[Slave] --- Type of slave an element is \Newline
-\vspace*{-5pt}
+%---------------------------------------------------------------------------------------------------
+\subsection{Slave Enum Group}
+\label{s:slave}
+\vspace*{-2ex}
+
+Type of slave an element is.
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .NOT       & --- Not a slave \\
-  .SUPER     & --- Super slave \\
-  .MULTIPASS & --- Multipass slave \\
+  Slave & \\
+  \indnt .NOT       & --- Not a slave \\
+  \indnt .SUPER     & --- Super slave \\
+  \indnt .MULTIPASS & --- Multipass slave \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
-%
-\item[Loc] --- Longitudinal location with respect to element's machine coordinates. \Newline
-\vspace*{-5pt}
+%---------------------------------------------------------------------------------------------------
+\subsection{Loc Enum Group}
+\label{s:loc}
+\vspace*{-2ex}
+
+Longitudinal location with respect to element's machine coordinates.
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .UPSTREAM_END   & --- Upstream element end\\
-  .CENTER         & --- center of element \\
-  .INSIDE         & --- Somewhere inside \\
-  .DOWNSTREAM_END & --- Downstream element end \\
+  Loc & \\
+  \indnt .UPSTREAM_END   & --- Upstream element end\\
+  \indnt .CENTER         & --- center of element \\
+  \indnt .INSIDE         & --- Somewhere inside \\
+  \indnt .DOWNSTREAM_END & --- Downstream element end \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
-%
-\item[Select] --- Specifies where to select if there is a choice of elements or positions. \Newline
-\vspace*{-5pt}
+%---------------------------------------------------------------------------------------------------
+\subsection{Select Enum Group}
+\label{s:select}
+\vspace*{-2ex}
+
+Specifies where to select if there is a choice of elements or positions.
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .UPSTREAM   & --- Select upstream \\
-  .DOWNSTREAM & --- Select downstream \\
+  Select & \\
+  \indnt .UPSTREAM   & --- Select upstream \\
+  \indnt .DOWNSTREAM & --- Select downstream \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
-%
-\item[ExactMultipoles] --- How multipoles are handled in a Bend element \Newline
-\vspace*{-5pt}
+%---------------------------------------------------------------------------------------------------
+\subsection{ExactMultipoles Enum Group}
+\label{s:exactmultipoles}
+\vspace*{-2ex}
+
+How multipoles are handled in a Bend element.
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .OFF               & --- Bend curvature not taken into account. \\
-  .HORIZONTALLY_PURE & --- Coefficients correspond to horizontally pure multipoles. \\
-  .VERTICALLY_PURE   & --- Coefficients correspond to vertically pure multipoles. \\
+  ExactMultipoles & \\
+  \indnt .OFF               & --- Bend curvature not taken into account. \\
+  \indnt .HORIZONTALLY_PURE & --- Coefficients correspond to horizontally pure multipoles. \\
+  \indnt .VERTICALLY_PURE   & --- Coefficients correspond to vertically pure multipoles. \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
-%
-\item[FiducialPt] Fiducial point location with respect to element's machine coordinates. \Newline
-\vspace*{-5pt}
+
+%---------------------------------------------------------------------------------------------------
+\section{FiducialPt Enum Group}
+\label{s:fiducialpt}
+\vspace*{-2ex}
+
+Fiducial point location with respect to element's machine coordinates.
+Possible values:\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  .ENTRANCE_END & --- Entrance end of element \\
-  .CENTER       & --- Center of element \\
-  .EXIT_END     & --- Exit end of element \\
-  .NONE         & --- No point chosen \\
+  FiducialPt & \\
+  \indnt .ENTRANCE_END & --- Entrance end of element \\
+  \indnt .CENTER       & --- Center of element \\
+  \indnt .EXIT_END     & --- Exit end of element \\
+  \indnt .NONE         & --- No point chosen \\
 \end{tabular}
-%
-\end{description}
+
 
 %---------------------------------------------------------------------------------------------------
 \section{Holy Traits}
@@ -149,15 +234,20 @@ There is a convenience function \vn{holy_traits} which will define a traits grou
 and create a docstring for the group. Values can be added to an existing group by defining a 
 new struct that inherits from the group abstract type.
 
-\begin{description}
-%
-\item[ApertureShape] --- The shape of an aperture.\Newline 
-\vspace*{-5pt}
+%---------------------------------------------------------------------------------------------------
+\subsection{ApertureShape Holy Trait Group}
+\label{s:apertureshape}
+\vspace*{-2ex}
+
+The shape of an aperture.\\
+\vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   RECTANGULAR & --- Rectangular shape \\
   ELLIPTICAL  & --- Elliptical shape \\
 \end{tabular}
-%
-\end{description}
+\hfill \break \vskip -1.2ex
 
-
+%---------------------------------------------------------------------------------------------------
+\subsection{EleGeometry Holy Trait Group}
+\label{s:elegeometry}
+\vspace*{-2ex}

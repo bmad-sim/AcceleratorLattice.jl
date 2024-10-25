@@ -5,11 +5,19 @@
 
 """
     Base.getproperty(lat::Lat, sym::Symbol)
+    Base.getproperty(branch::Branch, sym::Symbol)
+    Base.getproperty(bl::BeamLine, sym::Symbol)
 
-Overloads the dot struct component selection operator so something like `lat.XXX` returns the value of `lat.pdict[:XXX]`. 
-Exceptions are: `lat.name`, `lat.branch`, and `lat.pdict` which do not get redirected.
+Overloads the dot struct component selection operator so something like `lat.XXX` returns the value 
+of `lat.pdict[:XXX]`. 
 
-""" Base.getproperty(lat::Lat, sym::Symbol)
+## Exceptions
+
+- For `Lat`: `lat.name`, `lat.branch`, and `lat.pdict` which do not get redirected. \\
+- For `Branch`: `branch.name`, `branch.ele`, and `branch.pdict` which do not get redirected.
+- For `BeamLine`: `bl.name`, `bl.ele`, and `bl.pdict` which do not get redirected.
+
+""" Base.getproperty
 
 function Base.getproperty(lat::Lat, sym::Symbol)
   if sym == :name; return getfield(lat, :name); end
@@ -21,14 +29,6 @@ end
 #---------------------------------------------------------------------------------------------------
 # Base.getproperty(branch::Branch, sym::Symbol) for branch.XXX dot operator overload
 
-"""
-    Base.getproperty(branch::Branch, sym::Symbol)
-
-Overloads the dot struct component selection operator so something like `branch.XXX` returns the value of `branch.pdict[:XXX]`. 
-Exceptions are: `branch.name`, `branch.ele`, and `branch.pdict` which do not get redirected.
-
-""" Base.getproperty(branch::Branch, sym::Symbol)
-
 function Base.getproperty(branch::Branch, sym::Symbol)
   if sym == :name; return getfield(branch, :name); end
   if sym == :ele; return getfield(branch, :ele); end
@@ -38,14 +38,6 @@ end
 
 #---------------------------------------------------------------------------------------------------
 # Base.getproperty(bl::BeamLine, sym::Symbol) for bl.XXX dot operator overload
-
-"""
-    Base.getproperty(bl::BeamLine, sym::Symbol)
-
-Overloads the dot struct component selection operator so something like `bl.XXX` returns the value of `bl.pdict[:XXX]`. 
-Exceptions are: `bl.name`, `bl.ele`, and `bl.pdict` which do not get redirected.
-
-""" Base.getproperty(bl::BeamLine, sym::Symbol)
 
 function Base.getproperty(bl::BeamLine, sym::Symbol)
   if sym == :id; return getfield(bl, :id); end
@@ -62,11 +54,13 @@ end
 
 Overloads the dot struct component selection operator.
 
-Algorithm for what to return for `ele.XXX`:
-  1. If `XXX` is `pdict`, return `ele.pdict`.
-  1. If `ele.pdict[:XXX]` exists, return `ele.pdict[:XXX]`.
-  1. If `XXX` is a *registered* component of the Element group `GGG`, return `ele.pdict[:GGG].XXX`. 
-  1. If none of the above, throw an error.
+## Algorithm for what to return for `ele.XXX`: 
+1. If `XXX` is `pdict`, return `ele.pdict`.
+2. If `ele.pdict[:XXX]` exists, return `ele.pdict[:XXX]`.
+3. If `XXX` is a *registered* component of the Element group `GGG`, return `ele.pdict[:GGG].XXX`.
+4. If none of the above, throw an error.
+
+## Notes
 
 Exceptions: Something like `ele.Kn2L` is handled specially since storage for this parameter may
 not exist (parameter is stored in `ele.pdict[BMultipoleGroup].vec(N).Kn` where `N` is some integer).
