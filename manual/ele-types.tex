@@ -15,7 +15,7 @@ These elements are:
   BeamBeam          & \ref{s:beambeam}      &  Mask             & \ref{s:mask}        \\
   BeginningEle      & \ref{s:begin.ele}     &  Match            & \ref{s:match}       \\
   Bend              & \ref{s:bend}          &  Multipole        & \ref{s:mult}        \\
-  Converter         & \sref{s:converter}    &  NullEle          & \ref{s:nullele}     \\
+  Converter         & \ref{s:converter}     &  NullEle          & \ref{s:nullele}     \\
   Collimator        & \ref{s:collimator}    &  Octupole         & \ref{s:octupole}    \\
   CrabCavity        & \ref{s:crabcavity}    &  Patch            & \ref{s:patch}       \\
   Drift             & \ref{s:drift}         &  Quadrupole       & \ref{s:quadrupole}  \\
@@ -84,12 +84,18 @@ A \vn{beambeam} element simulates an interaction with an opposing
 
 NOTE: This Element is in development and is incomplete
 
-Element parameter groups associated with this element are:
-\\ \noindent\rule{\linewidth}{0.5pt}
+Element parameter groups associated with this element type are:
+\TOPrule
 \begin{example}
-
+  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
+  ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
+  StringGroup        -> Informational strings. \sref{s:string.g} 
+  TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
 \end{example}
-\noindent\rule{\linewidth}{0.5pt}
+\BOTTOMrule
+
 
 \newpage
 
@@ -101,16 +107,19 @@ A \vn{BeginningEle} element must be present as the first element of every tracki
 (\sref{s:branch.def}).
 
 Element parameter groups associated with this element type are:
-\\ \noindent\rule{\linewidth}{0.5pt}
+\TOPrule
 \begin{example}
-  LengthGroup          -> \sref{s:length.g} Length and s-position parameters.
-  LordSlaveGroup       -> \sref{s:lord.slave.g} Element lord and slave status.
-  StringGroup          -> \sref{s:string.g} Informational strings.
-  ReferenceGroup       -> \sref{s:reference.g} Reference energy and species.
-  FloorPositionGroup   -> \sref{s:floor.pos.g} Global floor position and orientation.
-  TrackingGroup        -> \sref{s:tracking.g} Default tracking settings.
+  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  InitParticleGroup  -> Initial particle position and spin. \sref{s:init.particle.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
+  ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
+  StringGroup        -> Informational strings. \sref{s:string.g} 
+  TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
+  TwissGroup         -> Initial Twiss and coupling parameters. \sref{s:twiss.g} 
 \end{example}
-\noindent\rule{\linewidth}{0.5pt}
+\BOTTOMrule
+
 
 Example:
 \begin{example}
@@ -128,8 +137,8 @@ which determines the location of downstream elements as documented in \sref{s:ma
 The actual bending strength that a particle feels can differ from the design value as detailed
 below.
 
-Element parameter groups associated with a \vn{BeginningEle} are:
-\\ \rule{\linewidth}{0.5pt}
+Element parameter groups associated with this element type are:
+\TOPrule
 \begin{example}
   AlignmentGroup     -> Element position/orientation shift. \sref{s:align.g} 
   ApertureGroup      -> Vacuum chamber aperture. \sref{s:aperture.g} 
@@ -144,7 +153,8 @@ Element parameter groups associated with a \vn{BeginningEle} are:
   StringGroup        -> Informational strings. \sref{s:string.g} 
   TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
 \end{example}
-\noindent\rule{\linewidth}{0.5pt}
+\BOTTOMrule
+
 
 \begin{figure}[ht]
   \centering \includegraphics{bend.pdf} 
@@ -178,7 +188,17 @@ Example:
 
 \vn{Collimators} are field free elements that can collimate beam particles.
 
-
+Element parameter groups associated with this element type are:
+\TOPrule
+\begin{example}
+  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
+  ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
+  StringGroup        -> Informational strings. \sref{s:string.g} 
+  TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
+\end{example}
+\BOTTOMrule
 
 %-----------------------------------------------------------------
 \section{Converter}
@@ -189,6 +209,17 @@ For example, converting electrons hitting on a metal target into positrons.
 
 NOTE: This Element is in development and is incomplete.
 
+Element parameter groups associated with this element type are:
+\TOPrule
+\begin{example}
+  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
+  ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
+  StringGroup        -> Informational strings. \sref{s:string.g} 
+  TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
+\end{example}
+\BOTTOMrule
 
 %-----------------------------------------------------------------
 \section{CrabCavity}
@@ -200,11 +231,36 @@ interaction point, to rotate the beams near the IP.
 
 NOTE: This Element is in development and is incomplete.
 
+Element parameter groups associated with this element type are:
+\TOPrule
+\begin{example}
+  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
+  ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
+  StringGroup        -> Informational strings. \sref{s:string.g} 
+  TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
+\end{example}
+\BOTTOMrule
+
+
 %-----------------------------------------------------------------
 \section{Drift}
 \label{s:drift}
 
 A \vn{Drift} is a field free element.
+
+Element parameter groups associated with this element type are:
+\TOPrule
+\begin{example}
+  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
+  ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
+  StringGroup        -> Informational strings. \sref{s:string.g} 
+  TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
+\end{example}
+\BOTTOMrule
 
 %-----------------------------------------------------------------
 \section{EGun}
@@ -214,6 +270,18 @@ An \vn{EGun} element represents an electron gun and encompasses a region startin
 were the electrons are generated.  
 
 NOTE: This Element is in development and is incomplete.
+
+Element parameter groups associated with this element type are:
+\TOPrule
+\begin{example}
+  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
+  ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
+  StringGroup        -> Informational strings. \sref{s:string.g} 
+  TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
+\end{example}
+\BOTTOMrule
 
 %-----------------------------------------------------------------
 \section{Fiducial}
@@ -225,6 +293,19 @@ will affect the global floor coordinates (\sref{s:global}) of elements both upst
 of the fiducial element.
 
 NOTE: This Element is in development and is incomplete.
+
+Element parameter groups associated with this element type are:
+\TOPrule
+\begin{example}
+  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
+  ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
+  StringGroup        -> Informational strings. \sref{s:string.g} 
+  TrackingGroup      -> Default tracking settings. \sref{s:tracking.g} 
+\end{example}
+\BOTTOMrule
+
 
 %-----------------------------------------------------------------
 \section{FloorShift}
