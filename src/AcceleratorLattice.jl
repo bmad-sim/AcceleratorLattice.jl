@@ -44,7 +44,6 @@ module AcceleratorLattice
   include("manipulation.jl")
   include("geometry.jl")
   include("superimpose.jl")
-  include("tracking.jl")
   include("show.jl")
   include("bookkeeper.jl")
   include("lat_construction.jl")
@@ -53,14 +52,14 @@ module AcceleratorLattice
   include("find.jl")
   include("external_ele.jl")
 
-  # Note! Element types are exported automatically when constructed
+  # Note! Element types, enums, and Holy traits are exported automatically when constructed.
 
   export memloc, beamline, @ele, @eles, @construct_ele_type, enum, enum_add
   export ele_name, show_name, show_ele, E_tot, E_kinetic, pc, β, β1, γ
   export show_lat, show_branch, show_beamline, get_property, bookkeeper!, set_param!
   export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
-  export split!, construct_ele_type, ele_at_s, add_governor!
+  export split!, construct_ele_type, ele_at_s, add_governor!, toggle_integrated!
   export eles, next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
   export branch, matches_branch, create_ele_vars, eval_str, Vertex1
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup, BeamBeamGroup

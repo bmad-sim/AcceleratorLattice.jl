@@ -1,7 +1,7 @@
 using AcceleratorLattice
 @ele qq = Quadrupole(L = 4, Kn1 = 0.34)
 @ele dd = Drift(L = 12)
-@ele ss = Solenoid(L = 1)
+@ele ss = Solenoid(L = 2)
 @ele zz = Solenoid(L = 1)
 @ele bb = BeginningEle(species_ref = Species("proton"), pc_ref = 1e11)
 

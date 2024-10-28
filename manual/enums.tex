@@ -6,7 +6,8 @@ variables whose value can be one of a set of named constants.
 A web search will provide documentation. 
 
 The advantage of Holy traits is that they can be used with function dispatch. The disadvantage is
-that the same Holy trait value name cannot be used with multiple groups.
+that the same Holy trait value name cannot be used with multiple groups. Generally, if function
+dispatch is not needed (which is true for the majority of cases), switch groups are defined using enums.
 
 %---------------------------------------------------------------------------------------------------
 \section{Enums}
@@ -36,6 +37,24 @@ See the documentation for \vn{enum} for more details.
 The \vn{enum_add} function is used to add values to an existing enum group. See the documentation for
 \vn{enum_add} for more details. This function is used with code extensions to customize \accellat.
 
+The enum groups are:
+\begin{table}[htb]
+\centering
+{\tt
+\begin{tabular}{llll} \toprule
+  {\it Group}       & {\it Section}             & {\it Group}         & {\it Section}       \\ \midrule
+  BendType          & \sref{s:bendtype}         & Slave               & \sref{s:slave}      \\
+  BodyLoc           & \sref{s:bodyloc}          & Loc                 & \sref{s:loc}        \\
+  BranchGeometry    & \sref{s:branchgeometry}   & Select              & \sref{s:select}     \\
+  Cavity            & \sref{s:cavity}           & ExactMultipoles     & \sref{s:exactmultipoles} \\
+  Lord              & \sref{s:lord}             & FiducialPt          & \sref{s:fiducialpt} \\
+  ParticleState     & \sref{s:particlestate}    &                     &                     \\
+  \bottomrule
+\end{tabular}
+} 
+\caption{Table of enum groups.}
+\label{t:enum}
+\end{table}
 %---------------------------------------------------------------------------------------------------
 \subsection{BendType Enum Group}
 \label{s:bendtype}
@@ -45,8 +64,8 @@ Type of Bend element. Possible values: \\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   BendType &  \\
-  \indnt .SECTOR      & --- Sector shape \\
-  \indnt .RECTANGULAR & --- Rectangular shape \\
+  \indnt .SECTOR      & -- Sector shape \\
+  \indnt .RECTANGULAR & -- Rectangular shape \\
 \end{tabular} 
 \hfill \break \vskip -1.2ex
 
@@ -65,12 +84,12 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   BodyLoc & \\
-  \indnt .ENTRANCE_END & --- Body entrance end \\
-  \indnt .CENTER       & --- Element center \\
-  \indnt .EXIT_END     & --- Body exit end \\
-  \indnt .BOTH_ENDS    & --- Both ends \\
-  \indnt .NOWHERE      & --- No location \\
-  \indnt .EVERYWHERE   & --- Everywhere \\
+  \indnt .ENTRANCE_END & -- Body entrance end \\
+  \indnt .CENTER       & -- Element center \\
+  \indnt .EXIT_END     & -- Body exit end \\
+  \indnt .BOTH_ENDS    & -- Both ends \\
+  \indnt .NOWHERE      & -- No location \\
+  \indnt .EVERYWHERE   & -- Everywhere \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
 
@@ -87,8 +106,8 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   BranchGeometry & \\
-  \indnt .OPEN    & --- Open geometry like a Linac. Default \\
-  \indnt .CLOSED  & --- Closed geometry like a storage ring.
+  \indnt .OPEN    & -- Open geometry like a Linac. Default \\
+  \indnt .CLOSED  & -- Closed geometry like a storage ring.
 \end{tabular}
 \hfill \break \vskip -1.2ex
 
@@ -122,8 +141,8 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   Cavity & \\
-  \indnt .STANDING_WAVE   & --- Standing wave cavity \\
-  \indnt .TRAVELING_WAVE  & --- Traveling wave cavity \\
+  \indnt .STANDING_WAVE   & -- Standing wave cavity \\
+  \indnt .TRAVELING_WAVE  & -- Traveling wave cavity \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
 
@@ -138,12 +157,42 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   Lord & \\
-  \indnt .NOT       & --- Not a lord \\
-  \indnt .SUPER     & --- Super lord \\
-  \indnt .MULTIPASS & --- Multipass lord \\
-  \indnt .GOVERNOR  & --- Girder and other "minor" lords \\ 
+  \indnt .NOT       & -- Not a lord \\
+  \indnt .SUPER     & -- Super lord \\
+  \indnt .MULTIPASS & -- Multipass lord \\
+  \indnt .GOVERNOR  & -- Girder and other "minor" lords \\ 
 \end{tabular}
 \hfill \break \vskip -1.2ex
+
+%---------------------------------------------------------------------------------------------------
+\subsection{ParticleState Enum Group}
+\label{s:particlestate}
+
+State of a particle.
+Possible values:\\
+\vspace*{-0.5ex} \\
+\begin{tabular}{ll}
+  ParticleState & \\
+  \indnt .PREBORN     & -- State before emission from cathode.  \\
+  \indnt .ALIVE       & -- Alive and kicking.  \\
+  \indnt .LOST        & -- Particle has been lost.  \\
+  \indnt .LOST_NEG_X  & -- Hit aperture in the -x direction.  \\
+  \indnt .LOST_POS_X  & -- Hit aperture in the +x direction.  \\
+  \indnt .LOST_NEG_Y  & -- Hit aperture in the -y direction.  \\
+  \indnt .LOST_POS_Y  & -- Hit aperture in the +y direction.  \\
+  \indnt .LOST_PZ     & -- Lost all forward momentum.   \\
+  \indnt .LOST_Z      & -- Out of RF bucket.  \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+
+The \vn{LOST} value is used when it is not possible to assign the particle state to one of the
+other lost values.
+
+The \vn{.LOST_PZ} value is used by $s$ (longitudinal position) based trackers which are not
+able to handle particles changing their longitudinal motion direction. For tracking something
+like dark current electrons which can go back and forth longitudinally, a time based tracker
+is needed.
+
 %---------------------------------------------------------------------------------------------------
 \subsection{Slave Enum Group}
 \label{s:slave}
@@ -154,11 +203,13 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   Slave & \\
-  \indnt .NOT       & --- Not a slave \\
-  \indnt .SUPER     & --- Super slave \\
-  \indnt .MULTIPASS & --- Multipass slave \\
+  \indnt .NOT       & -- Not a slave \\
+  \indnt .SUPER     & -- Super slave \\
+  \indnt .MULTIPASS & -- Multipass slave \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
+
+
 %---------------------------------------------------------------------------------------------------
 \subsection{Loc Enum Group}
 \label{s:loc}
@@ -169,12 +220,14 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   Loc & \\
-  \indnt .UPSTREAM_END   & --- Upstream element end\\
-  \indnt .CENTER         & --- center of element \\
-  \indnt .INSIDE         & --- Somewhere inside \\
-  \indnt .DOWNSTREAM_END & --- Downstream element end \\
+  \indnt .UPSTREAM_END   & -- Upstream element end\\
+  \indnt .CENTER         & -- center of element \\
+  \indnt .INSIDE         & -- Somewhere inside \\
+  \indnt .DOWNSTREAM_END & -- Downstream element end \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
+
+
 %---------------------------------------------------------------------------------------------------
 \subsection{Select Enum Group}
 \label{s:select}
@@ -185,10 +238,12 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   Select & \\
-  \indnt .UPSTREAM   & --- Select upstream \\
-  \indnt .DOWNSTREAM & --- Select downstream \\
+  \indnt .UPSTREAM   & -- Select upstream \\
+  \indnt .DOWNSTREAM & -- Select downstream \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
+
+
 %---------------------------------------------------------------------------------------------------
 \subsection{ExactMultipoles Enum Group}
 \label{s:exactmultipoles}
@@ -199,14 +254,15 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   ExactMultipoles & \\
-  \indnt .OFF               & --- Bend curvature not taken into account. \\
-  \indnt .HORIZONTALLY_PURE & --- Coefficients correspond to horizontally pure multipoles. \\
-  \indnt .VERTICALLY_PURE   & --- Coefficients correspond to vertically pure multipoles. \\
+  \indnt .OFF               & -- Bend curvature not taken into account. \\
+  \indnt .HORIZONTALLY_PURE & -- Coefficients correspond to horizontally pure multipoles. \\
+  \indnt .VERTICALLY_PURE   & -- Coefficients correspond to vertically pure multipoles. \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
 
+
 %---------------------------------------------------------------------------------------------------
-\section{FiducialPt Enum Group}
+\subsection{FiducialPt Enum Group}
 \label{s:fiducialpt}
 \vspace*{-2ex}
 
@@ -215,10 +271,10 @@ Possible values:\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   FiducialPt & \\
-  \indnt .ENTRANCE_END & --- Entrance end of element \\
-  \indnt .CENTER       & --- Center of element \\
-  \indnt .EXIT_END     & --- Exit end of element \\
-  \indnt .NONE         & --- No point chosen \\
+  \indnt .ENTRANCE_END & -- Entrance end of element \\
+  \indnt .CENTER       & -- Center of element \\
+  \indnt .EXIT_END     & -- Exit end of element \\
+  \indnt .NONE         & -- No point chosen \\
 \end{tabular}
 
 
@@ -226,13 +282,21 @@ Possible values:\\
 \section{Holy Traits}
 \label{s:holy}
 
-\vn{Holy traits} (named after Tim Holy) are a design pattern in Julia that that behave similarly
-to \vn{enums} (\sref{s:enum}). A Holy trait group consists of an abstract type with a set of values
-(traits) which are structs that inherit from the abstract type.
+\vn{Holy traits} (named after Tim Holy) are a design pattern in Julia that behave similarly
+to \vn{enums} (\sref{s:enum}). A Holy trait group consists of a base abstract type with a set of values
+(traits) which are abstract types that inherit from the base abstract type.
+
+The advantage of Holy traits is that they can be used with function dispatch. The disadvantage is
+that the same Holy trait value name cannot be used with multiple groups.
 
 There is a convenience function \vn{holy_traits} which will define a traits group, export the names,
 and create a docstring for the group. Values can be added to an existing group by defining a 
 new struct that inherits from the group abstract type.
+
+Example: To extend the \vn{EleGeometry} trait group to include the value \vn{HELIX_GEOMETRY} do
+\begin{example}
+  abstract type HELIX_GEOMETRY <: EleGeometry
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \subsection{ApertureShape Holy Trait Group}
@@ -242,8 +306,10 @@ new struct that inherits from the group abstract type.
 The shape of an aperture.\\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  RECTANGULAR & --- Rectangular shape \\
-  ELLIPTICAL  & --- Elliptical shape \\
+  RECTANGULAR   & -- Rectangular shape. \\
+  ELLIPTICAL    & -- Elliptical shape. \\
+  VERTEX        & -- Shape defined by set of vertices. \\
+  CUSTOM_SHAPE  & -- Shape defined with custom function. \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
 
@@ -251,3 +317,17 @@ The shape of an aperture.\\
 \subsection{EleGeometry Holy Trait Group}
 \label{s:elegeometry}
 \vspace*{-2ex}
+
+The geometry of the reference orbit through an element. See \\
+\vspace*{-0.5ex} \\
+\begin{tabular}{ll}
+  STRAIGHT          -- Straight line geometry.
+  CIRCULAR          -- Circular "bend-like" geometry
+  ZERO_LENGTH       -- Zero longitudinal length geometry.
+  PATCH_GEOMETRY    -- Patch element like geometry.
+  GIRDER_GEOMETRY   -- Support girder-like geometry.
+  CRYSTAL_GEOMETRY  -- Crystal geometry.
+  MIRROR_GEOMETRY   -- Mirror geometry.
+\end{tabular}
+\hfill \break \vskip -1.2ex
+

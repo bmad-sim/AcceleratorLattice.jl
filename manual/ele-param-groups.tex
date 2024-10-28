@@ -11,7 +11,7 @@ The parmeter groups are:
 {\tt
 \begin{tabular}{llll} \toprule
   {\it Group}        & {\it Section}             & {\it Group}         & {\it Section}         \\ \midrule
- AlignmentGroup      & \sref{s:align.g}          & LordSlaveGroup      & \sref{s:lord.slave.g} \\
+ AlignmentGroup      & \sref{s:alignment.g}      & LordSlaveGroup      & \sref{s:lord.slave.g} \\
  ApertureGroup       & \sref{s:aperture.g}       & MasterGroup         & \sref{s:master.g}     \\
  BMultipoleGroup     & \sref{s:bmultipole.g}     & PatchGroup          & \sref{s:patch.g}      \\ 
  BeamBeamGroup       & \sref{s:beam.beam.g}      & RFCommonGroup       & \sref{s:rfcommon.g}   \\
@@ -26,7 +26,7 @@ The parmeter groups are:
 \end{tabular}
 } 
 \caption{Table of element parameter groups.}
-\label{t:particle.groups}
+\label{t:ele.param.g}
 \end{table}
 
 \newpage
@@ -79,7 +79,7 @@ on lords and slaves of the element.
 
 %---------------------------------------------------------------------------------------------------
 \section{AlignmentGroup}
-\label{s:align.g}
+\label{s:alignment.g}
 
 \begin{figure}[bt]
 \centering \includegraphics{alignment-ref.pdf} 
@@ -142,33 +142,203 @@ alignments since Girders can support other Girders.
 \label{s:aperture.g}
 
 \begin{figure}[bt]
-\centering \includegraphics{apertures.pdf} \caption[Rectangular and elliptical apertures.]  
+\centering \includegraphics{apertures.pdf} \caption[Apertures.]  
 {
-Rectangular and elliptical apertures. As drawn, \vn{x_limit[1]} and \vn{y_limit[1]} are 
-negative and \vn{x_limit[2]} and \vn{y_limit[2]} are positive.
-}  \label{f:aperture}
+A) RECTANGULAR and ELLIPTICAL apertures. As drawn, \vn{x_limit[1]} and \vn{y_limit[1]} are 
+negative and \vn{x_limit[2]} and \vn{y_limit[2]} are positive. B) The VERTEX aperture is defined
+by a set of vertices.
+}  \label{f:apertures}
 \end{figure}
 
 The \vn{ApertureGroup} stores information about apertures an element may have. 
 The parameters of this group are:
 \begin{example}
-  x_limit::Vector{Number}                     - 2-Vector of horizontal aperture limits. (m)  
-  y_limit::Vector{Number}                     - 2-Vector of vertical aperture limits. (m)  
-  vertex::Vector{AcceleratorLattice.Vertex1}  - Array of aperture vertexes. ()  
-  aperture_shape::ApertureShape               - Shape of aperture. Default is ELLIPTICAL. ()  
-  aperture_at::AcceleratorLattice.BodyLoc.T   - Where the aperture is. Default is BodyLoc.ENTRANCE_END. ()  
-  misalignment_moves_aperture::Bool           - Does moving the element move the aperture? ()  
+  x_limit::Vector{Number}           - Min/Max horizontal aperture limits. (m)
+  y_limit::Vector{Number}           - Min/Max vertical aperture limits. (m)
+  section::WallSection              - Array of aperture vertices.
+  aperture_shape::ApertureShape     - Shape of aperture. Default is ELLIPTICAL.
+  misalignment_moves_aperture::Bool - Alignment affects aperture? Default false.
+  custom_aperture::Dict             - Custom aperture information.
+  aperture_at::BodyLoc.T - Aperture location. Default is BodyLoc.ENTRANCE_END.
 \end{example}
 
-The aperture location of 
+The aperture location is set by the \vn{aperture_at} parameter. Possible values are
+given by the \vn{BodyLoc} enum group (\sref{s:bodyloc}). The default is \vn{BodyLoc.ENTRANCE_END}.
+The \vn{.EVERYWHERE} location might be problematic for some types of particle tracking and
+so might not be always available.
+
+The \vn{aperture_shape} parameter selects the shape of the aperture. Possible values are
+given by the \vn{ApertureShape} Holy trait group. 
+\vspace*{-0.5ex} \\
+\begin{tabular}{ll}
+  RECTANGULAR   & -- Rectangular shape. \\
+  ELLIPTICAL    & -- Elliptical shape. \\
+  VERTEX        & -- Shape defined by set of vertices. \\
+  CUSTOM_SHAPE  & -- Shape defined with a custom function. \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+
+For \vn{RECTANGULAR} and \vn{ELLIPTICAL} shapes the \vn{x_limit} and \vn{y_limit} parameters are
+used to calculate the aperture as shown in \fig{f:apertures}A. For an \vn{ELLIPTICAL} aperture,
+a particle with position $(x, y)$ is outside of the aperture if any 
+one of the following four conditions is true:
+\begin{example}
+  1) x < 0 and y < 0 and (x/x_limit[1])^2 + (y/y_limit[1])^2 > 1 
+  2) x < 0 and y > 0 and (x/x_limit[1])^2 + (y/y_limit[2])^2 > 1
+  3) x > 0 and y < 0 and (x/x_limit[2])^2 + (y/y_limit[1])^2 > 1
+  4) x > 0 and y > 0 and (x/x_limit[2])^2 + (y/y_limit[2])^2 > 1
+\end{example}
+For a \vn{RECTANGULAR} aperture the corresponding four conditions are:
+\begin{example}
+  1) x < x_limit[1]
+  2) x > x_limit[2]
+  3) y < y_limit[1]
+  4) y > y_limit[2]
+\end{example}
+
+Default values for the limits are \vn{-Inf} for \vn{x_limit[1]} and \vn{y_limit[1]} and 
+\vn{Inf} for \vn{x_limit[2]} and \vn{y_limit[2]}.
+
+The \vn{misalignment_moves_aperture} parameter determines whether misaligning an element 
+(\sref{s:alignment.g}) affects the placement of the aperture. The default is \vn{false}. 
+A common case where \vn{misalignment_moves_aperture} would be \vn{false} is when a beam pipe,
+which incorporates the aperture, is not physically touching the surrounding magnet element. 
+When tracking a particle, assuming that there are only apertures at the element ends, 
+the order of computation with \vn{misalignment_moves_aperture} set to \vn{false} is
+\begin{example}
+  Start at upstream end of element
+  Check upstream aperture if there is one.
+  Convert from machine coordinates to body coordinates.
+  Track through the element body.
+  Convert from body coordinates to machine coordinates.
+  Check downstream aperture if there is one.
+  End at downstream end of element.
+\end{example}
+With \vn{misalignment_moves_aperture} set to \vn{true}, the computation order is 
+\begin{example}
+  Start at upstream end of element
+  Convert from machine coordinates to body coordinates.
+  Check upstream aperture if there is one.
+  Track through the element body.
+  Check downstream aperture if there is one.
+  Convert from body coordinates to machine coordinates.
+  End at downstream end of element.
+\end{example}
+
+The \vn{CUSTOM_SHAPE} setting for \vn{aperture_shape} indicates whether a User supplied function
+is used to calculate whether the particle has hit the aperture. The function is stored
+in the \vn{custom_aperture} parameter. The \vn{custom_aperture} parameter is a Dict that stores
+the aperture function along with any data that the aperture calculation needs. The aperture
+function must be stored in \vn{custom_aperture[:function]} and this function will be
+called with the signature
+\begin{example}
+  custom_aperture[:function](position::Vector, ele::Ele) -> ParticleState
+\end{example}
+where \vn{position} is the phase space 6-vector of the particle, \vn{ele} is the element 
+with the aperture, and a \vn{ParticleState} (\sref{s:particlestate}) value is returned.
+
+The \vn{VERTEX} setting for \vn{aperture_shape} is for defining an aperture using a 
+set of vertex points as illustrated in \fig{f:apetures}B. Between vertex points, the aperture
+can can follow a straight line or the arc of an ellipse. The vertex points are specified by
+setting the \vn{section} parameter of \vn{ApertureGroup}. Example:
+\begin{example}
+  section = WallSection([Vertex1([1.0, 4.0]), Vertex1([-1.0, 4.0, 6.0]), vertex1([-5.0, 1.0]),
+                        Vertex1([-5.0, -1.0]), Vertex1([1.0, -1.5)]], r0 = [-2.5, 0.5]) 
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{BMultipoleGroup}
 \label{s:bmultipole.g}
 
+The \vn{BMultipoleGroup} group stores magnetic multipole strengths. Also see \vn{EMultipoleGroup}.
+The parameters of this group are:
+\begin{example}
+  vec::Vector{BMultipole1}
+\end{example}
+This group stores a vector of \vn{BMultipole1} structs.
+The \vn{BMultipole1} structure stores the values for a magnetic multipole of a given order.
+Only orders where there is a non-zero multipole are stored and there is no maximum limit to the 
+order that can be stored. The multipoles will be stored in increasing order.
+
+The \vn{BMultipole1} structure has components:
+\begin{example}
+  Kn::Number     - Normal normalized component. EG: "Kn2", "Kn2L". \\
+  Ks::Number     - Skew multipole component. EG: "Ks2", "Ks2L".  \\
+  Bn::Number     - Normal field component. \\ 
+  Bs::Number     - Skew field component. \\
+  tilt::Number   - Rotation of multipole around z-axis. \\
+  order::Int     - Multipole order. \\
+  integrated::Union{Bool,Nothing} - Integrated multipoles or not? 
+\end{example}
+The \vn{order} component gives the multipole order.
+There is storage for both normalized (\vn{Kn} and \vn{Ks}) and unnormalized (\vn{Bn} and \vn{Bs})
+field strengths. The letter ``\vn{n}'' designates the normal component and ``\vn{s}'' designates
+the skew component. 
+There is also a \vn{tilt} component which will tilt the entire multipole \cite{???}.
+The \accellat bookkeeping code will take care of calculating the normalized field if the unnormalized
+field is set and vice versa. The reason why the structure has three components, 
+normal, skew and tilt, that describe the field when only two would be sufficient is due convenience.
+Having normal and skew components is convenient when magnet has multiple windings that control
+both independently. A common case is combined horizontal and vertical steering magnets. On the
+other hand, being able to ``misalign'' the multipole using the \vn{tilt} component is also
+useful.
+
+The dot selection operator for an element (\sref{s:ele.access}) is overloaded so that 
+magnetic multipole parameters for order $J$ can be accessed using the following notation:
+{\centering
+{\tt
+\begin{tabular}{lllll} \toprule
+  Name        & Stored     & Normalized & Integrated & Description \\
+  KnJ         & Kn         & Yes        & No         & Normal field. \\
+  KsJ         & Ks         & Yes        & No         & Skew field. \\
+  KnJL        & Kn         & Yes        & Yes        & Normal field. \\
+  KsJL        & Ks         & Yes        & Yes        & Skew field. \\
+  BnJ         & Bn         & No         & No         & Normal field. \\
+  BsJ         & Bs         & No         & No         & Skew field. \\
+  BnJL        & Bn         & No         & Yes        & Normal field. \\
+  BsJL        & Bs         & No         & Yes        & Skew field. \\
+  tiltJ       & tilt       & --         & --         & Field tilt. \\
+  integratedJ & integrated & --         & --         & Integrated fields? \\
+\end{tabular}
+} 
+Substitute the multipole order for $J$ in the above table. For example, \vn{Ks2L} is the
+normalized length-integrated skew field component of order 2. 
+
+Notice that both integrated
+and non-integrated fields are potentially stored in the same component of \vn{BMultipole1}.
+Which type is stored is determined by the \vn{integrated} logical. If \vn{true}, the integrated
+value is stored and vice versa. The \vn{integrated} setting can be different for different orders.
+The setting of \vn{integrated} for a given order is determined by whether the first field component
+to be set for that order is an integrated quantity or not. After the value of \vn{integrated} is set,
+an error will be thrown if a something that has the opposite sense in terms of integration is 
+set. For example:
+\begin{example}
+  @ele qq = Quadrupole(l = 0.6, Ks0L = 1.0)  # 0th order multipole is integrated
+  qq.Bn1 = 0.3                  # 1st order multipole is not integrated
+  qq.Ks1 = 0.5                  # This is OK.
+  println(qq.integrated0)       # Will print ``true''
+  println(qq.Bn0)               # But can use non-integrated component in an equation.
+  qq.Bn0 = 0.7                  # Cannot set non-integrated component! Will throw an error!
+  toggle_integrated!(qq, MAGNETIC, 0)  # toggle integrated setting for order 0 multipole.
+\end{example}
+In the above example, the 0th order multipole is initialized using \vn{Ks0L} so that
+multipole will have the \vn{integrated} component set to \vn{true} and non-integrated values
+cannot be set. However, independent of the setting of \vn{integrated}, both integrated and
+non-integrated quantities can always be used in an equation. To change the value of \vn{integrated},
+use the \vn{toggle_integrated!} function. This function also translates the values stored in the
+field components of the structure so that the field will stay constant.
+
+The setting of \vn{integrated} for a given multipole will also determine what stays constant
+of the length of the magnet changes. If \vn{integrated} is \vn{true}, the integrated values
+will be invariant and vice versa for \vn{integrated} being \vn{false}. Similarly, the setting
+of the \vn{field_master} parmeter (\sref{s:master.g}) will determine whether normalized or
+unnormalized quantities will stay constant if the reference energy is varied.
+
 %---------------------------------------------------------------------------------------------------
 \section{BeamBeamGroup}
 \label{s:beam.beam.g}
+
+In development.
 
 %---------------------------------------------------------------------------------------------------
 \section{BendGroup}
@@ -179,6 +349,29 @@ The \vn{BendGroup} stores the parameters that characterize the shape of a \vn{Be
 length \vn{L} which is in the \vn{LengthGroup}.
 
 The parameters of this group are:
+\begin{example}
+  bend_type::BendType.T     - Type of bend. Default: BendType.SECTOR.
+  angle::Number             - Design bend angle.
+  rho::Number               - Design bend radius.
+  g::Number                 - Design bend strength = 1/radius.
+  g_tot::Number             - Total bend strength.
+  bend_field::Number        - Design bend field.
+  bend_field_tot::Number    - Total (that is, actual) dipole field.
+  L_chord::Number           - Chord length.
+  L_sagitta::Number         - Sagitta length.
+  L_rectangle::Number       - Rectangular length.
+  ref_tilt::Number          - Reference tilt.
+  e1::Number                - Entrance end pole face rotation.
+  e2::Number                - Exit end pole face rotation.
+  e1_rect::Number           - Entrance end pole face rotation.
+  e2_rect::Number           - Exit end pole face rotation.
+  fint1::Number             - Entrance end fringe field integral.
+  fint2::Number             - Exit end fringe field integral
+  hgap1::Number             - Entrance end pole half gap.
+  hgap2::Number             - Exit end pole half gap.
+  fiducial_pt::FiducialPt.T            - Default: FiducialPt.NONE
+  exact_multipoles::ExactMultipoles.T  - Default: ExactMultipoles.OFF
+\end{example}
 
 \begin{figure}[ht]
   \centering \includegraphics{bend.pdf} 

@@ -617,11 +617,11 @@ end
 # info
 
 """
-    info(sym::Symbol) -> nothing
-    info(str::AbstractString) -> nothing
-    info(ele_type::Type{T}) where T <: Ele
-    info(ele::Ele)
-    info(group::Type{T}) where T <: EleParameterGroup
+    info(sym::Symbol) -> nothing            # Info on element parameter symbol. EG: :angle, :Kn1, etc.
+    info(str::AbstractString) -> nothing    # Info on element parameter string. EG: "angle", "Kn1", etc.
+    info(ele_type::Type{T}) where T <: Ele  # Info on a given element type.
+    info(ele::Ele)                          # Info on typeof(ele) element type.
+    info(group::Type{T}) where T <: EleParameterGroup  # Info on element parameter group.
 
 Prints information about:
   + The element parameter represented by `sym` or `str`.
@@ -699,7 +699,7 @@ function info(group::Type{T}) where T <: EleParameterGroup
     if isnothing(info)
       println("  $param")
     else
-      str = "  " * rpad("$param::$(info.kind)", 30) * info.description
+      str = "  " * rpad("$param::$(strip_AL(info.kind))", 30) * "  " * info.description
       if info.units != ""; str *= " ($(info.units))"; end
       if info.user_sym != info.struct_sym  str  *= "  User sym = $(info.user_sym)"; end
       println(str)
