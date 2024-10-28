@@ -222,7 +222,7 @@ Base.length(sym::Symbol) = length(repr(sym))
 """
 Index of substring in string. Assumes all characters are ASCII.
 Returns 0 if substring is not found
-"""
+""" index
 
 function index(str::AbstractString, substr::AbstractString)
   ns = length(substr)
@@ -241,9 +241,9 @@ end
 
 Returns a string stripped of prefix "AcceleratorLattice." if the prefix is present.
 
-Useful for streamlining output when something like "\$(my_type)" would produce
+Useful for streamlining output when something like "\\\$(my_type)" would produce
 a string with an "AcceleratorLattice." prefix.
-"""
+""" strip_AL
 
 strip_AL(who) = replace(string(who), r"^AcceleratorLattice\." => "")
 
@@ -262,8 +262,8 @@ end
 """
     cos_one(x)
 
-Function to calculate cos(x) - 1 to machine precision.
-This is usful if angle can be near zero where the direct evaluation of cos(x) - 1 is inaccurate.
+Function to calculate `cos(x) - 1` to machine precision.
+This is usful if angle can be near zero where the direct evaluation of `cos(x) - 1` is inaccurate.
 """ cos_one
 
 cos_one(x) = -2.0 * sin(x/2.0)^2
@@ -272,11 +272,17 @@ cos_one(x) = -2.0 * sin(x/2.0)^2
 # modulo2
 
 """
-! Function to return
-!     mod2 = x + 2 * n * amp
-! where n is an integer chosen such that
-!    -amp <= mod2 < amp
-"""
+    function modulo2(x, amp)
+
+ Function to return
+```
+     mod2 = x + 2 * n * amp
+```
+where `n` is an integer chosen such that
+```
+    -amp <= mod2 < amp
+```
+""" modulo2
 
 function modulo2(x, amp)
   m2 = mod(x, 2*amp)

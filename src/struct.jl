@@ -285,20 +285,42 @@ of the chamber wall from the vertex point to the next vertex point.
 If not set, the chamber wall from the vertex to the next vertex is a straight line.
 
 ## Fields
-• `x::Number`             - X-coordinate of vertex point.
-• `y::Number`             - Y-coordinate of vertex point.
+• `r0::Vector{Number}`     - (x, y) coordinate of vertex point.
 • `radius_x::Number`      - Horizontal ellipse radius.
 • `radius_y::Number`      - Vertical ellipse radius.
 • `tilt::Number`          - Tilt of ellipse.
 """ Vertex1
 
 @kwdef mutable struct Vertex1 <: EleParameterSubGroup
-  x::Number = NaN
-  y::Number = NaN
+  r0::Vector{Number} = [NaN, NaN]
   radius_x::Number = NaN
   radius_y::Number = NaN
   tilt::Number = NaN
 end
+
+Vertex1(r0::Vector{Number}, rx::Number = NaN, ry::Number = NaN) = 
+                                 Vertex1(r0 = r0, radius_x = rx, radius_y = ry, NaN)
+
+
+#---------------------------------------------------------------------------------------------------
+# WallSection
+
+"""
+    mutable struct WallSection <: EleParameterSubGroup
+
+Vacuum chamber wall cross-section.
+
+## Fields
+• `vertex::Vector{Vertex1}` - Array of vertices. \\
+• `r0::Vector{Number}`      - Origin point. \\
+""" WallSection
+
+@kwdef mutable struct WallSection <: EleParameterSubGroup
+  vertex::Vector{Vertex1} = Vector{Vertex1}()
+  r0::Vector{Number} = [0.0, 0.0]
+end
+
+WallSection(v::Vector{Vertex1}) = WallSection(v, [0.0, 0.0])
 
 #---------------------------------------------------------------------------------------------------
 # ApertureGroup
@@ -309,21 +331,23 @@ end
 Vacuum chamber aperture struct.
 
 ## Fields
-• `x_limit::Vector`                         - `[x-, x+]` Limits in x-direction. \\
-• `y_limit::Vector`                         - `[y-, y+]` Limits in y-direction. \\
-• `vertex::Vector{Vertex1}`                 - Array of vertexes used with `ApertureShape.VERTEX`. \\
-• `aperture_shape::ApertureShape.T`         - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
-• `aperture_at::BodyLoc.T`                  - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
-• `misalignment_moves_aperture::Bool`       - Do element misalignments move the aperture? \\
+• `x_limit::Vector`                     - `[x-, x+]` Limits in x-direction. \\
+• `y_limit::Vector`                     - `[y-, y+]` Limits in y-direction. \\
+• `section::WallSection`                - Aperture defined by an array of vertices. \\
+• `aperture_shape::ApertureShape.T`     - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
+• `aperture_at::BodyLoc.T`              - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
+• `misalignment_moves_aperture::Bool`   - Do element misalignments move the aperture? Default is false. \\
+• `custom_aperture::Dict`               - Custom aperture information.
 """ ApertureGroup
 
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
-  x_limit::Vector = [NaN, NaN]
-  y_limit::Vector = [NaN, NaN]
-  vertex::Vector{Vertex1} = Vector{Vertex1}()
+  x_limit::Vector = [Inf, Inf]
+  y_limit::Vector = [Inf, Inf]
+  section::WallSection = WallSection()
   aperture_shape::typeof(ApertureShape) = ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
-  misalignment_moves_aperture::Bool = true
+  misalignment_moves_aperture::Bool = false
+  custom_aperture::Dict = Dict()
 end
 
 #---------------------------------------------------------------------------------------------------

@@ -20,8 +20,8 @@ to `Twiss.a.beta` which is 2 levels down from parent struct Twiss.
 abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
-  parent_group::T where T <: Union{DataType,Vector}  # Use the parent_group function to get the parent group.
-  kind::Union{T, Union} where T <: DataType          # Something like Aperture is a Union.
+  parent_group::T where T <: Union{DataType,Vector}    # Use the parent_group function to get the parent group.
+  kind::Union{T, Union, UnionAll} where T <: DataType  # Something like Aperture is a Union.
   description::String = ""
   units::String = ""
   struct_sym::Symbol                                 # Symbol in struct.
@@ -150,18 +150,18 @@ ELE_PARAM_INFO_DICT = Dict(
   :auto_phase         => ParamInfo(RFAutoGroup,    Number,         "Correction RF phase calculated by the auto scale code.", "rad"),
   :do_auto_amp        => ParamInfo(RFAutoGroup,    Bool,           "Autoscale voltage/gradient?"),
   :do_auto_phase      => ParamInfo(RFAutoGroup,    Bool,           "Autoscale phase?"),
-  :do_auto_scale      => ParamInfo(Nothing,        Bool,           "Used to set do_auto_amp and do_auto_phase both at once.", ""),
 
   :num_steps          => ParamInfo(TrackingGroup,  Int,               "Nominal number of tracking steps."),
   :ds_step            => ParamInfo(TrackingGroup,  Number,            "Nominal distance between tracking steps.", "m"),
 
-  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,     "Shape of aperture. Default is ELLIPTICAL."),
-  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,         "Where the aperture is. Default is BodyLoc.ENTRANCE_END."),
+  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,     "Aperture shape. Default is ELLIPTICAL."),
+  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,         "Aperture location. Default is BodyLoc.ENTRANCE_END."),
   :misalignment_moves_aperture 
-                      => ParamInfo(ApertureGroup,  Bool,              "Does moving the element move the aperture?"),
-  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "2-Vector of horizontal aperture limits.", "m"),
-  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "2-Vector of vertical aperture limits.", "m"),
-  :vertex             => ParamInfo(ApertureGroup,  Vector{Vertex1},   "Array of aperture vertexes."),
+                      => ParamInfo(ApertureGroup,  Bool,              "Element movement moves aperture?"),
+  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "Min/Max horizontal aperture limits.", "m"),
+  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "Min/Max vertical aperture limits.", "m"),
+  :section            => ParamInfo(ApertureGroup,  WallSection,       "Array of aperture vertices."),
+  :custom_aperture    => ParamInfo(ApertureGroup,  Dict,              "Custom aperture info."),
 
   :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number},"3-vector of element floor position.", "m", :r),
   :q_floor            => ParamInfo(FloorPositionGroup, Vector{Number},"Element quaternion orientation.", "", :q),
@@ -304,13 +304,14 @@ end
 # multipole_type
 
 """
-    function multipole_type(sym::Symbol) -> (type::String, order::Int, group::Type{T}
-    function multipole_type(str::AbstractString}) -> (type::String, order::Int, group::Type{T}
+    function multipole_type(sym::Symbol) -> (type::String, order::Int, group_type::Type{T})
+    function multipole_type(str::AbstractString}) -> (type::String, order::Int, group_type::Type{T})
                                    where T <: Union{BMultipoleGroup,EMultipoleGroup,Nothing}
 
 If `str` is a multipole parameter name like `Kn2L` or `Etilt`,
 `order` will be the multipole order and `type` will be one of:
- - "Kn", "KnL", "Ks" "KsL", "Bn", "BnL", "Bs", "BsL", "tilt", "En", "EnL", "Es", "EsL", or "Etilt"
+ - "Kn", "KnL", "Ks" "KsL", "Bn", "BnL", "Bs", "BsL", "tilt", "integrated"
+"En", "EnL", "Es", "EsL", "Etilt", "Eintegrated"
 
 If `str` is not a valid multipole parameter name, returned will be `("", -1, Nothing)`.
 """ multipole_type
@@ -325,12 +326,18 @@ function multipole_type(str::AbstractString)
   elseif length(str) > 5 && str[1:5] == "Etilt"
     order = tryparse(Int,   str[6:end]) 
     isnothing(order) || order < 0 ? (return isbad) : return ("Etilt", order, EMultipoleGroup)
+  elseif length(str) > 10 && str[1:10] == "integrated"
+    order = tryparse(Int,   str[11:end])
+    isnothing(order) || order < 0 ? (return isbad) : return ("integrated", order, BMultipoleGroup)
+  elseif length(str) > 11 && str[1:11] == "Eintegrated"
+    order = tryparse(Int,   str[12:end]) 
+    isnothing(order) || order < 0 ? (return isbad) : return ("Eintegrated", order, EMultipoleGroup)
   end
 
   if str[1:2] in Set(["Kn", "Ks", "Bn", "Bs"])
-    group = BMultipoleGroup
+    group_type = BMultipoleGroup
   elseif str[1:2] in Set(["En", "Es"])
-    group = EMultipoleGroup
+    group_type = EMultipoleGroup
   else
     return isbad
   end
@@ -343,7 +350,7 @@ function multipole_type(str::AbstractString)
     str = str[1:2]
   end
 
-  isnothing(order) || order < 0 ? (return is_bad) : return (str, order, group)
+  isnothing(order) || order < 0 ? (return is_bad) : return (str, order, group_type)
 end
 
 !-
@@ -361,12 +368,14 @@ function multipole_param_info(sym::Symbol)
   (mtype, order, group) = multipole_type(sym)
   if group == Nothing; return nothing; end
 
-  n = length(mtype)
-  if n == 4 && mtype[1:4] == "tilt"
+  if mtype == "tilt"
     return ParamInfo(BMultipoleGroup, Number, f"Magnetic multipole tilt for order {order}", "rad", :tilt, nothing, sym)
-  end
-  if n == 5 && mtype[1:5] == "Etilt"
+  elseif mtype == "Etilt"
     return ParamInfo(EMultipoleGroup, Number, f"Electric multipole tilt for order {order}", "rad", :tilt, nothing, sym)
+  elseif mtype == "integrated"
+    return ParamInfo(BMultipoleGroup, Bool, f"Are stored multipoles integrated for order {order}?", "", :integrated, nothing, sym)
+  elseif mtype == "Eintegrated"
+    return ParamInfo(EMultipoleGroup, Bool, f"Are stored multipoles integrated for order {order}?", "", :Eintegrated, nothing, sym)
   end
 
   mtype[2] == "s" ? str = "Skew," : str = "Normal (non-skew)"
@@ -453,22 +462,25 @@ function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
 end
 
 #---------------------------------------------------------------------------------------------------
-# set_integrated!
+# toggle_integrated!
 
 """
+    toggle_integrated!(ele::Ele, field_type::FieldType, order::Int)
+
+
 Set whether multipoles values correspond to integrated or non-integrated.
 The existing multipole values will be translated appropriately.
 
 If there are no multipoles corresponding to `order`, nothing is done.
-"""
+""" toggle_integrated!
 
-function set_integrated!(ele::Ele, group::BMultipoleGroup, order::Int, integrated::Bool)
+function toggle_integrated!(ele::Ele, ftype::Type{MAGNETIC}, order::Int)
   mul = multipole!(BMultipoleGroup, order)
   if isnothing(mul); return; end
-  if integrated == mul.integrated; return; end
-
   L = ele.L
-  if integrated
+  want_integrated = !mul.integrated
+
+  if want_integrated
     mul.Kn = mul.Kn * L
     mul.Ks = mul.Ks * L
     mul.Bn = mul.Bn * L
@@ -483,16 +495,16 @@ function set_integrated!(ele::Ele, group::BMultipoleGroup, order::Int, integrate
     mul.Bs = mul.Bs / L
   end
 
-  mul.integrated = integrated
+  mul.integrated = want_integrated
 end
 
-function set_integrated!(ele::Ele, group::EMultipoleGroup, order::Int, integrated::Bool)
+function toggle_integrated!(ele::Ele, ftype::Type{ELECTRIC}, order::Int)
   mul = multipole!(EMultipoleGroup, order)
   if isnothing(mul); return; end
-  if integrated == mul.integrated; return; end
-
   L = ele.L
-  if integrated
+  want_integrated = !mul.integrated
+
+  if want_integrated
     mul.En = mul.En * L
     mul.Es = mul.Es * L
   else
@@ -503,13 +515,15 @@ function set_integrated!(ele::Ele, group::EMultipoleGroup, order::Int, integrate
     mul.Es = mul.Es / L
   end
 
-  mul.integrated = integrated
+  mul.integrated = want_integrated
 end
 
 #---------------------------------------------------------------------------------------------------
 # PARAM_GROUPS_LIST
 
 """
+    Dict PARAM_GROUPS_LIST
+
 Table of what element groups are associated with what element types.
 Order is important. Bookkeeping routines rely on: 
  - `LengthGroup` being first (`LengthGroup` bookkeeping may be done a second time if `BendGroup` modifies `L`).
@@ -595,7 +609,7 @@ ELE_PARAM_GROUP_INFO = Dict(
 
 Finds multipole of a given order.
 
-Returns `nothing` if `vec` array does not contain element with n = `order` and `insert` = `nothing`.
+Returns `nothing` if `vec` array does not contain element with n = `order` and `insert` = `false`.
 """ multipole!
 
 function multipole!(mgroup, order; insert::Bool = false)

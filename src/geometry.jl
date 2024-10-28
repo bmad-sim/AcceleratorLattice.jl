@@ -17,7 +17,6 @@ The coordinates are computed without misalignments. That is, the coordinates are
 coordinates and not the "body" coordinates. To compute coordinates with misalignments, use
 the routine ele_geometry_with_misalignments.
 
-
 """ propagate_ele_geometry
 
 function propagate_ele_geometry(ele::Ele)

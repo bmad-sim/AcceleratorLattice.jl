@@ -271,22 +271,37 @@ end
 #-
 
 function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
-  (mtype, order, mgroup) = multipole_type(pinfo.user_sym)
+  (mtype, order, group_type) = multipole_type(pinfo.user_sym)
+  if group_type == Nothing; error("Internal error. Unknown multipole group type. Please report."); end
+
+  #
+
   mul = multipole!(group, order)
-  if isnothing(mgroup) || group != mgroup; return 0.0; end
+  if isnothing(mul)
+    if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E' || mtype[1] == 't'; return 0; end 
+    if mtype[1] == 'i'; return false; end
+    error("Internal error. Unknown multipole group component. Please report.")
+  end
+
+  #
 
   val =  getfield(mul, pinfo.struct_sym)
-  if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
-    if (mtype[end] == 'L') && !mul.integrated
+
+  if mtype == "tilt" || mtype == "Etilt"
+    return val
+  elseif mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
+    if mtype[end] == 'L' && !mul.integrated
       return val * ele.L
-    elseif (mtype[end] != 'L') && mul.integrated
+    elseif mtype[end] != 'L' && mul.integrated
       if ele.L == 0; error(f"Cannot compute non-integrated multipole value {pinfo.user_sym} for" *
                            f" integrated multipole of element with zero length: {ele_name(ele)}"); end
       return val / ele.L
+    else
+      return val
     end
+  else
+    return val
   end
-
-  return val
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -315,7 +330,7 @@ function set_elegroup_param!(ele::Ele, group::Union{BMultipoleGroup, EMultipoleG
     elseif (mtype[end] == 'L') != mul.integrated
       error(f"Cannot set non-integrated multipole value for integrated multipole and " * 
             f"vice versa for {pinfo.user_sym} in {ele_name(ele)}.\n" *
-            f"Use set_integrated to change integrated status.")
+            f"Use toggle_integrated! to change the integrated status.")
     end
   end
 

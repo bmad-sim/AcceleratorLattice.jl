@@ -1,2 +1,29 @@
 \chapter{Defining New Lattice Elements}
 \label{c:new.ele}
+
+To construct a new element type:
+
+* Define a new element type. Example:
+\begin{example}
+  \@construct_ele_type NewEleType
+\end{example}
+
+* Extend EleGeometry Holy trait group (\sref{s:holy}) if a new geometry is needed. Example:
+\begin{example}
+  abstract type CORKSCREW <: EleGeometry end
+\end{example}
+
+* If the geometry is not \vn{STRAIGHT}, Extend the \vn{ele_geometry()} function to return the 
+correct geometry for the new type of element. Example:
+\begin{example}
+  ele_geometry(ele::NewEleType) = CORKSCREW
+\end{example}
+
+* If the element has a new type of geometry, extend the \vn{propagate_ele_geometry()} function
+to handle the new type of geometry. Example:
+\begin{example}
+  function propagate_ele_geometry(::Type{CORKSCREW}, fstart::FloorPositionGroup, ele::Ele)
+    ...
+    return floor_end  # FloorPositionGroup at the downstream end of the element.
+  end
+\end{example}

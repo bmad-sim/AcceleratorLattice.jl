@@ -55,7 +55,7 @@ enum("ExactMultipoles", ["OFF", "HORIZONTALLY_PURE", "VERTICALLY_PURE"], "Bend m
 enum("FiducialPt", ["ENTRANCE_END", "CENTER", "EXIT_END", "NONE"], 
                                       "Fiducial point location in relation to body coordinates.")
 enum("TrackingMethod", ["RUNGE_KUTTA", "TIME_RUNGE_KUTTA", "STANDARD"], "Particle tracking method.")
-enum("ParticleState", ["PREBORN", "ALIVE", "PRETRACK", "LOST", "LOST_NEG_X", "LOST_POS_X", 
+enum("ParticleState", ["PREBORN", "ALIVE", "LOST", "LOST_NEG_X", "LOST_POS_X", 
                          "LOST_NEG_Y", "LOST_POS_Y", "LOST_PZ", "LOST_Z"], "Particle state.")
 
 # Useful abbreviations
@@ -137,7 +137,7 @@ Possible values for this group:\n
 """
 
   for val in values
-    eval_str("struct $val <: $atype; end")
+    eval_str("abstract type $val <: $atype end")
     eval_str("export $val")
     doc_str *= "•  `$val`\\\n"
   end
@@ -146,8 +146,10 @@ Possible values for this group:\n
   return nothing
 end
 
+holy_traits("ApertureShape", ["RECTANGULAR", "ELLIPTICAL", "VERTEX", "CUSTOM_SHAPE"], "The shape of the aperture.")
+
 holy_traits("EleGeometry", ["STRAIGHT", "CIRCULAR", "ZERO_LENGTH", 
                    "PATCH_GEOMETRY", "GIRDER_GEOMETRY", "CRYSTAL_GEOMETRY", "MIRROR_GEOMETRY"], 
                    "Element geometry.")
 
-holy_traits("ApertureShape", ["RECTANGULAR", "ELLIPTICAL", "VERTEX", "CUSTOM"], "The shape of the aperture.")
+holy_traits("FieldType", ["ELECTRIC", "MAGNETIC"], "Type of field.")
