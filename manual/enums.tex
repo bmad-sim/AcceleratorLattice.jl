@@ -158,8 +158,8 @@ Possible values:\\
 \begin{tabular}{ll}
   Lord & \\
   \indnt .NOT       & -- Not a lord \\
-  \indnt .SUPER     & -- Super lord \\
-  \indnt .MULTIPASS & -- Multipass lord \\
+  \indnt .SUPER     & -- Is a Super lord (\sref{c:super}) \\
+  \indnt .MULTIPASS & -- Is a Multipass lord (\sref{c:multipass}) \\
   \indnt .GOVERNOR  & -- Girder and other "minor" lords \\ 
 \end{tabular}
 \hfill \break \vskip -1.2ex
@@ -204,8 +204,8 @@ Possible values:\\
 \begin{tabular}{ll}
   Slave & \\
   \indnt .NOT       & -- Not a slave \\
-  \indnt .SUPER     & -- Super slave \\
-  \indnt .MULTIPASS & -- Multipass slave \\
+  \indnt .SUPER     & -- Is a Super slave (\sref{c:super}) \\
+  \indnt .MULTIPASS & -- Multipass slave (\sref{c:multipass}) \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
 
@@ -216,11 +216,11 @@ Possible values:\\
 \vspace*{-2ex}
 
 Longitudinal location with respect to element's machine coordinates.
-Possible values:\\
+Possible values: \\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
   Loc & \\
-  \indnt .UPSTREAM_END   & -- Upstream element end\\
+  \indnt .UPSTREAM_END   & -- Upstream element end \\
   \indnt .CENTER         & -- center of element \\
   \indnt .INSIDE         & -- Somewhere inside \\
   \indnt .DOWNSTREAM_END & -- Downstream element end \\
@@ -318,16 +318,16 @@ The shape of an aperture.\\
 \label{s:elegeometry}
 \vspace*{-2ex}
 
-The geometry of the reference orbit through an element. See \\
+The geometry of the reference orbit through an element. \\
 \vspace*{-0.5ex} \\
 \begin{tabular}{ll}
-  STRAIGHT          -- Straight line geometry.
-  CIRCULAR          -- Circular "bend-like" geometry
-  ZERO_LENGTH       -- Zero longitudinal length geometry.
-  PATCH_GEOMETRY    -- Patch element like geometry.
-  GIRDER_GEOMETRY   -- Support girder-like geometry.
-  CRYSTAL_GEOMETRY  -- Crystal geometry.
-  MIRROR_GEOMETRY   -- Mirror geometry.
+  STRAIGHT          & -- Straight line geometry. \\
+  CIRCULAR          & -- Circular "bend-like" geometry. \\
+  ZERO_LENGTH       & -- Zero longitudinal length geometry. \\
+  PATCH_GEOMETRY    & -- Patch element like geometry. \\
+  GIRDER_GEOMETRY   & -- Support girder-like geometry. \\
+  CRYSTAL_GEOMETRY  & -- Crystal geometry. \\
+  MIRROR_GEOMETRY   & -- Mirror geometry. \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
 

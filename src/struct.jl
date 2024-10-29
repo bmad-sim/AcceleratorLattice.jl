@@ -487,7 +487,7 @@ Vector of magnetic multipoles.
 
 """
 @kwdef mutable struct BMultipoleGroup <: EleParameterGroup
-  vec::Vector{BMultipole1} = Vector{BMultipole1}([])         # Vector of multipoles.
+  vec::Vector{BMultipole1} = Vector{BMultipole1}(undef,0)         # Vector of multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -505,7 +505,7 @@ Used by `EMultipoleGroup`.
 • `Es::Number`                  - Skew fieldEG component. EG: "Es2", "Es2L" \\
 • `Etilt::Number`               - Rotation of multipole around `z`-axis. \\
 • `order::Int`                  - Multipole order. \\
-• `integrated::Bool`            - Integrated field or not?. 
+• `Eintegrated::Bool`           - Integrated field or not?. 
   Also determines what stays constant with length changes. \\
 """ EMultipole1
 
@@ -514,7 +514,7 @@ Used by `EMultipoleGroup`.
   Es::Number = 0.0                    # EG: "Es2", "Es2L"
   Etilt::Number = 0.0
   order::Int = -1 
-  integrated::Bool = false
+  Eintegrated::Union{Bool,Nothing} = nothing
 end
 
 #---------------------------------------------------------------------------------------------------

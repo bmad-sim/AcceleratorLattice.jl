@@ -29,10 +29,6 @@ The parmeter groups are:
 \label{t:ele.param.g}
 \end{table}
 
-\newpage
-
-%---------------------------------------------------------------------------------------------------
-
 Element parameter groups inherit from the abstract type \vn{EleParameterGroup} which
 in turn inherits from \vn{BaseEleParameterGroup}. Some
 parameter groups have sub-group components. 
@@ -42,6 +38,10 @@ These sub-groups also inherit from \vn{BaseEleParameterGroup}:
   abstract type EleParameterGroup <: BaseEleParameterGroup end
   abstract type EleParameterSubGroup <: BaseEleParameterGroup end
 \end{example}
+
+\newpage
+
+%---------------------------------------------------------------------------------------------------
 
 To see which element types contain a given group, use the \vn{info(::EleParameterGroup)}
 method. Example:
@@ -56,6 +56,19 @@ method. Example:
     ...
 \end{example}
 
+To get information on a given element parameter, including what element group the parameter is in,
+use the \vn{info(::Symbol)} function using the symbol corresponding to the parameter. For example,
+to get information on the multipole component \vn{Ks2L} do:
+\begin{example}
+  julia> info(:Ks2L)
+    User name:       Ks2L
+    Stored in:       BMultipoleGroup.Ks
+    Parameter type:  Number
+    Units:           1/m^2
+    Description:     Skew, length-integrated, momentum-normalized, 
+                                          magnetic multipole of order 2.
+\end{example}
+  
 Notes:
 \begin{itemize}
 %
@@ -288,7 +301,7 @@ magnetic multipole parameters for order $J$ can be accessed using the following 
 {\centering
 {\tt
 \begin{tabular}{lllll} \toprule
-  Name        & Stored     & Normalized & Integrated & Description \\
+  Name        & Stored In  & Normalized & Integrated & Description \\
   KnJ         & Kn         & Yes        & No         & Normal field. \\
   KsJ         & Ks         & Yes        & No         & Skew field. \\
   KnJL        & Kn         & Yes        & Yes        & Normal field. \\
@@ -617,13 +630,95 @@ counterclockwise rotation of the exit face. This is true irregardless of the sig
 \section{EMultipoleGroup}
 \label{s:emultipole.g}
 
+The \vn{EMultipoleGroup} group stores electric multipole strengths. Also see \vn{BMultipoleGroup}.
+The parameters of this group are:
+\begin{example}
+  vec::Vector{EMultipole1}
+\end{example}
+This group stores a vector of \vn{EMultipole1} structs.
+The \vn{EMultipole1} structure stores the values for a electric multipole of a given order.
+Only orders where there is a non-zero multipole are stored and there is no maximum limit to the 
+order that can be stored. The multipoles will be stored in increasing order.
+
+The \vn{EMultipole1} structure has components:
+\begin{example}
+  En::Number     - Normal field component. \\ 
+  Es::Number     - Skew field component. \\
+  Etilt::Number  - Rotation of multipole around z-axis. \\
+  order::Int     - Multipole order. \\
+  Eintegrated::Union{Bool,Nothing} - Integrated multipoles or not? 
+\end{example}
+The \vn{order} component gives the multipole order.
+There is storage for unnormalized (\vn{En} and \vn{Es}) field strengths however, unlike magnetic
+multipoles, there are no components for normalized field strengths. 
+The letter ``\vn{n}'' designates the normal component and ``\vn{s}'' designates the skew component. 
+There is also a \vn{Etilt} component which will tilt the entire multipole \cite{???}.
+The reason why the structure has three components, 
+normal, skew and tilt, that describe the field when only two would be sufficient is due convenience.
+Having normal and skew components is convenient when magnet has multiple windings that control
+both independently.
+
+The dot selection operator for an element (\sref{s:ele.access}) is overloaded so that 
+electric multipole parameters for order $J$ can be accessed using the following notation:
+{\centering
+{\tt
+\begin{tabular}{lllll} \toprule
+  Name         & Stored In   & Integrated & Description \\
+  EnJ          & En          & No         & Normal field. \\
+  EsJ          & Es          & No         & Skew field. \\
+  EnJL         & En          & Yes        & Normal field. \\
+  EsJL         & Es          & Yes        & Skew field. \\
+  EtiltJ       & Etilt       & --         & Field tilt. \\
+  EintegratedJ & Eintegrated & --         & Integrated fields? \\
+\end{tabular}
+} 
+Substitute the multipole order for $J$ in the above table. For example, \vn{Es2L} is the
+normalized length-integrated skew field component of order 2. 
+
+Notice that both integrated
+and non-integrated fields are potentially stored in the same component of \vn{EMultipole1}.
+Which type is stored is determined by the \vn{Eintegrated} logical. If \vn{true}, the integrated
+value is stored and vice versa. The \vn{Eintegrated} setting can be different for different orders.
+The setting of \vn{Eintegrated} for a given order is determined by whether the first field component
+to be set for that order is an integrated quantity or not. After the value of \vn{Eintegrated} is set,
+an error will be thrown if a something that has the opposite sense in terms of integration is 
+set. For example:
+\begin{example}
+  @ele qq = Quadrupole(l = 0.6, Es0L = 1.0)  # 0th order multipole is integrated
+  qq.En1 = 0.3                  # 1st order multipole is not integrated
+  qq.Es1 = 0.5                  # This is OK.
+  println(qq.Eintegrated0)      # Will print ``true''
+  println(qq.En0)               # Can use non-integrated component in an equation.
+  toggle_integrated!(qq, ELECTRIC, 0)  # toggle integrated setting for order 0 multipole.
+\end{example}
+In the above example, the 0th order multipole is initialized using \vn{Es0L} so that
+multipole will have the \vn{Eintegrated} component set to \vn{true} and non-integrated values
+cannot be set. However, independent of the setting of \vn{Eintegrated}, both integrated and
+non-integrated quantities can always be used in an equation. To change the value of \vn{Eintegrated},
+use the \vn{toggle_integrated!} function. This function also translates the values stored in the
+field components of the structure so that the field will stay constant.
+
+The setting of \vn{Eintegrated} for a given multipole will also determine what stays constant
+of the length of the magnet changes. If \vn{Eintegrated} is \vn{true}, the integrated values
+will be invariant with length changes and vice versa if \vn{integrated} is \vn{false}. 
+Similarly, the setting of the \vn{field_master} parmeter (\sref{s:master.g}) will determine 
+whether normalized or unnormalized quantities will stay constant if the reference energy is varied.
+
 %---------------------------------------------------------------------------------------------------
 \section{FloorPositionGroup}
 \label{s:floor.pos.g}
 
+The \vn{FloorPositionGroup} stores position and orientation information in the Global coordinate 
+system. The components of this struct are:
+\begin{example}
+
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{GirderGroup}
 \label{s:girder.g}
+
+Under Development.
 
 %---------------------------------------------------------------------------------------------------
 \section{InitParticleGroup}

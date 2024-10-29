@@ -25,7 +25,8 @@ abstract type Pointer end
   description::String = ""
   units::String = ""
   struct_sym::Symbol                                 # Symbol in struct.
-  sub_struct::Union{Function, Nothing}               # Used if parameter parent is not parent_group. EG: Twiss.a.beta
+  sub_struct::Union{Function, Nothing}               # Used if parameter parent is not parent_group. 
+                                                     #    EG: Twiss.a.beta and sub_struct = T -> T.a
   user_sym::Symbol                                   # Symbol used to construct elements.
 end
 
@@ -361,6 +362,12 @@ multipole_type(sym::Symbol) = multipole_type(string(sym))
 # multipole_param_info
 
 """
+    multipole_param_info(sym::Symbol) -> ParamInfo
+
+Returns `ParamInfo` information struct on a given multipole parameter corresponding to `sym`.
+
+The `sub_struct` of the returned `ParamInfo` is set to nothing since the true sub-structure is 
+complicated (something like `vec[J]` where `J` is not fixed).
 
 """ multipole_param_info
 
@@ -369,44 +376,46 @@ function multipole_param_info(sym::Symbol)
   if group == Nothing; return nothing; end
 
   if mtype == "tilt"
-    return ParamInfo(BMultipoleGroup, Number, f"Magnetic multipole tilt for order {order}", "rad", :tilt, nothing, sym)
+    return ParamInfo(BMultipoleGroup, Number, "Magnetic multipole tilt for order $order", "rad", :tilt, nothing, sym)
   elseif mtype == "Etilt"
-    return ParamInfo(EMultipoleGroup, Number, f"Electric multipole tilt for order {order}", "rad", :tilt, nothing, sym)
+    return ParamInfo(EMultipoleGroup, Number, "Electric multipole tilt for order $order", "rad", :tilt, nothing, sym)
   elseif mtype == "integrated"
-    return ParamInfo(BMultipoleGroup, Bool, f"Are stored multipoles integrated for order {order}?", "", :integrated, nothing, sym)
+    return ParamInfo(BMultipoleGroup, Bool, "Are stored multipoles integrated for order $order?", "", :integrated, nothing, sym)
   elseif mtype == "Eintegrated"
-    return ParamInfo(EMultipoleGroup, Bool, f"Are stored multipoles integrated for order {order}?", "", :Eintegrated, nothing, sym)
+    return ParamInfo(EMultipoleGroup, Bool, "Are stored multipoles integrated for order $order?", "", :Eintegrated, nothing, sym)
   end
 
-  mtype[2] == "s" ? str = "Skew," : str = "Normal (non-skew)"
+  mtype[2] == 's' ? str = "Skew" : str = "Normal (non-skew)"
   insym = Symbol(mtype[1:2])
 
   if mtype[end] == 'L'
-    str = str * " length-integrated,"
-    order = order - 1
+    str = str * ", length-integrated"
+    exp = order - 1
+  else
+    exp = order
   end
 
   if mtype[1] == 'K'
     if order == -1; units = ""
-    else;           units = f"1/m^{order+1}"
+    else;           units = "1/m^$(exp+1)"
     end
 
-    return ParamInfo(BMultipoleGroup, Number, f"{str}, momentum-normalized magnetic multipole.", units, insym, nothing, sym)
+    return ParamInfo(BMultipoleGroup, Number, "$str, momentum-normalized, magnetic multipole of order $order.", units, insym, nothing, sym)
 
   elseif mtype[1] == 'B'
     if order == -1;    units = "T*m"
     elseif order == 0; units = "T"
-    else;              units = f"T/m^{order}"
+    else;              units = "T/m^$exp"
     end
 
-    return ParamInfo(BMultipoleGroup, Number, f"{str} magnetic field multipole.", units, insym, nothing, sym)
+    return ParamInfo(BMultipoleGroup, Number, "$str, magnetic field multipole of order $order.", units, insym, nothing, sym)
 
   elseif mtype[1] == 'E'
     if order == -1; units = "V"
-    else;           units = f"V/m^{order+1}"
+    else;           units = "V/m^$(exp+1)"
     end
 
-    return ParamInfo(EMultipoleGroup, Number, f"{str} electric field multipole.", units, insym, nothing, sym) 
+    return ParamInfo(EMultipoleGroup, Number, "$str, electric field multipole of order $order.", units, insym, nothing, sym) 
   end
 end
 
@@ -579,10 +588,10 @@ ELE_PARAM_GROUP_INFO = Dict(
   ApertureGroup         => EleParameterGroupInfo("Vacuum chamber aperture.", false),
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
-  BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Contained in `BMultipoleGroup`", false),
+  BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleGroup`", false),
   ChamberWallGroup      => EleParameterGroupInfo("Vacuum chamber wall.", false),
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
-  EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Contained in `EMultipoleGroup`.", false),
+  EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Substructure contained in `EMultipoleGroup`.", false),
   FloorPositionGroup    => EleParameterGroupInfo("Global floor position and orientation.", true),
   GirderGroup           => EleParameterGroupInfo("Girder parameters.", false),
   InitParticleGroup     => EleParameterGroupInfo("Initial particle position and spin.", false),
