@@ -331,7 +331,7 @@ function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool; indent =
   end
 
   println(io, f"{off_str}BMultipoleGroup:")
-  println(io, f"{off_str}  Order Integrated{lpad(\"Tilt (rad)\",24)}")
+  println(io, f"{off_str}  Order integrated{lpad(\"tilt (rad)\",24)}")
   for v in group.vec
     ol = f"{v.order}"
     if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
@@ -353,12 +353,12 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool; indent =
   end
 
   println(io, f"{off_str}EMultipoleGroup:")
-  println(io, f"{off_str}  Order Integrated{lpad(\"Tilt (rad)\",24)}{lpad(\"En\",24)}{lpad(\"Es\",24)}")
+  println(io, f"{off_str}  Order Eintegrated{lpad(\"Etilt (rad)\",23)}")
   for v in group.vec
     ol = f"{v.order}"
-    if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
+    if !isnothing(v.Eintegrated) && v.Eintegrated; ol = ol * "L"; end
     ue = units(Symbol(f"En{ol}"))
-    println(io, f"{lpad(n,9+indent)}      {lpad(v.integrated,5)}{lpad(v.tilt,24)}{lpad(v.En,24)}{lpad(v.Es,24)}    En{ol}  Es{ol} ({ue})")
+    println(io, f"{off_str}{lpad(v.order,7)}{lpad(v.Eintegrated,11)}{lpad(v.Etilt,24)}{lpad(v.En,24)}  En{ol}{lpad(v.Es,24)}  Es{ol} ({ue})")
   end
 end
 
@@ -724,7 +724,11 @@ Used by `info` function.
 
 function info1(info::ParamInfo)
   println(f"  User name:       {info.user_sym}")
-  println(f"  Stored in:       {info.parent_group}.{info.struct_sym}")
+  if isnothing(info.sub_struct)
+    println(f"  Stored in:       {info.parent_group}.{info.struct_sym}")
+  else
+    println(f"  Stored in:       {info.sub_struct(info.parent_group)}.{info.struct_sym}")
+  end
   println(f"  Parameter type:  {info.kind}")
   if info.units != ""; println(f"  Units:           {info.units}"); end
   println(f"  Description:     {info.description}")

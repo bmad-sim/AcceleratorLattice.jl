@@ -34,14 +34,12 @@ for etype in subtypes(Ele)
   end
 
   lst = "Element parameter groups associated with this element type are:\n" *
-        raw"\TOPrule" * "\n" *
         raw"\begin{example}" * "\n"
   for group in sort(PARAM_GROUPS_LIST[etype])
     name = "$(strip_AL(group))"
-    lst *= "  $(rpad(name, n)) -> $(ELE_PARAM_GROUP_INFO[group].description) \\sref{$(section_dict[group])} \n"
+    lst *= "  $(rpad(name, n)) - $(ELE_PARAM_GROUP_INFO[group].description) \\sref{$(section_dict[group])} \n"
   end
-  lst *= raw"\end{example}" * "\n" *
-         raw"\BOTTOMrule" * "\n"
+  lst *= raw"\end{example}" * "\n"
   println("\n\n" * string(etype) * "\n")
   print(lst)
 end

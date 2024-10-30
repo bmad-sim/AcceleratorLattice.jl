@@ -278,27 +278,22 @@ function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGr
 
   mul = multipole!(group, order)
   if isnothing(mul)
-    if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E' || mtype[1] == 't'; return 0; end 
-    if mtype[1] == 'i'; return false; end
-    error("Internal error. Unknown multipole group component. Please report.")
+    if mtype == "integrated" || mtype == "Eintegrated"; return false; end
+    return 0
   end
 
   #
 
   val =  getfield(mul, pinfo.struct_sym)
+  if mtype == "tilt" || mtype == "Etilt" || mtype == "integrated" || mtype == "Eintegrated"; return val; end
 
-  if mtype == "tilt" || mtype == "Etilt"
-    return val
-  elseif mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
-    if mtype[end] == 'L' && !mul.integrated
-      return val * ele.L
-    elseif mtype[end] != 'L' && mul.integrated
-      if ele.L == 0; error(f"Cannot compute non-integrated multipole value {pinfo.user_sym} for" *
-                           f" integrated multipole of element with zero length: {ele_name(ele)}"); end
-      return val / ele.L
-    else
-      return val
-    end
+  group_type == BMultipoleGroup ? integrated = mul.integrated : integrated = mul.Eintegrated
+  if mtype[end] == 'L' && !integrated
+    return val * ele.L
+  elseif mtype[end] != 'L' && integrated
+    if ele.L == 0; error(f"Cannot compute non-integrated multipole value {pinfo.user_sym} for" *
+                         f" integrated multipole of element with zero length: {ele_name(ele)}"); end
+    return val / ele.L
   else
     return val
   end
@@ -320,18 +315,33 @@ function set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInf
   end
 end
 
-function set_elegroup_param!(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo, value)
-  (mtype, order, mgroup) = multipole_type(pinfo.user_sym)
+function set_elegroup_param!(ele::Ele, group::BMultipoleGroup, pinfo::ParamInfo, value)
+  (mtype, order, group_type) = multipole_type(pinfo.user_sym)
   mul = multipole!(group, order, insert = true)
+  if mtype == "tilt" || mtype == "integrated"; return setfield!(mul, pinfo.struct_sym, value); end
 
-  if mtype[1] == 'K' || mtype[1] == 'B' || mtype[1] == 'E'
-    if isnothing(mul.integrated)
-      mul.integrated = (mtype[end] == 'L')
-    elseif (mtype[end] == 'L') != mul.integrated
-      error(f"Cannot set non-integrated multipole value for integrated multipole and " * 
-            f"vice versa for {pinfo.user_sym} in {ele_name(ele)}.\n" *
-            f"Use toggle_integrated! to change the integrated status.")
-    end
+  if isnothing(mul.integrated)
+    mul.integrated = (mtype[end] == 'L')
+  elseif (mtype[end] == 'L') != mul.integrated
+    error(f"Cannot set non-integrated multipole value for integrated multipole and " * 
+          f"vice versa for {pinfo.user_sym} in {ele_name(ele)}.\n" *
+          f"Use toggle_integrated! to change the integrated status.")
+  end
+ 
+  return setfield!(mul, pinfo.struct_sym, value)
+end
+
+function set_elegroup_param!(ele::Ele, group::EMultipoleGroup, pinfo::ParamInfo, value)
+  (mtype, order, group_type) = multipole_type(pinfo.user_sym)
+  mul = multipole!(group, order, insert = true)
+  if mtype == "Etilt" || mtype == "Eintegrated"; return setfield!(mul, pinfo.struct_sym, value); end
+
+  if isnothing(mul.Eintegrated)
+    mul.Eintegrated = (mtype[end] == 'L')
+  elseif (mtype[end] == 'L') != mul.Eintegrated
+    error(f"Cannot set non-integrated multipole value for integrated multipole and " * 
+          f"vice versa for {pinfo.user_sym} in {ele_name(ele)}.\n" *
+          f"Use toggle_integrated! to change the integrated status.")
   end
 
   return setfield!(mul, pinfo.struct_sym, value)

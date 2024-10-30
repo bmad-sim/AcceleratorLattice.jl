@@ -487,7 +487,7 @@ Vector of magnetic multipoles.
 
 """
 @kwdef mutable struct BMultipoleGroup <: EleParameterGroup
-  vec::Vector{BMultipole1} = Vector{BMultipole1}([])         # Vector of multipoles.
+  vec::Vector{BMultipole1} = Vector{BMultipole1}(undef,0)         # Vector of multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -505,7 +505,7 @@ Used by `EMultipoleGroup`.
 • `Es::Number`                  - Skew fieldEG component. EG: "Es2", "Es2L" \\
 • `Etilt::Number`               - Rotation of multipole around `z`-axis. \\
 • `order::Int`                  - Multipole order. \\
-• `integrated::Bool`            - Integrated field or not?. 
+• `Eintegrated::Bool`           - Integrated field or not?. 
   Also determines what stays constant with length changes. \\
 """ EMultipole1
 
@@ -514,7 +514,7 @@ Used by `EMultipoleGroup`.
   Es::Number = 0.0                    # EG: "Es2", "Es2L"
   Etilt::Number = 0.0
   order::Int = -1 
-  integrated::Bool = false
+  Eintegrated::Union{Bool,Nothing} = nothing
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -570,6 +570,7 @@ Girder parameters.
 • `origin_ele::Ele`           - Origin reference element. \\
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
 • `dr::Vector`                - `[x, y, z]` offset. \\
+• `q::Quat`                   - Quaternion orientation. \\
 • `dtheta::Number`            - Orientation angle. \\
 • `dphi::Number`              - Orientation angle. \\
 • `dpsi::Number`              - Orientation angle. \\
@@ -578,6 +579,7 @@ Girder parameters.
   origin_ele::Ele = NullEle
   origin_ele_ref_pt::Loc.T = Loc.CENTER
   dr::Vector = [0.0, 0.0, 0.0]
+  dq::Quat  = Quat(1.0, 0.0, 0.0, 0.0)
   dtheta::Number = 0.0
   dphi::Number = 0.0
   dpsi::Number = 0.0
