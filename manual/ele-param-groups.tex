@@ -166,13 +166,15 @@ by a set of vertices.
 The \vn{ApertureGroup} stores information about apertures an element may have. 
 The parameters of this group are:
 \begin{example}
-  x_limit::Vector{Number}           - Min/Max horizontal aperture limits. (m)
-  y_limit::Vector{Number}           - Min/Max vertical aperture limits. (m)
+  x_limit::Vector\{Number\}           - Min/Max x-aperture limits. (m)
+  y_limit::Vector\{Number\}           - Min/Max y-aperture limits. (m)
   section::WallSection              - Array of aperture vertices.
-  aperture_shape::ApertureShape     - Shape of aperture. Default is ELLIPTICAL.
-  misalignment_moves_aperture::Bool - Alignment affects aperture? Default false.
+  aperture_shape::ApertureShape     - Aperture shape. Default: ELLIPTICAL
   custom_aperture::Dict             - Custom aperture information.
-  aperture_at::BodyLoc.T - Aperture location. Default is BodyLoc.ENTRANCE_END.
+  misalignment_moves_aperture::Bool - Alignment affects aperture? 
+                                                      Default: false.
+  aperture_at::BodyLoc.T            - Aperture location. 
+                                         Default: BodyLoc.ENTRANCE_END
 \end{example}
 
 The aperture location is set by the \vn{aperture_at} parameter. Possible values are
@@ -182,14 +184,12 @@ so might not be always available.
 
 The \vn{aperture_shape} parameter selects the shape of the aperture. Possible values are
 given by the \vn{ApertureShape} Holy trait group. 
-\vspace*{-0.5ex} \\
-\begin{tabular}{ll}
-  RECTANGULAR   & -- Rectangular shape. \\
-  ELLIPTICAL    & -- Elliptical shape. \\
-  VERTEX        & -- Shape defined by set of vertices. \\
-  CUSTOM_SHAPE  & -- Shape defined with a custom function. \\
-\end{tabular}
-\hfill \break \vskip -1.2ex
+\begin{example}
+  RECTANGULAR   - Rectangular shape. \\
+  ELLIPTICAL    - Elliptical shape. \\
+  VERTEX        - Shape defined by set of vertices. \\
+  CUSTOM_SHAPE  - Shape defined with a custom function. \\
+\end{example}
 
 For \vn{RECTANGULAR} and \vn{ELLIPTICAL} shapes the \vn{x_limit} and \vn{y_limit} parameters are
 used to calculate the aperture as shown in \fig{f:apertures}A. For an \vn{ELLIPTICAL} aperture,
@@ -219,23 +219,23 @@ which incorporates the aperture, is not physically touching the surrounding magn
 When tracking a particle, assuming that there are only apertures at the element ends, 
 the order of computation with \vn{misalignment_moves_aperture} set to \vn{false} is
 \begin{example}
-  Start at upstream end of element
-  Check upstream aperture if there is one.
-  Convert from machine coordinates to body coordinates.
-  Track through the element body.
-  Convert from body coordinates to machine coordinates.
-  Check downstream aperture if there is one.
-  End at downstream end of element.
+  1) Start at upstream end of element
+  2) Check upstream aperture if there is one.
+  3) Convert from machine coordinates to body coordinates.
+  4) Track through the element body.
+  5) Convert from body coordinates to machine coordinates.
+  6) Check downstream aperture if there is one.
+  7) End at downstream end of element.
 \end{example}
 With \vn{misalignment_moves_aperture} set to \vn{true}, the computation order is 
 \begin{example}
-  Start at upstream end of element
-  Convert from machine coordinates to body coordinates.
-  Check upstream aperture if there is one.
-  Track through the element body.
-  Check downstream aperture if there is one.
-  Convert from body coordinates to machine coordinates.
-  End at downstream end of element.
+  1) Start at upstream end of element
+  2) Convert from machine coordinates to body coordinates.
+  3) Check upstream aperture if there is one.
+  4) Track through the element body.
+  5) Check downstream aperture if there is one.
+  6) Convert from body coordinates to machine coordinates.
+  7) End at downstream end of element.
 \end{example}
 
 The \vn{CUSTOM_SHAPE} setting for \vn{aperture_shape} indicates whether a User supplied function
@@ -255,8 +255,9 @@ set of vertex points as illustrated in \fig{f:apetures}B. Between vertex points,
 can can follow a straight line or the arc of an ellipse. The vertex points are specified by
 setting the \vn{section} parameter of \vn{ApertureGroup}. Example:
 \begin{example}
-  section = WallSection([Vertex1([1.0, 4.0]), Vertex1([-1.0, 4.0, 6.0]), vertex1([-5.0, 1.0]),
-                        Vertex1([-5.0, -1.0]), Vertex1([1.0, -1.5)]], r0 = [-2.5, 0.5]) 
+  section = WallSection([Vertex1([1.0, 4.0]), Vertex1([-1.0, 4.0, 6.0]), 
+                         Vertex1([-5.0, 1.0]), Vertex1([-5.0, -1.0]), 
+                          Vertex1([1.0, -1.5)]], r0 = [-2.5, 0.5]) 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -275,12 +276,12 @@ order that can be stored. The multipoles will be stored in increasing order.
 
 The \vn{BMultipole1} structure has components:
 \begin{example}
-  Kn::Number     - Normal normalized component. EG: "Kn2", "Kn2L". \\
-  Ks::Number     - Skew multipole component. EG: "Ks2", "Ks2L".  \\
-  Bn::Number     - Normal field component. \\ 
-  Bs::Number     - Skew field component. \\
-  tilt::Number   - Rotation of multipole around z-axis. \\
-  order::Int     - Multipole order. \\
+  Kn::Number     - Normal normalized component. EG: "Kn2", "Kn2L".
+  Ks::Number     - Skew multipole component. EG: "Ks2", "Ks2L".
+  Bn::Number     - Normal field component.
+  Bs::Number     - Skew field component.
+  tilt::Number   - Rotation of multipole around z-axis.
+  order::Int     - Multipole order.
   integrated::Union{Bool,Nothing} - Integrated multipoles or not? 
 \end{example}
 The \vn{order} component gives the multipole order.
@@ -298,10 +299,10 @@ useful.
 
 The dot selection operator for an element (\sref{s:ele.access}) is overloaded so that 
 magnetic multipole parameters for order $J$ can be accessed using the following notation:
-{\centering
+\hfill\break
 {\tt
 \begin{tabular}{lllll} \toprule
-  Name        & Stored In  & Normalized & Integrated & Description \\
+  Name        & Stored In  & Normalized & Integrated & Description \\ \midrule
   KnJ         & Kn         & Yes        & No         & Normal field. \\
   KsJ         & Ks         & Yes        & No         & Skew field. \\
   KnJL        & Kn         & Yes        & Yes        & Normal field. \\
@@ -312,8 +313,10 @@ magnetic multipole parameters for order $J$ can be accessed using the following 
   BsJL        & Bs         & No         & Yes        & Skew field. \\
   tiltJ       & tilt       & --         & --         & Field tilt. \\
   integratedJ & integrated & --         & --         & Integrated fields? \\
+\bottomrule
 \end{tabular}
-} 
+}
+\hfill\break
 Substitute the multipole order for $J$ in the above table. For example, \vn{Ks2L} is the
 normalized length-integrated skew field component of order 2. 
 
@@ -330,9 +333,9 @@ set. For example:
   qq.Bn1 = 0.3                  # 1st order multipole is not integrated
   qq.Ks1 = 0.5                  # This is OK.
   println(qq.integrated0)       # Will print ``true''
-  println(qq.Bn0)               # But can use non-integrated component in an equation.
-  qq.Bn0 = 0.7                  # Cannot set non-integrated component! Will throw an error!
-  toggle_integrated!(qq, MAGNETIC, 0)  # toggle integrated setting for order 0 multipole.
+  println(qq.Bn0)               # Can use non-integrated component.
+  qq.Bn0 = 0.7                  # Cannot set non-integrated component! error thrown!
+  toggle_integrated!(qq, MAGNETIC, 0)  # toggle integrated setting for order 0.
 \end{example}
 In the above example, the 0th order multipole is initialized using \vn{Ks0L} so that
 multipole will have the \vn{integrated} component set to \vn{true} and non-integrated values
@@ -387,7 +390,8 @@ The parameters of this group are:
 \end{example}
 
 \begin{figure}[ht]
-  \centering \includegraphics{bend.pdf} 
+{\centering 
+\includegraphics{bend.pdf} 
 \caption[Bend geometry]{
 Bend geometry. Red dots are the entry and exit points that define the origin for the
 coordinate systems at the entry end $(s_1, x_1)$ and exit ends $(s_2, x_2)$ respectively. 
@@ -401,9 +405,10 @@ Note: The figures are drawn for zero \vn{ref_tilt} where the rotation axis is pa
 $y$-axis. 
 }
 \label{f:bend}
+}
 \end{figure}
 
-\vn{BendGroup} parameters are:
+In detail:
   \begin{description}
   %
   \index{angle}
@@ -532,7 +537,7 @@ has four possible settings:
 \begin{example}
   none          ! No fiducial point (default).
   entrance_end  ! The entrance point is the fiducial point.
-  center        ! The center of the reference curve is the fiducial point.
+  center        ! The center of the ref curve is the fiducial point.
   exit_end      ! The exit point is the fiducial point.
 \end{example}
 With \vn{fiducial_pt} set to \vn{none} (the default). The bend shape is not held constant. With the
@@ -613,7 +618,7 @@ a dipole by setting \vn{ref_tilt} will affect the positions of all downstream el
 %---------------
 
 The attributes \vn{g}, \vn{angle}, and \vn{L} are mutually dependent. If any two are specified for
-an element \bmad will calculate the appropriate value for the third.
+an element \accellat will calculate the appropriate value for the third.
 
 In the local coordinate system (\sref{s:ref}), looking from ``above'' (bend viewed from positive
 $y$), and with \vn{ref_tilt} = 0, a positive \vn{angle} represents a particle rotating clockwise. In
@@ -642,10 +647,10 @@ order that can be stored. The multipoles will be stored in increasing order.
 
 The \vn{EMultipole1} structure has components:
 \begin{example}
-  En::Number     - Normal field component. \\ 
-  Es::Number     - Skew field component. \\
-  Etilt::Number  - Rotation of multipole around z-axis. \\
-  order::Int     - Multipole order. \\
+  En::Number     - Normal field component.
+  Es::Number     - Skew field component.
+  Etilt::Number  - Rotation of multipole around z-axis.
+  order::Int     - Multipole order.
   Eintegrated::Union{Bool,Nothing} - Integrated multipoles or not? 
 \end{example}
 The \vn{order} component gives the multipole order.
@@ -660,18 +665,20 @@ both independently.
 
 The dot selection operator for an element (\sref{s:ele.access}) is overloaded so that 
 electric multipole parameters for order $J$ can be accessed using the following notation:
-{\centering
+\hfill\break
 {\tt
 \begin{tabular}{lllll} \toprule
-  Name         & Stored In   & Integrated & Description \\
+  Name         & Stored In   & Integrated & Description \\ \midrule
   EnJ          & En          & No         & Normal field. \\
   EsJ          & Es          & No         & Skew field. \\
   EnJL         & En          & Yes        & Normal field. \\
   EsJL         & Es          & Yes        & Skew field. \\
   EtiltJ       & Etilt       & --         & Field tilt. \\
   EintegratedJ & Eintegrated & --         & Integrated fields? \\
+  \bottomrule
 \end{tabular}
 } 
+\hfill\break
 Substitute the multipole order for $J$ in the above table. For example, \vn{Es2L} is the
 normalized length-integrated skew field component of order 2. 
 
@@ -684,12 +691,12 @@ to be set for that order is an integrated quantity or not. After the value of \v
 an error will be thrown if a something that has the opposite sense in terms of integration is 
 set. For example:
 \begin{example}
-  @ele qq = Quadrupole(l = 0.6, Es0L = 1.0)  # 0th order multipole is integrated
+  @ele qq = Quadrupole(l = 0.6, Es0L = 1.0)  # 0th order is integrated
   qq.En1 = 0.3                  # 1st order multipole is not integrated
   qq.Es1 = 0.5                  # This is OK.
   println(qq.Eintegrated0)      # Will print ``true''
-  println(qq.En0)               # Can use non-integrated component in an equation.
-  toggle_integrated!(qq, ELECTRIC, 0)  # toggle integrated setting for order 0 multipole.
+  println(qq.En0)               # Can use non-integrated component.
+  toggle_integrated!(qq, ELECTRIC, 0)  # change integrated setting for order 0.
 \end{example}
 In the above example, the 0th order multipole is initialized using \vn{Es0L} so that
 multipole will have the \vn{Eintegrated} component set to \vn{true} and non-integrated values
@@ -711,68 +718,133 @@ whether normalized or unnormalized quantities will stay constant if the referenc
 The \vn{FloorPositionGroup} stores position and orientation information in the Global coordinate 
 system. The components of this struct are:
 \begin{example}
-
+• `r::Vector`              - `[x,y,z]` position. \\
+• `q::Quat`                - Quaternion orientation. \\
+• `theta::Number`          - Global orientation angle. \\
+• `phi::Number`            - Global orientation angle. \\
+• `psi::Number`            - Global orientation angle. \\
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{GirderGroup}
 \label{s:girder.g}
 
-Under Development.
+Under development.
+
+The components of this struct are:
+\begin{example}
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{InitParticleGroup}
 \label{s:init.particle.g}
 
+Under development.
+
+The components of this struct are:
+\begin{example}
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{LCavityGroup}
 \label{s:lcavity.g}
+
+The components of this struct are:
+\begin{example}
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{LengthGroup}
 \label{s:length.g}
 
+The components of this struct are:
+\begin{example}
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{LordSlaveGroup}
 \label{s:lord.slave.g}
+
+The components of this struct are:
+\begin{example}
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{MasterGroup}
 \label{s:master.g}
 
+The components of this struct are:
+\begin{example}
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{PatchGroup}
 \label{s:patch.g}
+
+The components of this struct are:
+\begin{example}
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{RFCommonGroup}
 \label{s:rfcommon.g}
 
+The components of this struct are:
+\begin{example}
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{RFCavityGroup}
 \label{s:rfcavity.g}
+
+The components of this struct are:
+\begin{example}
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{RFAutoGroup}
 \label{s:rfauto.g}
 
+The components of this struct are:
+\begin{example}
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{ReferenceGroup}
 \label{s:reference.g}
+
+The components of this struct are:
+\begin{example}
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{SolenoidGroup}
 \label{s:solenoid.g}
 
+The components of this struct are:
+\begin{example}
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{StringGroup}
 \label{s:string.g}
+
+The components of this struct are:
+\begin{example}
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{TrackingGroup}
 \label{s:tracking.g}
 
+The components of this struct are:
+\begin{example}
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{TwissGroup}
 \label{s:twiss.g}
 
+The components of this struct are:
+\begin{example}
+\end{example}

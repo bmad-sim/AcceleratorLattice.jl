@@ -570,6 +570,7 @@ Girder parameters.
 • `origin_ele::Ele`           - Origin reference element. \\
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
 • `dr::Vector`                - `[x, y, z]` offset. \\
+• `q::Quat`                   - Quaternion orientation. \\
 • `dtheta::Number`            - Orientation angle. \\
 • `dphi::Number`              - Orientation angle. \\
 • `dpsi::Number`              - Orientation angle. \\
@@ -578,6 +579,7 @@ Girder parameters.
   origin_ele::Ele = NullEle
   origin_ele_ref_pt::Loc.T = Loc.CENTER
   dr::Vector = [0.0, 0.0, 0.0]
+  dq::Quat  = Quat(1.0, 0.0, 0.0, 0.0)
   dtheta::Number = 0.0
   dphi::Number = 0.0
   dpsi::Number = 0.0
