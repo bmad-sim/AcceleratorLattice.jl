@@ -545,17 +545,11 @@ ignoring misalignments.
 # Fields
 • `r::Vector`              - `[x,y,z]` position. \\
 • `q::Quat`                - Quaternion orientation. \\
-• `theta::Number`          - Global orientation angle. \\
-• `phi::Number`            - Global orientation angle. \\
-• `psi::Number`            - Global orientation angle. \\
 """ FloorPositionGroup
 
 @kwdef mutable struct FloorPositionGroup <: EleParameterGroup
   r::Vector = [0.0, 0.0, 0.0]
   q::Quat = Quat(1.0, 0.0, 0.0, 0.0)
-  theta::Number = 0.0
-  phi::Number = 0.0
-  psi::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -567,22 +561,19 @@ end
 Girder parameters.
 
 ## Fields
+• `eles:::Vector{Ele}`        - Elements supported by girder. \\
 • `origin_ele::Ele`           - Origin reference element. \\
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
 • `dr::Vector`                - `[x, y, z]` offset. \\
-• `q::Quat`                   - Quaternion orientation. \\
-• `dtheta::Number`            - Orientation angle. \\
-• `dphi::Number`              - Orientation angle. \\
-• `dpsi::Number`              - Orientation angle. \\
+• `dq::Quat`                   - Quaternion orientation. \\
+
 """
 @kwdef mutable struct GirderGroup <: EleParameterGroup
+  eles::Vector{Ele} = Ele[]
   origin_ele::Ele = NullEle
   origin_ele_ref_pt::Loc.T = Loc.CENTER
   dr::Vector = [0.0, 0.0, 0.0]
   dq::Quat  = Quat(1.0, 0.0, 0.0, 0.0)
-  dtheta::Number = 0.0
-  dphi::Number = 0.0
-  dpsi::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -594,8 +585,8 @@ end
 Initial particle position.
 
 ## Fields
-• `orbit::Vector{Number}`     - Phase space vector. \\
-• `spin::Vector{Number}`      - Spin vector. \\
+• `orbit::Vector{Number}`     - Phase space 6-vector. \\
+• `spin::Vector{Number}`      - Spin 3-vector. \\
 """
 @kwdef mutable struct InitParticleGroup <: EleParameterGroup
   orbit::Vector{Number} = Vector{Number}([0,0,0,0,0,0])     # Phase space vector
@@ -658,10 +649,10 @@ Element length and s-positions.
 end
 
 #---------------------------------------------------------------------------------------------------
-# LordSlaveGroup
+# LordSlaveStatusGroup
 
 """
-    mutable struct LordSlaveGroup <: EleParameterGroup
+    mutable struct LordSlaveStatusGroup <: EleParameterGroup
 
 Lord and slave status of an element.
 
@@ -670,7 +661,7 @@ Lord and slave status of an element.
 • `slave_status::Slave.T`   - Slave status. \\
 """
 
-@kwdef mutable struct LordSlaveGroup <: EleParameterGroup
+@kwdef mutable struct LordSlaveStatusGroup <: EleParameterGroup
   lord_status::Lord.T = Lord.NOT
   slave_status::Slave.T = Slave.NOT
 end
@@ -851,7 +842,6 @@ These strings have no affect on tracking.
 • `type::String` \\
 • `alias::String` \\
 • `description::String` \\
-
 """ StringGroup
 
 @kwdef mutable struct StringGroup <: EleParameterGroup

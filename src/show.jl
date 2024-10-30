@@ -54,13 +54,11 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
 
   FloorPositionGroup => Dict{Symbol,Symbol}(
     :r                => :q,
-    :phi              => :psi,
   ),
 
   GirderGroup => Dict{Symbol,Symbol}(
     :origin_ele       => :origin_ele_ref_pt,
-    :dtheta           => :dr,
-    :dphi             => :dpsi,
+    :dr               => :dq,
   ),
 
   LCavityGroup => Dict{Symbol,Symbol}(
@@ -75,7 +73,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :s                => :s_downstream,
   ),
 
-  LordSlaveGroup => Dict{Symbol,Symbol}(
+  LordSlaveStatusGroup => Dict{Symbol,Symbol}(
     :lord_status      => :slave_status,
   ),
 
@@ -88,7 +86,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :x_rot            => :y_rot,
     :E_tot_offset     => :t_offset,
     :E_tot_downstream => :pc_downstream,
-    :flexible         => :User_sets_length,
+    :flexible         => :L_user,
   ),
 
   ReferenceGroup => Dict{Symbol,Symbol}(

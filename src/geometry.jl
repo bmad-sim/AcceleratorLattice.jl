@@ -33,7 +33,7 @@ end
 
 function propagate_ele_geometry(::Type{STRAIGHT}, fstart::FloorPositionGroup, ele::Ele)
   r_floor = fstart.r + rot(fstart.q, [0.0, 0.0, ele.L])
-  return FloorPositionGroup(r_floor, fstart.q, fstart.theta, fstart.phi, fstart.psi)
+  return FloorPositionGroup(r_floor, fstart.q)
 end
 
 function propagate_ele_geometry(::Type{CIRCULAR}, fstart::FloorPositionGroup, ele::Ele)
@@ -41,7 +41,7 @@ function propagate_ele_geometry(::Type{CIRCULAR}, fstart::FloorPositionGroup, el
   (r_trans, q_trans) = ele_floor_transform(bend, ele.L)
   r_floor = fstart.r + rot(fstart.q, r_trans)
   q_floor = fstart.q * q_trans
-  return FloorPositionGroup(r_floor, q_floor, floor_angles(q_floor, fstart)...)
+  return FloorPositionGroup(r_floor, q_floor)
 end
 
 function propagate_ele_geometry(::Type{PATCH_GEOMETRY}, fstart::FloorPositionGroup, ele::Ele)
@@ -91,42 +91,25 @@ by `theta`, `phi`, and `psi`.
 QuatRotation(theta::Real, phi::Real, psi::Real) = RotY(theta) * RotX(-phi) * RotZ(psi)
 
 #---------------------------------------------------------------------------------------------------
-# floor_angles
+# rotation_angles
 
 """
-    floor_angles(q::Quaternion, floor0::FloorPositionGroup = FloorPositionGroup())
+    rotation_angles(q::Quaternion) -> theta, phi, psi
 
-Function to construct the angles that define the orientation of an element
-in the global "floor" coordinates from the quaternion.
-
-Input:
-   w_mat(3,3) -- Real(rp): Orientation matrix.
-   floor0     -- floor_position_struct, optional: There are two solutions related by:
-                   [theta, phi, psi] & [pi+theta, pi-phi, pi+psi]
-                 If floor0 is present, choose the solution "nearest" the angles in floor0.
-
-
+Return the rotation angles corresponding to the quaternion `q`.
 """ floor_angles
 
-function floor_angles(q::Quaternion, f0::FloorPositionGroup = FloorPositionGroup())
+function rotation_angles(q::Quaternion)
   m = quat_to_dcm(q)
   # Special case where cos(phi) is close to zero.
   if abs(m[1,3]) + abs(m[3,3]) < 1e-12
-    # Only theta +/- pis is well defined here so this is rather arbitrary.
-    if m[2,3] > 0
-      return f0.theta, pi/2, atan(-m[3,1], m[1,1]) - f0.theta
-    else
-      return f0.theta, -pi/2, atan(m[3,1], m[1,1]) + f0.theta
-    end
+    return 0.0, pi/2, atan(-m[3,1], m[1,1])
 
   else
     theta = atan(m[1,3], m[3,3])
     phi = atan(m[2,3], sqrt(m[1,3]^2 + m[3,3]^2))
     psi = atan(m[2,1], m[2,2])
-    diff1 = (modulo2(theta-f0.theta, pi), modulo2(phi-f0.phi, pi), modulo2(psi-f0.psi, pi))
-    diff2 = (modulo2(pi+theta-f0.theta, pi), modulo2(pi-phi-f0.phi, pi), modulo2(pi+psi-f0.psi, pi))
-    sum(norm(diff1)) < sum(norm(diff2)) ? d = diff1 : d = diff2
-    return theta+d[1], phi+d[2], psi+d[3]
+    return theta, phi, psi
   end
 end
 
