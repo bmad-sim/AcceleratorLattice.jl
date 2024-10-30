@@ -10,7 +10,7 @@ The parmeter groups are:
 \centering
 {\tt
 \begin{tabular}{llll} \toprule
-  {\it Group}        & {\it Section}             & {\it Group}         & {\it Section}         \\ \midrule
+  {\it Group}        & {\it Section}             & {\it Group}         & {\it Section}          \midrule
  AlignmentGroup      & \sref{s:alignment.g}      & LordSlaveGroup      & \sref{s:lord.slave.g} \\
  ApertureGroup       & \sref{s:aperture.g}       & MasterGroup         & \sref{s:master.g}     \\
  BMultipoleGroup     & \sref{s:bmultipole.g}     & PatchGroup          & \sref{s:patch.g}      \\ 
@@ -185,10 +185,10 @@ so might not be always available.
 The \vn{aperture_shape} parameter selects the shape of the aperture. Possible values are
 given by the \vn{ApertureShape} Holy trait group. 
 \begin{example}
-  RECTANGULAR   - Rectangular shape. \\
-  ELLIPTICAL    - Elliptical shape. \\
-  VERTEX        - Shape defined by set of vertices. \\
-  CUSTOM_SHAPE  - Shape defined with a custom function. \\
+  RECTANGULAR   - Rectangular shape.
+  ELLIPTICAL    - Elliptical shape.
+  VERTEX        - Shape defined by set of vertices.
+  CUSTOM_SHAPE  - Shape defined with a custom function.
 \end{example}
 
 For \vn{RECTANGULAR} and \vn{ELLIPTICAL} shapes the \vn{x_limit} and \vn{y_limit} parameters are
@@ -718,32 +718,32 @@ whether normalized or unnormalized quantities will stay constant if the referenc
 The \vn{FloorPositionGroup} stores position and orientation information in the Global coordinate 
 system. The components of this struct are:
 \begin{example}
-• `r::Vector`              - `[x,y,z]` position. \\
-• `q::Quat`                - Quaternion orientation. \\
-• `theta::Number`          - Global orientation angle. \\
-• `phi::Number`            - Global orientation angle. \\
-• `psi::Number`            - Global orientation angle. \\
+• r::Vector              - [x,y,z] position. 
+• q::Quat                - Quaternion orientation. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{GirderGroup}
 \label{s:girder.g}
 
-Under development.
-
 The components of this struct are:
 \begin{example}
+• eles::Vector{Ele}         - Elements supported by girder. 
+• origin_ele::Ele           - Origin reference element. 
+• origin_ele_ref_pt::Loc.T  - Origin reference point. Default is Loc.CENTER. 
+• dr::Vector                - [x, y, z] offset. 
+• dq::Quat                   - Quaternion orientation. 
 \end{example}
+
 
 %---------------------------------------------------------------------------------------------------
 \section{InitParticleGroup}
 \label{s:init.particle.g}
 
-Under development.
-
 The components of this struct are:
 \begin{example}
-\end{example}
+• orbit::Vector{Number}     - Phase space 6-vector. 
+• spin::Vector{Number}      - Spin 3-vector. \end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{LCavityGroup}
@@ -751,6 +751,15 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• voltage_ref::Number     - Voltage gain of the reference particle. 
+• voltage_err::Number     - Voltage deviation from reference. 
+• voltage_tot::Number     - Actual voltage = voltage_ref + voltage_err. 
+• gradient_ref::Number    - Voltage gradient of reference.   
+• gradient_err::Number    - Gradient deviation from reference. 
+• gradient_tot::Number    - Actual gradient = gradient_ref + gradient_err. 
+• phase_ref::Number       - RF Phase of reference particle. 
+• phase_err::Number       - RF Phase deviation from reference. 
+• phase_tot::Number       - Actual RF phase = phase_ref + phase_err. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -759,14 +768,20 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• L::Number               - Length of element. 
+• s::Number               - Starting s-position. 
+• s_downstream::Number    - Ending s-position. 
+• orientation::Int        - Longitudinal orientation. +1 or -1. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{LordSlaveGroup}
+\section{LordSlaveStatusGroup}
 \label{s:lord.slave.g}
 
 The components of this struct are:
 \begin{example}
+• lord_status::Lord.T     - Lord status. 
+• slave_status::Slave.T   - Slave status. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -775,6 +790,8 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+  is_on::Bool = true
+  field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -783,6 +800,17 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• offset::Vector            - [x, y, z] offset vector. 
+• t_offset::Number          - Time offset. 
+• x_rot::Number             - Rotation around the x-axis. 
+• y_rot::Number             - Rotation around the y-axis. 
+• tilt::Number              - Rotation around the z-axis. 
+• E_tot_offset::Number      - Total energy offset. Default is NaN (not used). 
+• E_tot_exit::Number        - Fix total energy at exit end. Default is NaN (not used). 
+• pc_exit::Number           - Reference momentum*c at exit end. Default is NaN (not used). 
+• flexible::Bool            - Flexible patch? Default is false. 
+• L_user::Number            - User set Length? Default is NaN (length calculated by bookkeeping code). 
+• ref_coords::BodyLoc.T     - Reference coordinate system used inside the patch. Default is BodyLoc.EXIT_END.
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -791,6 +819,11 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• multipass_phase::Number   - RF Phase added to multipass elements. 
+• frequency::Number         - RF frequency. 
+• harmon::Number            - RF frequency harmonic number. 
+• cavity_type::Cavity.T     - Cavity type. Default is Cavity.STANDING_WAVE. 
+• n_cell::Int               - Number of cavity cells. Default is 1. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -799,6 +832,9 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• voltage::Number   - RF voltage. 
+• gradient::Number  - RF gradient. 
+• phase::Number     - RF phase. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -807,6 +843,10 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• do_auto_amp::Bool           - Will autoscaling set auto_amp? Default is true. 
+• do_auto_phase::Bool         - Will autoscaling set auto_phase? Default is true. 
+• auto_amp::Number            - Auto RF field amplitude scale value. 
+• auto_phase::Number          - Auto RF phase value. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -815,6 +855,16 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• species_ref::Species          - Reference species entering end. 
+• species_ref_exit::Species     - Reference species exit end. 
+• pc_ref::Number                - Reference momentum*c upstream end. 
+• pc_ref_downstream::Number     - Reference momentum*c downstream end. 
+• E_tot_ref::Number             - Reference total energy upstream end. 
+• E_tot_ref_downstream::Number  - Reference total energy downstream end. 
+• time_ref::Number              - Reference time upstream end. 
+• time_ref_downstream::Number   - Reference time downstream end. 
+• β_ref::Number                 - Reference v/c upstream end. 
+• β_ref_downstream::Number      - Reference v/c downstream end. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -823,6 +873,8 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• Ksol::Number        - Normalized solenoid strength.       
+• Bsol::Number        - Solenoid field. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -831,6 +883,9 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• type::String 
+• alias::String 
+• description::String 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -839,11 +894,15 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
+• num_steps::Int    - Number of steps. 
+• ds_step::Number   - Step length. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{TwissGroup}
 \label{s:twiss.g}
+
+In development
 
 The components of this struct are:
 \begin{example}

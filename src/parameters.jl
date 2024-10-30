@@ -164,24 +164,20 @@ ELE_PARAM_INFO_DICT = Dict(
   :section            => ParamInfo(ApertureGroup,  WallSection,       "Array of aperture vertices."),
   :custom_aperture    => ParamInfo(ApertureGroup,  Dict,              "Custom aperture info."),
 
-  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number},"3-vector of element floor position.", "m", :r),
-  :q_floor            => ParamInfo(FloorPositionGroup, Vector{Number},"Element quaternion orientation.", "", :q),
-  :theta_floor        => ParamInfo(FloorPositionGroup, Number,        "Element floor theta angle orientation", "rad", :theta),
-  :phi_floor          => ParamInfo(FloorPositionGroup, Number,        "Element floor phi angle orientation", "rad", :phi),
-  :psi_floor          => ParamInfo(FloorPositionGroup, Number,        "Element floor psi angle orientation", "rad", :psi),
+  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", :r),
+  :q_floor            => ParamInfo(FloorPositionGroup, Quat,           "Element quaternion orientation.", "", :q),
 
+  :eles               => ParamInfo(GirderGroup,     Vector{Ele},      "Array of supported elements."),
   :origin_ele         => ParamInfo(GirderGroup,     Ele,              "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(GirderGroup,     Loc.T,            "Reference location on reference element. Default is Loc.CENTER."),
-  :dr_girder          => ParamInfo(GirderGroup,     Vector{Number},   "3-vector of girder position with respect to ref ele.", "m", :dr),
-  :dtheta_girder      => ParamInfo(GirderGroup,     Number,           "Theta angle orientation with respect to ref ele.", "rad", :dtheta),
-  :dphi_girder        => ParamInfo(GirderGroup,     Number,           "Phi angle orientation with respect to ref ele.", "rad", :dphi),
-  :dpsi_girder        => ParamInfo(GirderGroup,     Number,           "Psi angle orientation with respect to ref ele.", "rad", :dpsi),
+  :dr                 => ParamInfo(GirderGroup,     Vector{Number},   "3-vector of girder position with respect to ref ele.", "m"),
+  :dq                 => ParamInfo(GirderGroup,     Quat,             "Quaternion orientation with respect to ref ele."),
 
   :Ksol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid strength.", "1/m"),
   :Bsol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid field.", "T"),
 
-  :slave_status       => ParamInfo(LordSlaveGroup,    Slave.T,        "Slave status."),
-  :lord_status        => ParamInfo(LordSlaveGroup,    Lord.T,         "Lord status."),
+  :slave_status       => ParamInfo(LordSlaveStatusGroup,    Slave.T,        "Slave status."),
+  :lord_status        => ParamInfo(LordSlaveStatusGroup,    Lord.T,         "Lord status."),
 
   :spin               => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle spin"),
   :orbit              => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle position."),
@@ -541,7 +537,7 @@ Order is important. Bookkeeping routines rely on:
  - `RFCommonGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
 """ PARAM_GROUPS_LIST
 
-base_group_list = [LengthGroup, LordSlaveGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
+base_group_list = [LengthGroup, LordSlaveStatusGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 bmultipole_group_list = [MasterGroup, BMultipoleGroup]
@@ -598,7 +594,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   TwissGroup            => EleParameterGroupInfo("Initial Twiss and coupling parameters.", false),
   LCavityGroup          => EleParameterGroupInfo("Accelerating cavity parameters.", false),
   LengthGroup           => EleParameterGroupInfo("Length and s-position parameters.", true),
-  LordSlaveGroup        => EleParameterGroupInfo("Element lord and slave status.", false),
+  LordSlaveStatusGroup        => EleParameterGroupInfo("Element lord and slave status.", false),
   MasterGroup           => EleParameterGroupInfo("Contains field_master parameter.", false),
   PatchGroup            => EleParameterGroupInfo("Patch parameters.", false),
   ReferenceGroup        => EleParameterGroupInfo("Reference energy and species.", true),
