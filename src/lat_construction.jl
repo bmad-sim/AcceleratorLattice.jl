@@ -236,9 +236,8 @@ Used by the `Lat` function.
 """ new_tracking_branch!
 
 function new_tracking_branch!(lat::Lat, bline::BeamLine)
-  push!(lat.branch, Branch(bline.pdict[:name], Ele[], Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
+  push!(lat.branch, Branch(name = bline.pdict[:name], lat = lat, pdict = Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
   branch = lat.branch[end]
-  branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = TrackingBranch
   if branch.name == ""; branch.name = "b" * string(length(lat.branch)); end
@@ -269,9 +268,8 @@ function new_tracking_branch!(lat::Lat, bline::BeamLine)
 end
 
 function new_lord_branch!(lat::Lat, name::AbstractString, branch_type::Type{T}) where T <: BranchType
-  push!(lat.branch, Branch(name, Ele[], Dict{Symbol,Any}()))
+  push!(lat.branch, Branch(name = name, lat = lat, pdict = Dict{Symbol,Any}()))
   branch = lat.branch[end]
-  branch.pdict[:lat] = lat
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = branch_type
   branch.changed_ele = Set{Ele}()
@@ -302,9 +300,11 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 Lat(root_line::BeamLine; name = "lat") = Lat([root_line], name = name)
 
 function Lat(root_lines::Vector{BeamLine}; name::AbstractString = "lat") 
-  lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal()))
-  lat.doing_bookkeeping = false
-  lat.autobookkeeping = false
+  lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal(),
+                                             :record_changes => false,
+                                             :autobookkeeping => false,
+                                             :parameters_have_changed => true
+  ))
   
   for root in root_lines
     new_tracking_branch!(lat, root)
@@ -317,9 +317,10 @@ function Lat(root_lines::Vector{BeamLine}; name::AbstractString = "lat")
   new_lord_branch!(lat, "girder_lord", GirderBranch)
 
   init_multipass_bookkeeper!(lat)
-  bookkeeper!(lat, check_changed = false)
+  bookkeeper!(lat)
   lat_sanity_check(lat)
 
-  lat.autobookkeeping = false
+  lat.record_changes = true
+  lat.autobookkeeping = true
   return lat
 end

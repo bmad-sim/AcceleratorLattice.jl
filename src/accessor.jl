@@ -32,7 +32,9 @@ end
 function Base.getproperty(branch::Branch, sym::Symbol)
   if sym == :name; return getfield(branch, :name); end
   if sym == :ele; return getfield(branch, :ele); end
+  if sym == :lat; return getfield(branch, :lat); end
   if sym == :pdict; return getfield(branch, :pdict); end
+
   return getfield(branch, :pdict)[sym]
 end
 
@@ -90,12 +92,11 @@ function Base.getproperty(ele::Ele, sym::Symbol)
 
   # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
   if pinfo.kind <: Vector
-    pdict[:changed][sym] = getfield(pdict[parent], pinfo.struct_sym)
+    if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
+      pdict[:changed][sym] = getfield(pdict[parent], pinfo.struct_sym)
+    end
   end
 
-  # Do bookkeeping but only if element is in a lattice.
-  if !isnothing(branch) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
-  
   return get_elegroup_param(ele, pdict[parent], pinfo)
 end
 
@@ -109,6 +110,12 @@ Element accessor with default. Useful for elements that are not part of a lattic
 """ Base.get_prop(ele::Ele, sym::Symbol, default)
 
 function Base.get(ele::Ele, sym::Symbol, default)
+  # Do bookkeeping but only if element is in a lattice.
+  lat = lattice(ele)
+  if !isnothing(lat) && lat.autobookkeeping
+    bookkeeper!(lat)
+  end
+  
   try
     return Base.getproperty(ele, sym)
   catch
@@ -137,6 +144,7 @@ end
 
 function Base.setproperty!(branch::Branch, sym::Symbol, value)
   if sym == :name; return setfield!(branch, :name, value); end
+  if sym == :lat; return setfield!(branch, :lat, value); end
   if sym == :ele;  return setfield!(branch, :ele, value); end
   getfield(branch, :pdict)[sym] = value
 end
@@ -151,30 +159,39 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
   pdict::Dict{Symbol,Any} = ele.pdict
   if haskey(pdict, sym); pdict[sym] = value; return pdict[sym]; end
   pinfo = ele_param_info(sym, ele)
-  ## Currently is_settable() does not exist.
-  ## if !is_settable(ele, sym); error(f"Parameter is not user settable: {sym}. For element: {ele.name}."); end
+  check_if_settable(ele, sym, pinfo)
 
-  parent = pinfo.parent_group
   # All parameters that do not have a parent struct are not "normal" and setting 
   # them does not have to be recorded in pdict[:changed]. 
+
+  parent = pinfo.parent_group
   if parent == Nothing
     pdict[sym] = value
+
   else
-    pdict[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(parent)], pinfo)
+    branch = lat_branch(ele)
+    if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
+      pdict[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(parent)], pinfo)
+    end
+
     set_elegroup_param!(ele, pdict[Symbol(parent)], pinfo, value)
 
     # Record changes for bookkeeping.
     # There is no bookkeeping done for elements outside of a lattice.
     # Also if bookkeeping is in process, no need to record changes.
-    branch = lat_branch(ele)
-    if !isnothing(branch) && branch.lat.doing_bookkeeping == false
+
+    if isnothing(branch) || isnothing(branch.lat); return; end
+
+    if branch.lat.record_changes
       if branch.type == TrackingBranch
         branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ele.ix_ele)
         branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ele.ix_ele)
       else
-        push!(branch.changed_ele, ele)
+        push!(branch.changed_ele, ele)    # Only used with lord branches
       end
     end
+
+    branch.lat.parameters_have_changed = true
   end
 end
 

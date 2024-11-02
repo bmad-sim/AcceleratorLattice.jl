@@ -23,20 +23,15 @@ end
 # bookkeeper!(Lat)
 
 """
-    bookkeeper!(lat::Lat; check_changed::Bool = true)
+    bookkeeper!(lat::Lat)
 
 All Lat bookkeeping. For example, if the reference energy is changed at the start of a branch the 
 bookkeeping code will propagate that change through the reset of the lattice. 
-Also controller bookkeeping will be done. 
-
-This routine needs to be called after any lattice changes and before any tracking is done.
-- `check_changed`   -- Check if it is valid to vary a changed parameter. For example, parameters
-  of a super slave element cannot be directly changed. There generally is no reason to set
-  the argument false. One exception is during lattice expansion.
 """ bookkeeper!(lat::Lat)
 
-function bookkeeper!(lat::Lat; check_changed::Bool = true)
-  if check_changed; check_changed_parameters(lat); end
+function bookkeeper!(lat::Lat)
+  if !lat.parameters_have_changed; return; end
+  lat.parameters_have_changed = false
 
   # Lord bookkeeping at the start involves transferring changes in the lords to the slaves.
 
@@ -56,33 +51,35 @@ function bookkeeper!(lat::Lat; check_changed::Bool = true)
 
   end_multipass_bookkeeper!(lat)
   end_superimpose_bookkeeper!(lat)
-
 end
 
 #---------------------------------------------------------------------------------------------------
-# check_changed_parameters(lat)
+# check_if_settable
 
 """
-    Internal: check_changed_parameters(lat::Lat)
+    Internal: check_is_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothing})
 
-Check that it is valid to have varied all the parameters in the lattice that have been changed.
+Check that it is valid to have varied element parameters.
 For example, parameters of a super slave element cannot be directly changed.
+Or dependent parameters cannot be directly changed.
 """
 
-function check_changed_parameters(lat::Lat)
-  for branch in lat.branch
-    if branch.type != TrackingBranch && branch.type != SuperLordBranch; continue; end
-    for ele in branch.ele
-      if ele.slave_status != Slave.MULTIPASS && ele.slave_status != Slave.SUPER; continue; end
-      if :changed ∉ keys(ele.pdict); continue; end
 
-      for key in keys(ele.changed)
-        pinfo = ele_param_info(key, throw_error = false)
-        if isnothing(pinfo); continue; end
-        if pinfo.parent_group in [StringGroup]; continue; end
-        error("Changing component $key in multipass or super slave $(ele_name(ele)) not allowed.")
-      end
+
+function check_if_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothing})
+  branch = lat_branch(ele)
+  lat = lattice(ele)
+  if !isnothing(lat) && !lat.record_changes; return; end
+
+  if !isnothing(lat)
+    if get(ele, :slave_status, 0) == Slave.MULTIPASS || get(ele, :slave_status, 0) == Slave.SUPER
+      if sym == :multipass_phase; return; end
+      error("Changing component $sym in multipass or super slave $(ele_name(ele)) not allowed.")
     end
+  end
+
+  if sym in DEPENDENT_ELE_PARAMETERS
+    error("Parameter is not user settable: $sym. For element: $(ele_name(ele)).")
   end
 end
 
@@ -164,10 +161,14 @@ Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lat)
 """ end_superimpose_bookkeeper!
 
 function end_superimpose_bookkeeper!(lat)
+  autob = lat.autobookkeeping
+  lat.autobookkeeping = false
   sbranch = lat_branch(lat, SuperLordBranch)
   for lord in sbranch.ele
-
-  end 
+    lord.pdict[:LengthGroup].s = lord.slaves[1].s
+    lord.pdict[:LengthGroup].s_downstream = lord.slaves[end].s_downstream
+  end
+  lat.autobookkeeping = autob
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -177,19 +178,26 @@ end
     Internal: bookkeeper!(branch::Branch)
 
 Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lat)`.
+Only tracking branches are examined. Lord branches are ignored.
 """ bookkeeper!(branch::Branch)
 
 function bookkeeper!(branch::Branch)
   if branch.pdict[:type] == LordBranch; return; end
 
-  # Not a lord branch...
+  ix_min = branch.pdict[:ix_ele_min_changed]
+  if ix_min > length(branch.ele); return; end
+  ix_min == 1 ? previous_ele = NULL_ELE : previous_ele = branch[ix_min-1].ele
+  ix_max = branch.pdict[:ix_ele_max_changed]
   changed = ChangedLedger()
-  previous_ele = NULL_ELE
 
-  for (ix, ele) in enumerate(branch.ele)
-    bookkeeper!(ele, changed, previous_ele) 
+  for ele in branch.ele[ix_min:end]
+    bookkeeper!(ele, changed, previous_ele)
     previous_ele = ele
+    if ix_max > 0 && ele.ix_ele == ix_max && changed == ChangedLedger(); break; end
   end
+
+  branch.pdict[:ix_ele_min_changed] = typemax(Int)
+  branch.pdict[:ix_ele_max_changed] = 0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -296,7 +304,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger,
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, ...)
+# elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, ...)
 # Low level LengthGroup bookkeeping.
 
 function elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, changed::ChangedLedger, previous_ele::Ele)
@@ -361,7 +369,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
     if rg.species_ref == Species("NotSet"); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
     rg.species_ref_exit = rg.species_ref
 
-    rg.time_ref_downstream = rg.time_ref
+    rg.time_ref_downstream = rg.time_ref + rg.dtime_ref
 
     if haskey(cdict, :pc_ref) && haskey(cdict, :E_tot_ref)
       error(f"Beginning element has both pc_ref and E_tot_ref set in {ele_name(ele)}")
@@ -375,6 +383,9 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
 
     rg.pc_ref_downstream = rg.pc_ref
     rg.E_tot_ref_downstream = rg.E_tot_ref
+
+    rg.β_ref            = rg.pc_ref / rg.E_tot_ref
+    rg.β_ref_downstream = rg.pc_ref_downstream / rg.E_tot_ref_downstream
 
     clear_changed!(ele, ReferenceGroup)
     return
@@ -394,13 +405,14 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
 
 
   if typeof(ele) == LCavity
-    rg.pc_ref_downstream      = rg.pc_ref + ele.voltage_ref
+    rg.pc_ref_downstream      = rg.pc_ref + ele.dvoltage_ref
     rg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
-    rg.time_ref_downstream    = rg.time_ref + ele.L * (rg.E_tot_ref + rg.E_tot_ref_downstream) / (c_light * (rg.pc_ref + rg.pc_ref_downstream))
+    rg.time_ref_downstream    = rg.time_ref + rg.dtime_ref + ele.L *
+             (rg.E_tot_ref + rg.E_tot_ref_downstream) / (c_light * (rg.pc_ref + rg.pc_ref_downstream))
   else
     rg.pc_ref_downstream      = rg.pc_ref
     rg.E_tot_ref_downstream   = rg.E_tot_ref
-    rg.time_ref_downstream    = rg.time_ref + ele.L / (c_light * rg.pc_ref / rg.E_tot_ref)
+    rg.time_ref_downstream    = rg.time_ref + rg.dtime_ref + ele.L / (c_light * rg.pc_ref / rg.E_tot_ref)
   end
 
   rg.β_ref_downstream = rg.pc_ref_downstream / rg.E_tot_ref_downstream
@@ -438,12 +450,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup},
   if has_changed(ele, FloorPositionGroup) || changed.this_ele_length; changed.floor_position = true; end
   if !changed.floor_position; return; end
 
-  if is_null(previous_ele)
-    fpg.theta, fpg.phi, fpg.psi = quat_angles(fpg.q, fpg)
-    return
-  end
-
-  fpg = propagate_ele_geometry(previous_ele)
+  ele.FloorPositionGroup = propagate_ele_geometry(previous_ele)
   clear_changed!(ele, FloorPositionGroup)
 end
 

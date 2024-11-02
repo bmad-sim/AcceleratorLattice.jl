@@ -124,26 +124,18 @@ ELE_PARAM_INFO_DICT = Dict(
   :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
   :ref_coords         => ParamInfo(PatchGroup,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
-  :voltage            => ParamInfo(RFCavityGroup,   Number,        "RF voltage.", "volt"),
-  :gradient           => ParamInfo(RFCavityGroup,   Number,        "RF gradient.", "volt/m"),
-  :phase              => ParamInfo(RFCavityGroup,   Number,        "RF phase.", "rad"),
+  :dvoltage_ref       => ParamInfo(RFGroup,       Number,        "Sets change in reference energy.", "volt"),
+  :voltage            => ParamInfo(RFGroup,       Number,        "RF voltage.", "volt"),
+  :gradient           => ParamInfo(RFGroup,       Number,        "RF gradient.", "volt/m"),
+  :phase              => ParamInfo(RFGroup,       Number,        "RF phase.", "rad"),
 
-  :multipass_phase    => ParamInfo(RFCommonGroup,   Number,    
-                                  "RF phase which can differ from multipass element to multipass element.", "rad"),
-  :frequency          => ParamInfo(RFCommonGroup,   Number,        "RF frequency.", "Hz"),
-  :harmon             => ParamInfo(RFCommonGroup,   Number,        "RF frequency harmonic number.", ""),
-  :cavity_type        => ParamInfo(RFCommonGroup,   Cavity.T,      "Type of cavity."),
-  :n_cell             => ParamInfo(RFCommonGroup,   Int,           "Number of RF cells."),
+  :multipass_phase    => ParamInfo(RFGroup,       Number,    
+                                                   "RF phase added to element and not controlled by multipass lord.", "rad"),
+  :frequency          => ParamInfo(RFGroup,       Number,        "RF frequency.", "Hz"),
+  :harmon             => ParamInfo(RFGroup,       Number,        "RF frequency harmonic number.", ""),
+  :cavity_type        => ParamInfo(RFGroup,       Cavity.T,      "Type of cavity."),
+  :n_cell             => ParamInfo(RFGroup,       Int,           "Number of RF cells."),
 
-  :voltage_ref        => ParamInfo(LCavityGroup,   Number,         "Reference RF voltage.", "volt"),
-  :voltage_err        => ParamInfo(LCavityGroup,   Number,         "RF voltage error.", "volt"),
-  :voltage_tot        => ParamInfo(LCavityGroup,   Number,         "Actual RF voltage (ref + err).", "volt"),
-  :gradient_ref       => ParamInfo(LCavityGroup,   Number,         "Reference RF gradient.", "volt/m"),
-  :gradient_err       => ParamInfo(LCavityGroup,   Number,         "RF gradient error.", "volt/m"),
-  :gradient_tot       => ParamInfo(LCavityGroup,   Number,         "Actual RF gradient (ref + err).", "volt/m"),
-  :phase_ref          => ParamInfo(LCavityGroup,   Number,         "Reference RF phase.", "rad"),
-  :phase_err          => ParamInfo(LCavityGroup,   Number,         "RF phase error.", "rad"),
-  :phase_tot          => ParamInfo(LCavityGroup,   Number,         "Actual RF phase. (ref + err)", "rad"),
 
   :voltage_master     => ParamInfo(RFAutoGroup,    Bool,           "Voltage or gradient is constant with length changes?"),
   :auto_amp           => ParamInfo(RFAutoGroup,    Number,    
@@ -229,6 +221,9 @@ for (key, info) in ELE_PARAM_INFO_DICT
   if info.struct_sym == :XXX; info.struct_sym = key; end
   info.user_sym = key
 end
+
+DEPENDENT_ELE_PARAMETERS::Vector{Symbol} = [:β_ref, :β_ref_downstream,
+                  :species_ref_exit, :pc_ref_downstream, :E_tot_ref_downstream, :time_ref_downstream,]
 
 #---------------------------------------------------------------------------------------------------
 # has_parent_group
@@ -374,7 +369,7 @@ function multipole_param_info(sym::Symbol)
   if mtype == "tilt"
     return ParamInfo(BMultipoleGroup, Number, "Magnetic multipole tilt for order $order", "rad", :tilt, nothing, sym)
   elseif mtype == "Etilt"
-    return ParamInfo(EMultipoleGroup, Number, "Electric multipole tilt for order $order", "rad", :tilt, nothing, sym)
+    return ParamInfo(EMultipoleGroup, Number, "Electric multipole tilt for order $order", "rad", :Etilt, nothing, sym)
   elseif mtype == "integrated"
     return ParamInfo(BMultipoleGroup, Bool, "Are stored multipoles integrated for order $order?", "", :integrated, nothing, sym)
   elseif mtype == "Eintegrated"
@@ -560,7 +555,7 @@ PARAM_GROUPS_LIST = Dict(
     Girder              => [base_group_list...],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
-    LCavity             => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, LCavityGroup, RFCommonGroup],
+    LCavity             => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFGroup],
     Marker              => [base_group_list...],
     Mask                => [base_group_list...],
     Match               => [base_group_list...],
@@ -569,7 +564,7 @@ PARAM_GROUPS_LIST = Dict(
     Octupole            => [general_group_list...],
     Patch               => [base_group_list..., PatchGroup],
     Quadrupole          => [general_group_list...],
-    RFCavity            => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFCavityGroup, RFCommonGroup],
+    RFCavity            => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFGroup],
     Sextupole           => [general_group_list...],
     Solenoid            => [general_group_list..., SolenoidGroup],
     Taylor              => [base_group_list...],
@@ -592,14 +587,12 @@ ELE_PARAM_GROUP_INFO = Dict(
   GirderGroup           => EleParameterGroupInfo("Girder parameters.", false),
   InitParticleGroup     => EleParameterGroupInfo("Initial particle position and spin.", false),
   TwissGroup            => EleParameterGroupInfo("Initial Twiss and coupling parameters.", false),
-  LCavityGroup          => EleParameterGroupInfo("Accelerating cavity parameters.", false),
   LengthGroup           => EleParameterGroupInfo("Length and s-position parameters.", true),
-  LordSlaveStatusGroup        => EleParameterGroupInfo("Element lord and slave status.", false),
+  LordSlaveStatusGroup  => EleParameterGroupInfo("Element lord and slave status.", false),
   MasterGroup           => EleParameterGroupInfo("Contains field_master parameter.", false),
   PatchGroup            => EleParameterGroupInfo("Patch parameters.", false),
   ReferenceGroup        => EleParameterGroupInfo("Reference energy and species.", true),
-  RFCavityGroup         => EleParameterGroupInfo("`RFCavity` parameters.", true),
-  RFCommonGroup         => EleParameterGroupInfo("RF parameters common to both `LCavity` and `RFCavity`.", false),
+  RFGroup               => EleParameterGroupInfo("`RFCavity` and `LCavity` RF parameters.", true),
   RFAutoGroup           => EleParameterGroupInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
   SolenoidGroup         => EleParameterGroupInfo("`Solenoid` parameters.", false),
   StringGroup           => EleParameterGroupInfo("Informational strings.", false),
@@ -672,7 +665,6 @@ Dictionary of parameters in the Branch.pdict dict.
 BRANCH_PARAM::Dict{Symbol,ParamInfo} = Dict{Symbol,ParamInfo}(
   :ix_branch   => ParamInfo(Nothing, Int,               "Index of branch in containing lat .branch[] array"),
   :geometry    => ParamInfo(Nothing, BranchGeometry.T,  "BranchGeometry OPEN (default) or CLOSED."),
-  :lat         => ParamInfo(Nothing, Pointer,           "Pointer to lattice containing the branch."),
   :type        => ParamInfo(Nothing, BranchType,        "Either LordBranch or TrackingBranch BranchType enums."),
   :from_ele    => ParamInfo(Nothing, Pointer,           "Element that forks to this branch."),
   :live_branch => ParamInfo(Nothing, Bool,              "Used by programs to turn on/off tracking in a branch."),

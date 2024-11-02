@@ -9,13 +9,16 @@ using AcceleratorLattice, Test
   d3 = Drift(L = 1.0);
   m1 = Marker();
   zs1 = Sextupole(Kn2L = 0.2);
+  zs2 = Bend(L = 0.2)
   zm1 = Marker();
   zm2 = Marker();
   zm3 = Marker();
 end;
 
 ln1 = BeamLine([beginning, d1, d2, d1, m1, d3]);
-lat = Lat([ln1]);
+lat = Lat([ln1])
+
+#superimpose!(zs2, eles(lat, "d1"), offset = 0.2)
 
 #---------------------------------------------------------------------------------------------------
 
@@ -27,3 +30,6 @@ lat = Lat([ln1]);
 @testset "Superimpose" begin
 end
 
+
+
+# Superimpose test with multipoles

@@ -14,13 +14,12 @@ The parmeter groups are:
  AlignmentGroup      & \sref{s:alignment.g}      & LordSlaveGroup      & \sref{s:lord.slave.g} \\
  ApertureGroup       & \sref{s:aperture.g}       & MasterGroup         & \sref{s:master.g}     \\
  BMultipoleGroup     & \sref{s:bmultipole.g}     & PatchGroup          & \sref{s:patch.g}      \\ 
- BeamBeamGroup       & \sref{s:beam.beam.g}      & RFCommonGroup       & \sref{s:rfcommon.g}   \\
- BendGroup           & \sref{s:bend.g}           & RFCavityGroup       & \sref{s:rfcavity.g}    \\ 
- EMultipoleGroup     & \sref{s:emultipole.g}     & RFAutoGroup         & \sref{s:rfauto.g}   \\
- FloorPositionGroup  & \sref{s:floor.pos.g}      & ReferenceGroup      & \sref{s:reference.g}  \\
- GirderGroup         & \sref{s:girder.g}         & SolenoidGroup       & \sref{s:solenoid.g}   \\
- InitParticleGroup   & \sref{s:init.particle.g}  & StringGroup         & \sref{s:string.g}     \\
- LCavityGroup        & \sref{s:lcavity.g}        & TrackingGroup       & \sref{s:tracking.g}   \\
+ BeamBeamGroup       & \sref{s:beam.beam.g}      & RFGroup             & \sref{s:rf.g}         \\
+ BendGroup           & \sref{s:bend.g}           & RFAutoGroup         & \sref{s:rfauto.g}     \\
+ EMultipoleGroup     & \sref{s:emultipole.g}     & ReferenceGroup      & \sref{s:reference.g}  \\
+ FloorPositionGroup  & \sref{s:floor.pos.g}      & SolenoidGroup       & \sref{s:solenoid.g}   \\
+ GirderGroup         & \sref{s:girder.g}         & StringGroup         & \sref{s:string.g}     \\
+ InitParticleGroup   & \sref{s:init.particle.g}  & TrackingGroup       & \sref{s:tracking.g}   \\
  LengthGroup         & \sref{s:length.g}         & TwissGroup          & \sref{s:twiss.g}      \\ 
   \bottomrule
 \end{tabular}
@@ -746,23 +745,6 @@ The components of this struct are:
 • spin::Vector{Number}      - Spin 3-vector. \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{LCavityGroup}
-\label{s:lcavity.g}
-
-The components of this struct are:
-\begin{example}
-• voltage_ref::Number     - Voltage gain of the reference particle. 
-• voltage_err::Number     - Voltage deviation from reference. 
-• voltage_tot::Number     - Actual voltage = voltage_ref + voltage_err. 
-• gradient_ref::Number    - Voltage gradient of reference.   
-• gradient_err::Number    - Gradient deviation from reference. 
-• gradient_tot::Number    - Actual gradient = gradient_ref + gradient_err. 
-• phase_ref::Number       - RF Phase of reference particle. 
-• phase_err::Number       - RF Phase deviation from reference. 
-• phase_tot::Number       - Actual RF phase = phase_ref + phase_err. 
-\end{example}
-
-%---------------------------------------------------------------------------------------------------
 \section{LengthGroup}
 \label{s:length.g}
 
@@ -814,27 +796,20 @@ The components of this struct are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{RFCommonGroup}
-\label{s:rfcommon.g}
+\section{RFGroup}
+\label{s:rf.g}
 
 The components of this struct are:
 \begin{example}
-• multipass_phase::Number   - RF Phase added to multipass elements. 
 • frequency::Number         - RF frequency. 
 • harmon::Number            - RF frequency harmonic number. 
+• dvoltage_ref::Number      - Sets change in reference energy.
+• voltage::Number           - RF voltage. 
+• gradient::Number          - RF gradient. 
+• phase::Number             - RF phase. 
+• multipass_phase::Number   - RF Phase added to multipass elements. 
 • cavity_type::Cavity.T     - Cavity type. Default is Cavity.STANDING_WAVE. 
 • n_cell::Int               - Number of cavity cells. Default is 1. 
-\end{example}
-
-%---------------------------------------------------------------------------------------------------
-\section{RFCavityGroup}
-\label{s:rfcavity.g}
-
-The components of this struct are:
-\begin{example}
-• voltage::Number   - RF voltage. 
-• gradient::Number  - RF gradient. 
-• phase::Number     - RF phase. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -863,6 +838,7 @@ The components of this struct are:
 • E_tot_ref_downstream::Number  - Reference total energy downstream end. 
 • time_ref::Number              - Reference time upstream end. 
 • time_ref_downstream::Number   - Reference time downstream end. 
+• dtime_ref::Number             - User set reference time change.
 • β_ref::Number                 - Reference v/c upstream end. 
 • β_ref_downstream::Number      - Reference v/c downstream end. 
 \end{example}

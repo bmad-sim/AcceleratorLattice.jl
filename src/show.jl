@@ -61,13 +61,6 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :dr               => :dq,
   ),
 
-  LCavityGroup => Dict{Symbol,Symbol}(
-    :voltage_ref      => :gradient_ref,
-    :voltage_err      => :gradient_err,
-    :voltage_tot      => :gradient_tot,
-    :phase_ref        => :phase_err
-  ),
-
   LengthGroup => Dict{Symbol,Symbol}(
     :L                => :orientation,
     :s                => :s_downstream,
@@ -97,12 +90,9 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :β_ref            => :β_ref_downstream,
   ),
 
-  RFCavityGroup => Dict{Symbol,Symbol}(
+  RFGroup => Dict{Symbol,Symbol}(
     :voltage          => :gradient,
-    :phase            => :rad2pi,
-  ),
-
-  RFCommonGroup => Dict{Symbol,Symbol}(
+    :phase            => :multipass_phase,
     :frequency        => :harmon,
     :n_cell           => :cavity_type,
   ),
@@ -190,7 +180,7 @@ function ele_name(ele::Ele, template::AbstractString = "")
 
   ix_ele = ele.pdict[:ix_ele]
   branch = ele.pdict[:branch]
-  lat = branch.pdict[:lat]
+  lat = branch.lat
   str = replace(template, "@N" => ele.name)
   str = replace(str, "%#" => (branch === lat.branch[1] ? string(ix_ele) : branch.name * ">>" * string(ix_ele)))
   str = replace(str, "&#" => (lat.branch == 1 ? string(ix_ele) : branch.name * ">>" * string(ix_ele)))
@@ -237,6 +227,22 @@ ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch 
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
 ele_param_value_str(who; default::AbstractString = "???") = string(who)
 
+#---------------------------------------------------------------------------------------------------
+# IGNORE_ELE_PDICT_KEY
+
+"""
+   Array IGNORE_ELE_PDICT_KEY 
+
+List of `Ele.pdict` keys to ignore when outputting the contents of an element.
+Stuff to not output includes, for example, internal bookkeeping information.
+
+# To Ignore
+• `:drift_master`  - Used with drift elements that have been superimposed upon to enable mangling 
+of drift names.
+
+""" IGNORE_ELE_PDICT_KEY
+
+IGNORE_ELE_PDICT_KEY = [:drift_master]
 
 #---------------------------------------------------------------------------------------------------
 # show_ele
@@ -257,6 +263,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
   if length(pdict) > 0   # Need test since will bomb on zero length dict
     # Print non-group, non-changed parameters first.
     for key in sort(collect(keys(pdict)))
+      if key in IGNORE_ELE_PDICT_KEY; continue; end
       val = pdict[key]
       if typeof(val) <: EleParameterGroup || key == :changed; continue; end
       if key == :name; continue; end
@@ -542,10 +549,11 @@ Base.show(io::IO, ::MIME"text/plain", branch::Branch) = Base.show(stdout, branch
 # Show Vector{Branch}
 
 function Base.show(io::IO, branches::Vector{Branch})
+  if length(branches) == 0; return; end
   n = maximum([length(b.name) for b in branches]) + 4
   for branch in branches
     g_str = ""
-    if haskey(branch.pdict, :geometry)
+    if length(branch.ele) > 0 && haskey(branch.pdict, :geometry)
       g_str = f", length = {branch.ele[end].s_downstream:16.9f}, geometry => {branch.pdict[:geometry]}"
     end
     println(io, f"Branch {branch.ix_branch}: {rpad(str_quote(branch.name), n)} {lpad(length(branch.ele), 5)} Ele{g_str}")
@@ -748,4 +756,23 @@ $(info(etype, output_str = true))
 """
 
   eval_str("@doc ele_docstring $etype")
+end
+
+#---------------------------------------------------------------------------------------------------
+# show_changed
+
+"""
+    show_changed(lat::Lat)
+
+Show elements that have changed parameters.
+This function is used for debugging.
+"""
+function show_changed(lat::Lat)
+  for branch in lat.branch
+    for ele in branch.ele
+      if !haskey(ele.pdict, :changed); continue; end
+      if length(ele.changed) == 0; continue; end
+      println("Changed: $(ele_name(ele))")
+    end
+  end
 end

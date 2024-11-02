@@ -456,6 +456,20 @@ function lat_branch(ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
+# lattice
+
+"""
+    lattice(ele::Ele) -> Union{Lat, Nothing}
+
+Returns the lattice that an element is contained in or `nothing` if there is no containing lattice.
+"""
+function lattice(ele::Ele)
+  branch = lat_branch(ele)
+  if isnothing(branch); return nothing; end
+  return branch.lat
+end
+
+#---------------------------------------------------------------------------------------------------
 # ele_at_s
 
 """
