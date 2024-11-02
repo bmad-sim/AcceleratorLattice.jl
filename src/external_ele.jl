@@ -2,7 +2,7 @@
 # lat_ele_dict
 
 """
-    lat_ele_dict(lat::Lat)
+    lat_ele_dict(lat::Lattice)
 
 Return a dictionary of `ele_name => Vector{Ele}` mapping of lattice element names to arrays of
 elements with that name.
@@ -24,7 +24,7 @@ eled["q23w"]
 
 """
 
-function lat_ele_dict(lat::Lat)
+function lat_ele_dict(lat::Lattice)
   eled = Dict{String,Vector{Ele}}()
   for branch in lat.branch
     for ele in branch.ele
@@ -52,7 +52,7 @@ The `prefix` argument is needed if a prefix was given in `create_ele_vars`.
 The `this_module` argument is needed if the variables are not in the `Main` module. 
 Note: `@__MODULE__` is the name of the module of the calling routine.
 """
-function kill_external_ele(lat::Lat; prefix::AbstractString = "", this_module = Main)
+function kill_external_ele(lat::Lattice; prefix::AbstractString = "", this_module = Main)
   for branch in lat.branch
     for ele in branch.ele
       nam = prefix * ele.name
@@ -82,7 +82,7 @@ Use `@__MODULE__` for the name of the module of the code calling `create_ele_var
 
 The routine kill_external_ele will remove these external elements.
 """
-function create_external_ele(lat::Lat; prefix::AbstractString = "", this_module = Main)
+function create_external_ele(lat::Lattice; prefix::AbstractString = "", this_module = Main)
   eled = lat_ele_dict(lat)
 
   for (name, evec) in eled
@@ -99,7 +99,7 @@ end
 # create_unique_ele_names!
 
 """
-function create_unique_ele_names!(lat::Lat; suffix::AbstractString = "!#")
+function create_unique_ele_names!(lat::Lattice; suffix::AbstractString = "!#")
 
 Modifies a lattice so that all elements have a unique name.
 
@@ -107,7 +107,7 @@ For elements whose names are not unique, the `suffix` arg is appended to the ele
 and an integer is substituted for  the "#" character in the suffix arg. If no "#" 
 character exists, a "#" character is appended to the suffix arg.
 """
-function create_unique_ele_names!(lat::Lat; suffix::AbstractString = "!#")
+function create_unique_ele_names!(lat::Lattice; suffix::AbstractString = "!#")
   if !occursin("#", suffix); suffix = suffix * "#"; end
   eled = lat_ele_dict(lat)
 

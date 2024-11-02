@@ -20,16 +20,16 @@ The exception is the `this_ele_length` parameter which is reset for each element
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper!(Lat)
+# bookkeeper!(Lattice)
 
 """
-    bookkeeper!(lat::Lat)
+    bookkeeper!(lat::Lattice)
 
-All Lat bookkeeping. For example, if the reference energy is changed at the start of a branch the 
+All Lattice bookkeeping. For example, if the reference energy is changed at the start of a branch the 
 bookkeeping code will propagate that change through the reset of the lattice. 
-""" bookkeeper!(lat::Lat)
+""" bookkeeper!(lat::Lattice)
 
-function bookkeeper!(lat::Lat)
+function bookkeeper!(lat::Lattice)
   if !lat.parameters_have_changed; return; end
   lat.parameters_have_changed = false
 
@@ -89,7 +89,7 @@ end
 """
     Internal: start_multipass_bookkeeper!(lat)
 
-Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lat)`
+Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lattice)`
 """ start_multipass_bookkeeper!
 
 function start_multipass_bookkeeper!(lat)
@@ -105,7 +105,7 @@ end
 """
     Internal: end_multipass_bookkeeper!(lat)
 
-Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lat)`
+Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lattice)`
 """ end_multipass_bookkeeper!
 
 function end_multipass_bookkeeper!(lat)
@@ -141,7 +141,7 @@ end
 """
     Internal: start_superimpose_bookkeeper!(lat)
 
-Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lat)`
+Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lattice)`
 """ start_superimpose_bookkeeper!
 
 function start_superimpose_bookkeeper!(lat)
@@ -157,7 +157,7 @@ end
 """
     Internal: end_superimpose_bookkeeper!(lat)
 
-Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lat)`
+Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lattice)`
 """ end_superimpose_bookkeeper!
 
 function end_superimpose_bookkeeper!(lat)
@@ -177,7 +177,7 @@ end
 """
     Internal: bookkeeper!(branch::Branch)
 
-Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lat)`.
+Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lattice)`.
 Only tracking branches are examined. Lord branches are ignored.
 """ bookkeeper!(branch::Branch)
 
@@ -207,7 +207,7 @@ end
     Internal: bookkeeper!(ele::Ele, ..., previous_ele::Ele)
 
 Ele bookkeeping. For example, propagating the floor geometry from one element to the next. 
-These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lat)`.
+These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lattice)`.
 
 ### Output
 
@@ -662,12 +662,12 @@ end
 # init_multipass_bookkeeper!
 
 """
-    Internal: init_multipass_bookkeeper!(lat::Lat)
+    Internal: init_multipass_bookkeeper!(lat::Lattice)
 
 Multipass initialization done during lattice expansion.
 """ init_multipass_bookkeeper!
 
-function init_multipass_bookkeeper!(lat::Lat)
+function init_multipass_bookkeeper!(lat::Lattice)
   # Sort slaves. multipass_id is an identification tag to enable identifying the set of slaves
   # for a given lord. multipass_id is removed here since it will be no longer needed.
   # The Dict is ordered so that the order of the lords in the lord branch is deterministic.

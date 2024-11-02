@@ -182,7 +182,7 @@ However, with the second statement, \vn{setproperty} not only sets
 \vn{q1.pdict[:changed]} which is a dict within \vn{pdict}. 
 The key of the entry will, in this case, be the symbol \vn{:s_downstream} 
 and the value will be the old value of the parameter. 
-When the \vn{bookkeeper(::Lat)} function is called (\sref{xxx}), the bookkeeping code will use the
+When the \vn{bookkeeper(::Lattice)} function is called (\sref{xxx}), the bookkeeping code will use the
 entries in \vn{ele.pdict[:changed]} to limit the bookkeeping to what is necessary and thus
 minimize computation time. 
 Knowing what has been changed is also important in resolving what
@@ -200,11 +200,11 @@ The place where \vn{q1.pdict} is needed is in the bookkeeping code itself to avo
 \section{Bookkeeping and Dependent Element Parameters}
 \label{s:param.depend}
 
-After lattice parameters are changed, the function \vn{bookkeeper(::Lat)} needs to be called
+After lattice parameters are changed, the function \vn{bookkeeper(::Lattice)} needs to be called
 so that dependent parameters can be updated. 
 Since bookkeeping can take a significant amount of time if bookkeeping is done every time
 a change to the lattice is made, and since there is no good way to tell when bookkeeping should
-be done, After lattice expansion, \vn{bookkeeper(::Lat)} is never called directly by \accellat 
+be done, After lattice expansion, \vn{bookkeeper(::Lattice)} is never called directly by \accellat 
 functions and needs to be called by the User when appropriate (generally before tracking or
 other computations are done).
 

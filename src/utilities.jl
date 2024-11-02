@@ -6,12 +6,12 @@
 # lat_sanity_check
 
 """
-    lat_sanity_check(lat::Lat)
+    lat_sanity_check(lat::Lattice)
 
 Does some self consistency checks on a lattice and throws an error if there is a problem.
 """ lat_sanity_check
 
-function lat_sanity_check(lat::Lat)
+function lat_sanity_check(lat::Lattice)
   for (ib, branch) in enumerate(lat.branch)
     if ib != branch.ix_branch; error(f"SanityCheck: Branch with branch index: {ib} has branch.ix_branch set to {branch.ix_branch}"); end
     if lat !== branch.lat; error(f"SanityCheck: Branch {ib} has branch.lat not pointing to parient lat."); end

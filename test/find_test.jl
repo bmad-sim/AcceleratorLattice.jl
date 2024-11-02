@@ -18,7 +18,7 @@ ln1 = bl([qf, d])
 ln2 = bl([qd, d, qd], geometry = CLOSED, multipass = true)
 fodo = bl([b1, s1, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), d2, reverse(bl([qd, ln1]))])
 
-lat = Lat([bl([beginning, fodo], name = "fodo"), bl([beginning, ln2], name = "ln2"), ln3])
+lat = Lattice([bl([beginning, fodo], name = "fodo"), bl([beginning, ln2], name = "ln2"), ln3])
 
 superimpose!(z2, lat.branch[3], offset = 0.1, ele_origin = BodyLoc.ENTRANCE_END)
 superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)

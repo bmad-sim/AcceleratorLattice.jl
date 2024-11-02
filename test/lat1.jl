@@ -13,4 +13,4 @@ ln1 = bl([qf, d])
 ln2 = bl([qd, d, qd], geometry = CLOSED, multipass = true)
 fodo = bl("fodo", [z1, z2, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), reverse(bl("sub", [qd, ln1]))])
 
-lat = Lat([bl([begin_fodo, fodo]), bl([begin_ln2, ln2]))
+lat = Lattice([bl([begin_fodo, fodo]), bl([begin_ln2, ln2]))

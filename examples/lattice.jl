@@ -12,7 +12,7 @@ using AcceleratorLattice
 
 ln1 = BeamLine([p_begin, qf, d]);
 ln2 = BeamLine([e_begin, qd, d, qd], geometry = closed);
-lat = Lat([ln1, ln2]);
+lat = Lattice([ln1, ln2]);
 
 superimpose!(b1, ref_ele = lat.branch[2].ele[3], offset = 0.2, ref_origin = entrance_end);
 superimpose!(m, ref_ele = lat.branch[1].ele[1], offset = 0.2, ref_origin = entrance_end);

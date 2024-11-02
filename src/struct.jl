@@ -911,14 +911,14 @@ for an element.
 end
 
 #---------------------------------------------------------------------------------------------------
-# AbstractLat 
+# AbstractLattice 
 
 """
-    abstract type AbstractLat
+    abstract type AbstractLattice
 
-Abstract lattice type from which the `Lat` struct inherits.
+Abstract lattice type from which the `Lattice` struct inherits.
 """
-abstract type AbstractLat end
+abstract type AbstractLattice end
 
 #---------------------------------------------------------------------------------------------------
 # Branch
@@ -930,11 +930,11 @@ Lattice branch structure.
 
 ## Fields
 • `name::String`                      - Name of the branch.
-• `lat::Union{AbstractLat, Nothing}`  - Pointer to the lattice containing the branch.
+• `lat::Union{AbstractLattice, Nothing}`  - Pointer to the lattice containing the branch.
 • `ele::Vector{Ele}`                  - Pointer to the array of lattice element contained in the branch.
 • `pdict::Dict{Symbol,Any}`           - Dict for holding other branch parameters.
 
-Note: `AbstractLat` is used here since `Lat` is not yet defined and Julia does not allow forward 
+Note: `AbstractLattice` is used here since `Lattice` is not yet defined and Julia does not allow forward 
 struct declarations.
 
 ## Standard pdict keys:
@@ -954,7 +954,7 @@ The test `is_null(branch)` will test if a branch is a `NULL_BRANCH`.
 
 @kwdef mutable struct Branch <: BeamLineItem
   name::String              = ""
-  lat::Union{AbstractLat, Nothing}  = nothing
+  lat::Union{AbstractLattice, Nothing}  = nothing
   ele::Vector{Ele}          = Ele[]
   pdict::Dict{Symbol,Any}   = Dict{Symbol,Any}
 end
@@ -986,7 +986,7 @@ struct GovernorBranch <: LordBranch; end  # This may never be used!
     LatticeGlobal
 
 Struct holding "global" parameters used for tracking. 
-Each Lat will store a `LatticeGlobal` in `Lat.pdict[:LatticeGlobal]`.
+Each Lattice will store a `LatticeGlobal` in `Lattice.pdict[:LatticeGlobal]`.
 """ LatticeGlobal
 
 mutable struct LatticeGlobal
@@ -997,10 +997,10 @@ end
 LatticeGlobal() = LatticeGlobal(1.0e-10, Dict())
 
 #---------------------------------------------------------------------------------------------------
-# Lat
+# Lattice
 
 """
-    mutable struct Lat <: AbstractLat
+    mutable struct Lattice <: AbstractLattice
 
 Lattice structure.
 
@@ -1021,7 +1021,7 @@ want to make parameter changes without leaving a record. Also if `:record_change
 changes to parameters that normally should not be changed are allowed. This enables bookkeeping
 code to modify, for example, dependent parameters.
 """
-mutable struct Lat <: AbstractLat
+mutable struct Lattice <: AbstractLattice
   name::String
   branch::Vector{Branch}
   pdict::Dict{Symbol,Any}

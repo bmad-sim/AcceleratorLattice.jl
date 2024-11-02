@@ -1,14 +1,14 @@
 #---------------------------------------------------------------------------------------------------
-# Base.copy(lat::Lat)
+# Base.copy(lat::Lattice)
 
 """
-    Base.copy(lat::Lat)
+    Base.copy(lat::Lattice)
 
 Shallow copy constructer for a lattice. 
-""" Base.copy(lat::Lat)
+""" Base.copy(lat::Lattice)
 
-function Base.copy(lat::Lat)
-  lat_copy = Lat(lat.name, copy(lat.branch), copy(lat.pdict))
+function Base.copy(lat::Lattice)
+  lat_copy = Lattice(lat.name, copy(lat.branch), copy(lat.pdict))
   for ix in 1:length(lat.branch)
     lat_copy.branch[ix] = copy(lat.branch[ix])
     lat_copy.branch[ix].lat => lat_copy

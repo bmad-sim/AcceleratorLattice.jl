@@ -157,14 +157,14 @@ end
 # min_ele_length
 
 """
-    min_ele_length(lat::Lat)
+    min_ele_length(lat::Lattice)
 
 For elements that have a non-zero length: minimum element length that is "significant".
 This is used by, for example, the `split!` function which will not create "runt" elements
 whose length is below min_ele_length. The returned value is `2 * lat.LatticeGlobal.significant_length`
 """ min_ele_length
 
-min_ele_length(lat::Lat) = 2 * lat.LatticeGlobal.significant_length
+min_ele_length(lat::Lattice) = 2 * lat.LatticeGlobal.significant_length
 
 #---------------------------------------------------------------------------------------------------
 # it_ismutable & it_isimmutable

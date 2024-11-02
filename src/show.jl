@@ -493,17 +493,17 @@ end
 Base.show(io::IO, ::MIME"text/plain", eles::Vector{T}) where T <: Ele = Base.show(io::IO, eles)
 
 #---------------------------------------------------------------------------------------------------
-# Show Lat
+# Show Lattice
 
-function Base.show(io::IO, lat::Lat)
-  println(io, f"Lat: {str_quote(lat.name)}")
+function Base.show(io::IO, lat::Lattice)
+  println(io, f"Lattice: {str_quote(lat.name)}")
   for branch in lat.branch
     show(io, branch)
   end
   return nothing
 end
 
-Base.show(io::IO, ::MIME"text/plain", lat::Lat) = Base.show(stdout, lat)
+Base.show(io::IO, ::MIME"text/plain", lat::Lattice) = Base.show(stdout, lat)
 
 #---------------------------------------------------------------------------------------------------
 # Show Branch
@@ -762,12 +762,12 @@ end
 # show_changed
 
 """
-    show_changed(lat::Lat)
+    show_changed(lat::Lattice)
 
 Show elements that have changed parameters.
 This function is used for debugging.
 """
-function show_changed(lat::Lat)
+function show_changed(lat::Lattice)
   for branch in lat.branch
     for ele in branch.ele
       if !haskey(ele.pdict, :changed); continue; end

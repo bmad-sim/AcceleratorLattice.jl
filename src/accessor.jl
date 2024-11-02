@@ -1,10 +1,10 @@
 # Accessor functions to customize how things like `ele.XXX` where `ele` is an `Ele` instance.
 
 #---------------------------------------------------------------------------------------------------
-# Base.getproperty(lat::Lat, sym::Symbol) for lat.XXX dot operator overload
+# Base.getproperty(lat::Lattice, sym::Symbol) for lat.XXX dot operator overload
 
 """
-    Base.getproperty(lat::Lat, sym::Symbol)
+    Base.getproperty(lat::Lattice, sym::Symbol)
     Base.getproperty(branch::Branch, sym::Symbol)
     Base.getproperty(bl::BeamLine, sym::Symbol)
 
@@ -13,13 +13,13 @@ of `lat.pdict[:XXX]`.
 
 ## Exceptions
 
-- For `Lat`: `lat.name`, `lat.branch`, and `lat.pdict` which do not get redirected. \\
+- For `Lattice`: `lat.name`, `lat.branch`, and `lat.pdict` which do not get redirected. \\
 - For `Branch`: `branch.name`, `branch.ele`, and `branch.pdict` which do not get redirected.
 - For `BeamLine`: `bl.name`, `bl.ele`, and `bl.pdict` which do not get redirected.
 
 """ Base.getproperty
 
-function Base.getproperty(lat::Lat, sym::Symbol)
+function Base.getproperty(lat::Lattice, sym::Symbol)
   if sym == :name; return getfield(lat, :name); end
   if sym == :branch; return getfield(lat, :branch); end
   if sym == :pdict; return getfield(lat, :pdict); end
@@ -127,7 +127,7 @@ end
 # Base.setproperty for lat.XXX, branch.XXX, ele.XXX dot operator overload
 
 """
-    Base.setproperty!(lat::Lat, sym::Symbol, value)
+    Base.setproperty!(lat::Lattice, sym::Symbol, value)
     Base.setproperty!(branch::Branch, sym::Symbol, value)
     Base.setproperty!(ele::Ele, sym::Symbol, value)
 
@@ -136,7 +136,7 @@ sets the appropriate component in the `lat` variable.
 See the Base.getproperty for documentation on what the appropriate property is.
 """ Base.setproperty!
 
-function Base.setproperty!(lat::Lat, sym::Symbol, value)
+function Base.setproperty!(lat::Lattice, sym::Symbol, value)
   if sym == :name;   return setfield!(lat, :name, value); end
   if sym == :branch; return setfield!(lat, :branch, value); end
   getfield(lat, :pdict)[sym] = value
@@ -196,16 +196,16 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Base.getindex(lat::Lat, name::AbstractString)
+# Base.getindex(lat::Lattice, name::AbstractString)
 
 """
-  Base.getindex(lat::Lat}, name::AbstractString)
+  Base.getindex(lat::Lattice}, name::AbstractString)
 
 Match `lat[name]` to either a branch with name `name` or all lattice elements which
 match. See `eles` function for more details on matching to lattice elements.
-""" Base.getindex(lat::Lat, name::AbstractString)
+""" Base.getindex(lat::Lattice, name::AbstractString)
 
-function Base.getindex(lat::Lat, name::AbstractString)
+function Base.getindex(lat::Lattice, name::AbstractString)
   for br in lat.branch
     if br.name == name; return br; end
   end

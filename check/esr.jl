@@ -5649,4 +5649,4 @@ ring = beamline("ring", [begin1, ip6__1, d000001__1, q1er_6, d000002__1, q2er_6,
    d000006__38, d1ef_6, d000083, mcoll_mask, q1ef_6, d000022__2, q0ef_6, d000023__2, ip6__2, end1],
    geometry = closed)
 
-lat = Lat("ring", [ring])
+lat = Lattice("ring", [ring])

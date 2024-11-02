@@ -29,7 +29,7 @@ A simple example illustrates how superposition works (also see section \sref{s:l
   @ele bb = BeginningEle(species_ref = species("proton"), pc_ref = 1e11)
   @ele ss = Solenoid(L = 1)
   zline = beamline("z", [bb, dd])
-  lat = Lat("lat", zline)
+  lat = Lattice("lat", zline)
 
   ref_ele = find_eles(lat, "dd")
   superimpose!(ss, ref_ele, offset = 0.2)
@@ -98,7 +98,7 @@ Branch 1: "z"  geometry => open                 L           s       s_downstream
   @ele ss = Solenoid(L = 1)
   @ele bb = BeginningEle(species_ref = species("proton"), pc_ref = 1e11)
   zline = beamline("z", [bb, qq, dd])
-  lat = Lat("lat", zline)
+  lat = Lattice("lat", zline)
 
   ref_ele = find_eles (lat, "dd")
   superimpose!(ss, ref_ele, offset = 0.2)

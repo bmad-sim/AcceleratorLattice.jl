@@ -16,7 +16,7 @@ module AcceleratorLattice
   using EnumX
   using Random
   using OrderedCollections
-  # using SimUtils
+  using SimUtils
   using AtomicAndPhysicalConstants
 
   # AtomicAndPhysicalConstants
@@ -58,7 +58,7 @@ module AcceleratorLattice
   export memloc, beamline, @ele, @eles, @construct_ele_type, enum, enum_add
   export ele_name, show_name, show_ele, E_tot, E_kinetic, pc, β, β1, γ
   export show_lat, show_branch, show_beamline, bookkeeper!, set_param!
-  export InfiniteLoop, Branch, Lat, BeamLineEle, superimpose!, multipole_type
+  export InfiniteLoop, Branch, Lattice, BeamLineEle, superimpose!, multipole_type
   export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
   export split!, construct_ele_type, ele_at_s, add_governor!, toggle_integrated!
   export eles, next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
