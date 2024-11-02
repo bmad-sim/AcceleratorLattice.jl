@@ -6,9 +6,10 @@
                           offset::Real = 0, ref_origin::BodyLoc.T = BodyLoc.CENTER, 
                           wrap::Bool = true) where T <: Union{Branch, Ele, Vector{Branch}, Vector{Ele}}
 
-Superimpose a copy (or copies) of the element `super_ele` on a lattice.
+Superimpose a copy (or copies) of the element `super_ele` on a lattice (or lattices).
 If `ref` is a scaler, one superposition is done. 
 If `ref` is a vector, one superposition is done per element of `ref`.
+The set of `ref` elements do not all have to be contained within a single lattice.
 See the AcceleratorLattice manual for more details.
 
 ### Input
@@ -63,6 +64,8 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     ref_ele = ref
   end
 
+  lat_list = []
+
   for this_ref in collect(ref_ele)
     if typeof(this_ref) == Branch
       ref_ele = this_ref.ele[1]
@@ -80,6 +83,14 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
       ref_ix_ele = ref_ele.slaves[1].ix_ele
     else
       ref_ix_ele = ref_ele.ix_ele
+    end
+
+    lat = branch.lat
+    if lat ∉ lat_list
+      push!(lat_list, lat)
+      lat.pdict[:old_autobookkeeping] = lat.autobookkeeping
+      lat.autobookkeeping = false
+      lat.record_changes = false
     end
 
     L_super = super_ele.L
@@ -257,6 +268,11 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     for lord in sbranch.ele
       set_super_slave_names!(lord)
     end
-
   end   # for this_ref in collect(ref)
+
+  for lat in lat_list
+    lat.autobookkeeping = lat.old_autobookkeeping
+    pop!(lat.pdict, :old_autobookkeeping)
+    lat.record_changes = true
+  end
 end

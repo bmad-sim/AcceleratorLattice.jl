@@ -13,6 +13,7 @@ OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 PyFormattedStrings = "5f89f4a4-a228-4886-b223-c468a82ed5b9"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ReferenceFrameRotations = "74f56ac7-18b3-5285-802d-d4bd4f104033"
+SimUtils = "042f21a8-4046-4c2b-b9ed-b6e14110b343"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]

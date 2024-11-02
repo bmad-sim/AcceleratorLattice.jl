@@ -72,7 +72,7 @@ macro construct_ele_type(type_name, doc::String)
 end
 
 #---------------------------------------------------------------------------------------------------
-# @ele/@eles macros
+# @ele macro
 
 """
     macro ele(expr)
@@ -89,8 +89,11 @@ macro ele(expr)
                                "Expecting something like: \"q1 = Quadrupole(...)\"")
   name = expr.args[1]
   insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
-  return esc(expr)   # This will call the constructor below
+  return esc(expr)   # This will call the lattice element constructor below
 end
+
+#---------------------------------------------------------------------------------------------------
+# @eles macro
 
 """
     macro eles(block)
@@ -118,10 +121,19 @@ macro eles(block)
   return esc(block)
 end
 
-# Functions called by `ele` macro.
+#---------------------------------------------------------------------------------------------------
+# Element construction function. Called by `ele` macro.
 
+"""
+    function (::Type{T})(; kwargs...) where T <: Ele
+
+
+Lattice element constructor.
+The constructor initializes `Ele.pdict[:branch]` since it is assumed by the
+bookkeeping code to always exist.
+"""
 function (::Type{T})(; kwargs...) where T <: Ele
-  ele = T(Dict{Symbol,Any}())
+  ele = T(Dict{Symbol,Any}(:branch => nothing))
   pdict = ele.pdict
   pdict[:changed] = Dict{Symbol,Any}()
 
@@ -154,14 +166,14 @@ end
 @construct_ele_type BeginningEle        "Initial element at start of a branch."
 @construct_ele_type Bend                "Dipole bend."
 @construct_ele_type Collimator          "Collimation element."
-@construct_ele_type Converter           "Target to produce new species."
+@construct_ele_type Converter           "Target to produce new species. EG: Positron converter."
 @construct_ele_type CrabCavity          "RF crab cavity." 
 @construct_ele_type Drift               "Field free region."
 @construct_ele_type EGun                "Electron gun."
 @construct_ele_type Fiducial            "Global coordinate system fiducial point."
 @construct_ele_type FloorShift          "Global coordinates shift."
 @construct_ele_type Foil                "Strips electrons from an atom."
-@construct_ele_type Fork                "Connect branches together."
+@construct_ele_type Fork                "Connect lattice branches together."
 @construct_ele_type Girder              "Support element."
 @construct_ele_type Instrument          "Measurement element."
 @construct_ele_type Kicker              "Particle kicker element."
@@ -171,7 +183,7 @@ end
 @construct_ele_type Match               "Orbit, Twiss, and dispersion matching element."
 @construct_ele_type Multipole           "Zero length multipole."
 @construct_ele_type NullEle             "Placeholder element used for bookkeeping."
-@construct_ele_type Octupole            "Octupole elemnt."
+@construct_ele_type Octupole            "Octupole element."
 @construct_ele_type Patch               "Reference orbit shift."
 @construct_ele_type Quadrupole          "Quadrupole element."
 @construct_ele_type RFCavity            "RF cavity element."
@@ -594,38 +606,6 @@ Initial particle position.
 end
 
 #---------------------------------------------------------------------------------------------------
-# LCavityGroup
-
-"""
-    mutable struct LCavityGroup <: EleParameterGroup
-
-Used by `LCavity` elements but not `RFCavity` elements.
-See also `RFAutoGroup` and `RFCommonGroup`.
-
-##Fields
-• `voltage_ref::Number`     - Voltage gain of the reference particle. \\
-• `voltage_err::Number`     - Voltage deviation from reference. \\
-• `voltage_tot::Number`     - Actual voltage = `voltage_ref` + `voltage_err`. \\
-• `gradient_ref::Number`    - Voltage gradient of reference. \\  
-• `gradient_err::Number`    - Gradient deviation from reference. \\
-• `gradient_tot::Number`    - Actual gradient = `gradient_ref` + `gradient_err`. \\
-• `phase_ref::Number`       - RF Phase of reference particle. \\
-• `phase_err::Number`       - RF Phase deviation from reference. \\
-• `phase_tot::Number`       - Actual RF phase = `phase_ref` + `phase_err`. \\
-"""
-@kwdef mutable struct LCavityGroup <: EleParameterGroup
-  voltage_ref::Number = 0.0
-  voltage_err::Number = 0.0
-  voltage_tot::Number = 0.0
-  gradient_ref::Number = 0.0
-  gradient_err::Number = 0.0
-  gradient_tot::Number = 0.0
-  phase_ref::Number = 0.0
-  phase_err::Number = 0.0
-  phase_tot::Number = 0.0
-end
-
-#---------------------------------------------------------------------------------------------------
 # LengthGroup
 
 """
@@ -740,6 +720,7 @@ but with `Converter` or `Foil` Elements they will generally be different.
 • `E_tot_ref_downstream::Number`  - Reference total energy downstream end. \\
 • `time_ref::Number`              - Reference time upstream end. \\
 • `time_ref_downstream::Number`   - Reference time downstream end. \\
+• `dtime_ref::Number`             - User set reference time change. \\
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
 • `β_ref_downstream::Number`      - Reference `v/c` downstream end. \\
 """
@@ -752,57 +733,42 @@ but with `Converter` or `Foil` Elements they will generally be different.
   E_tot_ref_downstream::Number = NaN
   time_ref::Number = 0.0
   time_ref_downstream::Number = 0.0
+  dtime_ref::Number = 0.0
   β_ref::Number = 0.0
   β_ref_downstream::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
-# RFCommonGroup
+# RFGroup
 
 """
-    mutable struct RFCommonGroup <: EleParameterGroup
+    mutable struct RFGroup <: EleParameterGroup
 
-RF parameters except for `voltage`,  `gradient` and `phase`.
-Used by both `RFCavity` and `LCavity` elements.
-See also `RFAutoGroup`, `RFCavityGroup`, and `LCavityGroup` structures.
+RF voltage parameters.
 
 ## Fields
 
-• `multipass_phase::Number`   - RF Phase added to multipass elements. \\
-• `frequency::Number`         - RF frequency. \\
-• `harmon::Number`            - RF frequency harmonic number. \\
-• `cavity_type::Cavity.T`     - Cavity type. Default is `Cavity.STANDING_WAVE`. \\
-• `n_cell::Int`               - Number of cavity cells. Default is `1`. \\
-""" RFCommonGroup
+• `frequency::Number`       - RF frequency. \\
+• `harmon::Number`          - RF frequency harmonic number. \\
+• `voltage::Number`         - RF voltage. \\
+• `gradient::Number`        - RF gradient. \\
+• `phase::Number`           - RF phase. \\
+• `multipass_phase::Number` - RF Phase added to multipass elements. \\
+• `dvoltage_ref`::Number    - Sets the change in the reference energy. \\
+• `cavity_type::Cavity.T`   - Cavity type. Default is `Cavity.STANDING_WAVE`. \\
+• `n_cell::Int`             - Number of cavity cells. Default is `1`. \\
+""" RFGroup
 
-@kwdef mutable struct RFCommonGroup <: EleParameterGroup
-  multipass_phase::Number = 0.0
+@kwdef mutable struct RFGroup <: EleParameterGroup
   frequency::Number = 0.0
   harmon::Number = 0.0
-  cavity_type::Cavity.T = Cavity.STANDING_WAVE
-  n_cell::Int = 1
-end
-
-#---------------------------------------------------------------------------------------------------
-# RFCavityGroup
-
-"""
-    mutable struct RFCavityGroup <: EleParameterGroup
-
-RF voltage parameters. Used by `RFCavity` elements but not `LCavity` elements.
-See also `RFAutoGroup` and `RFCommonGroup`.
-
-## Fields
-
-• `voltage::Number`   - RF voltage. \\
-• `gradient::Number`  - RF gradient. \\
-• `phase::Number`     - RF phase. \\
-""" RFCavityGroup
-
-@kwdef mutable struct RFCavityGroup <: EleParameterGroup
   voltage::Number = 0.0
+  dvoltage_ref::Number = 0.0
   gradient::Number = 0.0
   phase::Number = 0.0
+  multipass_phase::Number = 0.0
+  cavity_type::Cavity.T = Cavity.STANDING_WAVE
+  n_cell::Int = 1
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -945,6 +911,16 @@ for an element.
 end
 
 #---------------------------------------------------------------------------------------------------
+# AbstractLat 
+
+"""
+    abstract type AbstractLat
+
+Abstract lattice type from which the `Lat` struct inherits.
+"""
+abstract type AbstractLat end
+
+#---------------------------------------------------------------------------------------------------
 # Branch
 
 """
@@ -953,30 +929,34 @@ end
 Lattice branch structure. 
 
 ## Fields
-    name::String
-    ele::Vector{Ele}
-    pdict::Dict{Symbol,Any}
+• `name::String`                      - Name of the branch.
+• `lat::Union{AbstractLat, Nothing}`  - Pointer to the lattice containing the branch.
+• `ele::Vector{Ele}`                  - Pointer to the array of lattice element contained in the branch.
+• `pdict::Dict{Symbol,Any}`           - Dict for holding other branch parameters.
+
+Note: `AbstractLat` is used here since `Lat` is not yet defined and Julia does not allow forward 
+struct declarations.
 
 ## Standard pdict keys:
-• `:lat`        - Pointer to containing lattice. \\
 • `:geometry`   - `OPEN` or `CLOSED`. \\
 • `:type`       - `MultipassLordBranch`, `SuperLordBranch`, `GirderBranch`, or `TrackingBranch`.  \\
 • `:ix_branch`  - Index of branch in `lat.branch[]` array. \\
 • `:ix_ele_min_changed` - For tracking branches: Minimum index of elements where parameter changes have been made.
-  Set to `typemax(Int)` if no elements have been modified.
+  Set to `typemax(Int)` if no elements have been modified. \\
 • `:ix_ele_max_changed` - For tracking branches: Maximum index of elements where parameter changes have been made.
-  Set to `0` if no elements have been modified.
-• `:changed_ele`        - `Set{Ele}` For lord branches: Set of elements whose parameters have been modified.
+  Set to `0` if no elements have been modified. \\
+• `:changed_ele`        - `Set{Ele}` For lord branches: Set of elements whose parameters have been modified. \\
 
 ## Notes
 The constant `NULL_BRANCH` is defined as a placeholder for signaling the absense of a branch.
 The test `is_null(branch)` will test if a branch is a `NULL_BRANCH`.
 """ Branch
 
-mutable struct Branch <: BeamLineItem
-  name::String
-  ele::Vector{Ele}
-  pdict::Dict{Symbol,Any}
+@kwdef mutable struct Branch <: BeamLineItem
+  name::String              = ""
+  lat::Union{AbstractLat, Nothing}  = nothing
+  ele::Vector{Ele}          = Ele[]
+  pdict::Dict{Symbol,Any}   = Dict{Symbol,Any}
 end
 
 """ 
@@ -984,7 +964,7 @@ The constant NULL_BRANCH is defined as a placeholder for signaling the absense o
 The test is_null(branch) will test if a branch is a NULL_BRANCH.
 """ NULL_BRANCH
 
-const NULL_BRANCH = Branch("NULL_BRANCH", Ele[], Dict{Symbol,Any}(:ix_branch => -1))
+const NULL_BRANCH = Branch(name = "NULL_BRANCH", pdict = Dict{Symbol,Any}(:ix_branch => -1))
 
 #---------------------------------------------------------------------------------------------------
 # Branch types
@@ -1017,14 +997,7 @@ end
 LatticeGlobal() = LatticeGlobal(1.0e-10, Dict())
 
 #---------------------------------------------------------------------------------------------------
-# AbstractLat & Lat
-
-"""
-    abstract type AbstractLat
-
-Abstract lattice type from which the `Lat` struct inherits.
-"""
-abstract type AbstractLat end
+# Lat
 
 """
     mutable struct Lat <: AbstractLat
@@ -1039,9 +1012,14 @@ Lattice structure.
 
 ## Standard pdict keys
 
-• `:doing_bookkeeping`    - Bool: In the process of bookkeeping?
-• `:autobookkeeping`      - Bool: Automatic bookkeeping enabled?
+• `:record_changes`         - Bool: Record parameter changes?
+• `:autobookkeeping`        - Bool: Automatic bookkeeping enabled? \\
+• `parameters_have_changed` - Bool: Have any parameters changed since the last bookkeeping? \\
 
+The `:record_changes` is usually `true` but can be set `false` by bookkeeping routines that 
+want to make parameter changes without leaving a record. Also if `:record_changes` is `false`,
+changes to parameters that normally should not be changed are allowed. This enables bookkeeping
+code to modify, for example, dependent parameters.
 """
 mutable struct Lat <: AbstractLat
   name::String
