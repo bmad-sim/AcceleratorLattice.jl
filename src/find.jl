@@ -94,7 +94,7 @@ function eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str
   ix_ele = integer(match_str, -1)
   julia_regex = (typeof(who) == Regex)
 
-  if typeof(where_search) == Lat
+  if typeof(where_search) == Lattice
     branch_vec = where_search.branch
   else
     branch_vec = collect(where_search)
@@ -156,7 +156,7 @@ Internal function. Called by `eles` function.
 `who` is a "group" search string. See the documentation in `eles` for more details.
 """ eles_group
 
-function eles_group(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
+function eles_group(where_search::Union{Lattice,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
   julia_regex = (typeof(who) == Regex)
 
   ele_type = nothing
@@ -373,9 +373,9 @@ If there are more than two group expressions involved, evaluation is left to rig
 
 Note: The index operator `[...]` is overloaded so that `branch[who]` where `branch` is a `Branch` 
 instance, or `lat[who]` where `lat` is a
-`Lat` instance is the same as `eles(branch, who)` and `eles(lat, who)` respectively.
+`Lattice` instance is the same as `eles(branch, who)` and `eles(lat, who)` respectively.
 """ 
-function eles(where_search::Union{Lat,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
+function eles(where_search::Union{Lattice,Branch}, who::Union{AbstractString,Regex}; wrap::Bool = true)
   # Julia regex is simple
   if typeof(who) == Regex; return eles_group(where_search, who); end
 
@@ -421,29 +421,29 @@ end
 # lat_branch
 
 """
-    lat_branch(lat::Lat, ix::Int)
-    lat_branch(lat::Lat, who::AbstractString) 
-    lat_branch(lat::Lat, who::T) where T <: BranchType
-    lat_branch(ele::Lat)
+    lat_branch(lat::Lattice, ix::Int)
+    lat_branch(lat::Lattice, who::AbstractString) 
+    lat_branch(lat::Lattice, who::T) where T <: BranchType
+    lat_branch(ele::Lattice)
 
 With `lat` as first argument: Returns the branch in `lat` with index `ix` or name that matches `who`.
 With `ele` as first argumnet: Returns the branch `ele` is in.
 Returns `nothing` if no branch can be matched.
 """ lat_branch
 
-function lat_branch(lat::Lat, ix::Int) 
+function lat_branch(lat::Lattice, ix::Int) 
   if ix < 1 || ix > length(lat.branch); error(f"Branch index {ix} out of bounds."); end
   return lat.branch[ix]
 end
 
-function lat_branch(lat::Lat, who::AbstractString) 
+function lat_branch(lat::Lattice, who::AbstractString) 
   for branch in lat.branch
     if branch.name == who; return branch; end
   end
   error(f"Cannot find branch with name {name} in lattice.")
 end
 
-function lat_branch(lat::Lat, who::Type{T}) where T <: BranchType
+function lat_branch(lat::Lattice, who::Type{T}) where T <: BranchType
   for branch in lat.branch
     if branch.pdict[:type] == who; return branch; end
   end
@@ -459,7 +459,7 @@ end
 # lattice
 
 """
-    lattice(ele::Ele) -> Union{Lat, Nothing}
+    lattice(ele::Ele) -> Union{Lattice, Nothing}
 
 Returns the lattice that an element is contained in or `nothing` if there is no containing lattice.
 """

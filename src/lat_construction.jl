@@ -3,10 +3,10 @@
 #-
 
 #---------------------------------------------------------------------------------------------------
-# LatConstructionInfo
+# LatticeConstructionInfo
 
 """
-    Internal: mutable struct LatConstructionInfo
+    Internal: mutable struct LatticeConstructionInfo
 
 Internal struct to hold information during lattice construction.
 
@@ -15,7 +15,7 @@ Internal struct to hold information during lattice construction.
 - `orientation_here::Int`
 - `n_loop::Int`
 """
-mutable struct LatConstructionInfo
+mutable struct LatticeConstructionInfo
   multipass_id::Vector{String}
   orientation_here::Int
   n_loop::Int
@@ -142,21 +142,21 @@ end
 
 """
     Internal: add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
-                                                 info::Union{LatConstructionInfo, Nothing}  = nothing)
+                                                 info::Union{LatticeConstructionInfo, Nothing}  = nothing)
 
 Adds a `BeamLineEle` to a `Branch` under construction. The `info` argument passes on parameters
 from the beamline containing the `BeamLineEle`.
 
-This routine is used by the `Lat` function.
+This routine is used by the `Lattice` function.
 """ add_beamline_ele_to_branch!
 
 function add_beamline_ele_to_branch!(branch::Branch, bele::BeamLineEle, 
-                                                 info::Union{LatConstructionInfo, Nothing}  = nothing)
+                                                 info::Union{LatticeConstructionInfo, Nothing}  = nothing)
   push!(branch.ele, copy(bele.ele))
   ele = branch.ele[end]
   ele.pdict[:ix_ele] = length(branch.ele)
   ele.pdict[:branch] = branch
-  if info isa LatConstructionInfo
+  if info isa LatticeConstructionInfo
     ele.pdict[:LengthGroup].orientation = bele.pdict[:orientation] * info.orientation_here
     ele.pdict[:multipass_id] = copy(info.multipass_id)
     if length(ele.pdict[:multipass_id]) > 0; push!(ele.pdict[:multipass_id], 
@@ -172,14 +172,14 @@ end
 # add_beamline_item_to_branch!
 
 """
-    Internal: add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
+    Internal: add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatticeConstructionInfo)
 
 Adds a single item of a `BeamLine` line to the `Branch` under construction.
 
-Used by Lat() call chain and is not of general interest.
+Used by Lattice() call chain and is not of general interest.
 """ add_beamline_item_to_branch!
 
-function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatConstructionInfo)
+function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::LatticeConstructionInfo)
   if item isa BeamLineEle
     add_beamline_ele_to_branch!(branch, item, info)
   elseif item isa BeamLine 
@@ -194,14 +194,14 @@ end
 # add_beamline_line_to_branch!
 
 """
-    Internal: add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
+    Internal: add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatticeConstructionInfo)
 
 Add the elements in a `BeamLine.line` to a `Branch` under construction.
 
-Used by the `Lat` function.
+Used by the `Lattice` function.
 """ add_beamline_line_to_branch!
 
-function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatConstructionInfo)
+function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatticeConstructionInfo)
   info.n_loop += 1
   if info.n_loop > 100; error(f"InfiniteLoop: Infinite loop of beam lines calling beam lines detected."); end
 
@@ -228,20 +228,20 @@ end
 # new_tracking_branch!
 
 """
-    Internal: new_tracking_branch!(lat::Lat, beamline::Union{BeamLine, Tuple})
+    Internal: new_tracking_branch!(lat::Lattice, beamline::Union{BeamLine, Tuple})
 
 Adds a `BeamLine` to the lattice creating a new `Branch`.
 
-Used by the `Lat` function.
+Used by the `Lattice` function.
 """ new_tracking_branch!
 
-function new_tracking_branch!(lat::Lat, bline::BeamLine)
+function new_tracking_branch!(lat::Lattice, bline::BeamLine)
   push!(lat.branch, Branch(name = bline.pdict[:name], lat = lat, pdict = Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
   branch = lat.branch[end]
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = TrackingBranch
   if branch.name == ""; branch.name = "b" * string(length(lat.branch)); end
-  info = LatConstructionInfo([], bline.pdict[:orientation], 0)
+  info = LatticeConstructionInfo([], bline.pdict[:orientation], 0)
 
   if haskey(bline.pdict, :species_ref); branch.ele[1].species_ref = bline.pdict[:species_ref]; end
   if haskey(bline.pdict, :pc_ref);      branch.ele[1].pc_ref      = bline.pdict[:pc_ref]; end
@@ -267,7 +267,7 @@ function new_tracking_branch!(lat::Lat, bline::BeamLine)
   return nothing
 end
 
-function new_lord_branch!(lat::Lat, name::AbstractString, branch_type::Type{T}) where T <: BranchType
+function new_lord_branch!(lat::Lattice, name::AbstractString, branch_type::Type{T}) where T <: BranchType
   push!(lat.branch, Branch(name = name, lat = lat, pdict = Dict{Symbol,Any}()))
   branch = lat.branch[end]
   branch.pdict[:ix_branch] = length(lat.branch)
@@ -277,13 +277,13 @@ function new_lord_branch!(lat::Lat, name::AbstractString, branch_type::Type{T}) 
 end
 
 #---------------------------------------------------------------------------------------------------
-# Lat
+# Lattice
 
 """
-    Lat(root_lines::Vector{BeamLine}; name = "lat") -> Lat
-    Lat(root_line::BeamLine; name = "lat") -> Lat
+    Lattice(root_lines::Vector{BeamLine}; name = "lat") -> Lattice
+    Lattice(root_line::BeamLine; name = "lat") -> Lattice
 
-Returns a `Lat` containing branches for the expanded beamlines and branches for the lord elements.
+Returns a `Lattice` containing branches for the expanded beamlines and branches for the lord elements.
 
 ### Input
 
@@ -293,14 +293,14 @@ Returns a `Lat` containing branches for the expanded beamlines and branches for 
 
 ### Output
 
-- `Lat`      - `Lat` instance with expanded beamlines.
+- `Lattice`      - `Lattice` instance with expanded beamlines.
 
-""" Lat(root_line::BeamLine), Lat(root_lines::Vector{BeamLine})
+""" Lattice(root_line::BeamLine), Lattice(root_lines::Vector{BeamLine})
 
-Lat(root_line::BeamLine; name = "lat") = Lat([root_line], name = name)
+Lattice(root_line::BeamLine; name = "lat") = Lattice([root_line], name = name)
 
-function Lat(root_lines::Vector{BeamLine}; name::AbstractString = "lat") 
-  lat = Lat(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal(),
+function Lattice(root_lines::Vector{BeamLine}; name::AbstractString = "lat") 
+  lat = Lattice(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal(),
                                              :record_changes => false,
                                              :autobookkeeping => false,
                                              :parameters_have_changed => true

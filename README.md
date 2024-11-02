@@ -27,12 +27,12 @@ using AcceleratorLattice
 end
 
 aline= BeamLine([begin0, qf, d, b1])
-lat = Lat([aline])
+lat = Lattice([aline])
 ```
 The result is:
 ```
 julia> lat
-Lat: "lat"
+Lattice: "lat"
 Branch 1: "b1", geometry => OPEN                      L           s      s_downstream
       1  "begin0"             BeginningEle        0.000000    0.000000 ->    0.000000
       2  "qf"                 Quadrupole          0.600000    0.000000 ->    0.600000

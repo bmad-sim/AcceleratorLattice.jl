@@ -148,7 +148,7 @@ the end element must be of type \vn{Marker} (\sref{s:mark}).
 A \vn{lattice} (\sref{s:lattice.def}) is the root structure holding the information about a
 ``machine''. A machine may be as simple as a line of elements (like the elements of a Linac) or
 as complicated as an entire accelerator complex with multiple storage rings, Linacs, transfer
-lines, etc. All lattices are of type \vn{Lat}.
+lines, etc. All lattices are of type \vn{Lattice}.
 
 Essentially, a \vn{lattice}, has an array of \vn{branches} with each branch describing part of the
 machine. Branches can be interconnected to form a unified whole.
@@ -188,7 +188,7 @@ a bend:
   @ele b = Bend(L = 1.2, angle = 0.001)
 
   a_line = beamline("simple_line", [begin_ele, q, d, b])
-  lat = Lat("simple_lat", [a_line])
+  lat = Lattice("simple_lat", [a_line])
 \end{example}
 
 %---------------------------------------------------------------------------
@@ -202,7 +202,7 @@ obvious. Some differences to be aware of:
 the Julia language, is case sensitive.
 %
 With \bmad, the branch array within a lattice and the element array within a branch is
-indexed from zero. With \scibmad, indexing of \vn{Lat.branch[]} and \vn{branch.ele[]} is 
+indexed from zero. With \scibmad, indexing of \vn{Lattice.branch[]} and \vn{branch.ele[]} is 
 from one conforming to the Julia standard.
 %
 \item

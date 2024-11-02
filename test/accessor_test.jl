@@ -17,7 +17,7 @@ using AcceleratorLattice, Test
 bl = BeamLine
 ln3 = bl([beginning, d, b1, m1, d3], name = "ln3")
 
-lat = Lat(ln3, name = "honeybee")
+lat = Lattice(ln3, name = "honeybee")
 
 #---------------------------------------------------------------------------------------------------
 

@@ -15,11 +15,11 @@ This does not include tracking. Packages that implement tracking are listed in [
 
 ## Nomenclature
 
-- `Element`: Lattice elements are the basic building block for describing an accelerator. Lattice elements are structs that inherit from the abstract type `Lat`. Example element structs are `Quadrupole` and `RFCavity`.
+- `Element`: Lattice elements are the basic building block for describing an accelerator. Lattice elements are structs that inherit from the abstract type `Lattice`. Example element structs are `Quadrupole` and `RFCavity`.
 
 - `Branch`: A lattice branch is essentially an array of lattice elements. All branches are of type  `Branch`. Branches come in two types: There are "tracking" branches through which particles can be tracked and there are "lord" branches which hold a collection of "lord" elements which are elements can control the parameters of other elements but are not tracked through directly. 
 
-- `lattice`: A lattice is an array of branches. All lattices are of type `Lat`. Tracking branches can be connected together to form an entire accelerator complex. For example, a branch representing an injection line can be connected to a branch representing a storage ring and there can be multiple branches representing extraction lines connected to the storage ring branch.
+- `lattice`: A lattice is an array of branches. All lattices are of type `Lattice`. Tracking branches can be connected together to form an entire accelerator complex. For example, a branch representing an injection line can be connected to a branch representing a storage ring and there can be multiple branches representing extraction lines connected to the storage ring branch.
 
 ## Setup
 

@@ -4,7 +4,7 @@
 """
 """
 
-function Base.write(io::IO, lat::Lat)
+function Base.write(io::IO, lat::Lattice)
 end
 
 function Base.write(io::IO, branch::Branch)
