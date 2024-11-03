@@ -30,20 +30,7 @@ iteration region will never include any `super_lord` elements. but rather their 
   include_regionend::Bool = false
 end
 
-#---------------------------------------------------------------------------------------------------
-# Region
-
 Region(start_ele::Ele, end_ele::Ele) = Region(start_ele = start_ele, end_ele = end_ele)
-
-function Base.show(io::IO, er::Region)
-  print(f"""
-Region:
- start_ele: {ele_name(er.start_ele)}
- end_ele:   {ele_name(er.end_ele)}
- include_regionend: {er.include_regionend}""")
-end
-
-Base.show(io::IO, ::MIME"text/plain", er::Region) = Base.show(io::IO, er::Region)
 
 #---------------------------------------------------------------------------------------------------
 # Base.iterate(::Region)

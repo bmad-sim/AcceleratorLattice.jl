@@ -121,13 +121,13 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     else    # Not a lord branch
       if machine_ref_origin == Loc.UPSTREAM_END; s1 = ref_ele.s
       elseif machine_ref_origin == Loc.CENTER;   s1 = 0.5 * (ref_ele.s + ref_ele.s_downstream)
-      else;                                  s1 = ref_ele.s_downstream
+      else;                                      s1 = ref_ele.s_downstream
       end
     end
 
     if machine_ele_origin == Loc.UPSTREAM_END; s1 = s1 + offset
     elseif machine_ele_origin == Loc.CENTER;   s1 = s1 + offset - 0.5 * L_super
-    else;                                  s1 = s1 + offset - L_super
+    else;                                      s1 = s1 + offset - L_super
     end
 
     s2 = s1 + L_super
@@ -207,10 +207,8 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
 
     if all_drift
       ix_super = ele1.ix_ele
-      super_ele.ix_ele = ix_super
-      branch.ele[ix_super] = super_ele
+      super_ele = set!(branch, ix_super, super_ele)
       if n_ele > 1; deleatat!(branch.ele, ix_super+1:ix_super+n_ele-1); end
-      index_and_s_bookkeeper!(branch)
       if typeof(branch.ele[ix_super-1]) == Drift; set_drift_slice_names(branch.ele[ix_super-1]); end
       if typeof(branch.ele[ix_super+1]) == Drift; set_drift_slice_names(branch.ele[ix_super+1]); end
       continue 
@@ -218,20 +216,16 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
 
     # Here if a super_lord element needs to be constructed.
     sbranch = branch.lat.branch["super_lord"]
-    lord1 = copy(super_ele)
-    push!(sbranch.ele, lord1)
+    lord1 = push!(sbranch, super_ele)
     lord1.lord_status = Lord.SUPER
     lord1.pdict[:slaves] = Ele[]
-    index_and_s_bookkeeper!(sbranch)
 
     for ele in Region(ele1, ele2, false)
       if ele.L == 0; continue; end
       ix_ele = ele.ix_ele
 
       if typeof(ele) == Drift
-        branch.ele[ix_ele] = copy(super_ele)
-        ele2 = branch.ele[ix_ele]
-        ele2.ix_ele = ix_ele
+        ele2 = set!(branch, ix_ele, super_ele)
         ele2.slave_status = Slave.SUPER
         ele2.L = ele.L
         ele2.pdict[:super_lords] = Vector{Ele}([lord1])
@@ -239,11 +233,10 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
         set_drift_slice_names(ele)
 
       elseif ele.slave_status != Slave.SUPER
-        lord2 = ele
-        push!(sbranch.ele, lord2)
+        lord2 = push!(sbranch, ele)
         lord2.lord_status = Lord.SUPER
-        branch.ele[ix_ele] = UnionEle(name = "", L = ele.L, super_lords = Vector{Ele}([lord1]))
-        slave = branch.ele[ix_ele]
+
+        slave = set!(branch, ix_ele, UnionEle(name = "", L = ele.L, super_lords = Vector{Ele}([lord1])))
         slave.slave_status = Slave.SUPER
         lord2.pdict[:slaves] = Vector{Ele}([slave])
         push!(slave.pdict[:super_lords], lord2)
@@ -251,7 +244,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
 
       else  # Is super_slave and not Drift
         if typeof(ele) != UnionEle   # That is, has a single super_lord
-          branch.ele[ix_ele] = UnionEle(name = "", L = ele.L, super_lords = ele.super_lords)
+          set!(branch, ix_ele, UnionEle(name = "", L = ele.L, super_lords = ele.super_lords))
           old_lord = ele.super_lords[1]
           for (ix, slave) in enumerate(old_lord.slaves)
             if slave === ele; old_lord.slaves[ix] = branch.ele[ix_ele]; end
@@ -265,6 +258,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     end
 
     index_and_s_bookkeeper!(branch)
+
     for lord in sbranch.ele
       set_super_slave_names!(lord)
     end

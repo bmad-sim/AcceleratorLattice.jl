@@ -32,7 +32,13 @@ end
 
 #---------------------------------------------------------------------------------------------------
 # Base.isless
-# Used to sort output
+
+"""
+    Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterGroup, T2 <: EleParameterGroup} -> Bool
+    Base.isless(x::Type{T}, y::Type{U}) where {T <: Ele, U <: Ele} = isless(string(x), string(y)) -> Bool
+
+Used to sort output alphabetically by name.
+""" Base.isless
 
 function Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterGroup, T2 <: EleParameterGroup}
   return Symbol(a) < Symbol(b)

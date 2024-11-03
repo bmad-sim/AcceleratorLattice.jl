@@ -247,22 +247,26 @@ end
 # index_and_s_bookkeeper!(Branch)
 
 """
-    Internal: index_and_s_bookkeeper!(branch::Branch)
+    Internal: index_and_s_bookkeeper!(branch::Branch, ix_start = 1)
 
-Does "quick" element index and s-position bookkeeping for a given branch.
-Used by lattice manipulation routines that need reindexing but don't need a full bookkeeping.
+Does "quick" element index and s-position bookkeeping for a given branch starting
+at index `ix_start` to the end of `branch.ele`.
+
+Used by lattice manipulation routines that need reindexing but don't need (or want) a full bookkeeping.
 """ index_and_s_bookkeeper!
 
-function index_and_s_bookkeeper!(branch::Branch)
-  for (ix, ele) in enumerate(branch.ele)
-    ele.pdict[:ix_ele] = ix
-    ele.pdict[:branch] = branch
+function index_and_s_bookkeeper!(branch::Branch, ix_start = 1)
+  for ix in range(ix_start, length(branch.ele))
+    pdict = branch.ele[ix].pdict
+    pdict[:ix_ele] = ix
+    pdict[:branch] = branch
   end
 
   if branch.type <: LordBranch; return; end
-  s_now = branch.ele[1].s
 
-  for (ix, ele) in enumerate(branch.ele)
+  s_now = branch.ele[ix_start].s
+  for ix in range(ix_start, length(branch.ele))
+    ele = branch.ele[ix]
     set_param!(ele, :s, s_now)
     s_now = s_now + ele.L
     set_param!(ele, :s_downstream, s_now)
