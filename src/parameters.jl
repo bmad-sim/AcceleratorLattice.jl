@@ -59,39 +59,15 @@ ELE_PARAM_INFO_DICT = Dict(
   :slaves             => ParamInfo(Nothing,        Vector{Ele},   "Array of slaves of element. Will not be present if no slaves exist."),
   :amp_function       => ParamInfo(Nothing,        Function,      "Amplitude function."),
 
-  :offset             => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "[x, y, z] element offset.", "m"),
-  :x_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis element rotation.", "rad"),
-  :y_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-axis element rotation.", "rad"),
-  :tilt               => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Z-axis element rotation.", "rad"),
+  :offset             => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "[x, y, z] offset of element or, for a patch, exit coordinates.", "m"),
+  :x_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :y_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :tilt               => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Z-axis rotation of element or, for a patch, exit coordinates.", "rad"),
 
   :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m"),
   :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad"),
   :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad"),
   :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad"),
-
-  :type               => ParamInfo(StringGroup,    String,        "Type of element. Set by User and ignored the code."),
-  :alias              => ParamInfo(StringGroup,    String,        "Alias name. Set by User and ignored by the code."),
-  :description        => ParamInfo(StringGroup,    String,        "Descriptive info. Set by User and ignored by the code."),
-
-  :L                  => ParamInfo(LengthGroup,    Number,        "Element length.", "m"),
-  :orientation        => ParamInfo(LengthGroup,    Int,           "Longitudinal orientation of element. May be +1 or -1."),
-  :s                  => ParamInfo(LengthGroup,    Number,        "Longitudinal s-position at the upstream end.", "m"),
-  :s_downstream       => ParamInfo(LengthGroup,    Number,        "Longitudinal s-position at the downstream end.", "m"),
-
-  :is_on              => ParamInfo(MasterGroup,    Bool,          "Element fields on/off."),
-  :field_master       => ParamInfo(MasterGroup,    Bool,          "True: fields are fixed and normalized values change when varying ref energy."),
-  :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup, Bool, "True: If element is a multipass lord, ref energy is set in lord."),
-
-  :species_ref          => ParamInfo(ReferenceGroup, Species,     "Reference species."),
-  :species_ref_exit     => ParamInfo(ReferenceGroup, Species,     "Reference species at exit end."),
-  :pc_ref               => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c.", "eV"),
-  :E_tot_ref            => ParamInfo(ReferenceGroup, Number,      "Reference total energy.", "eV"),
-  :time_ref             => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
-  :pc_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c at downstream end.", "eV"),
-  :E_tot_ref_downstream => ParamInfo(ReferenceGroup, Number,      "Reference total energy at downstream end.", "eV"),
-  :time_ref_downstream  => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
-  :β_ref                => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c."),
-  :β_ref_downstream     => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c at downstream end."),
 
   :angle              => ParamInfo(BendGroup,      Number,        "Design bend angle", "rad"),
   :bend_field         => ParamInfo(BendGroup,      Number,        "Design bend field corresponding to g bending strength", "T"),
@@ -116,6 +92,34 @@ ELE_PARAM_INFO_DICT = Dict(
   :bend_type          => ParamInfo(BendGroup,      BendType.T,    "Sets the \"logical\" shape of a bend."),
   :fiducial_pt        => ParamInfo(BendGroup,      FiducialPt.T,  "Fiducial point used with variation of bend parameters."),
   :exact_multipoles   => ParamInfo(BendGroup,      ExactMultipoles.T, "Are multipoles treated exactly?"),
+
+  :to_line            => ParamInfo(ForkGroup,      Union{BeamLine, Nothing}, "Beamline forked to."),
+  :to_ele             => ParamInfo(ForkGroup,      String,                   "Lattice element forked to."),
+  :direction          => ParamInfo(ForkGroup,      Int,                      "Direction (forwards or backwards) of injection."),
+  :new_branch         => ParamInfo(ForkGroup,      Bool,                     "Fork to new or existing branch?"),
+
+  :L                  => ParamInfo(LengthGroup,    Number,        "Element length.", "m"),
+  :orientation        => ParamInfo(LengthGroup,    Int,           "Longitudinal orientation of element. May be +1 or -1."),
+  :s                  => ParamInfo(LengthGroup,    Number,        "Longitudinal s-position at the upstream end.", "m"),
+  :s_downstream       => ParamInfo(LengthGroup,    Number,        "Longitudinal s-position at the downstream end.", "m"),
+
+  :slave_status       => ParamInfo(LordSlaveStatusGroup,    Slave.T,        "Slave status."),
+  :lord_status        => ParamInfo(LordSlaveStatusGroup,    Lord.T,         "Lord status."),
+
+  :is_on              => ParamInfo(MasterGroup,    Bool,          "Element fields on/off."),
+  :field_master       => ParamInfo(MasterGroup,    Bool,          "True: fields are fixed and normalized values change when varying ref energy."),
+  :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup, Bool, "True: If element is a multipass lord, ref energy is set in lord."),
+
+  :species_ref          => ParamInfo(ReferenceGroup, Species,     "Reference species."),
+  :species_ref_exit     => ParamInfo(ReferenceGroup, Species,     "Reference species at exit end."),
+  :pc_ref               => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c.", "eV"),
+  :E_tot_ref            => ParamInfo(ReferenceGroup, Number,      "Reference total energy.", "eV"),
+  :time_ref             => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
+  :pc_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c at downstream end.", "eV"),
+  :E_tot_ref_downstream => ParamInfo(ReferenceGroup, Number,      "Reference total energy at downstream end.", "eV"),
+  :time_ref_downstream  => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
+  :β_ref                => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c."),
+  :β_ref_downstream     => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c at downstream end."),
 
   :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
   :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
@@ -168,11 +172,12 @@ ELE_PARAM_INFO_DICT = Dict(
   :Ksol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid strength.", "1/m"),
   :Bsol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid field.", "T"),
 
-  :slave_status       => ParamInfo(LordSlaveStatusGroup,    Slave.T,        "Slave status."),
-  :lord_status        => ParamInfo(LordSlaveStatusGroup,    Lord.T,         "Lord status."),
-
   :spin               => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle spin"),
   :orbit              => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle position."),
+
+  :type               => ParamInfo(StringGroup,    String,        "Type of element. Set by User and ignored the code."),
+  :alias              => ParamInfo(StringGroup,    String,        "Alias name. Set by User and ignored by the code."),
+  :description        => ParamInfo(StringGroup,    String,        "Descriptive info. Set by User and ignored by the code."),
 
   :beta               => ParamInfo(Twiss1,      Number,             "Beta Twiss parameter.", "m"),
   :alpha              => ParamInfo(Twiss1,      Number,             "Alpha Twiss parameter.", ""),
@@ -282,14 +287,16 @@ end
 #---------------------------------------------------------------------------------------------------
 # description
 
-function description(key)
-  param_info = ele_param_info(key)
+"""
+    description(param::Symbol) -> String
+
+Return description string for lattice element parameter `param`.
+""" description
+
+function description(param)
+  param_info = ele_param_info(param)
   if isnothing(param_info); return "???"; end
   return param_info.description
-end
-
-function description(key, eletype::Type{T}) where T <: Ele
-  return description(key)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -540,7 +547,7 @@ general_group_list = [base_group_list..., alignment_group_list..., multipole_gro
 
 PARAM_GROUPS_LIST = Dict(  
     ACKicker            => [base_group_list..., alignment_group_list..., bmultipole_group_list...],
-    BeamBeam            => [base_group_list...],
+    BeamBeam            => [base_group_list..., BeamBeamGroup],
     BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
     Bend                => [general_group_list..., BendGroup],
     Collimator          => [base_group_list...],
@@ -551,8 +558,8 @@ PARAM_GROUPS_LIST = Dict(
     Fiducial            => [base_group_list...],
     FloorShift          => [base_group_list...],
     Foil                => [base_group_list...],
-    Fork                => [base_group_list...],
-    Girder              => [base_group_list...],
+    Fork                => [base_group_list..., ForkGroup],
+    Girder              => [base_group_list..., GirderGroup],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
     LCavity             => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFGroup],
@@ -577,6 +584,7 @@ PARAM_GROUPS_LIST = Dict(
 ELE_PARAM_GROUP_INFO = Dict(
   AlignmentGroup        => EleParameterGroupInfo("Element position/orientation shift.", false),
   ApertureGroup         => EleParameterGroupInfo("Vacuum chamber aperture.", false),
+  BeamBeamGroup         => EleParameterGroupInfo("BeamBeam element parameters", false),
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
   BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleGroup`", false),
@@ -584,6 +592,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
   EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Substructure contained in `EMultipoleGroup`.", false),
   FloorPositionGroup    => EleParameterGroupInfo("Global floor position and orientation.", true),
+  ForkGroup             => EleParameterGroupInfo("Fork element parameters", false),
   GirderGroup           => EleParameterGroupInfo("Girder parameters.", false),
   InitParticleGroup     => EleParameterGroupInfo("Initial particle position and spin.", false),
   TwissGroup            => EleParameterGroupInfo("Initial Twiss and coupling parameters.", false),

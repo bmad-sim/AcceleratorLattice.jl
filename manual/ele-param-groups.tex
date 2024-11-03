@@ -18,9 +18,10 @@ The parmeter groups are:
  BendGroup           & \sref{s:bend.g}           & RFAutoGroup         & \sref{s:rfauto.g}     \\
  EMultipoleGroup     & \sref{s:emultipole.g}     & ReferenceGroup      & \sref{s:reference.g}  \\
  FloorPositionGroup  & \sref{s:floor.pos.g}      & SolenoidGroup       & \sref{s:solenoid.g}   \\
- GirderGroup         & \sref{s:girder.g}         & StringGroup         & \sref{s:string.g}     \\
- InitParticleGroup   & \sref{s:init.particle.g}  & TrackingGroup       & \sref{s:tracking.g}   \\
- LengthGroup         & \sref{s:length.g}         & TwissGroup          & \sref{s:twiss.g}      \\ 
+ ForkGroup           & \sref{s:fork.g}           & StringGroup         & \sref{s:string.g}     \\
+ GirderGroup         & \sref{s:girder.g}         & TrackingGroup       & \sref{s:tracking.g}   \\
+ InitParticleGroup   & \sref{s:init.particle.g}  & TwissGroup          & \sref{s:twiss.g}      \\
+ LengthGroup         & \sref{s:length.g}         &                     &                       \\
   \bottomrule
 \end{tabular}
 } 
@@ -720,6 +721,10 @@ system. The components of this struct are:
 • r::Vector              - [x,y,z] position. 
 • q::Quat                - Quaternion orientation. 
 \end{example}
+
+%---------------------------------------------------------------------------------------------------
+\section{ForkGroup}
+\label{s:fork.g}
 
 %---------------------------------------------------------------------------------------------------
 \section{GirderGroup}

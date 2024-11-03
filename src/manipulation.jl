@@ -57,10 +57,10 @@ function Base.copy(ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Base.insert!(branch::Branch, ...)
+# Base.insert!(branch, ix_ele, ele)
 
 """ 
-    Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
+    Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true) -> ::Ele
 
 Insert an element `ele` at index `ix_ele` in branch `branch`.
 All elements with indexes of `ix_ele` and higher are pushed one element down the array.
@@ -70,12 +70,13 @@ Inserted is a (shallow) copy of `ele` and this copy is returned.
  - `adjust_orientation`  If `true`, and the `branch.type` is a `TrackingBranch`, the orientation 
 parameter of `ele` is adjusted to match the neighboring elements.
 
+No bookkeeping is done by this routine. See also set!, push!, and pop!
 """ Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
 
 function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
   ele = copy(ele)
   insert!(branch.ele, ix_ele, ele)
-  index_and_s_bookkeeper!(branch)
+  index_and_s_bookkeeper!(branch, ix_ele)
 
   if adjust_orientation && branch.type == TrackingBranch && length(branch.ele) > 1
     if ix_ele == 1
@@ -89,7 +90,86 @@ function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation 
 end
 
 #---------------------------------------------------------------------------------------------------
-# split!
+# set!(branch, ix_ele, ele)
+
+""" 
+    set!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true) -> ::Ele
+
+Insert an element `ele` at index `ix_ele` in branch `branch`.
+Inserted is a (shallow) copy of `ele` and this copy is returned.
+
+ - `adjust_orientation`  If `true`, and the `branch.type` is a `TrackingBranch`, the orientation 
+parameter of `ele` is adjusted to match the neighboring elements.
+
+No bookkeeping is done by this routine. See also pop!, push!, and insert!
+""" set!(branch::Branch, ix_ele::Int, ele::Ele)
+
+function set!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
+  ele = copy(ele)
+  branch.ele[ix_ele] = ele
+  index_and_s_bookkeeper!(branch, ix_ele)
+
+  if adjust_orientation && branch.type == TrackingBranch && length(branch.ele) > 1
+    if ix_ele == 1
+      ele.pdict[:LengthGroup].orientation = branch.ele[2].orientation
+    else
+      ele.pdict[:LengthGroup].orientation = branch.ele[ele.ix_ele-1].orientation
+    end
+  end
+
+  return ele
+end
+
+#---------------------------------------------------------------------------------------------------
+# Base.pop!(branch, ix_ele, ele)
+
+""" 
+    Base.pop!(branch::Branch, ix_ele::Int) -> ::Nothing
+
+Remove the element with index `ix_ele` in `branch.ele[]`.
+
+No bookkeeping is done by this routine. See also set!, push!, and insert!
+""" Base.pop!(branch::Branch, ix_ele::Int, ele::Ele)
+
+function Base.pop!(branch::Branch, ix_ele::Int)
+  pop!(branch.ele, ix_ele)
+  index_and_s_bookkeeper!(branch, ix_ele)
+
+  return nothing
+end
+
+#---------------------------------------------------------------------------------------------------
+# Base.push!(branch, ele)
+
+""" 
+    Base.push!(branch::Branch, ele::Ele; adjust_orientation = true) -> ::Ele
+
+Insert an element `ele` at end of branch `branch`.
+
+Inserted is a (shallow) copy of `ele` and this copy is returned.
+
+ - `adjust_orientation`  If `true`, and the `branch.type` is a `TrackingBranch`, the orientation 
+parameter of `ele` is adjusted to match the neighboring elements.
+
+No bookkeeping is done by this routine. See also set!, pop!, and insert!
+""" Base.push!(branch::Branch)
+
+function Base.push!(branch::Branch, ele::Ele; adjust_orientation = true)
+  ele = copy(ele)
+  push!(branch.ele, ele)
+  ix_ele = length(branch.ele)
+  index_and_s_bookkeeper!(branch, ix_ele)
+
+  if adjust_orientation && branch.type == TrackingBranch && ix_ele > 1
+    ele.pdict[:LengthGroup].orientation = branch.ele[ele.ix_ele-1].orientation
+  end
+
+  return ele
+end
+
+
+#---------------------------------------------------------------------------------------------------
+# split!(branch, s_split)
 
 """
     split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREAM, ele_near::Ele = NULL_ELE)

@@ -18,7 +18,7 @@ end;
 ln1 = BeamLine([beginning, d1, d2, d1, m1, d3]);
 lat = Lattice([ln1])
 
-#superimpose!(zs2, eles(lat, "d1"), offset = 0.2)
+superimpose!(zs2, eles(lat, "d1"), offset = 0.2)
 
 #---------------------------------------------------------------------------------------------------
 

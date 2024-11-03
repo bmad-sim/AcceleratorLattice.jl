@@ -759,6 +759,20 @@ $(info(etype, output_str = true))
 end
 
 #---------------------------------------------------------------------------------------------------
+# show(::Region)
+
+
+function Base.show(io::IO, er::Region)
+  print(f"""
+Region:
+ start_ele: {ele_name(er.start_ele)}
+ end_ele:   {ele_name(er.end_ele)}
+ include_regionend: {er.include_regionend}""")
+end
+
+Base.show(io::IO, ::MIME"text/plain", er::Region) = Base.show(io::IO, er::Region)
+
+#---------------------------------------------------------------------------------------------------
 # show_changed
 
 """

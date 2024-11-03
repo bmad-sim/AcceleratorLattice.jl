@@ -202,6 +202,55 @@ NullEle lattice element type used to indicate the absence of any valid element.
 const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL_ELE"))
 
 #---------------------------------------------------------------------------------------------------
+# BeamLineEle
+
+"""
+    mutable struct BeamLineEle <: BeamLineItem
+
+An item in a `BeamLine.line[]` array that represents a lattice element.
+
+## Fields
+• `ele::Ele` \\
+• `pdict::Dict{Symbol,Any}` \\
+
+Essentially, `BeamLineEle` is an `Ele` along with some extra information stored in the `pdict` Dict
+component. The extra information is the element's orientation and multipass state.
+
+Note: All instances a given Ele in beamlines are identical so that the User can easily 
+make a Change to all. When the lattice is expanded, deepcopyies of Eles will be done.
+"""
+mutable struct BeamLineEle <: BeamLineItem
+  ele::Ele
+  pdict::Dict{Symbol,Any}
+end
+
+#---------------------------------------------------------------------------------------------------
+# BeamLine
+
+"""
+    mutable struct BeamLine <: BeamLineItem
+
+Structure holding a beamline.
+
+## Fields
+
+• `id::String`                  - ID stringused for multipass bookkeeping. \\
+• `line::Vector{BeamLineItem}`  - Vector of beam line components. \\
+• `pdict::Dict{Symbol,Any}`     - Extra information. See below. \\
+
+Standard components of `pdict` are:
+• `name`          - String to be used for naming the lattice branch if this is a root branch. \\
+• `orientation`   - +1 or -1. \\
+• `geometry`      - `OPEN` or `CLOSED`. \\
+• `multipass`     - `true` or `false`. \\
+"""
+mutable struct BeamLine <: BeamLineItem
+  id::String
+  line::Vector{BeamLineItem}
+  pdict::Dict{Symbol,Any}
+end
+
+#---------------------------------------------------------------------------------------------------
 # EleParameterGroupInfo
 
 """
@@ -242,6 +291,155 @@ method. To see what parameter groups are contained in a Example:
 abstract type BaseEleParameterGroup end
 abstract type EleParameterGroup <: BaseEleParameterGroup end
 abstract type EleParameterSubGroup <: BaseEleParameterGroup end
+
+#---------------------------------------------------------------------------------------------------
+# BMultipole1 subgroup
+
+"""
+    mutable struct BMultipole1 <: EleParameterSubGroup
+
+Single magnetic multipole of a given order.
+Used by `BMultipoleGroup`.
+
+## Fields
+
+• `Kn::Number`                 - Normal normalized component. EG: `"Kn2"`, `"Kn2L"`. \\
+• `Ks::Number`                 - Skew multipole component. EG: `"Ks2"`, `"Ks2L"`.  \\
+• `Bn::Number`                 - Normal field component. \\ 
+• `Bs::Number`                 - Skew field component. \\
+• `tilt::Number`               - Rotation of multipole around `z`-axis. \\
+• `order::Int`                 - Multipole order. \\
+• `integrated::Union{Bool,Nothing}` - Integrated or not? 
+  Also determines what stays constant with length changes. \\
+"""
+@kwdef mutable struct BMultipole1 <: EleParameterSubGroup  # A single multipole
+  Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
+  Ks::Number = 0.0                 # EG: "Ks2", "Ks2L"
+  Bn::Number = 0.0
+  Bs::Number = 0.0  
+  tilt::Number = 0.0
+  order::Int   = -1                # Multipole order
+  integrated::Union{Bool,Nothing} = nothing  # Also determines what stays constant with length changes.
+end
+
+#---------------------------------------------------------------------------------------------------
+# Dispersion subgroup
+
+"""
+Dispersion parameters for a single axis.
+
+""" Dispersion1
+
+@kwdef mutable struct Dispersion1 <: EleParameterSubGroup
+  eta::Number = 0           # Position dispersion.
+  etap::Number = 0          # Momentum dispersion.
+  deta_ds::Number = 0       # Dispersion derivative.
+end
+
+#---------------------------------------------------------------------------------------------------
+# EMultipole1
+
+"""
+    mutable struct EMultipole1 <: EleParameterSubGroup
+
+Single electric multipole of a given order.
+Used by `EMultipoleGroup`.
+
+## Fields
+
+• `En::Number`                  - Normal field component. EG: "En2", "En2L" \\
+• `Es::Number`                  - Skew fieldEG component. EG: "Es2", "Es2L" \\
+• `Etilt::Number`               - Rotation of multipole around `z`-axis. \\
+• `order::Int`                  - Multipole order. \\
+• `Eintegrated::Bool`           - Integrated field or not?. 
+  Also determines what stays constant with length changes. \\
+""" EMultipole1
+
+@kwdef mutable struct EMultipole1 <: EleParameterSubGroup
+  En::Number = 0.0                    # EG: "En2", "En2L"
+  Es::Number = 0.0                    # EG: "Es2", "Es2L"
+  Etilt::Number = 0.0
+  order::Int = -1 
+  Eintegrated::Union{Bool,Nothing} = nothing
+end
+
+#---------------------------------------------------------------------------------------------------
+# Twiss subgroup.
+
+@kwdef mutable struct Twiss <: EleParameterSubGroup
+  beta_a::Number = 0
+  alpha_a::Number = 0
+  beta_b::Number = 0
+  alpha_b::Number = 0
+end
+
+#---------------------------------------------------------------------------------------------------
+# Twiss1 subgroup
+
+"""
+    mutable struct Twiss1 <: EleParameterSubGroup
+
+Twiss parameters for a single mode.
+
+""" Twiss1
+
+@kwdef mutable struct Twiss1 <: EleParameterSubGroup
+  beta::Number = 0          # Beta Twiss
+  alpha::Number = 0         # Alpha Twiss
+  gamma::Number = 0         # Gamma Twiss
+  phi::Number = 0           # Phase
+  eta::Number = 0           # Position dispersion.
+  etap::Number = 0          # Momentum dispersion.
+  deta_ds::Number = 0       # Dispersion derivative.
+end
+
+#---------------------------------------------------------------------------------------------------
+# Vertex1 subgroup
+
+"""
+  struct Vertex1 <: EleParameterSubGroup
+
+Single vertex. An array of vertices can be used to construct an aperture.
+If `radius_x`, and `radius_y` )and possibly `tilt`) are set, this specifies the shape of the elliptical arc
+of the chamber wall from the vertex point to the next vertex point. 
+If not set, the chamber wall from the vertex to the next vertex is a straight line.
+
+## Fields
+• `r0::Vector{Number}`     - (x, y) coordinate of vertex point.
+• `radius_x::Number`      - Horizontal ellipse radius.
+• `radius_y::Number`      - Vertical ellipse radius.
+• `tilt::Number`          - Tilt of ellipse.
+""" Vertex1
+
+@kwdef mutable struct Vertex1 <: EleParameterSubGroup
+  r0::Vector{Number} = [NaN, NaN]
+  radius_x::Number = NaN
+  radius_y::Number = NaN
+  tilt::Number = NaN
+end
+
+Vertex1(r0::Vector{Number}, rx::Number = NaN, ry::Number = NaN) = 
+                                 Vertex1(r0 = r0, radius_x = rx, radius_y = ry, NaN)
+
+#---------------------------------------------------------------------------------------------------
+# WallSection subgroup
+
+"""
+    mutable struct WallSection <: EleParameterSubGroup
+
+Vacuum chamber wall cross-section.
+
+## Fields
+• `vertex::Vector{Vertex1}` - Array of vertices. \\
+• `r0::Vector{Number}`      - Origin point. \\
+""" WallSection
+
+@kwdef mutable struct WallSection <: EleParameterSubGroup
+  vertex::Vector{Vertex1} = Vector{Vertex1}()
+  r0::Vector{Number} = [0.0, 0.0]
+end
+
+WallSection(v::Vector{Vertex1}) = WallSection(v, [0.0, 0.0])
 
 #---------------------------------------------------------------------------------------------------
 # AlignmentGroup
@@ -286,55 +484,6 @@ the corresponding `_tot` fields.
 end
 
 #---------------------------------------------------------------------------------------------------
-# Vertex1
-
-"""
-  struct Vertex1 <: EleParameterSubGroup
-
-Single vertex. An array of vertices can be used to construct an aperture.
-If `radius_x`, and `radius_y` )and possibly `tilt`) are set, this specifies the shape of the elliptical arc
-of the chamber wall from the vertex point to the next vertex point. 
-If not set, the chamber wall from the vertex to the next vertex is a straight line.
-
-## Fields
-• `r0::Vector{Number}`     - (x, y) coordinate of vertex point.
-• `radius_x::Number`      - Horizontal ellipse radius.
-• `radius_y::Number`      - Vertical ellipse radius.
-• `tilt::Number`          - Tilt of ellipse.
-""" Vertex1
-
-@kwdef mutable struct Vertex1 <: EleParameterSubGroup
-  r0::Vector{Number} = [NaN, NaN]
-  radius_x::Number = NaN
-  radius_y::Number = NaN
-  tilt::Number = NaN
-end
-
-Vertex1(r0::Vector{Number}, rx::Number = NaN, ry::Number = NaN) = 
-                                 Vertex1(r0 = r0, radius_x = rx, radius_y = ry, NaN)
-
-
-#---------------------------------------------------------------------------------------------------
-# WallSection
-
-"""
-    mutable struct WallSection <: EleParameterSubGroup
-
-Vacuum chamber wall cross-section.
-
-## Fields
-• `vertex::Vector{Vertex1}` - Array of vertices. \\
-• `r0::Vector{Number}`      - Origin point. \\
-""" WallSection
-
-@kwdef mutable struct WallSection <: EleParameterSubGroup
-  vertex::Vector{Vertex1} = Vector{Vertex1}()
-  r0::Vector{Number} = [0.0, 0.0]
-end
-
-WallSection(v::Vector{Vertex1}) = WallSection(v, [0.0, 0.0])
-
-#---------------------------------------------------------------------------------------------------
 # ApertureGroup
 
 """
@@ -371,14 +520,6 @@ end
     struct BeamBeamGroup
 
 """ BeamBeamGroup
-
-@kwdef mutable struct Twiss <: EleParameterSubGroup
-  beta_a::Number = 0
-  alpha_a::Number = 0
-  beta_b::Number = 0
-  alpha_b::Number = 0
-end
-
 
 @kwdef mutable struct BeamBeamGroup <: EleParameterGroup
   n_slice::Number = 1
@@ -457,36 +598,6 @@ determined by the `field_master` setting in the MasterGroup struct.
 end
 
 #---------------------------------------------------------------------------------------------------
-# BMultipole1
-
-"""
-    mutable struct BMultipole1 <: EleParameterSubGroup
-
-Single magnetic multipole of a given order.
-Used by `BMultipoleGroup`.
-
-## Fields
-
-• `Kn::Number`                 - Normal normalized component. EG: `"Kn2"`, `"Kn2L"`. \\
-• `Ks::Number`                 - Skew multipole component. EG: `"Ks2"`, `"Ks2L"`.  \\
-• `Bn::Number`                 - Normal field component. \\ 
-• `Bs::Number`                 - Skew field component. \\
-• `tilt::Number`               - Rotation of multipole around `z`-axis. \\
-• `order::Int`                 - Multipole order. \\
-• `integrated::Union{Bool,Nothing}` - Integrated or not? 
-  Also determines what stays constant with length changes. \\
-"""
-@kwdef mutable struct BMultipole1 <: EleParameterSubGroup  # A single multipole
-  Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
-  Ks::Number = 0.0                 # EG: "Ks2", "Ks2L"
-  Bn::Number = 0.0
-  Bs::Number = 0.0  
-  tilt::Number = 0.0
-  order::Int   = -1                # Multipole order
-  integrated::Union{Bool,Nothing} = nothing  # Also determines what stays constant with length changes.
-end
-
-#---------------------------------------------------------------------------------------------------
 # BMultipoleGroup
 
 """
@@ -503,30 +614,14 @@ Vector of magnetic multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
-# EMultipole1
+# ChamberWallGroup
 
 """
-    mutable struct EMultipole1 <: EleParameterSubGroup
+    mutable struct ChamberWallGroup <: EleParameterGroup
 
-Single electric multipole of a given order.
-Used by `EMultipoleGroup`.
-
-## Fields
-
-• `En::Number`                  - Normal field component. EG: "En2", "En2L" \\
-• `Es::Number`                  - Skew fieldEG component. EG: "Es2", "Es2L" \\
-• `Etilt::Number`               - Rotation of multipole around `z`-axis. \\
-• `order::Int`                  - Multipole order. \\
-• `Eintegrated::Bool`           - Integrated field or not?. 
-  Also determines what stays constant with length changes. \\
-""" EMultipole1
-
-@kwdef mutable struct EMultipole1 <: EleParameterSubGroup
-  En::Number = 0.0                    # EG: "En2", "En2L"
-  Es::Number = 0.0                    # EG: "Es2", "Es2L"
-  Etilt::Number = 0.0
-  order::Int = -1 
-  Eintegrated::Union{Bool,Nothing} = nothing
+Vacuum chamber wall.
+"""
+@kwdef mutable struct ChamberWallGroup <: EleParameterGroup
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -565,6 +660,26 @@ ignoring misalignments.
 end
 
 #---------------------------------------------------------------------------------------------------
+# ForkGroup
+
+"""
+    mutable struct ForkGroup <: EleParameterGroup
+
+Fork element parameters.
+
+## Fields
+• 
+
+""" ForkGroup
+
+@kwdef mutable struct ForkGroup <: EleParameterGroup
+  to_line::Union{BeamLine, Nothing} = nothing
+  to_ele::String = ""
+  direction::Int = +1
+  new_branch::Bool = true
+end
+
+#---------------------------------------------------------------------------------------------------
 # GirderGroup
 
 """
@@ -578,8 +693,8 @@ Girder parameters.
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
 • `dr::Vector`                - `[x, y, z]` offset. \\
 • `dq::Quat`                   - Quaternion orientation. \\
+""" GirderGroup
 
-"""
 @kwdef mutable struct GirderGroup <: EleParameterGroup
   eles::Vector{Ele} = Ele[]
   origin_ele::Ele = NullEle
@@ -854,46 +969,10 @@ Sets the nominal values for tracking prameters.
   ds_step::Number = NaN
 end
 
-"""
-Vacuum chamber wall.
-"""
-@kwdef mutable struct ChamberWallGroup <: EleParameterGroup
-end
+
 
 #---------------------------------------------------------------------------------------------------
 # TwissGroup
-
-"""
-    mutable struct Twiss1 <: EleParameterSubGroup
-
-Twiss parameters for a single mode.
-
-""" Twiss1
-
-@kwdef mutable struct Twiss1 <: EleParameterSubGroup
-  beta::Number = 0          # Beta Twiss
-  alpha::Number = 0         # Alpha Twiss
-  gamma::Number = 0         # Gamma Twiss
-  phi::Number = 0           # Phase
-  eta::Number = 0           # Position dispersion.
-  etap::Number = 0          # Momentum dispersion.
-  deta_ds::Number = 0       # Dispersion derivative.
-end
-
-#-----------------
-
-"""
-Dispersion parameters for a single axis.
-
-""" Dispersion1
-
-@kwdef mutable struct Dispersion1 <: EleParameterSubGroup
-  eta::Number = 0           # Position dispersion.
-  etap::Number = 0          # Momentum dispersion.
-  deta_ds::Number = 0       # Dispersion derivative.
-end
-
-#-----------------
 
 """
 Twiss parameters
@@ -1027,51 +1106,3 @@ mutable struct Lattice <: AbstractLattice
   pdict::Dict{Symbol,Any}
 end
 
-#---------------------------------------------------------------------------------------------------
-# BeamLineEle
-
-"""
-    mutable struct BeamLineEle <: BeamLineItem
-
-An item in a `BeamLine.line[]` array that represents a lattice element.
-
-## Fields
-• `ele::Ele` \\
-• `pdict::Dict{Symbol,Any}` \\
-
-Essentially, `BeamLineEle` is an `Ele` along with some extra information stored in the `pdict` Dict
-component. The extra information is the element's orientation and multipass state.
-
-Note: All instances a given Ele in beamlines are identical so that the User can easily 
-make a Change to all. When the lattice is expanded, deepcopyies of Eles will be done.
-"""
-mutable struct BeamLineEle <: BeamLineItem
-  ele::Ele
-  pdict::Dict{Symbol,Any}
-end
-
-#---------------------------------------------------------------------------------------------------
-# BeamLine
-
-"""
-    mutable struct BeamLine <: BeamLineItem
-
-Structure holding a beamline.
-
-## Fields
-
-• `id::String`                  - ID stringused for multipass bookkeeping. \\
-• `line::Vector{BeamLineItem}`  - Vector of beam line components. \\
-• `pdict::Dict{Symbol,Any}`     - Extra information. See below. \\
-
-Standard components of `pdict` are:
-• `name`          - String to be used for naming the lattice branch if this is a root branch. \\
-• `orientation`   - +1 or -1. \\
-• `geometry`      - `OPEN` or `CLOSED`. \\
-• `multipass`     - `true` or `false`. \\
-"""
-mutable struct BeamLine <: BeamLineItem
-  id::String
-  line::Vector{BeamLineItem}
-  pdict::Dict{Symbol,Any}
-end
