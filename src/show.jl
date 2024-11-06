@@ -360,10 +360,9 @@ function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool; indent =
   println(io, f"{off_str}EMultipoleGroup:")
   println(io, f"{off_str}  Order Eintegrated{lpad(\"Etilt (rad)\",23)}")
   for v in group.vec
-    ol = f"{v.order}"
-    if !isnothing(v.Eintegrated) && v.Eintegrated; ol = ol * "L"; end
-    ue = units(Symbol(f"En{ol}"))
-    println(io, f"{off_str}{lpad(v.order,7)}{lpad(v.Eintegrated,11)}{lpad(v.Etilt,24)}{lpad(v.En,24)}  En{ol}{lpad(v.Es,24)}  Es{ol} ({ue})")
+    !isnothing(v.Eintegrated) && v.Eintegrated ? ol = "$(v.order)L" : ol = "$(v.order) "
+    ue = units(Symbol("En$(ol)"))
+    println(io, f"{off_str}{lpad(v.order,7)}{lpad(v.Eintegrated,11)}{lpad(v.Etilt,24)}{lpad(v.En,24)} En{ol}{lpad(v.Es,24)} Es{ol} ({ue})")
   end
 end
 

@@ -33,11 +33,6 @@ function bookkeeper!(lat::Lattice)
   if !lat.parameters_have_changed; return; end
   lat.parameters_have_changed = false
 
-  # Lord bookkeeping at the start involves transferring changes in the lords to the slaves.
-
-  start_multipass_bookkeeper!(lat)
-  start_superimpose_bookkeeper!(lat)
-
   # Tracking branch bookkeeping
 
   for (ix, branch) in enumerate(lat.branch)
@@ -45,12 +40,6 @@ function bookkeeper!(lat::Lattice)
     branch.pdict[:ix_branch] = ix
     bookkeeper!(branch)
   end
-
-  # Lord bookkeeping at the end involves making sure that shifts in the reference energy
-  # which have filtered up from the slaves to the lords is handled.
-
-  end_multipass_bookkeeper!(lat)
-  end_superimpose_bookkeeper!(lat)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -62,9 +51,7 @@ end
 Check that it is valid to have varied element parameters.
 For example, parameters of a super slave element cannot be directly changed.
 Or dependent parameters cannot be directly changed.
-"""
-
-
+""" check_if_settable
 
 function check_if_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothing})
   branch = lat_branch(ele)
@@ -81,22 +68,6 @@ function check_if_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothin
   if sym in DEPENDENT_ELE_PARAMETERS
     error("Parameter is not user settable: $sym. For element: $(ele_name(ele)).")
   end
-end
-
-#---------------------------------------------------------------------------------------------------
-# start_multipass_bookkeeper!(lat)
-
-"""
-    Internal: start_multipass_bookkeeper!(lat)
-
-Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lattice)`
-""" start_multipass_bookkeeper!
-
-function start_multipass_bookkeeper!(lat)
-  mbranch = lat_branch(lat, MultipassLordBranch)
-  for lord in mbranch.ele
-
-  end 
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -136,49 +107,13 @@ function end_multipass_bookkeeper!(lat)
 end
 
 #---------------------------------------------------------------------------------------------------
-# start_superimpose_bookkeeper!(lat)
-
-"""
-    Internal: start_superimpose_bookkeeper!(lat)
-
-Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lattice)`
-""" start_superimpose_bookkeeper!
-
-function start_superimpose_bookkeeper!(lat)
-  sbranch = lat_branch(lat, SuperLordBranch)
-  for lord in sbranch.ele
-
-  end 
-end
-
-#---------------------------------------------------------------------------------------------------
-# end_superimpose_bookkeeper!(lat)
-
-"""
-    Internal: end_superimpose_bookkeeper!(lat)
-
-Bookkeeper to handle changes in super lord elements. Used by `bookkeeper!(::Lattice)`
-""" end_superimpose_bookkeeper!
-
-function end_superimpose_bookkeeper!(lat)
-  autob = lat.autobookkeeping
-  lat.autobookkeeping = false
-  sbranch = lat_branch(lat, SuperLordBranch)
-  for lord in sbranch.ele
-    lord.pdict[:LengthGroup].s = lord.slaves[1].s
-    lord.pdict[:LengthGroup].s_downstream = lord.slaves[end].s_downstream
-  end
-  lat.autobookkeeping = autob
-end
-
-#---------------------------------------------------------------------------------------------------
 # bookkeeper!(Branch)
 
 """
     Internal: bookkeeper!(branch::Branch)
 
-Branch bookkeeping. This routine is called by `bookkeeper!(lat::Lattice)`.
-Only tracking branches are examined. Lord branches are ignored.
+Branch bookkeeping. This function is called by `bookkeeper!(lat::Lattice)`.
+This processes tracking branches only. Lord branches are ignored.
 """ bookkeeper!(branch::Branch)
 
 function bookkeeper!(branch::Branch)
@@ -191,7 +126,17 @@ function bookkeeper!(branch::Branch)
   changed = ChangedLedger()
 
   for ele in branch.ele[ix_min:end]
-    bookkeeper!(ele, changed, previous_ele)
+    # If UnionEle or the first super slave then process super lord(s).
+    if typeof(ele) == UnionEle
+      bookkeeper_unionele!(ele, changed, previous_ele)
+    elseif ele.slave_status == Slave.SUPER
+      bookkeeper_superslave!(ele, changed, previous_ele)
+    elseif ele.slave_status == Slave.MULTIPASS
+      bookkeeper_multipassslave!(ele, changed, previous_ele)
+    else
+      bookkeeper!(ele, changed, previous_ele)
+    end
+
     previous_ele = ele
     if ix_max > 0 && ele.ix_ele == ix_max && changed == ChangedLedger(); break; end
   end
@@ -201,15 +146,15 @@ function bookkeeper!(branch::Branch)
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper!(Ele)
+# bookkeeper!(ele, changed, previous_ele)
 
 """
-    Internal: bookkeeper!(ele::Ele, ..., previous_ele::Ele)
+    Internal: bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
 
-Ele bookkeeping. For example, propagating the floor geometry from one element to the next. 
+Lattice element bookkeeping. For example, propagating the floor geometry from one element to the next. 
 These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lattice)`.
 
-### Output
+## Arguments
 
 - `ele`           -- Element to do bookkeeping on.
 - `previous_ele`  -- Element in the branch before `ele`. Will be `NULL_ELE` if this is the first branch element.
@@ -221,9 +166,9 @@ function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
 
     try
       elegroup_bookkeeper!(ele, group, changed, previous_ele)
-    catch er
+    catch this_err
       reinstate_changed!(ele, group)    # Try to undo the dammage.
-      rethrow(er)
+      rethrow(this_err)
     end
   end
 
@@ -244,6 +189,56 @@ function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
+# bookkeeper_unionele!(ele, changed, previous_ele)
+
+function bookkeeper_unionele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+  for lord in ele.super_lords
+    bookkeeper!(ele, changed, previous_ele) 
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# bookkeeper_superslave!(ele, changed, previous_ele)
+
+"""
+    Internal: bookkeeper_superslave!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+
+Internal bookkeeping for a non-`UnionEle` super slave.
+""" bookkeeper_superslave!
+
+function bookkeeper_superslave!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+  # A non-UnionEle super slave has only one lord
+  lord = ele.super_lords[1]
+
+  # If this is the first super slave
+  if lord.slaves[1] === ele
+    bookkeeper!(lord, changed, previous_ele) 
+  end
+
+  # Transfer info from lord to slave
+  for param in copy(keys(ele.pdict[:changed]))
+    pinfo = ele_param_info(param)
+    if isnothing(pinfo); continue; end
+    group = pinfo.parent_group
+    if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end
+    if !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed; pop!(ele.pdict[:changed], param); end
+  end
+
+  bookkeeper_superslave_elegroup!(ele, lord)
+
+  #
+
+end
+
+#---------------------------------------------------------------------------------------------------
+# bookkeeper_multipassslave!(ele, changed, previous_ele)
+
+function bookkeeper_multipassslave!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+  lord =  ele.multipass_lord
+
+end
+
+#---------------------------------------------------------------------------------------------------
 # index_and_s_bookkeeper!(Branch)
 
 """
@@ -252,7 +247,7 @@ end
 Does "quick" element index and s-position bookkeeping for a given branch starting
 at index `ix_start` to the end of `branch.ele`.
 
-Used by lattice manipulation routines that need reindexing but don't need (or want) a full bookkeeping.
+  Used by lattice manipulation routines that need reindexing but don't need (or want) a full bookkeeping.
 """ index_and_s_bookkeeper!
 
 function index_and_s_bookkeeper!(branch::Branch, ix_start = 1)
@@ -264,7 +259,7 @@ function index_and_s_bookkeeper!(branch::Branch, ix_start = 1)
 
   if branch.type <: LordBranch; return; end
 
-  s_now = branch.ele[ix_start].s
+  ix_start == 1 ?  s_now = branch.ele[ix_start].s : s_now = branch.ele[ix_start-1].s_downstream
   for ix in range(ix_start, length(branch.ele))
     ele = branch.ele[ix]
     set_param!(ele, :s, s_now)
