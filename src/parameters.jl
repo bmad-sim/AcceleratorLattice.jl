@@ -115,6 +115,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :pc_ref               => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c.", "eV"),
   :E_tot_ref            => ParamInfo(ReferenceGroup, Number,      "Reference total energy.", "eV"),
   :time_ref             => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
+  :dtime_ref            => ParamInfo(ReferenceGroup, Number,      "Additional reference time change.", "sec"),
   :pc_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c at downstream end.", "eV"),
   :E_tot_ref_downstream => ParamInfo(ReferenceGroup, Number,      "Reference total energy at downstream end.", "eV"),
   :time_ref_downstream  => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
