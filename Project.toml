@@ -18,11 +18,12 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Accessors = "0.1"
-AtomicAndPhysicalConstants = "0.2.1"
+AtomicAndPhysicalConstants = "0.3.0"
 EnumX = "1"
 OrderedCollections = "1"
 PyFormattedStrings = "0.1"
 ReferenceFrameRotations = "3"
+SimUtils = "1.2.0"
 julia = "1.10.6"
 
 [extras]
