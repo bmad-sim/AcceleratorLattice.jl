@@ -247,7 +247,7 @@ end
 Does "quick" element index and s-position bookkeeping for a given branch starting
 at index `ix_start` to the end of `branch.ele`.
 
-Used by lattice manipulation routines that need reindexing but don't need (or want) a full bookkeeping.
+  Used by lattice manipulation routines that need reindexing but don't need (or want) a full bookkeeping.
 """ index_and_s_bookkeeper!
 
 function index_and_s_bookkeeper!(branch::Branch, ix_start = 1)
