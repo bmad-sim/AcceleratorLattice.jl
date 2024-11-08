@@ -381,10 +381,8 @@ The parameters of this group are:
   e2::Number                - Exit end pole face rotation.
   e1_rect::Number           - Entrance end pole face rotation.
   e2_rect::Number           - Exit end pole face rotation.
-  fint1::Number             - Entrance end fringe field integral.
-  fint2::Number             - Exit end fringe field integral
-  hgap1::Number             - Entrance end pole half gap.
-  hgap2::Number             - Exit end pole half gap.
+  edge_int1::Number         - Entrance end fringe field integral.
+  edge_int2::Number         - Exit end fringe field integral
   fiducial_pt::FiducialPt.T            - Default: FiducialPt.NONE
   exact_multipoles::ExactMultipoles.T  - Default: ExactMultipoles.OFF
 \end{example}
@@ -488,30 +486,26 @@ and if \vn{exact_multipoles} is set to \vn{horizontally_pure} the horizontally p
 $\psi_n^r$ and $\psi_n^i$ are used instead of the vertically pure solutions $\phi_n^r$ and
 $\phi_n^i$.
   %
-  \index{fint1}\index{fint2}\index{hgap1}\index{hgap2}
-  \item[fint1, fint2, hgap1, hgap2] \Newline
-The field integrals for the entrance pole face is given by the product of the \vn{fint} and
-\vn{hgap} parameters with \vn{hgap} being the half gap between poles at the entrance face
+  \index{edge_int1}\index{edge_int2}
+  \item[edge_int1, edge_int2] \Newline
+The field integral for the entrance pole face \vn{edge_int1} is given by
 \begin{equation}
-  F_{H1} \equiv F_{int1} \, H_{gap1} = \int_{pole} \! \! ds \, \frac{B_y(s) \, (B_{y0} - B_y(s))}
+  \text{edge}_1 = \int_{pole} \! \! ds \, \frac{B_y(s) \, (B_{y0} - B_y(s))}
   {2 \, B_{y0}^2}
   \label{fsbbb}
 \end{equation}
-For the exit pole face there is a similar equation using \vn{fint2} and \vn{hgap2} which defines
-$F_{H2}$. In the above equation $B_{y0}$ is the field in the interior of the dipole. The values of
-\vn{fint1}, \vn{fint2}, \vn{hgap1}, and \vn{hgap2} are never used in isolation when tracking. Only
-the values for $F_{H1}$ and $F_{H2}$ matter.
-That is, to have an effect, both \vn{fint} and \vn{hgap} (or \vn{fintx} and \vn{hgapx}) must be non-zero.
+For the exit pole face there is a similar equation for \vn{edge_int2}
+
+Note: In Bmad and MAD, these integrals are represented by the product of \vn{fint} and \vn{hgap}.
 
 Note: The SAD program uses \vn{fb1+f1} for the entrance fringe and \vn{fb2+f1} for the exit
 fringe. The correspondence between the two is
 \begin{example2}
-  \(F_{H1}\) = fint  * hgap  = (fb1 + f1) / 12
-  \(F_{H2}\) = fintx * hgapx = (fb2 + f1) / 12
+  edge_int1 = (fb1 + f1) / 12
+  edge_int2 = (fb2 + f1) / 12
 \end{example2}
 
-\index{Enge function}
-\vn{fint} and \vn{hgap} can be related to the Enge function which is sometimes used to model the
+\vn{edge_int1 and \vn{edge_int2} can be related to the Enge function which is sometimes used to model the
 fringe field. The Enge function is of the form
 \begin{equation}
   B_y(s) = \frac{B_{y0}}{1 + \exp[P(s)]}
@@ -523,7 +517,7 @@ where
 The $C_0$ term simply shifts where the edge of the bend is. If all the $C_n$ are zero except for
 $C_0$ and $C_1$ then
 \begin{equation}
-  C_1 = \frac{1}{2 \,H_{gap} \, F_{int}}
+  C_1 = \frac{1}{2 \, \text{field_int}}
 \end{equation}
   %
   \item[fiducial_pt] \Newline
