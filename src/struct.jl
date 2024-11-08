@@ -179,7 +179,6 @@ end
 @construct_ele_type Kicker              "Particle kicker element."
 @construct_ele_type LCavity             "Linac accelerating RF cavity."
 @construct_ele_type Marker              "Zero length element to mark a particular position."
-@construct_ele_type Mask                "Zero length collimator."
 @construct_ele_type Match               "Orbit, Twiss, and dispersion matching element."
 @construct_ele_type Multipole           "Zero length multipole."
 @construct_ele_type NullEle             "Placeholder element used for bookkeeping."
@@ -190,7 +189,6 @@ end
 @construct_ele_type Sextupole           "Sextupole element."
 @construct_ele_type Solenoid            "Solenoid."
 @construct_ele_type Taylor              "General Taylor map element."
-@construct_ele_type ThickMultipole      "Multipole with non-zero length."
 @construct_ele_type Undulator           "Undulator."
 @construct_ele_type UnionEle            "Container element for overlapping elements." 
 @construct_ele_type Wiggler             "Wiggler."
@@ -556,8 +554,8 @@ end
 • `e2::Number`                - Pole face rotation at the exit end with respect to a sector geometry. \\
 • `e1_rect::Number`           - Pole face rotation with respect to a rectangular geometry. \\
 • `e2_rect::Number`           - Pole face rotation with respect to a rectangular geometry. \\
-• `fint1::Number`             - Field integral at entrance end. Default value is `0.5`. \\
-• `fint2::Number`             - Field integral at exit end. Default value is `0.5`. \\
+• `edge_int1::Number`         - Field integral at entrance end. \\
+• `edge_int2::Number`         - Field integral at exit end. \\
 • `hgap1::Number`             - Pole gap at entrance end. \\
 • `hgap2::Number`             - Pole gap at exit end. \\
 • `fiducial_pt::FiducialPt.T` - Fiducial point used when the bend geometry is varied. 
@@ -589,10 +587,8 @@ determined by the `field_master` setting in the MasterGroup struct.
   e2::Number = 0.0
   e1_rect::Number = 0.0
   e2_rect::Number = 0.0
-  fint1::Number = 0.5
-  fint2::Number = 0.5
-  hgap1::Number = 0.0
-  hgap2::Number = 0.0
+  edge_int1::Number = 0.5
+  edge_int2::Number = 0.5
   fiducial_pt::FiducialPt.T = FiducialPt.NONE
   exact_multipoles::ExactMultipoles.T = ExactMultipoles.OFF
 end
