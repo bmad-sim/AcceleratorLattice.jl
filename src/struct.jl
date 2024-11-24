@@ -836,8 +836,8 @@ but with `Converter` or `Foil` Elements they will generally be different.
 • `β_ref_downstream::Number`      - Reference `v/c` downstream end. \\
 """
 @kwdef mutable struct ReferenceGroup <: EleParameterGroup
-  species_ref::Species = Species("NotSet")
-  species_ref_exit::Species = Species("NotSet")
+  species_ref::Species = species("NotSet")
+  species_ref_exit::Species = species("NotSet")
   pc_ref::Number = NaN
   pc_ref_downstream::Number = NaN
   E_tot_ref::Number = NaN
