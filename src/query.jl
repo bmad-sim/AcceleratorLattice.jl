@@ -90,7 +90,7 @@ end
 function ele_geometry(ele::Ele)
   if ele isa Bend; return CIRCULAR; end
   if ele isa Patch; return PATCH_GEOMETRY; end
-  if typeof(ele) <: Union{BeginningEle, Egun, Fiducial, Fork, 
+  if typeof(ele) <: Union{BeginningEle, Fiducial, Fork, 
                             Marker, Match, NullEle, Taylor}; return ZERO_LENGTH; end
   if ele isa Girder; return GIRDER_GEOMETRY; end
   return STRAIGHT

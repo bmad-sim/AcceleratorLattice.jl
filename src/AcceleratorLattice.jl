@@ -21,15 +21,21 @@ module AcceleratorLattice
 
   # AtomicAndPhysicalConstants
 
-  setunits(ACCELERATOR);
-
-  function __init__()
-    setunits(ACCELERATOR);
-  end
+  @AAPCdef;
 
   for name in names(AtomicAndPhysicalConstants)
     eval(Meta.parse("export $name"))
   end
+
+  function species(str::String)
+    if str == "NotSet"; return Species("muon"); end
+    return Species(str)
+  end
+
+  C_light = C_LIGHT.val
+
+  charge(species::Species) = chargeof(species).val
+
 
   #
 
