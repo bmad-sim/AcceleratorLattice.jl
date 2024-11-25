@@ -12,3 +12,17 @@ Bookkeeping in \accellat mainly involves making sure that dependent parameters a
 \label{s:changed.param}
 
 Importance of using pop!, insert!, push! and set! when modifying the branch.ele array.
+
+The \vn{ele.changed} parameter (which is actually \vn{ele.pdict[:changed]}) is a dictionary.
+The keys of this dict will be either symbols of the changed parameters or
+will be the symbol of an element parameter group. 
+When the key is a symbol of a changed parameter,
+the dict value will be the old value of the parameter. These dict entries are set by the 
+overloaded \vn{Base.setproperty(ele, param_sym, value)} function. 
+When the key is an element parameter group, the dict value will be the string \vn{"changed"}.
+These dict entries are set by functions that do lord/slave bookkeeping.
+
+When bookkeeping is done, entries from the \vn{ele.changed} dict are removed when the corresponding
+parameter(s) are bookkeeped. If there are dict entries that remain after all bookkeeping is done,
+this is an indication of a problem and a warning message is printed.
+

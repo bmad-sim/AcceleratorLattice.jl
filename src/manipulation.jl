@@ -86,6 +86,8 @@ function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation 
     end
   end
 
+  set_branch_min_max_changed!(branch, ix_ele)
+
   return ele
 end
 
@@ -117,6 +119,7 @@ function set!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
     end
   end
 
+  set_branch_min_max_changed!(branch, ix_ele)
   return ele
 end
 
@@ -135,6 +138,7 @@ function Base.pop!(branch::Branch, ix_ele::Int)
   pop!(branch.ele, ix_ele)
   index_and_s_bookkeeper!(branch, ix_ele)
 
+  set_branch_min_max_changed!(branch, ix_ele)
   return nothing
 end
 
@@ -229,6 +233,8 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
 
   # An element is split cases:
 
+  set_branch_min_max_changed!(branch, slave1.ix_ele, slave1.ix_ele+1)
+
   # Split case 1: Element is a drift. No super lord issues. Need to create a "master drift"
   # representing the original drift in `branch.drift_masters` so that the names of drift slices can 
   # be properly formed using a `!N` suffix where N is an integer.
@@ -280,6 +286,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
     for lord in slave1.super_lords
       set_super_slave_names!(lord)
     end
+
     return (slave2, true)
   end
 
@@ -379,4 +386,32 @@ function set_super_slave_names!(lord::Ele)
       slave.name = slave.name * "!s" * string(index_dict[slave.name])
     end
   end
+end
+
+#---------------------------------------------------------------------------------------------------
+# set_branch_min_max_changed!
+
+"""
+    function set_branch_min_max_changed!(branch::Branch, ix_ele::Number)
+    function set_branch_min_max_changed!(branch::Branch, ix_ele_min::Number, ix_ele_max::Number)
+
+Sets `branch.ix_ele_min_changed` and `branch.ix_ele_max_changed` to record the indexes at which
+element parameters have changed. This is used by `bookkeeper!` to minimize computation time.
+
+The arguments `ix_ele`, `ix_ele_min`, and `ix_ele_max` are all element indexes where there
+has been a change in parameters.
+
+Note: Elements whose index has shifted but whose parameters have not changed, do not need to be
+marked as changed.
+
+""" set_branch_min_max_changed!
+
+function set_branch_min_max_changed!(branch::Branch, ix_ele::Number)
+  branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ix_ele)
+  branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ix_ele)
+end
+
+function set_branch_min_max_changed!(branch::Branch, ix_ele_min::Number, ix_ele_max::Number)
+  branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ix_ele_min)
+  branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ix_ele_max)
 end

@@ -355,7 +355,7 @@ If there are more than two group expressions involved, evaluation is left to rig
 ## Notes
 
 - The `parameter='match_str'` construct allows for matching to element parameters other than the element name. 
-  Typically used with the standard element "string parameters" `alias`, `type`, and `description`
+  Typically used with the standard element "string parameters" `ID`, `type`, and `class`
   but matching is not limited to these parameters.
 - If `ele_id` is an integer (element index), Specifying `#N` is not permitted.
 - To exclude matches to super slave elements, use `"~*!s"` at the end of an expression.
@@ -368,7 +368,7 @@ If there are more than two group expressions involved, evaluation is left to rig
                                 #   ending in the digit "5"
   eles(lat, "1>>m1#2")          # Second element named "m1" in branch 1.
   eles(lat.branch[1], "m1#2")   # Equivalent to eles(lat, "1>>m1#2").
-  eles(lat, "alias=`abc`")
+  eles(lat, "ID=`abc`")
 ```
 
 Note: The index operator `[...]` is overloaded so that `branch[who]` where `branch` is a `Branch` 

@@ -11,17 +11,17 @@ The parmeter groups are:
 {\tt
 \begin{tabular}{llll} \toprule
   {\it Group}        & {\it Section}             & {\it Group}         & {\it Section}          \midrule
- AlignmentGroup      & \sref{s:alignment.g}      & LordSlaveGroup      & \sref{s:lord.slave.g} \\
- ApertureGroup       & \sref{s:aperture.g}       & MasterGroup         & \sref{s:master.g}     \\
- BMultipoleGroup     & \sref{s:bmultipole.g}     & PatchGroup          & \sref{s:patch.g}      \\ 
- BeamBeamGroup       & \sref{s:beam.beam.g}      & RFGroup             & \sref{s:rf.g}         \\
- BendGroup           & \sref{s:bend.g}           & RFAutoGroup         & \sref{s:rfauto.g}     \\
+ AlignmentGroup      & \sref{s:alignment.g}      & LengthGroup         & \sref{s:length.g}     \\   
+ ApertureGroup       & \sref{s:aperture.g}       & LordSlaveGroup      & \sref{s:lord.slave.g} \\
+ BMultipoleGroup     & \sref{s:bmultipole.g}     & MasterGroup         & \sref{s:master.g}     \\
+ BeamBeamGroup       & \sref{s:beam.beam.g}      & PatchGroup          & \sref{s:patch.g}      \\
+ BendGroup           & \sref{s:bend.g}           & RFGroup             & \sref{s:rf.g}         \\
+ DescriptionGroup    & \sref{s:descrip.g}        & RFAutoGroup         & \sref{s:rfauto.g}     \\
  EMultipoleGroup     & \sref{s:emultipole.g}     & ReferenceGroup      & \sref{s:reference.g}  \\
  FloorPositionGroup  & \sref{s:floor.pos.g}      & SolenoidGroup       & \sref{s:solenoid.g}   \\
- ForkGroup           & \sref{s:fork.g}           & StringGroup         & \sref{s:string.g}     \\
- GirderGroup         & \sref{s:girder.g}         & TrackingGroup       & \sref{s:tracking.g}   \\
- InitParticleGroup   & \sref{s:init.particle.g}  & TwissGroup          & \sref{s:twiss.g}      \\
- LengthGroup         & \sref{s:length.g}         &                     &                       \\
+ ForkGroup           & \sref{s:fork.g}           & TrackingGroup       & \sref{s:tracking.g}   \\
+ GirderGroup         & \sref{s:girder.g}         & TwissGroup          & \sref{s:twiss.g}      \\
+ InitParticleGroup   & \sref{s:init.particle.g}  &                     &                       \\
   \bottomrule
 \end{tabular}
 } 
@@ -626,6 +626,26 @@ counterclockwise rotation of the exit face. This is true irregardless of the sig
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
+\section{DescriptionGroup}
+\label{s:descrip.g}
+
+Element descriptive strings which can be used used when searching. For example
+\begin{example}
+  @ele q1 = Quadrupole(type = "rotating quad", ...)
+  eles(lat, "type = "*rot*")
+\end{example}
+In this example \vn{lat} is the lattice that contains \vn{q1} and the \vn{eles} function
+will return a vector of all elements whose \vn{type} string has the substring ``\vn{rot}''
+in it.
+
+The components of this struct are:
+\begin{example}
+  type::String 
+  ID::String 
+  class::String 
+\end{example}
+
+%---------------------------------------------------------------------------------------------------
 \section{EMultipoleGroup}
 \label{s:emultipole.g}
 
@@ -850,17 +870,6 @@ The components of this struct are:
 \begin{example}
 • Ksol::Number        - Normalized solenoid strength.       
 • Bsol::Number        - Solenoid field. 
-\end{example}
-
-%---------------------------------------------------------------------------------------------------
-\section{StringGroup}
-\label{s:string.g}
-
-The components of this struct are:
-\begin{example}
-• type::String 
-• alias::String 
-• description::String 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------

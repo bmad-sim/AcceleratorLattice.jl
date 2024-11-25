@@ -91,7 +91,7 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   if !haskey(pdict, parent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
 
   # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
-  if pinfo.kind <: Vector
+  if pinfo.paramkind <: Vector
     if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
       pdict[:changed][sym] = getfield(pdict[parent], pinfo.struct_sym)
     end
@@ -187,11 +187,17 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
         branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ele.ix_ele)
         branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ele.ix_ele)
       else
-        push!(branch.changed_ele, ele)    # Only used with lord branches
+        for slave in ele.slaves
+          sbranch = slave.branch
+          sbranch.ix_ele_min_changed = min(sbranch.ix_ele_min_changed, ele.ix_ele)
+          sbranch.ix_ele_max_changed = max(sbranch.ix_ele_max_changed, ele.ix_ele)
+        end
+        push!(branch.changed_ele, ele)    # Only used with lord branches. SHOULD BE REMOVED?!
       end
     end
 
     branch.lat.parameters_have_changed = true
+    if branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   end
 end
 
@@ -278,7 +284,7 @@ EG: integrated multipole value even if stored value is not integrated.
 function get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
   if !isnothing(pinfo.sub_struct)                       # Example see: ParamInfo(:a_beta)
     return getfield(pinfo.sub_struct(group), pinfo.struct_sym)
-  elseif pinfo.parent_group == pinfo.kind               # Example see: ParamInfo(:twiss)
+  elseif pinfo.parent_group == pinfo.paramkind               # Example see: ParamInfo(:twiss)
     return group
   else
     return getfield(group, pinfo.struct_sym)

@@ -2,7 +2,7 @@
 
 Quat = Quaternion{Number}
 
-function rot(q::Quaternion, v::Vector)
+function rot(q::Quaternion, v::Vector{T}) where {T}
   vv = q * v / q
   return [vv.q1, vv.q2, vv.q3]
 end
@@ -64,7 +64,7 @@ end
 It is not assumed that the quaternion is normalized
 """ RotMat
 
-function RotMat(q::Quaternion)
+function RotMat(q::Quaternion{T}) where {T}
   sq1 = q.q0 * q.q0
   sqx = q.vec[1] * q.vec[1]
   sqy = q.vec[2] * q.vec[2]

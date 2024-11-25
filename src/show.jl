@@ -105,8 +105,8 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :Ksol             => :Bsol,
   ),
 
-  StringGroup => Dict{Symbol,Symbol}(
-    :type             => :alias,
+  DescriptionGroup => Dict{Symbol,Symbol}(
+    :type             => :ID,
   ),
 
   TrackingGroup => Dict{Symbol,Symbol}(
@@ -218,6 +218,7 @@ function ele_param_value_str(ele::Ele, key::Symbol; default::AbstractString = "?
   end
 end
 
+ele_param_value_str(wall2d::Wall2D; default::AbstractString = "???") = "Wall2D(...)"
 ele_param_value_str(who::Nothing; default::AbstractString = "???") = default
 ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
 ele_param_value_str(species::Species; default::AbstractString = "???") = "Species(\"" * full_name(species) * "\")"
@@ -225,6 +226,7 @@ ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T
 ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
 ele_param_value_str(who; default::AbstractString = "???") = string(who)
+
 
 #---------------------------------------------------------------------------------------------------
 # IGNORE_ELE_PDICT_KEY
@@ -267,12 +269,12 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       if typeof(val) <: EleParameterGroup || key == :changed; continue; end
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
-      kstr = rpad(string(key), nn2)
-      vstr = ele_param_value_str(pdict, key)
+      param_name = rpad(string(key), nn2)
+      value_str = ele_param_value_str(pdict, key)
       if docstring
-        ele_print_line(io, f"  {kstr} {vstr} {units(key)}", description(key))
+        ele_print_line(io, f"  {param_name} {value_str} {units(key)}", description(key))
       else
-        println(io, f"  {kstr} {vstr} {units(key)}")
+        println(io, f"  {param_name} {value_str} {units(key)}")
       end
     end
 
@@ -289,12 +291,12 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       println(io, "  changed:")
       for (key, value) in changed
         nn2 = max(nn, length(string(key)))
-        kstr = rpad(string(key), nn2)
-        vstr = ele_param_value_str(changed, key)
+        param_name = rpad(string(key), nn2)
+        value_str = ele_param_value_str(changed, key)
         if docstring
-          ele_print_line(io, f"    {kstr} {vstr} {units(key, eletype)}", description(key, eletype))
+          ele_print_line(io, f"    {param_name} {value_str} {units(key, eletype)}", description(key, eletype))
         else
-          println(io, f"    {kstr} {vstr} {units(key, eletype)}")
+          println(io, f"    {param_name} {value_str} {units(key, eletype)}")
         end
       end
     end
@@ -374,9 +376,9 @@ function show_elegroup_with_doc(io::IO, group::T; indent = 0) where T <: ElePara
   println(io, f"  {gtype}:")
 
   for field in fieldnames(gtype)
-    kstr = rpad(full_parameter_name(field, gtype), nn)
-    vstr = ele_param_value_str(Base.getproperty(group, field))
-    ele_print_line(io, f"    {kstr} {vstr} {units(field)}", description(field))
+    param_name = rpad(full_parameter_name(field, gtype), nn)
+    value_str = ele_param_value_str(Base.getproperty(group, field))
+    ele_print_line(io, f"    {param_name} {value_str} {units(field)}", description(field))
   end
 end
 
@@ -421,13 +423,13 @@ function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = 
     if field_sym in values(col2); continue; end         # Second column fields handled with first column ones.
 
     if field_sym in keys(col2)
-      kstr = rpad(full_parameter_name(field_sym, gtype), n1)
+      field_name = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(field)
-      str = f"  {kstr} {vstr} {units(field_sym)}"   # First column entry
+      str = f"  {field_name} {vstr} {units(field_sym)}"   # First column entry
       field2_sym = col2[field_sym]
-      kstr = rpad(full_parameter_name(field2_sym, gtype), n2)
+      field_name = rpad(full_parameter_name(field2_sym, gtype), n2)
       vstr = ele_param_value_str(Base.getproperty(group, field2_sym))
-      str2 = f"  {kstr} {vstr} {units(field2_sym)}" # Second column entry.
+      str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
       if length(str) > 50 || length(str2) > 50        # If length is too big print in two lines.
         println(io, " "^indent * str)
         println(io, " "^indent * str2)
@@ -436,9 +438,9 @@ function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = 
       end
 
     else
-      kstr = rpad(full_parameter_name(field_sym, gtype), n1)
+      field_name = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(field)
-      println(io, " "^indent * f"  {kstr} {vstr} {units(field_sym)}")
+      println(io, " "^indent * f"  {field_name} {vstr} {units(field_sym)}")
     end
 
   end  # for field_sym in fieldnames(gtype)
@@ -453,9 +455,9 @@ return the string `struct_name (user_name)` (EG: `r (r_floor)`).
 """ full_parameter_name
 
 function full_parameter_name(field, group::Type{T}) where T <: BaseEleParameterGroup
-  if field ∉ keys(struct_sym_to_user_sym); return String(field); end
+  if field ∉ keys(ele_param_struct_field_to_user_sym); return String(field); end
 
-  for sym in struct_sym_to_user_sym[field]
+  for sym in ele_param_struct_field_to_user_sym[field]
     info = ele_param_info(sym)
     if !has_parent_group(info, group); continue; end
     if info.parent_group != group; continue; end
@@ -494,7 +496,7 @@ Base.show(io::IO, ::MIME"text/plain", eles::Vector{T}) where T <: Ele = Base.sho
 # Show Lattice
 
 function Base.show(io::IO, lat::Lattice)
-  println(io, f"Lattice: {str_quote(lat.name)}")
+  println(io, "Lattice: $(str_quote(lat.name)),  lat.autobookkeeping = $(lat.autobookkeeping)")
   for branch in lat.branch
     show(io, branch)
   end
@@ -639,9 +641,9 @@ Prints information about:
 """ info
 
 function info(sym::Symbol)
-  if sym in keys(struct_sym_to_user_sym)
+  if sym in keys(ele_param_struct_field_to_user_sym)
     first_info_printed = false
-    for sym2 in struct_sym_to_user_sym[sym]
+    for sym2 in ele_param_struct_field_to_user_sym[sym]
       if first_info_printed; println(""); end
       info1(ele_param_info(sym2))
       first_info_printed = true
@@ -703,7 +705,7 @@ function info(group::Type{T}) where T <: EleParameterGroup
     if isnothing(info)
       println("  $param")
     else
-      str = "  " * rpad("$param::$(strip_AL(info.kind))", 30) * "  " * info.description
+      str = "  " * rpad("$param::$(strip_AL(info.paramkind))", 30) * "  " * info.description
       if info.units != ""; str *= " ($(info.units))"; end
       if info.user_sym != info.struct_sym  str  *= "  User sym = $(info.user_sym)"; end
       println(str)
@@ -733,7 +735,7 @@ function info1(info::ParamInfo)
   else
     println(f"  Stored in:       {info.sub_struct(info.parent_group)}.{info.struct_sym}")
   end
-  println(f"  Parameter type:  {info.kind}")
+  println(f"  Parameter type:  {info.paramkind}")
   if info.units != ""; println(f"  Units:           {info.units}"); end
   println(f"  Description:     {info.description}")
   return nothing
