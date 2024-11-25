@@ -268,5 +268,6 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     lat.autobookkeeping = lat.old_autobookkeeping
     pop!(lat.pdict, :old_autobookkeeping)
     lat.record_changes = true
+    if lat.autobookkeeping; bookkeeper!(lat); end
   end
 end

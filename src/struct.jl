@@ -420,24 +420,24 @@ Vertex1(r0::Vector{Number}, rx::Number = NaN, ry::Number = NaN) =
                                  Vertex1(r0 = r0, radius_x = rx, radius_y = ry, NaN)
 
 #---------------------------------------------------------------------------------------------------
-# WallSection subgroup
+# Wall2D subgroup
 
 """
-    mutable struct WallSection <: EleParameterSubGroup
+    mutable struct Wall2D <: EleParameterSubGroup
 
 Vacuum chamber wall cross-section.
 
 ## Fields
 • `vertex::Vector{Vertex1}` - Array of vertices. \\
 • `r0::Vector{Number}`      - Origin point. \\
-""" WallSection
+""" Wall2D
 
-@kwdef mutable struct WallSection <: EleParameterSubGroup
+@kwdef mutable struct Wall2D <: EleParameterSubGroup
   vertex::Vector{Vertex1} = Vector{Vertex1}()
   r0::Vector{Number} = [0.0, 0.0]
 end
 
-WallSection(v::Vector{Vertex1}) = WallSection(v, [0.0, 0.0])
+Wall2D(v::Vector{Vertex1}) = Wall2D(v, [0.0, 0.0])
 
 #---------------------------------------------------------------------------------------------------
 # AlignmentGroup
@@ -492,7 +492,7 @@ Vacuum chamber aperture struct.
 ## Fields
 • `x_limit::Vector`                     - `[x-, x+]` Limits in x-direction. \\
 • `y_limit::Vector`                     - `[y-, y+]` Limits in y-direction. \\
-• `section::WallSection`                - Aperture defined by an array of vertices. \\
+• `wall::Wall2D`                        - Aperture defined by an array of vertices. \\
 • `aperture_shape::ApertureShape.T`     - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
 • `aperture_at::BodyLoc.T`              - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
 • `misalignment_moves_aperture::Bool`   - Do element misalignments move the aperture? Default is false. \\
@@ -500,11 +500,11 @@ Vacuum chamber aperture struct.
 """ ApertureGroup
 
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
-  x_limit::Vector = [Inf, Inf]
-  y_limit::Vector = [Inf, Inf]
-  section::WallSection = WallSection()
+  x_limit::Vector = [-Inf, Inf]
+  y_limit::Vector = [-Inf, Inf]
   aperture_shape::typeof(ApertureShape) = ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
+  wall::Wall2D = Wall2D()
   misalignment_moves_aperture::Bool = false
   custom_aperture::Dict = Dict()
 end
@@ -607,17 +607,6 @@ Vector of magnetic multipoles.
 """
 @kwdef mutable struct BMultipoleGroup <: EleParameterGroup
   vec::Vector{BMultipole1} = Vector{BMultipole1}(undef,0)         # Vector of multipoles.
-end
-
-#---------------------------------------------------------------------------------------------------
-# ChamberWallGroup
-
-"""
-    mutable struct ChamberWallGroup <: EleParameterGroup
-
-Vacuum chamber wall.
-"""
-@kwdef mutable struct ChamberWallGroup <: EleParameterGroup
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -906,10 +895,10 @@ RF autoscale parameters.
 end
 
 #---------------------------------------------------------------------------------------------------
-# StringGroup
+# DescriptionGroup
 
 """
-    mutable struct StringGroup <: EleParameterGroup
+    mutable struct DescriptionGroup <: EleParameterGroup
 
 Strings that can be set and used with element searches.
 These strings have no affect on tracking.
@@ -917,14 +906,14 @@ These strings have no affect on tracking.
 # Fields
 
 • `type::String` \\
-• `alias::String` \\
-• `description::String` \\
-""" StringGroup
+• `ID::String` \\
+• `class::String` \\
+""" DescriptionGroup
 
-@kwdef mutable struct StringGroup <: EleParameterGroup
+@kwdef mutable struct DescriptionGroup <: EleParameterGroup
   type::String = ""
-  alias::String = ""
-  description::String = ""
+  ID::String = ""
+  class::String = ""
 end
 
 #---------------------------------------------------------------------------------------------------

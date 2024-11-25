@@ -1,8 +1,8 @@
 using AcceleratorLattice, Test
 
 @ele beginning = BeginningEle(s = 0.3, pc_ref = 1e7, species_ref = Species("electron"));
-@ele qf = Quadrupole(L = 0.6, alias = "z1");
-@ele qd = Quadrupole(L = 0.6, description = "z2");
+@ele qf = Quadrupole(L = 0.6, ID = "z1");
+@ele qd = Quadrupole(L = 0.6, class = "z2");
 @ele d = Drift(L = 0.4);
 @ele d2 = Drift(L = -1.5);
 @ele d3 = Drift(L = 2);
@@ -54,9 +54,9 @@ end
   @test eles(lat, "z1-1") == eles(lat, "1>>4")
   @test eles(lat, "z1+1") == eles(lat, "fodo>>6")
   @test eles(lat, "z2-1") == eles(lat, "ln3>>2")
-  @test eles(lat, "alias=`z1`") == eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
-  @test eles(lat, "alias=`z1` ~fodo>>9 ~fodo>>22") == eles(lat, "fodo>>7, fodo>>15, fodo>>21")
-  @test eles(lat, "alias=`z1` & fodo>>9") == eles(lat, "fodo>>9")
+  @test eles(lat, "ID=`z1`") == eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
+  @test eles(lat, "ID=`z1` ~fodo>>9 ~fodo>>22") == eles(lat, "fodo>>7, fodo>>15, fodo>>21")
+  @test eles(lat, "ID=`z1` & fodo>>9") == eles(lat, "fodo>>9")
   @test b["z1"] == eles(lat, "super_lord>>3")
   @test eles(lat, "Quadrupole::* ~*!*") == 
                 eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21, fodo>>22, multipass_lord>>1, multipass_lord>>3")

@@ -99,7 +99,7 @@ QuatRotation(theta::Real, phi::Real, psi::Real) = RotY(theta) * RotX(-phi) * Rot
 Return the rotation angles corresponding to the quaternion `q`.
 """ floor_angles
 
-function rotation_angles(q::Quaternion)
+function rotation_angles(q::Quaternion{T}) where {T}
   m = quat_to_dcm(q)
   # Special case where cos(phi) is close to zero.
   if abs(m[1,3]) + abs(m[3,3]) < 1e-12

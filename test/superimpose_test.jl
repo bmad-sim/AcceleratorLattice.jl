@@ -2,7 +2,7 @@ using AcceleratorLattice, Test
 
 @eles begin
   beginning = BeginningEle(pc_ref = 1e7, species_ref = Species("electron"))
-  q1 = Quadrupole(L = 0.6, x_rot = 2, alias = "qz", Ks8L = 123, tilt8 = 2)
+  q1 = Quadrupole(L = 0.6, x_rot = 2, ID = "qz", Ks8L = 123, tilt8 = 2)
   q2 = Quadrupole(L = 0.6, Kn1 = -0.3);
   d1 = Drift(L = 1.0);
   d2 = Drift(L = 1.0);

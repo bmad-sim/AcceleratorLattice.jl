@@ -21,7 +21,7 @@ abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
   parent_group::T where T <: Union{DataType,Vector}    # Use the parent_group function to get the parent group.
-  kind::Union{T, Union, UnionAll} where T <: DataType  # Something like Aperture is a Union.
+  paramkind::Union{T, Union, UnionAll} where T <: DataType  # Something like Aperture is a Union.
   description::String = ""
   units::String = ""
   struct_sym::Symbol                                 # Symbol in struct.
@@ -154,7 +154,7 @@ ELE_PARAM_INFO_DICT = Dict(
                       => ParamInfo(ApertureGroup,  Bool,              "Element movement moves aperture?"),
   :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "Min/Max horizontal aperture limits.", "m"),
   :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "Min/Max vertical aperture limits.", "m"),
-  :section            => ParamInfo(ApertureGroup,  WallSection,       "Array of aperture vertices."),
+  :wall               => ParamInfo(ApertureGroup,  Wall2D,            "Wall defined by array of aperture vertices."),
   :custom_aperture    => ParamInfo(ApertureGroup,  Dict,              "Custom aperture info."),
 
   :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", :r),
@@ -172,9 +172,9 @@ ELE_PARAM_INFO_DICT = Dict(
   :spin               => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle spin"),
   :orbit              => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle position."),
 
-  :type               => ParamInfo(StringGroup,    String,        "Type of element. Set by User and ignored the code."),
-  :alias              => ParamInfo(StringGroup,    String,        "Alias name. Set by User and ignored by the code."),
-  :description        => ParamInfo(StringGroup,    String,        "Descriptive info. Set by User and ignored by the code."),
+  :type               => ParamInfo(DescriptionGroup,   String,      "Type of element."),
+  :ID                 => ParamInfo(DescriptionGroup,   String,      "Identification name."),
+  :class              => ParamInfo(DescriptionGroup,   String,      "Classification of element."),
 
   :beta               => ParamInfo(Twiss1,      Number,             "Beta Twiss parameter.", "m"),
   :alpha              => ParamInfo(Twiss1,      Number,             "Alpha Twiss parameter.", ""),
@@ -239,21 +239,33 @@ function has_parent_group(pinfo::ParamInfo, group::Type{T}) where T <: BaseElePa
 end
 
 #---------------------------------------------------------------------------------------------------
-# struct_sym_to_user_sym
+# ele_param_struct_field_to_user_sym
 
 """
-Map struct symbol to user symbol(s). Example: `:r` => `[:r_floor]`.
-A vector is used since the struct symbol maps to multiple user symbols.
-This mapping only covers stuff in ELE_PARAM_INFO_DICT so this mapping does not, for example, cover multipoles.
-""" struct_sym_to_user_sym
+    Dict{Symbol,Vector{Symbol}} ele_param_struct_field_to_user_sym[field::Symbol] -> users::Vector{Symbol}
 
-struct_sym_to_user_sym = Dict{Symbol,Any}()
+Map element parameter struct field to vector of user symbol(s). User symbols being the symbols
+that a user can use to access the struct field. 
+
+Dict values are vectors since the struct symbol maps to multiple user symbols.
+This mapping only covers stuff in ELE_PARAM_INFO_DICT so this mapping does not, for example, cover multipoles.
+
+Example: ` ele_param_struct_field_to_user_sym[:beta] => [:beta_b, :beta, :beta_a, :beta_c]`
+
+The mappings from user name to field for this example are: \\
+• `beta_a` maps to `a.beta` in a TwissGroup
+• `beta_b` maps to `b.beta` in a TwissGroup
+• `beta_c` maps to `c.beta` in a TwissGroup
+• `beta`   maps to `beta` in a Twiss1Group
+""" ele_param_struct_field_to_user_sym
+
+ele_param_struct_field_to_user_sym = Dict{Symbol,Vector{Symbol}}()
 
 for (param, info) in ELE_PARAM_INFO_DICT
-  if info.struct_sym in keys(struct_sym_to_user_sym)
-    push!(struct_sym_to_user_sym[info.struct_sym], param)
+  if info.struct_sym in keys(ele_param_struct_field_to_user_sym)
+    push!(ele_param_struct_field_to_user_sym[info.struct_sym], param)
   else
-    struct_sym_to_user_sym[info.struct_sym] = [param]
+    ele_param_struct_field_to_user_sym[info.struct_sym] = [param]
   end
 end
 
@@ -269,8 +281,15 @@ Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
 """ units
 
 function units(param::Symbol)
-  info = ele_param_info(param, throw_error = false, include_struct_syms = true)
   if param in Symbol.(keys(AcceleratorLattice.ELE_PARAM_GROUP_INFO)); return ""; end
+
+  if param in keys(ele_param_struct_field_to_user_sym)
+    # Ambiguous so just assume that all possibilities have the same units.
+    info = ELE_PARAM_INFO_DICT[ele_param_struct_field_to_user_sym[param][1]]
+  else
+    info = ele_param_info(param, throw_error = false)
+  end
+
   if isnothing(info); (return "?units?"); end
   return info.units
 end
@@ -422,7 +441,7 @@ multipole_param_info(str::AbstractString) = multipole_param_info(Symbol(str))
 # ele_param_info
 
 """
-    ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false) -> Union{ParamInfo, Nothing}
+    ele_param_info(sym::Symbol; throw_error = true) -> Union{ParamInfo, Nothing}
     ele_param_info(sym::Symbol, ele::Ele; throw_error = true) -> Union{ParamInfo, Nothing}
 
 Returns information on the element parameter `sym`.
@@ -430,11 +449,8 @@ Returns a `ParamInfo` struct. If no information on `sym` is found, an error is t
 or `nothing` is returned.
 """ ele_param_info
 
-function ele_param_info(sym::Symbol; throw_error = true, include_struct_syms = false)
+function ele_param_info(sym::Symbol; throw_error = true)
   if haskey(ELE_PARAM_INFO_DICT, sym); (return ELE_PARAM_INFO_DICT[sym]); end
-  if include_struct_syms && sym in keys(struct_sym_to_user_sym)
-    return ELE_PARAM_INFO_DICT[struct_sym_to_user_sym[sym][1]]
-  end
 
   # Is a multipole? Otherwise unrecognized.
   info = multipole_param_info(sym)
@@ -536,7 +552,7 @@ Order is important. Bookkeeping routines rely on:
  - `RFCommonGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
 """ PARAM_GROUPS_LIST
 
-base_group_list = [LengthGroup, LordSlaveStatusGroup, StringGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
+base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 bmultipole_group_list = [MasterGroup, BMultipoleGroup]
@@ -583,7 +599,6 @@ ELE_PARAM_GROUP_INFO = Dict(
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
   BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleGroup`", false),
-  ChamberWallGroup      => EleParameterGroupInfo("Vacuum chamber wall.", false),
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
   EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Substructure contained in `EMultipoleGroup`.", false),
   FloorPositionGroup    => EleParameterGroupInfo("Global floor position and orientation.", true),
@@ -599,7 +614,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   RFGroup               => EleParameterGroupInfo("`RFCavity` and `LCavity` RF parameters.", true),
   RFAutoGroup           => EleParameterGroupInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
   SolenoidGroup         => EleParameterGroupInfo("`Solenoid` parameters.", false),
-  StringGroup           => EleParameterGroupInfo("Informational strings.", false),
+  DescriptionGroup           => EleParameterGroupInfo("Informational strings.", false),
   TrackingGroup         => EleParameterGroupInfo("Default tracking settings.", false),
 )
 

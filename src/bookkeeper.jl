@@ -38,8 +38,19 @@ function bookkeeper!(lat::Lattice)
   for (ix, branch) in enumerate(lat.branch)
     if branch.type != TrackingBranch; continue; end
     branch.pdict[:ix_branch] = ix
-    bookkeeper!(branch)
+    bookkeeper_tracking_branch!(branch)
   end
+
+  # Check for unbookkeeped parameters
+  for branch in lat.branch
+    for ele in branch.ele
+      for param in keys(ele.pdict[:changed])
+        println("WARNING! Unbookkeeped parameter $param in element $(ele_name(ele)). Please report this!")
+      end
+    end
+  end
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -68,6 +79,8 @@ function check_if_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothin
   if sym in DEPENDENT_ELE_PARAMETERS
     error("Parameter is not user settable: $sym. For element: $(ele_name(ele)).")
   end
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -104,24 +117,26 @@ function end_multipass_bookkeeper!(lat)
       pop!(cdict, :ReferenceGroup)
     end
   end 
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper!(Branch)
+# bookkeeper_tracking_branch!(Branch)
 
 """
-    Internal: bookkeeper!(branch::Branch)
+    Internal: bookkeeper_tracking_branch!(branch::Branch)
 
-Branch bookkeeping. This function is called by `bookkeeper!(lat::Lattice)`.
+Branch bookkeeping. This function is called by `bookkeeper_tracking_branch!(lat::Lattice)`.
 This processes tracking branches only. Lord branches are ignored.
-""" bookkeeper!(branch::Branch)
+""" bookkeeper_tracking_branch!(branch::Branch)
 
-function bookkeeper!(branch::Branch)
+function bookkeeper_tracking_branch!(branch::Branch)
   if branch.pdict[:type] == LordBranch; return; end
 
   ix_min = branch.pdict[:ix_ele_min_changed]
   if ix_min > length(branch.ele); return; end
-  ix_min == 1 ? previous_ele = NULL_ELE : previous_ele = branch[ix_min-1].ele
+  ix_min == 1 ? previous_ele = NULL_ELE : previous_ele = branch.ele[ix_min-1]
   ix_max = branch.pdict[:ix_ele_max_changed]
   changed = ChangedLedger()
 
@@ -134,7 +149,7 @@ function bookkeeper!(branch::Branch)
     elseif ele.slave_status == Slave.MULTIPASS
       bookkeeper_multipassslave!(ele, changed, previous_ele)
     else
-      bookkeeper!(ele, changed, previous_ele)
+      bookkeeper_ele!(ele, changed, previous_ele)
     end
 
     previous_ele = ele
@@ -143,13 +158,15 @@ function bookkeeper!(branch::Branch)
 
   branch.pdict[:ix_ele_min_changed] = typemax(Int)
   branch.pdict[:ix_ele_max_changed] = 0
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper!(ele, changed, previous_ele)
+# bookkeeper_ele!(ele, changed, previous_ele)
 
 """
-    Internal: bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+    Internal: bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
 
 Lattice element bookkeeping. For example, propagating the floor geometry from one element to the next. 
 These low level routines (there are several with this signature) are called via `bookkeeper!(lat::Lattice)`.
@@ -158,9 +175,9 @@ These low level routines (there are several with this signature) are called via 
 
 - `ele`           -- Element to do bookkeeping on.
 - `previous_ele`  -- Element in the branch before `ele`. Will be `NULL_ELE` if this is the first branch element.
-""" bookkeeper!(ele::Ele)
+""" bookkeeper_ele!(ele::Ele)
 
-function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
   for group in PARAM_GROUPS_LIST[typeof(ele)]
     if !haskey(ELE_PARAM_GROUP_INFO, group) || !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed; continue; end
 
@@ -175,59 +192,75 @@ function bookkeeper!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
   # Throw out changed parameters that don't need bookkeeping
 
   for param in copy(keys(ele.pdict[:changed]))
-    pinfo = ele_param_info(param)
-    if isnothing(pinfo); continue; end
-    group = pinfo.parent_group
-    if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end
-    if !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed; pop!(ele.pdict[:changed], param); end
+    if typeof(param) == EleParameterGroup
+      group = param
+    else
+      pinfo = ele_param_info(param, throw_error = false)
+      if isnothing(pinfo); continue; end
+      group = pinfo.parent_group
+    end
+
+    if group in keys(ELE_PARAM_GROUP_INFO) && !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed
+      pop!(ele.pdict[:changed], param)
+    end
   end
 
-  # Check for unbookkeeped parameters
-  for param in keys(ele.pdict[:changed])
-    println("Unbookkeeped parameter $param in element $(ele_name(ele))")
-  end
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper_unionele!(ele, changed, previous_ele)
+# bookkeeper_unionele!
 
 function bookkeeper_unionele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
   for lord in ele.super_lords
-    bookkeeper!(ele, changed, previous_ele) 
+    bookkeeper_ele!(ele, changed, previous_ele) 
   end
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper_superslave!(ele, changed, previous_ele)
+# bookkeeper_superslave!
 
 """
-    Internal: bookkeeper_superslave!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+    Internal: bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
 
 Internal bookkeeping for a non-`UnionEle` super slave.
 """ bookkeeper_superslave!
 
-function bookkeeper_superslave!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
   # A non-UnionEle super slave has only one lord
-  lord = ele.super_lords[1]
+  lord = slave.super_lords[1]
 
-  # If this is the first super slave
-  if lord.slaves[1] === ele
-    bookkeeper!(lord, changed, previous_ele) 
+  # Bookkeeping of the superlord is only done if the slave is the first superslave of the lord.
+  # Here the ReferenceGroup of the slave needs to be bookkeeped first.
+  if lord.slaves[1] === slave
+    elegroup_bookkeeper!(slave, ReferenceGroup, changed, previous_ele)
+    bookkeeper_ele!(lord, changed, previous_ele) 
   end
 
   # Transfer info from lord to slave
-  for param in copy(keys(ele.pdict[:changed]))
+  for param in copy(keys(lord.pdict[:changed]))
+    if param in Symbol.(PARAM_GROUPS_LIST[typeof(lord)]); continue; end
     pinfo = ele_param_info(param)
     if isnothing(pinfo); continue; end
     group = pinfo.parent_group
-    if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end
-    if !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed; pop!(ele.pdict[:changed], param); end
+    if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end  # Ignore custom stuff
+    if group == LengthGroup; continue; end     # Do not modify length of slave
+    if group == ReferenceGroup; continue; end  # Slave ReferenceGroup independent of lord
+
+    slave.pdict[Symbol(group)] = lord.pdict[Symbol(group)]
+    slave.pdict[:changed][Symbol(group)] = "changed"
   end
 
-  bookkeeper_superslave_elegroup!(ele, lord)
+  # Now bookkeep the slave
+  changed2 = ChangedLedger()
+  bookkeeper_ele!(slave, changed2, previous_ele)  # In case slave parameters have changed.
 
-  #
+  # If last slave of lord, cleare lord.changed dict.
+  if lord.slaves[end] == slave; lord.pdict[:changed] = Dict{Symbol,Any}(); end
 
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -247,7 +280,7 @@ end
 Does "quick" element index and s-position bookkeeping for a given branch starting
 at index `ix_start` to the end of `branch.ele`.
 
-  Used by lattice manipulation routines that need reindexing but don't need (or want) a full bookkeeping.
+  Used by lattice manipulation routines that need reindexing but do not need (or want) a full bookkeeping.
 """ index_and_s_bookkeeper!
 
 function index_and_s_bookkeeper!(branch::Branch, ix_start = 1)
@@ -266,6 +299,8 @@ function index_and_s_bookkeeper!(branch::Branch, ix_start = 1)
     s_now = s_now + ele.L
     set_param!(ele, :s_downstream, s_now)
   end
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -291,6 +326,8 @@ function param_conflict_check(ele::Ele, syms...)
   if length(sym_in) > 1; error(f"Conflict: {s[1]} and {s[2]} cannot both " * 
                                     f"be specified for a {typeof(ele)} element: {ele.name}"); end
   return sym_in
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -300,6 +337,7 @@ end
 function elegroup_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
                                       previous_ele::Ele) where T <: EleParameterGroup
   clear_changed!(ele, group)
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -319,6 +357,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, changed::Cha
     pop!(cdict, :ds_step)
     tg.num_steps = ele.L / tg.ds_step
   end
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -349,6 +389,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::Chang
 
   lg.s = previous_ele.s_downstream
   lg.s_downstream = lg.s + lg.L
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -416,25 +458,30 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
 
   rg.β_ref_downstream = rg.pc_ref_downstream / rg.E_tot_ref_downstream
 
-  # Lord bookkeeping
+  # Multipass lord bookkeeping if this is a slave
 
   if ele.slave_status == Slave.MULTIPASS
     lord = ele.pdict[:multipass_lord]
     if lord.pdict[:slaves][1] === ele 
       lord.ReferenceGroup = rg
-      haskey(lord.pdict, :changed) ? lord.changed = Dict(:ReferenceGroup => "changed") : lord.changed[:ReferenceGroup] = "changed" 
+      haskey(lord.pdict, :changed) ? lord.changed = Dict(:ReferenceGroup => "changed") : 
+                                                           lord.changed[:ReferenceGroup] = "changed" 
     end
   end
 
+  # Super lord bookkeeping if this is the first (upstream) slave of the lord.
+
   if ele.slave_status == Slave.SUPER
-    for lord in ele.super_lords
-      if !(lord.pdict[:slaves][1] === ele); continue; end
+    lord = ele.super_lords[1]
+    if lord.pdict[:slaves][1] === ele
       lord.ReferenceGroup = rg
-      haskey(lord.pdict, :changed) ? lord.changed = Dict(:ReferenceGroup => "changed") : lord.changed[:ReferenceGroup] = "changed" 
+      haskey(lord.pdict, :changed) ? lord.changed = Dict(:ReferenceGroup => "changed") : 
+                                                           lord.changed[:ReferenceGroup] = "changed" 
     end
   end
 
   clear_changed!(ele, ReferenceGroup)
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -451,6 +498,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup},
 
   ele.FloorPositionGroup = propagate_ele_geometry(previous_ele)
   clear_changed!(ele, FloorPositionGroup)
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -540,6 +589,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
   end
 
   clear_changed!(ele, BendGroup)
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -564,6 +614,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, changed::Cha
   end
 
   clear_changed!(ele, SolenoidGroup)
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -605,17 +656,21 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
   end
 
   clear_changed!(ele, BMultipoleGroup)
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
 # has_changed
 
 """
+    has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup -> Bool
+
 Has any parameter in `group` changed since the last bookkeeping?
 """
 
 function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   for param in keys(ele.changed)
+    if param == Symbol(group); return true; end
     info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info); continue; end
     if info.parent_group == group; return true; end
@@ -631,14 +686,26 @@ end
      clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
 
 Clear any parameter as having been changed that is associated with `group`.
+
+Exception: A superlord or multipasslord is not touched since these lords must retain changed
+information until bookkeeping has finished for all slaves. The appropriate lord/slave
+bookkeeping code will handle this.
 """ clear_changed!
 
 function clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+  if ele.lord_status == Lord.SUPER || ele.lord_status == Lord.MULTIPASS; return; end
+
   for param in keys(ele.changed)
-    info = ele_param_info(param, ele, throw_error = false)
-    if isnothing(info) || info.parent_group != group; continue; end
-    pop!(ele.changed, param)
+    if param == Symbol(group)
+      pop!(ele.changed, param)
+    else
+      info = ele_param_info(param, ele, throw_error = false)
+      if isnothing(info) || info.parent_group != group; continue; end
+      pop!(ele.changed, param)
+    end
   end
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -655,6 +722,8 @@ function reinstate_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGro
     if isnothing(info) || info.parent_group != group; continue; end
     Base.setproperty!(ele, param, ele.changed[param])
   end
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -705,5 +774,7 @@ function init_multipass_bookkeeper!(lat::Lattice)
       push!(lord.pdict[:slaves], ele)
     end
   end
+
+  return
 end
 
