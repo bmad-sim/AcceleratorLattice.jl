@@ -266,9 +266,18 @@ end
 #---------------------------------------------------------------------------------------------------
 # bookkeeper_multipassslave!(ele, changed, previous_ele)
 
-function bookkeeper_multipassslave!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
-  lord =  ele.multipass_lord
+"""
+    Internal: bookkeeper_multipassslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
 
+Internal bookkeeping for multipass slave.
+
+""" bookkeeper_multipassslave!
+
+function bookkeeper_multipassslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
+  lord = slave.multipass_lord
+
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -402,15 +411,16 @@ end
 
 function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Ele)
   rg = ele.ReferenceGroup
+  drg = ele.DownstreamReferenceGroup
   cdict = ele.changed
 
   if has_changed(ele, ReferenceGroup); changed.ref_group = true; end
 
   if is_null(previous_ele)   # implies BeginningEle
     if rg.species_ref == species("NotSet"); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
-    rg.species_ref_exit = rg.species_ref
+    drg.species_ref_downstream = rg.species_ref
 
-    rg.time_ref_downstream = rg.time_ref + rg.dtime_ref
+    rg.time_ref_downstream = rg.time_ref + rg.extra_dtime_ref
 
     if haskey(cdict, :pc_ref) && haskey(cdict, :E_tot_ref)
       error(f"Beginning element has both pc_ref and E_tot_ref set in {ele_name(ele)}")
@@ -422,11 +432,13 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
       error(f"Neither pc_ref nor E_tot_ref set for: {ele_name(ele)}")
     end
 
-    rg.pc_ref_downstream = rg.pc_ref
-    rg.E_tot_ref_downstream = rg.E_tot_ref
+    drg.pc_ref_downstream = rg.pc_ref
+    drg.E_tot_ref_downstream = rg.E_tot_ref
 
-    rg.β_ref            = rg.pc_ref / rg.E_tot_ref
-    rg.β_ref_downstream = rg.pc_ref_downstream / rg.E_tot_ref_downstream
+    rg.β_ref             = rg.pc_ref / rg.E_tot_ref
+    rg.γ_ref             = rg.E_tot_ref / massof(rg.species_ref)
+    drg.β_ref_downstream = drg.pc_ref_downstream / drg.E_tot_ref_downstream
+    drg.γ_ref_downstream = drg.E_tot_ref_downstream / massof(drg.species_ref_downstream)
 
     clear_changed!(ele, ReferenceGroup)
     return
@@ -437,26 +449,28 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   if !changed.this_ele_length && !changed.ref_group; return; end
   changed.ref_group = true
 
-  rg.species_ref      = previous_ele.species_ref_exit
-  rg.species_ref_exit = rg.species_ref
   rg.pc_ref           = previous_ele.pc_ref_downstream
   rg.E_tot_ref        = previous_ele.E_tot_ref_downstream
   rg.time_ref         = previous_ele.time_ref_downstream
   rg.β_ref            = rg.pc_ref / rg.E_tot_ref
+  rg.species_ref      = previous_ele.species_ref_downstream
+  drg.species_ref_downstream = rg.species_ref
 
 
   if typeof(ele) == LCavity
-    rg.pc_ref_downstream      = rg.pc_ref + ele.dvoltage_ref
-    rg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
-    rg.time_ref_downstream    = rg.time_ref + rg.dtime_ref + ele.L *
+    drg.pc_ref_downstream      = rg.pc_ref + ele.dvoltage_ref
+    drg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
+    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L *
              (rg.E_tot_ref + rg.E_tot_ref_downstream) / (C_light * (rg.pc_ref + rg.pc_ref_downstream))
   else
-    rg.pc_ref_downstream      = rg.pc_ref
-    rg.E_tot_ref_downstream   = rg.E_tot_ref
-    rg.time_ref_downstream    = rg.time_ref + rg.dtime_ref + ele.L / (C_light * rg.pc_ref / rg.E_tot_ref)
+    drg.pc_ref_downstream      = rg.pc_ref
+    drg.E_tot_ref_downstream   = rg.E_tot_ref
+    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L / (C_light * rg.pc_ref / rg.E_tot_ref)
   end
 
-  rg.β_ref_downstream = rg.pc_ref_downstream / rg.E_tot_ref_downstream
+  rg.γ_ref             = rg.E_tot_ref / massof(rg.species_ref)
+  drg.β_ref_downstream = drg.pc_ref_downstream / drg.E_tot_ref_downstream
+  drg.γ_ref_downstream = drg.E_tot_ref_downstream / massof(drg.species_ref_downstream)
 
   # Multipass lord bookkeeping if this is a slave
 

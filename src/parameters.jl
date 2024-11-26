@@ -106,17 +106,20 @@ ELE_PARAM_INFO_DICT = Dict(
   :field_master       => ParamInfo(MasterGroup,    Bool,          "True: fields are fixed and normalized values change when varying ref energy."),
   :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup, Bool, "True: If element is a multipass lord, ref energy is set in lord."),
 
-  :species_ref          => ParamInfo(ReferenceGroup, Species,     "Reference species."),
-  :species_ref_exit     => ParamInfo(ReferenceGroup, Species,     "Reference species at exit end."),
-  :pc_ref               => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c.", "eV"),
-  :E_tot_ref            => ParamInfo(ReferenceGroup, Number,      "Reference total energy.", "eV"),
-  :time_ref             => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
-  :dtime_ref            => ParamInfo(ReferenceGroup, Number,      "Additional reference time change.", "sec"),
-  :pc_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c at downstream end.", "eV"),
-  :E_tot_ref_downstream => ParamInfo(ReferenceGroup, Number,      "Reference total energy at downstream end.", "eV"),
-  :time_ref_downstream  => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
-  :β_ref                => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c."),
-  :β_ref_downstream     => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c at downstream end."),
+  :species_ref            => ParamInfo(ReferenceGroup, Species,     "Reference species."),
+  :pc_ref                 => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c.", "eV"),
+  :E_tot_ref              => ParamInfo(ReferenceGroup, Number,      "Reference total energy.", "eV"),
+  :time_ref               => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
+  :extra_dtime_ref        => ParamInfo(ReferenceGroup, Number,      "Additional reference time change.", "sec"),
+  :time_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
+  :β_ref                  => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c."),
+  :γ_ref                  => ParamInfo(ReferenceGroup, Number,      "Reference relativistic gamma factor."),
+
+  :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species,     "Reference species at downstream end."),
+  :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,      "Reference momentum * c at downstream end.", "eV"),
+  :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,      "Reference total energy at downstream end.", "eV"),
+  :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,      "Reference velocity/c at downstream end."),
+  :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,      "Reference relativistic gamma factor at downstream end."),
 
   :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
   :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
@@ -224,8 +227,8 @@ for (key, info) in ELE_PARAM_INFO_DICT
   info.user_sym = key
 end
 
-DEPENDENT_ELE_PARAMETERS::Vector{Symbol} = [:β_ref, :β_ref_downstream,
-                  :species_ref_exit, :pc_ref_downstream, :E_tot_ref_downstream, :time_ref_downstream,]
+DEPENDENT_ELE_PARAMETERS::Vector{Symbol} = [:β_ref, :β_ref_downstream, :γ_ref, :γ_ref_downstream,
+                  :species_ref_downstream, :pc_ref_downstream, :E_tot_ref_downstream, :time_ref_downstream,]
 
 #---------------------------------------------------------------------------------------------------
 # has_parent_group
@@ -552,7 +555,8 @@ Order is important. Bookkeeping routines rely on:
  - `RFCommonGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
 """ PARAM_GROUPS_LIST
 
-base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, FloorPositionGroup, TrackingGroup]
+base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, 
+                                          DownstreamReferenceGroup, FloorPositionGroup, TrackingGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 bmultipole_group_list = [MasterGroup, BMultipoleGroup]
@@ -599,6 +603,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
   BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleGroup`", false),
+  DownstreamReferenceGroup => EleParameterGroupInfo("Downstream element end reference energy and species.", false),
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
   EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Substructure contained in `EMultipoleGroup`.", false),
   FloorPositionGroup    => EleParameterGroupInfo("Global floor position and orientation.", true),

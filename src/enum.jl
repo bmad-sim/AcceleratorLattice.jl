@@ -99,7 +99,7 @@ function enum_add(group_name::AbstractString, values::Vector)
   end
 
   eval_str("@enumx $enum_group $(join(values, " "))")
-  return nothing
+  return
 end
 
 
@@ -143,7 +143,7 @@ Possible values for this group:\n
   end
   
   eval_str("@doc doc_str $atype")
-  return nothing
+  return
 end
 
 holy_traits("ApertureShape", ["RECTANGULAR", "ELLIPTICAL", "VERTEX", "CUSTOM_SHAPE"], "The shape of the aperture.")

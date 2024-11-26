@@ -610,6 +610,34 @@ Vector of magnetic multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
+# DownstreamReferenceGroup
+
+"""
+    mutable struct DownstreamReferenceGroup <: EleParameterGroup
+
+Downstream end of element reference energy and species. This group is useful for
+elements where the reference energy or species is not constant.
+Elements where this is true include `LCavity`, `Foil`, and `Converter`.
+
+To simplify the lattice bookkeeping, all elements that have a `ReferenceGroup` also have
+a `DownstreamReferenceGroup`. 
+
+## Fields
+• `species_ref_downstream::Species`  - Reference species exit end. \\
+• `pc_ref_downstream::Number`        - Reference `momentum*c` downstream end. \\
+• `E_tot_ref_downstream::Number`     - Reference total energy downstream end. \\
+• `β_ref_downstream::Number`         - Reference `v/c` upstream end. \\
+• `γ_ref_downstream::Number`         - Reference gamma factor downstream end. \\
+"""
+@kwdef mutable struct DownstreamReferenceGroup <: EleParameterGroup
+  species_ref_downstream::Species = species("NotSet")
+  pc_ref_downstream::Number = NaN
+  E_tot_ref_downstream::Number = NaN
+  β_ref_downstream::Number = 0.0
+  γ_ref_downstream::Number = 0.0
+end
+
+#---------------------------------------------------------------------------------------------------
 # EMultipoleGroup
 
 """
@@ -806,36 +834,28 @@ end
 """
     mutable struct ReferenceGroup <: EleParameterGroup
 
-Reference energy, time and species. 
-
-Generally `species_ref_exit` will be he same as `species_ref`
-but with `Converter` or `Foil` Elements they will generally be different.
+Reference energy, time, species, etc at upstream end of an element.
+See also `DownstreamReferenceGroup 
 
 ## Fields
 • `species_ref::Species`          - Reference species entering end. \\
-• `species_ref_exit::Species`     - Reference species exit end. \\
 • `pc_ref::Number`                - Reference `momentum*c` upstream end. \\
-• `pc_ref_downstream::Number`     - Reference `momentum*c` downstream end. \\
 • `E_tot_ref::Number`             - Reference total energy upstream end. \\
-• `E_tot_ref_downstream::Number`  - Reference total energy downstream end. \\
 • `time_ref::Number`              - Reference time upstream end. \\
 • `time_ref_downstream::Number`   - Reference time downstream end. \\
-• `dtime_ref::Number`             - User set reference time change. \\
+• `extra_dtime_ref::Number`       - User set additional time change. \\
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
-• `β_ref_downstream::Number`      - Reference `v/c` downstream end. \\
+• `γ_ref::Number`                 - Reference gamma factor upstream end. \\
 """
 @kwdef mutable struct ReferenceGroup <: EleParameterGroup
   species_ref::Species = species("NotSet")
-  species_ref_exit::Species = species("NotSet")
   pc_ref::Number = NaN
-  pc_ref_downstream::Number = NaN
   E_tot_ref::Number = NaN
-  E_tot_ref_downstream::Number = NaN
   time_ref::Number = 0.0
   time_ref_downstream::Number = 0.0
-  dtime_ref::Number = 0.0
+  extra_dtime_ref::Number = 0.0
   β_ref::Number = 0.0
-  β_ref_downstream::Number = 0.0
+  γ_ref::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------

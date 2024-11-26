@@ -36,6 +36,7 @@ function lat_ele_dict(lat::Lattice)
       end
     end
   end
+
   return eled
 end
 
@@ -60,7 +61,8 @@ function kill_external_ele(lat::Lattice; prefix::AbstractString = "", this_modul
       eval( :($(Symbol(nam)) = nothing) )
     end
   end
-  return nothing
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -92,7 +94,8 @@ function create_external_ele(lat::Lattice; prefix::AbstractString = "", this_mod
       eval( :($(Symbol(this_module)).$(Symbol(name))= $(evec)) )
     end
   end
-  return nothing
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -118,5 +121,5 @@ function create_unique_ele_names!(lat::Lattice; suffix::AbstractString = "!#")
     end
   end
 
-  return nothing
+  return
 end

@@ -23,6 +23,7 @@ function Base.getproperty(lat::Lattice, sym::Symbol)
   if sym == :name; return getfield(lat, :name); end
   if sym == :branch; return getfield(lat, :branch); end
   if sym == :pdict; return getfield(lat, :pdict); end
+
   return getfield(lat, :pdict)[sym]
 end
 
@@ -45,6 +46,7 @@ function Base.getproperty(bl::BeamLine, sym::Symbol)
   if sym == :id; return getfield(bl, :id); end
   if sym == :line; return getfield(bl, :line); end
   if sym == :pdict; return getfield(bl, :pdict); end
+
   return getfield(bl, :pdict)[sym]
 end
 
