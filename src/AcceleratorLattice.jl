@@ -70,7 +70,8 @@ module AcceleratorLattice
   export branch, matches_branch, create_ele_vars, eval_str, Vertex1, LatticeGlobal
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup, BeamBeamGroup
   export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, DescriptionGroup, RFCommonGroup, SolenoidGroup
-  export TrackingGroup, LengthGroup, ReferenceGroup, MasterGroup, LordSlaveStatusGroup
+  export TrackingGroup, LengthGroup, ReferenceGroup, DownstreamReferenceGroup
+  export MasterGroup, LordSlaveStatusGroup
   export GirderGroup, LCavityGroup, PatchGroup, RFCavityGroup, RFAutoGroup
   export TwissGroup, Twiss1, Wall2D, Vertex1, InitSpinGroup, InitParticleGroup, show_changed
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms

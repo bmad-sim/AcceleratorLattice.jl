@@ -81,12 +81,16 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :flexible         => :L_user,
   ),
 
+  DownstreamReferenceGroup => Dict{Symbol,Symbol}(
+    :pc_ref_downstream  => :E_tot_ref_downstream,
+    :β_ref_downstream   => :γ_ref_downstream,
+  ),
+
   ReferenceGroup => Dict{Symbol,Symbol}(
-    :species_ref      => :species_ref_exit,
-    :pc_ref           => :pc_ref_downstream,
-    :E_tot_ref        => :E_tot_ref_downstream,
+    :species_ref      => :extra_dtime_ref,
+    :pc_ref           => :E_tot_ref,
     :time_ref         => :time_ref_downstream,
-    :β_ref            => :β_ref_downstream,
+    :β_ref            => :γ_ref,
   ),
 
   RFGroup => Dict{Symbol,Symbol}(
@@ -262,7 +266,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
 
   pdict = ele.pdict
   if length(pdict) > 0   # Need test since will bomb on zero length dict
-    # Print non-group, non-changed parameters first.
+    # Print non-group, non-changed parameters first like the element index, branch ID, etc.
     for key in sort(collect(keys(pdict)))
       if key in IGNORE_ELE_PDICT_KEY; continue; end
       val = pdict[key]
@@ -282,6 +286,14 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
       if !(typeof(group) <: EleParameterGroup); continue; end
+      # Do not show if the group parameter values are the same as the ReferenceGroup
+      if key == :DownstreamReferenceGroup
+        rg = pdict[ReferenceGroup]
+        if group.species_ref_downstream == rg.species_ref && group.pc_ref_downstream == rg.pc_ref
+          println(io, "  DownstreamReferenceGroup: Same energy and species values as ReferenceGroup")
+          continue
+        end
+      end
       show_elegroup(io, group, docstring, indent = 2)
     end
 

@@ -415,6 +415,7 @@ function eles(where_search::Union{Lattice,Branch}, who::Union{AbstractString,Reg
     list = list[3:end]
   end
 
+  return list
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -452,7 +453,7 @@ end
 
 function lat_branch(ele::Ele)
   if haskey(ele.pdict, :branch); return ele.pdict[:branch]; end
-  return nothing
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
