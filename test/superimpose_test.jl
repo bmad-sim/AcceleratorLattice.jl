@@ -2,7 +2,8 @@ using AcceleratorLattice, Test
 
 @eles begin
   beginning = BeginningEle(pc_ref = 1e7, species_ref = Species("electron"))
-  q1 = Quadrupole(L = 0.6, x_rot = 2, ID = "qz", Ks8L = 123, tilt8 = 2)
+  q1 = Quadrupole(L = 0.6, x_rot = 2, ID = "qz", Ks8L = 123, tilt8 = 2, Bn9 = 3, 
+                          En1L = 1, Etilt1 = 2, Es2 = 3, Etilt2 = 4)
   q2 = Quadrupole(L = 0.6, Kn1 = -0.3);
   d1 = Drift(L = 1.0);
   d2 = Drift(L = 1.0);
@@ -34,5 +35,8 @@ end
 
 # superimpose at boundary
 # Make sure superimpose at branch start is not before beginning element.
+# Transfer of parameters between lord/slave especially multipoles
+# LCavity with marker
+# UnionEle
 
 print("")  # To surpress trailing garbage output

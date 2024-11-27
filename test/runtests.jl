@@ -26,6 +26,10 @@ using AcceleratorLattice, Test
 #    include("lat_construction_test.jl")
 #  end
 
+#  @testset "multipass_test" begin
+#    include("multipass_test.jl")
+#  end
+
 
 end;
 

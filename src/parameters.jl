@@ -276,15 +276,16 @@ end
 # units
 
 """
-    units(param::Symbol) -> units::String
-    units(param::Symbol, eletype::Type{T}) where T <: Ele -> units::String
+    units(param::Union{Symbol,DataType}) -> units::String
+    units(param::Union{Symbol,DataType}, eletype::Type{T}) where T <: Ele -> units::String
 
 Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
-`param` may correspond to either a user symbol or struct symbol.
+`param` may be an element parameter group type (EG: `LengthGroup`) in which
+case `units` returns a blank string.
 """ units
 
-function units(param::Symbol)
-  if param in Symbol.(keys(AcceleratorLattice.ELE_PARAM_GROUP_INFO)); return ""; end
+function units(param::Union{Symbol,DataType})
+  if typeof(param) == DataType; return ""; end
 
   if param in keys(ele_param_struct_field_to_user_sym)
     # Ambiguous so just assume that all possibilities have the same units.
@@ -299,7 +300,7 @@ end
 
 #-
 
-function units(param::Symbol, eletype::Type{T}) where T <: Ele
+function units(param::Union{Symbol,DataType}, eletype::Type{T}) where T <: Ele
   return units(param)
 end
 
@@ -379,7 +380,7 @@ multipole_type(sym::Symbol) = multipole_type(string(sym))
 # multipole_param_info
 
 """
-    multipole_param_info(sym::Symbol) -> ParamInfo
+    Internal: multipole_param_info(sym::Symbol) -> ParamInfo
 
 Returns `ParamInfo` information struct on a given multipole parameter corresponding to `sym`.
 
@@ -444,44 +445,57 @@ multipole_param_info(str::AbstractString) = multipole_param_info(Symbol(str))
 # ele_param_info
 
 """
-    ele_param_info(sym::Symbol; throw_error = true) -> Union{ParamInfo, Nothing}
-    ele_param_info(sym::Symbol, ele::Ele; throw_error = true) -> Union{ParamInfo, Nothing}
+    ele_param_info(who::Union{Symbol,DataType}; throw_error = true) -> Union{ParamInfo, Nothing}
+    ele_param_info(who::Symbol, ele::Ele; throw_error = true) -> Union{ParamInfo, Nothing}
 
-Returns information on the element parameter `sym`.
-Returns a `ParamInfo` struct. If no information on `sym` is found, an error is thrown
-or `nothing` is returned.
+Returns information on `who` which is either a `Symbol` representing an element parameter
+or an element parameter group type.
+
+Returned is a `ParamInfo` struct. If `who` is a DataType or no information on `who` is found, 
+an error is thrown or `nothing` is returned depending upon the setting of `throw_error`.
 """ ele_param_info
 
-function ele_param_info(sym::Symbol; throw_error = true)
-  if haskey(ELE_PARAM_INFO_DICT, sym); (return ELE_PARAM_INFO_DICT[sym]); end
+function ele_param_info(who::Union{Symbol,DataType}; throw_error = true)
+  if typeof(who) == Symbol
+    if haskey(ELE_PARAM_INFO_DICT, who); (return ELE_PARAM_INFO_DICT[who]); end
+    # Is a multipole? Otherwise unrecognized.
+    info = multipole_param_info(who)
+    if isnothing(info) && throw_error; error(f"Unrecognized element parameter: {who}"); end
+    return info
+  end
 
-  # Is a multipole? Otherwise unrecognized.
-  info = multipole_param_info(sym)
-  if isnothing(info) && throw_error; error(f"Unrecognized element parameter: {sym}"); end
-  return info
+  # A DataType means `who` is not an element parameter.
+  if throw_error; error(f"Unrecognized element parameter: {who}"); end
+  return nothing
 end
 
 #
 
-function ele_param_info(sym::Symbol, ele::Ele; throw_error = true)
-  param_info = ele_param_info(sym, throw_error = throw_error)
-  if isnothing(param_info); return nothing; end
+function ele_param_info(who::Union{Symbol,DataType}, ele::Ele; throw_error = true)
+  if typeof(who) == Symbol
+    param_info = ele_param_info(who, throw_error = throw_error)
+    if isnothing(param_info); return nothing; end
 
-  if typeof(param_info.parent_group) <: Vector
-    for parent in param_info.parent_group
-      if parent in PARAM_GROUPS_LIST[typeof(ele)]
-        param_info.parent_group = parent
-        return param_info
+    if typeof(param_info.parent_group) <: Vector
+      for parent in param_info.parent_group
+        if parent in PARAM_GROUPS_LIST[typeof(ele)]
+          param_info.parent_group = parent
+          return param_info
+        end
       end
-    end
     
-    error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")
+      error(f"Symbol {who} not in element {ele_name(ele)} which is of type {typeof(ele)}")
 
-  else
-    if param_info.parent_group in PARAM_GROUPS_LIST[typeof(ele)] || 
+    else
+      if param_info.parent_group in PARAM_GROUPS_LIST[typeof(ele)] || 
                                         param_info.parent_group == Nothing; return param_info; end
-    error(f"Symbol {sym} not in element {ele_name(ele)} which is of type {typeof(ele)}")   
+      error(f"Symbol {who} not in element {ele_name(ele)} which is of type {typeof(ele)}")   
+    end
   end
+
+  # A DataType means `who` is not an element parameter.
+  if throw_error; error(f"Unrecognized element parameter: {who}"); end
+  return nothing
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -596,6 +610,12 @@ PARAM_GROUPS_LIST = Dict(
     Wiggler             => [base_group_list...],
 )
 
+PARAM_GROUPS_SYMBOL = copy(PARAM_GROUPS_LIST)
+for key in keys(PARAM_GROUPS_SYMBOL)
+  PARAM_GROUPS_SYMBOL[key] = Symbol.(strip_AL.(string.(PARAM_GROUPS_SYMBOL[key])))
+end
+
+
 ELE_PARAM_GROUP_INFO = Dict(
   AlignmentGroup        => EleParameterGroupInfo("Element position/orientation shift.", false),
   ApertureGroup         => EleParameterGroupInfo("Vacuum chamber aperture.", false),
@@ -603,6 +623,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
   BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleGroup`", false),
+  DescriptionGroup      => EleParameterGroupInfo("Informational strings.", false),
   DownstreamReferenceGroup => EleParameterGroupInfo("Downstream element end reference energy and species.", false),
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
   EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Substructure contained in `EMultipoleGroup`.", false),
@@ -619,7 +640,6 @@ ELE_PARAM_GROUP_INFO = Dict(
   RFGroup               => EleParameterGroupInfo("`RFCavity` and `LCavity` RF parameters.", true),
   RFAutoGroup           => EleParameterGroupInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
   SolenoidGroup         => EleParameterGroupInfo("`Solenoid` parameters.", false),
-  DescriptionGroup           => EleParameterGroupInfo("Informational strings.", false),
   TrackingGroup         => EleParameterGroupInfo("Default tracking settings.", false),
 )
 

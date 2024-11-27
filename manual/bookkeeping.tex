@@ -15,7 +15,7 @@ Importance of using pop!, insert!, push! and set! when modifying the branch.ele 
 
 The \vn{ele.changed} parameter (which is actually \vn{ele.pdict[:changed]}) is a dictionary.
 The keys of this dict will be either symbols of the changed parameters or
-will be the symbol of an element parameter group. 
+will be an element parameter group. 
 When the key is a symbol of a changed parameter,
 the dict value will be the old value of the parameter. These dict entries are set by the 
 overloaded \vn{Base.setproperty(ele, param_sym, value)} function. 
