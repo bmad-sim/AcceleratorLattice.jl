@@ -135,7 +135,7 @@ bookkeeping code to always exist.
 function (::Type{T})(; kwargs...) where T <: Ele
   ele = T(Dict{Symbol,Any}(:branch => nothing))
   pdict = ele.pdict
-  pdict[:changed] = Dict{Symbol,Any}()
+  pdict[:changed] = Dict{Union{Symbol,DataType},Any}()
 
   # Setup parameter groups.
   for group in PARAM_GROUPS_LIST[typeof(ele)]

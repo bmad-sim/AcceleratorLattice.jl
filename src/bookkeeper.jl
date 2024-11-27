@@ -45,7 +45,7 @@ function bookkeeper!(lat::Lattice)
   for branch in lat.branch
     for ele in branch.ele
       for param in keys(ele.pdict[:changed])
-        println("WARNING! Unbookkeeped parameter $param in element $(ele_name(ele)). Please report this!")
+        println("WARNING! Unbookkeeped parameter: $(repr(param)) in element $(ele_name(ele)). Please report this!")
       end
     end
   end
@@ -79,44 +79,6 @@ function check_if_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothin
   if sym in DEPENDENT_ELE_PARAMETERS
     error("Parameter is not user settable: $sym. For element: $(ele_name(ele)).")
   end
-
-  return
-end
-
-#---------------------------------------------------------------------------------------------------
-# end_multipass_bookkeeper!(lat)
-
-"""
-    Internal: end_multipass_bookkeeper!(lat)
-
-Bookkeeper to handle changes in multipass lord elements. Used by `bookkeeper!(::Lattice)`
-""" end_multipass_bookkeeper!
-
-function end_multipass_bookkeeper!(lat)
-  mbranch = lat_branch(lat, MultipassLordBranch)
-  for lord in mbranch.ele
-    cdict = lord.changed
-
-    if haskey(cdict, :ReferenceGroup)
-      if haskey(lord.pdict, :BMultipoleGroup)
-        elegroup_bookkeeper!(lord, BMultipoleGroup, ChangedLedger(ref_group = true), NULL_ELE)
-        for slave in lord.slaves
-          slave.BMultipoleGroup = copy(lord.BMultipoleGroup)
-          elegroup_bookkeeper!(slave, BMultipoleGroup, ChangedLedger(ref_group = true), NULL_ELE)
-        end
-      end
-
-      if haskey(lord.pdict, :EMultipoleGroup)
-        elegroup_bookkeeper!(lord, EMultipoleGroup, ChangedLedger(ref_group = true), NULL_ELE)
-        for slave in lord.slaves
-          slave.EMultipoleGroup = copy(lord.EMultipoleGroup)
-          elegroup_bookkeeper!(slave, EMultipoleGroup, ChangedLedger(ref_group = true), NULL_ELE)
-        end
-      end
-
-      pop!(cdict, :ReferenceGroup)
-    end
-  end 
 
   return
 end
@@ -192,7 +154,7 @@ function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
   # Throw out changed parameters that don't need bookkeeping
 
   for param in copy(keys(ele.pdict[:changed]))
-    if typeof(param) == EleParameterGroup
+    if typeof(param) != Symbol    # Something like param = `ReferenceGroup`
       group = param
     else
       pinfo = ele_param_info(param, throw_error = false)
@@ -241,23 +203,24 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
 
   # Transfer info from lord to slave
   for param in copy(keys(lord.pdict[:changed]))
-    if param in Symbol.(PARAM_GROUPS_LIST[typeof(lord)]); continue; end
+    if typeof(param) != Symbol; continue; end
     pinfo = ele_param_info(param)
     if isnothing(pinfo); continue; end
     group = pinfo.parent_group
     if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end  # Ignore custom stuff
     if group == LengthGroup; continue; end     # Do not modify length of slave
     if group == ReferenceGroup; continue; end  # Slave ReferenceGroup independent of lord
+    if group == DownstreamReferenceGroup; continue; end
 
     slave.pdict[Symbol(group)] = lord.pdict[Symbol(group)]
-    slave.pdict[:changed][Symbol(group)] = "changed"
+    slave.pdict[:changed][group] = "changed"
   end
 
   # Now bookkeep the slave
   changed2 = ChangedLedger()
   bookkeeper_ele!(slave, changed2, previous_ele)  # In case slave parameters have changed.
 
-  # If last slave of lord, cleare lord.changed dict.
+  # If last slave of lord, clear lord.changed dict.
   if lord.slaves[end] == slave; lord.pdict[:changed] = Dict{Symbol,Any}(); end
 
   return
@@ -275,7 +238,31 @@ Internal bookkeeping for multipass slave.
 
 function bookkeeper_multipassslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
   lord = slave.multipass_lord
+  cdict = lord.changed
 
+  ## To Do: Bookkeep the lord. What is the reference energy?
+
+  # Transfer info from lord to slave
+  for param in copy(keys(lord.pdict[:changed]))
+    if typeof(param) != Symbol; continue; end
+    pinfo = ele_param_info(param)
+    if isnothing(pinfo); continue; end
+    group = pinfo.parent_group
+    if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end  # Ignore custom stuff
+    if group == LengthGroup; continue; end     # Do not modify length of slave
+    if group == ReferenceGroup; continue; end  # Slave ReferenceGroup independent of lord
+    if group == DownstreamReferenceGroup; continue; end
+
+    slave.pdict[Symbol(group)] = lord.pdict[Symbol(group)]
+    slave.pdict[:changed][group] = "changed"
+  end
+
+  # Now bookkeep the slave
+  changed2 = ChangedLedger()
+  bookkeeper_ele!(slave, changed2, previous_ele)  # In case slave parameters have changed.
+
+  # If last slave of lord, clear lord.changed dict.
+  if lord.slaves[end] == slave; lord.pdict[:changed] = Dict{Symbol,Any}(); end
 
   return
 end
@@ -478,8 +465,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
     lord = ele.pdict[:multipass_lord]
     if lord.pdict[:slaves][1] === ele 
       lord.ReferenceGroup = rg
-      haskey(lord.pdict, :changed) ? lord.changed = Dict(:ReferenceGroup => "changed") : 
-                                                           lord.changed[:ReferenceGroup] = "changed" 
+      haskey(lord.pdict, :changed) ? lord.changed = Dict(ReferenceGroup => "changed") : 
+                                                           lord.changed[ReferenceGroup] = "changed" 
     end
   end
 
@@ -489,8 +476,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
     lord = ele.super_lords[1]
     if lord.pdict[:slaves][1] === ele
       lord.ReferenceGroup = rg
-      haskey(lord.pdict, :changed) ? lord.changed = Dict(:ReferenceGroup => "changed") : 
-                                                           lord.changed[:ReferenceGroup] = "changed" 
+      haskey(lord.pdict, :changed) ? lord.changed = Dict(ReferenceGroup => "changed") : 
+                                                           lord.changed[ReferenceGroup] = "changed" 
     end
   end
 
@@ -643,6 +630,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
   ff = ele.pc_ref / (C_light * charge(ele.species_ref))
 
   for param in keys(cdict)
+    if typeof(param) == DataType; continue; end
     (mtype, order, group) = multipole_type(param)
     if isnothing(group) || group != BMultipoleGroup || mtype == "tilt"; continue; end
     mul = multipole!(bmg, order)
@@ -684,7 +672,7 @@ Has any parameter in `group` changed since the last bookkeeping?
 
 function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   for param in keys(ele.changed)
-    if param == Symbol(group); return true; end
+    if param == group; return true; end
     info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info); continue; end
     if info.parent_group == group; return true; end
@@ -710,7 +698,7 @@ function clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   if ele.lord_status == Lord.SUPER || ele.lord_status == Lord.MULTIPASS; return; end
 
   for param in keys(ele.changed)
-    if param == Symbol(group)
+    if param == group
       pop!(ele.changed, param)
     else
       info = ele_param_info(param, ele, throw_error = false)

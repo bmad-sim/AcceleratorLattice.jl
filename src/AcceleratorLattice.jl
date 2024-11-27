@@ -77,7 +77,7 @@ module AcceleratorLattice
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
   export ele_param_struct_field_to_user_sym, multipole!, index, integer, quat_angles, Quaternion
-  export machine_location, body_location, EleRegion, multipole_param_info, holy_traits
+  export machine_location, body_location, EleRegion, holy_traits
   export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
   export str_split, str_match, str_unquote, str_quote, str_to_int, OPEN, CLOSED
   export ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST

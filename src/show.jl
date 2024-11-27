@@ -288,7 +288,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       if !(typeof(group) <: EleParameterGroup); continue; end
       # Do not show if the group parameter values are the same as the ReferenceGroup
       if key == :DownstreamReferenceGroup
-        rg = pdict[ReferenceGroup]
+        rg = pdict[:ReferenceGroup]
         if group.species_ref_downstream == rg.species_ref && group.pc_ref_downstream == rg.pc_ref
           println(io, "  DownstreamReferenceGroup: Same energy and species values as ReferenceGroup")
           continue
