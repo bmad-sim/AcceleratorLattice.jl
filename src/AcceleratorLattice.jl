@@ -27,14 +27,15 @@ module AcceleratorLattice
     eval(Meta.parse("export $name"))
   end
 
-  function species(str::String)
-    if str == "NotSet"; return Species("muon"); end
-    return Species(str)
+  function charge(species::Species)
+    if species == Species(); error("Species not set!"); end
+    return chargeof(species)
   end
 
-  C_light = C_LIGHT
-  charge(species::Species) = chargeof(species)
-
+  function mass(species::Species)
+    if species == Species(); error("Species not set!"); end
+    return massof(species)
+  end
 
   #
 
@@ -53,7 +54,7 @@ module AcceleratorLattice
   include("show.jl")
   include("bookkeeper.jl")
   include("lat_construction.jl")
-  include("input_output.jl")
+  include("output_lat.jl")
   include("query.jl")
   include("find.jl")
   include("external_ele.jl")

@@ -404,7 +404,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   if has_changed(ele, ReferenceGroup); changed.ref_group = true; end
 
   if is_null(previous_ele)   # implies BeginningEle
-    if rg.species_ref == species("NotSet"); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
+    if rg.species_ref == Species(); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
     drg.species_ref_downstream = rg.species_ref
 
     rg.time_ref_downstream = rg.time_ref + rg.extra_dtime_ref
@@ -448,11 +448,11 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
     drg.pc_ref_downstream      = rg.pc_ref + ele.dvoltage_ref
     drg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
     rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L *
-             (rg.E_tot_ref + rg.E_tot_ref_downstream) / (C_light * (rg.pc_ref + rg.pc_ref_downstream))
+             (rg.E_tot_ref + rg.E_tot_ref_downstream) / (C_LIGHT * (rg.pc_ref + rg.pc_ref_downstream))
   else
     drg.pc_ref_downstream      = rg.pc_ref
     drg.E_tot_ref_downstream   = rg.E_tot_ref
-    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L / (C_light * rg.pc_ref / rg.E_tot_ref)
+    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L / (C_LIGHT * rg.pc_ref / rg.E_tot_ref)
   end
 
   rg.γ_ref             = rg.E_tot_ref / massof(rg.species_ref)
@@ -545,8 +545,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
   bg.g_tot = bg.g + ele.Kn0
   bg.g == 0 ? bg.rho = Inf : bg.rho = 1.0 / bg.g
 
-  bg.bend_field = bg.g * ele.pc_ref / (C_light * charge(ele.species_ref))
-  bg.bend_field_tot = bg.g_tot * ele.pc_ref / (C_light * charge(ele.species_ref))
+  bg.bend_field = bg.g * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
+  bg.bend_field_tot = bg.g_tot * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
   if haskey(cdict, :L_chord)
     bg.angle = 2 * asin(bg.L_chord * bg.g / 2)
@@ -602,7 +602,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, changed::Cha
   cdict = ele.changed
   if !has_changed(ele, SolenoidGroup) && !changed.ref_group; return; end
 
-  ff = ele.pc_ref / (C_light * charge(ele.species_ref))
+  ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
   if has_key(cdict, :Ksol)
     sg.Bsol = sg.Ksol * ff
@@ -627,7 +627,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
   cdict = ele.changed
   if !has_changed(ele, BMultipoleGroup) && !changed.this_ele_length && !changed.ref_group; return; end
 
-  ff = ele.pc_ref / (C_light * charge(ele.species_ref))
+  ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
   for param in keys(cdict)
     if typeof(param) == DataType; continue; end

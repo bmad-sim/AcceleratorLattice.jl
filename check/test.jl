@@ -1,7 +1,7 @@
 using AcceleratorLattice
 
-@ele begin_ln2 = BeginningEle(pc_ref = 1e7, species_ref = species("electron"))
-@ele begin_fodo = BeginningEle(E_tot_ref = 1.23456789012345678e3, s = 0.3, species_ref = species("photon"))
+@ele begin_ln2 = BeginningEle(pc_ref = 1e7, species_ref = Species("electron"))
+@ele begin_fodo = BeginningEle(E_tot_ref = 1.23456789012345678e3, s = 0.3, species_ref = Species("photon"))
 #@ele qf = Quadrupole(L = 0.6, K2 = 0.3, tilt0 = 1, x_rot = 2, alias = "qz", Es8L = 123, Etilt8 = 2)
 @ele qf = Quadrupole(L = 0.6, x_rot = 2, alias = "qz", Ks8L = 123, tilt8 = 2)
 @ele qd = Quadrupole(L = 0.6, Kn1 = -0.3)
