@@ -1,7 +1,7 @@
 using AcceleratorLattice
 
-@ele e_begin = BeginningEle(pc_ref = 1e9, species_ref = species("electron"));
-@ele p_begin = BeginningEle(pc_ref = 1e11, species_ref = species("proton"));
+@ele e_begin = BeginningEle(pc_ref = 1e9, species_ref = Species("electron"));
+@ele p_begin = BeginningEle(pc_ref = 1e11, species_ref = Species("proton"));
 @ele qd = Quadrupole(L = 0.6, Kn1 = -0.3);
 @ele qf = Quadrupole(L = 0.6, x_rot = 2, ID = "qz", Ks8L = 123, tilt8 = 2);
 @ele d = Drift(L = 0.6);

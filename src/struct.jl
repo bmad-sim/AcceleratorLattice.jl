@@ -630,7 +630,7 @@ a `DownstreamReferenceGroup`.
 • `γ_ref_downstream::Number`         - Reference gamma factor downstream end. \\
 """
 @kwdef mutable struct DownstreamReferenceGroup <: EleParameterGroup
-  species_ref_downstream::Species = species("NotSet")
+  species_ref_downstream::Species = Species()
   pc_ref_downstream::Number = NaN
   E_tot_ref_downstream::Number = NaN
   β_ref_downstream::Number = 0.0
@@ -848,7 +848,7 @@ See also `DownstreamReferenceGroup
 • `γ_ref::Number`                 - Reference gamma factor upstream end. \\
 """
 @kwdef mutable struct ReferenceGroup <: EleParameterGroup
-  species_ref::Species = species("NotSet")
+  species_ref::Species = Species()
   pc_ref::Number = NaN
   E_tot_ref::Number = NaN
   time_ref::Number = 0.0

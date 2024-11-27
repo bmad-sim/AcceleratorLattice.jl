@@ -1,6 +1,6 @@
 # Lattice file translated from Fortran Bmad.
 
-@ele begin1 = BeginningEle(pc_ref = 1.7846262612447E10, species_ref = species("electron"),
+@ele begin1 = BeginningEle(pc_ref = 1.7846262612447E10, species_ref = Species("electron"),
    beta_a = 0.58999989679404, beta_b = 0.057000051459821, alpha_a = 1.9903787513516E-6,
    alpha_b = 4.714580338894E-7, eta_x = -2.0707830822078E-7, eta_y = 5.9788818987933E-14,
    etap_x = 2.2102341125692E-7, etap_y = 6.4775804266427E-13)
