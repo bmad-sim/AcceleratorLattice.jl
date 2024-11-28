@@ -20,7 +20,7 @@ using AcceleratorLattice
 
 ```
 @eles begin
-  begin0 = BeginningEle(pc_ref = 1e7, species_ref = species("electron"))
+  begin0 = BeginningEle(pc_ref = 1e7, species_ref = Species("electron"))
   qf = Quadrupole(L = 0.6, Kn1 = 0.34)
   d = Drift(L = 0.4)
   b1 = Bend(L = 1.2, g = 0.034);
@@ -42,8 +42,6 @@ Branch 1: "b1", geometry => OPEN                      L           s      s_downs
 Branch 2: "super_lord"
      --- No Elements ---
 Branch 3: "multipass_lord"
-     --- No Elements ---
-Branch 4: "governor"
      --- No Elements ---
 ```
 An individual element looks like:
@@ -76,3 +74,7 @@ Ele: "qf" (b1>>2)   Quadrupole
     s                    0.0 m                        s_downstream         0.6 m
 ... etc...
 ```
+
+# SciBmad manual
+
+[SciBmad manual](https://github.com/bmad-sim/AcceleratorLattice.jl/blob/main/manual/AcceleratorLattice.pdf)

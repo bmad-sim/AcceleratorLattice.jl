@@ -864,7 +864,7 @@ end
 """
     mutable struct RFGroup <: EleParameterGroup
 
-RF voltage parameters.
+RF voltage parameters. Also see `RFAutoGroup`.
 
 ## Fields
 
@@ -897,7 +897,7 @@ end
 """
     mutable struct RFAutoGroup <: EleParameterGroup
 
-RF autoscale parameters.
+RF autoscale parameters. Also see `RFGroup`.
 
 ## Fields
 
