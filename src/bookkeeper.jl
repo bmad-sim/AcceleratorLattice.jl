@@ -401,7 +401,9 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   drg = ele.DownstreamReferenceGroup
   cdict = ele.changed
 
-  if has_changed(ele, ReferenceGroup); changed.ref_group = true; end
+  if has_changed(ele, ReferenceGroup) || has_changed(ele, RFGroup); changed.ref_group = true; end
+
+
 
   if is_null(previous_ele)   # implies BeginningEle
     if rg.species_ref == Species(); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
@@ -444,15 +446,16 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   drg.species_ref_downstream = rg.species_ref
 
 
-  if typeof(ele) == LCavity
-    drg.pc_ref_downstream      = rg.pc_ref + ele.dvoltage_ref
-    drg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
-    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L *
-             (rg.E_tot_ref + rg.E_tot_ref_downstream) / (C_LIGHT * (rg.pc_ref + rg.pc_ref_downstream))
-  else
+  :RFGroup in ele.pdict ? dvoltage_ref = ele.dvoltage_ref : dvoltage_ref = 0 
+  if dvoltage_ref == 0
     drg.pc_ref_downstream      = rg.pc_ref
     drg.E_tot_ref_downstream   = rg.E_tot_ref
     rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L / (C_LIGHT * rg.pc_ref / rg.E_tot_ref)
+  else
+    drg.pc_ref_downstream      = rg.pc_ref + dvoltage_ref
+    drg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
+    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L *
+             (rg.E_tot_ref + rg.E_tot_ref_downstream) / (C_LIGHT * (rg.pc_ref + rg.pc_ref_downstream))
   end
 
   rg.γ_ref             = rg.E_tot_ref / massof(rg.species_ref)
@@ -482,6 +485,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   end
 
   clear_changed!(ele, ReferenceGroup)
+  clear_changed!(ele, RFGroup)
   return
 end
 
