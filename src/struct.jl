@@ -259,7 +259,7 @@ Used in constructing the `ELE_PARAM_GROUP_INFO` Dict.
 
 ## Contains
 • `description::String`      - Descriptive string. \\
-• `bookkeeping_needed::Bool  - If true, this indicates there exists a bookkeeping function for the 
+• `bookkeeping_needed::Bool  - If true, this indicates there exists a bookkeeping function for the \\
   parameter group that needs to be called if a parameter of the group is changed. \\
 """
 struct EleParameterGroupInfo
@@ -307,7 +307,7 @@ Used by `BMultipoleGroup`.
 • `Bs::Number`                 - Skew field component. \\
 • `tilt::Number`               - Rotation of multipole around `z`-axis. \\
 • `order::Int`                 - Multipole order. \\
-• `integrated::Union{Bool,Nothing}` - Integrated or not? 
+• `integrated::Union{Bool,Nothing}` - Integrated or not? \\
   Also determines what stays constant with length changes. \\
 """
 @kwdef mutable struct BMultipole1 <: EleParameterSubGroup  # A single multipole
@@ -349,7 +349,7 @@ Used by `EMultipoleGroup`.
 • `Es::Number`                  - Skew fieldEG component. EG: "Es2", "Es2L" \\
 • `Etilt::Number`               - Rotation of multipole around `z`-axis. \\
 • `order::Int`                  - Multipole order. \\
-• `Eintegrated::Bool`           - Integrated field or not?. 
+• `Eintegrated::Bool`           - Integrated field or not?. \\
   Also determines what stays constant with length changes. \\
 """ EMultipole1
 
@@ -403,10 +403,10 @@ of the chamber wall from the vertex point to the next vertex point.
 If not set, the chamber wall from the vertex to the next vertex is a straight line.
 
 ## Fields
-• `r0::Vector{Number}`     - (x, y) coordinate of vertex point.
-• `radius_x::Number`      - Horizontal ellipse radius.
-• `radius_y::Number`      - Vertical ellipse radius.
-• `tilt::Number`          - Tilt of ellipse.
+• `r0::Vector{Number}`     - (x, y) coordinate of vertex point. \\
+• `radius_x::Number`      - Horizontal ellipse radius. \\
+• `radius_y::Number`      - Vertical ellipse radius. \\
+• `tilt::Number`          - Tilt of ellipse. \\
 """ Vertex1
 
 @kwdef mutable struct Vertex1 <: EleParameterSubGroup
@@ -464,9 +464,9 @@ the corresponding `_tot` fields.
 • `x_rot_tot::Number`      - Rotation around the x-axis including Girder misalignment. \\
 • `y_rot::Number`          - Rotation around the y-axis not including any Girder misalignments. \\
 • `y_rot_tot::Number`      - Rotation around the z-axis including Girder misalignment. \\
-• `tilt::Number`           - Rotation around the z-axis not including any Girder misalignment. 
+• `tilt::Number`           - Rotation around the z-axis not including any Girder misalignment. \\
   Not used by Bend elements. \\
-• `tilt_tot::Number`       - Rotation around the z-axis including Girder misalignment. 
+• `tilt_tot::Number`       - Rotation around the z-axis including Girder misalignment. \\
   Not used by Bend elements. \\
 """ AlignmentGroup
 
@@ -496,7 +496,7 @@ Vacuum chamber aperture struct.
 • `aperture_shape::ApertureShape.T`     - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
 • `aperture_at::BodyLoc.T`              - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
 • `misalignment_moves_aperture::Bool`   - Do element misalignments move the aperture? Default is false. \\
-• `custom_aperture::Dict`               - Custom aperture information.
+• `custom_aperture::Dict`               - Custom aperture information. \\
 """ ApertureGroup
 
 @kwdef mutable struct ApertureGroup <: EleParameterGroup
@@ -518,22 +518,26 @@ end
     mutable struct BeamBeamGroup <: EleParameterGroup
 
 ## Fields
-• n_slice::Number
-• z0_crossing::Number       - Weak particle phase space z when strong beam center
-                            -   passes the BeamBeam element.
-• repetition_freq:: Number  - Strong beam repetition rate.
-• twiss::Twiss              - Strong beam Twiss at IP.
-• sig_x::Number             - Strong beam horizontal sigma at IP.
-• sig_y::Number             - Strong beam vertical sigma at IP.
-• sig_z::Number             - Strong beam longitudinal sigma.
-• bbi_constant::Number      - BBI constant. Set by Bmad. See manual.
+• `n_slice::Number`          - Number of slices the Strong beam is divided into. \\
+• `n_particle::Number`       - Number of particle in the strong beam. \\
+• `species::Species`         - Strong beam species. Default is weak particle species. \\
+• `z0_crossing::Number`      - Weak particle phase space z when strong beam center.  \\
+                             -   passes the BeamBeam element. \\
+• `repetition_freq::Number`  - Strong beam repetition rate. \\
+• `twiss::Twiss`             - Strong beam Twiss at IP. \\
+• `sig_x::Number`            - Strong beam horizontal sigma at IP. \\
+• `sig_y::Number`            - Strong beam vertical sigma at IP. \\
+• `sig_z::Number`            - Strong beam longitudinal sigma. \\
+• `bbi_constant::Number`     - BBI constant. Set by Bmad. See manual. \\
 """ BeamBeamGroup
 
 @kwdef mutable struct BeamBeamGroup <: EleParameterGroup
   n_slice::Number = 1
+  n_particle::Number = 0
+  species::Species = Species()
   z0_crossing::Number = 0       # Weak particle phase space z when strong beam Loc.CENTER passes
                                 #   the BeamBeam element.
-  repetition_freq:: Number = 0  # Strong beam repetition rate.
+  repetition_freq::Number = 0  # Strong beam repetition rate.
   twiss::Twiss = Twiss()        # Strong beam Twiss at IP.
   sig_x::Number = 0
   sig_y::Number = 0
@@ -568,7 +572,7 @@ end
 • `edge_int2::Number`         - Field integral at exit end. \\
 • `hgap1::Number`             - Pole gap at entrance end. \\
 • `hgap2::Number`             - Pole gap at exit end. \\
-• `fiducial_pt::FiducialPt.T` - Fiducial point used when the bend geometry is varied. 
+• `fiducial_pt::FiducialPt.T` - Fiducial point used when the bend geometry is varied. \\
   Default is `FiducialPt.NONE`. \\
 • `exact_multipoles::ExactMultipoles.T` - Field multipoles treatment. Default is `ExactMultipoles.OFF`. \\
 
@@ -612,7 +616,7 @@ end
 Vector of magnetic multipoles.
 
 ## Field
-• `vec::Vector{BMultipole1}` - Vector of multipoles.
+• `vec::Vector{BMultipole1}` - Vector of multipoles. \\
 
 """
 @kwdef mutable struct BMultipoleGroup <: EleParameterGroup
@@ -691,8 +695,10 @@ end
 Fork element parameters.
 
 ## Fields
-• 
-
+• `to_line::Union{BeamLine, Nothing}`   - Beam line to fork to. \\
+• `to_ele::String`                      - Element forked to. \\
+• `direction::Int`                      - Longitudinal Direction of injected beam. \\
+• `new_branch::Bool`                    - New or existing `to_line`? \\
 """ ForkGroup
 
 @kwdef mutable struct ForkGroup <: EleParameterGroup
@@ -792,9 +798,9 @@ end
 
 ## Fields
 • `is_on::Bool`         - Turns on or off the fields in an element. When off, the element looks like a drift. \\
-• `field_master::Bool`  - The setting of this matters when there is a change in reference energy. 
+• `field_master::Bool`  - The setting of this matters when there is a change in reference energy. \\
 In this case, if `field_master` = true, magnetic multipoles and Bend unnormalized fields will be held constant
-and normalized field strengths willbe varied. Vice versa when `field_master` is `false`. \\
+and normalized field strengths willbe varied. And vice versa when `field_master` is `false`. \\
 """ MasterGroup
 
 @kwdef mutable struct MasterGroup <: EleParameterGroup
@@ -821,7 +827,7 @@ end
 • `pc_exit::Number`           - Reference momentum*c at exit end. Default is `NaN` (not used). \\
 • `flexible::Bool`            - Flexible patch? Default is `false`. \\
 • `L_user::Number`            - User set Length? Default is `NaN` (length calculated by bookkeeping code). \\
-• `ref_coords::BodyLoc.T`     - Reference coordinate system used inside the patch. Default is `BodyLoc.EXIT_END`.
+• `ref_coords::BodyLoc.T`     - Reference coordinate system used inside the patch. Default is `BodyLoc.EXIT_END`. \\
 """ PatchGroup
 
 @kwdef mutable struct PatchGroup <: EleParameterGroup
@@ -1023,10 +1029,10 @@ abstract type AbstractLattice end
 Lattice branch structure. 
 
 ## Fields
-• `name::String`                      - Name of the branch.
-• `lat::Union{AbstractLattice, Nothing}`  - Pointer to the lattice containing the branch.
-• `ele::Vector{Ele}`                  - Pointer to the array of lattice element contained in the branch.
-• `pdict::Dict{Symbol,Any}`           - Dict for holding other branch parameters.
+• `name::String`                      - Name of the branch. \\
+• `lat::Union{AbstractLattice, Nothing}`  - Pointer to the lattice containing the branch. \\
+• `ele::Vector{Ele}`                  - Pointer to the array of lattice element contained in the branch. \\
+• `pdict::Dict{Symbol,Any}`           - Dict for holding other branch parameters. \\
 
 Note: `AbstractLattice` is used here since `Lattice` is not yet defined and Julia does not allow forward 
 struct declarations.
@@ -1035,9 +1041,9 @@ struct declarations.
 • `:geometry`   - `OPEN` or `CLOSED`. \\
 • `:type`       - `MultipassLordBranch`, `SuperLordBranch`, `GirderBranch`, or `TrackingBranch`.  \\
 • `:ix_branch`  - Index of branch in `lat.branch[]` array. \\
-• `:ix_ele_min_changed` - For tracking branches: Minimum index of elements where parameter changes have been made.
+• `:ix_ele_min_changed` - For tracking branches: Minimum index of elements where parameter changes have been made. \\
   Set to `typemax(Int)` if no elements have been modified. \\
-• `:ix_ele_max_changed` - For tracking branches: Maximum index of elements where parameter changes have been made.
+• `:ix_ele_max_changed` - For tracking branches: Maximum index of elements where parameter changes have been made. \\
   Set to `0` if no elements have been modified. \\
 • `:changed_ele`        - `Set{Ele}` For lord branches: Set of elements whose parameters have been modified. \\
 
@@ -1106,7 +1112,7 @@ Lattice structure.
 
 ## Standard pdict keys
 
-• `:record_changes`         - Bool: Record parameter changes?
+• `:record_changes`         - Bool: Record parameter changes? \\
 • `:autobookkeeping`        - Bool: Automatic bookkeeping enabled? \\
 • `parameters_have_changed` - Bool: Have any parameters changed since the last bookkeeping? \\
 
