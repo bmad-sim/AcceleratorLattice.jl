@@ -515,8 +515,18 @@ end
 #### This is incomplete ####
 
 """
-    struct BeamBeamGroup
+    mutable struct BeamBeamGroup <: EleParameterGroup
 
+## Fields
+• n_slice::Number
+• z0_crossing::Number       - Weak particle phase space z when strong beam center
+                            -   passes the BeamBeam element.
+• repetition_freq:: Number  - Strong beam repetition rate.
+• twiss::Twiss              - Strong beam Twiss at IP.
+• sig_x::Number             - Strong beam horizontal sigma at IP.
+• sig_y::Number             - Strong beam vertical sigma at IP.
+• sig_z::Number             - Strong beam longitudinal sigma.
+• bbi_constant::Number      - BBI constant. Set by Bmad. See manual.
 """ BeamBeamGroup
 
 @kwdef mutable struct BeamBeamGroup <: EleParameterGroup
