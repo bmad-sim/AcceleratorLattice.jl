@@ -33,12 +33,12 @@ can be accessed via using Julia's REPL.
 %---------------------------------------------------------------------------
 \section{Brief History}
 
-\scibmad has it's origins in the "\bmad"\cite{Sagan:Bmad2006} ecosystem of toolkits and programs 
-developed over several
-decades at Cornell University. Although the two share a similar name, {\bf the code of the two are
-completely separate}. That being said, the development of \accellat is heavily influenced by the 
-experience --- both good and bad --- in the development and use of \bmad as well as experience
-with other accelerator simulation programs.
+\accellat has it's origins in the \bmad\cite{Sagan:Bmad2006} ecosystem of toolkits and programs 
+developed over several decades at Cornell University.
+While the development of \accellat is heavily influenced by the 
+experience --- both good and bad --- of the development and use of \bmad as well as experience
+with other accelerator simulation programs, \bf the code of the two are
+completely separate with \bmad being written in Fortran and \accellat being written in Julia.
 
 The \julia language itself is used as the basis for constructing lattices with \accellat. 
 Other simulation programs
@@ -152,7 +152,7 @@ lines, etc. All lattices are of type \vn{Lattice}.
 
 Essentially, a \vn{lattice}, has an array of \vn{branches} with each branch describing part of the
 machine. Branches can be interconnected to form a unified whole.
-Tracking branches can be interconnected using \vn{fork} and \vn{photon_fork} elements (\sref{s:fork}). 
+Tracking branches can be interconnected using \vn{Fork} elements (\sref{s:fork}). 
 This is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
 X-ray beam line. The \vn{branch} from which other \vn{branches} fork but is not forked to by any
 other \vn{branch} is called a \vn{root} branch.

@@ -10,18 +10,19 @@ The parmeter groups are:
 \centering
 {\tt
 \begin{tabular}{llll} \toprule
-  {\it Group}        & {\it Section}             & {\it Group}         & {\it Section}         \\ \midrule
- AlignmentGroup      & \sref{s:alignment.g}      & LengthGroup         & \sref{s:length.g}     \\   
- ApertureGroup       & \sref{s:aperture.g}       & LordSlaveGroup      & \sref{s:lord.slave.g} \\
- BMultipoleGroup     & \sref{s:bmultipole.g}     & MasterGroup         & \sref{s:master.g}     \\
- BeamBeamGroup       & \sref{s:beam.beam.g}      & PatchGroup          & \sref{s:patch.g}      \\
- BendGroup           & \sref{s:bend.g}           & RFGroup             & \sref{s:rf.g}         \\
- DescriptionGroup    & \sref{s:descrip.g}        & RFAutoGroup         & \sref{s:rfauto.g}     \\
- EMultipoleGroup     & \sref{s:emultipole.g}     & ReferenceGroup      & \sref{s:reference.g}  \\
- FloorPositionGroup  & \sref{s:floor.pos.g}      & SolenoidGroup       & \sref{s:solenoid.g}   \\
- ForkGroup           & \sref{s:fork.g}           & TrackingGroup       & \sref{s:tracking.g}   \\
- GirderGroup         & \sref{s:girder.g}         & TwissGroup          & \sref{s:twiss.g}      \\
- InitParticleGroup   & \sref{s:init.particle.g}  &                     &                       \\
+ {\it Group}          & {\it Section}             & {\it Group}          & {\it Section}            \\ 
+ \midrule
+ AlignmentGroup       & \sref{s:alignment.g}      & InitParticleGroup    & \sref{s:init.particle.g} \\  
+ ApertureGroup        & \sref{s:aperture.g}       & LengthGroup          & \sref{s:length.g}        \\   
+ BMultipoleGroup      & \sref{s:bmultipole.g}     & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
+ BeamBeamGroup        & \sref{s:beam.beam.g}      & MasterGroup          & \sref{s:master.g}        \\
+ BendGroup            & \sref{s:bend.g}           & PatchGroup           & \sref{s:patch.g}         \\
+ DescriptionGroup     & \sref{s:descrip.g}        & RFGroup              & \sref{s:rf.g}            \\
+ DownstreamReferenceGroup & \sref{dreference.g}   & RFAutoGroup          & \sref{s:rfauto.g}        \\
+ EMultipoleGroup      & \sref{s:emultipole.g}     & ReferenceGroup       & \sref{s:reference.g}     \\
+ FloorPositionGroup   & \sref{s:floor.pos.g}      & SolenoidGroup        & \sref{s:solenoid.g}      \\
+ ForkGroup            & \sref{s:fork.g}           & TrackingGroup        & \sref{s:tracking.g}      \\
+ GirderGroup          & \sref{s:girder.g}         & TwissGroup           & \sref{s:twiss.g}         \\
   \bottomrule
 \end{tabular}
 } 
@@ -166,15 +167,15 @@ by a set of vertices.
 The \vn{ApertureGroup} stores information about apertures an element may have. 
 The parameters of this group are:
 \begin{example}
-  x_limit::Vector\{Number\}           - Min/Max x-aperture limits. (m)
-  y_limit::Vector\{Number\}           - Min/Max y-aperture limits. (m)
-  section::WallSection              - Array of aperture vertices.
+  x_limit::Vector\{Number\}         - Min/Max x-aperture limits. (m)
+  y_limit::Vector\{Number\}         - Min/Max y-aperture limits. (m)
   aperture_shape::ApertureShape     - Aperture shape. Default: ELLIPTICAL
-  custom_aperture::Dict             - Custom aperture information.
   misalignment_moves_aperture::Bool - Alignment affects aperture? 
                                                       Default: false.
   aperture_at::BodyLoc.T            - Aperture location. 
                                          Default: BodyLoc.ENTRANCE_END
+  wall::Wall2D                      - Aperture defined by vertex array.
+  custom_aperture::Dict             - Custom aperture information.
 \end{example}
 
 The aperture location is set by the \vn{aperture_at} parameter. Possible values are
@@ -244,7 +245,7 @@ in the \vn{custom_aperture} parameter. The \vn{custom_aperture} parameter is a D
 the aperture function along with any data that the aperture calculation needs. The aperture
 function must be stored in \vn{custom_aperture[:function]} and this function will be
 called with the signature
-\begin{example}
+\begin{example} %
   custom_aperture[:function](position::Vector, ele::Ele) -> ParticleState
 \end{example}
 where \vn{position} is the phase space 6-vector of the particle, \vn{ele} is the element 
@@ -255,9 +256,9 @@ set of vertex points as illustrated in \fig{f:apetures}B. Between vertex points,
 can can follow a straight line or the arc of an ellipse. The vertex points are specified by
 setting the \vn{section} parameter of \vn{ApertureGroup}. Example:
 \begin{example}
-  section = WallSection([Vertex1([1.0, 4.0]), Vertex1([-1.0, 4.0, 6.0]), 
-                         Vertex1([-5.0, 1.0]), Vertex1([-5.0, -1.0]), 
-                          Vertex1([1.0, -1.5)]], r0 = [-2.5, 0.5]) 
+  wall = Wall2D([Vertex1([1.0, 4.0]), Vertex1([-1.0, 4.0, 6.0]), 
+                 Vertex1([-5.0, 1.0]), Vertex1([-5.0, -1.0]), 
+                 Vertex1([1.0, -1.5)]], r0 = [-2.5, 0.5]) 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -354,7 +355,20 @@ unnormalized quantities will stay constant if the reference energy is varied.
 \section{BeamBeamGroup}
 \label{s:beam.beam.g}
 
-In development.
+The parameters of this group are:
+\begin{example}
+  n_slice::Number           - Number of slices the Strong beam is divided into.
+  n_particle::Number        - Number of particle in the strong beam.
+  species::Species          - Strong beam species. Default is weak particle species.
+  z0_crossing::Number       - Weak particle phase space z when strong beam center
+                            -   passes the BeamBeam element.
+  repetition_freq:: Number  - Strong beam repetition rate.
+  twiss::Twiss              - Strong beam Twiss at IP.
+  sig_x::Number             - Strong beam horizontal sigma at IP.
+  sig_y::Number             - Strong beam vertical sigma at IP.
+  sig_z::Number             - Strong beam longitudinal sigma.
+  bbi_constant::Number      - BBI constant. Set by Bmad. See manual.
+\end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{BendGroup}
@@ -646,6 +660,20 @@ The components of this struct are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
+\section{DownstreamReferenceGroup}
+\label{dreference.g}
+
+The components of this struct are:
+\begin{example}
+  species_ref_downstream::Species  - Reference species. 
+  pc_ref_downstream::Number        - Reference momentum*c. 
+  E_tot_ref_downstream::Number     - Reference total energy. 
+  β_ref_downstream::Number         - Reference v/c. 
+  γ_ref_downstream::Number         - Reference relativistic gamma factor.
+\end{example}
+
+
+%---------------------------------------------------------------------------------------------------
 \section{EMultipoleGroup}
 \label{s:emultipole.g}
 
@@ -732,8 +760,8 @@ whether normalized or unnormalized quantities will stay constant if the referenc
 The \vn{FloorPositionGroup} stores position and orientation information in the Global coordinate 
 system. The components of this struct are:
 \begin{example}
-• r::Vector              - [x,y,z] position. 
-• q::Quat                - Quaternion orientation. 
+  r::Vector              - [x,y,z] position. 
+  q::Quat                - Quaternion orientation. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -746,11 +774,11 @@ system. The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• eles::Vector{Ele}         - Elements supported by girder. 
-• origin_ele::Ele           - Origin reference element. 
-• origin_ele_ref_pt::Loc.T  - Origin reference point. Default is Loc.CENTER. 
-• dr::Vector                - [x, y, z] offset. 
-• dq::Quat                   - Quaternion orientation. 
+  eles::Vector{Ele}         - Elements supported by girder. 
+  origin_ele::Ele           - Origin reference element. 
+  origin_ele_ref_pt::Loc.T  - Origin reference point. Default is Loc.CENTER. 
+  dr::Vector                - [x, y, z] offset. 
+  dq::Quat                   - Quaternion orientation. 
 \end{example}
 
 
@@ -760,8 +788,8 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• orbit::Vector{Number}     - Phase space 6-vector. 
-• spin::Vector{Number}      - Spin 3-vector. \end{example}
+  orbit::Vector{Number}     - Phase space 6-vector. 
+  spin::Vector{Number}      - Spin 3-vector. \end{example}
 
 %---------------------------------------------------------------------------------------------------
 \section{LengthGroup}
@@ -769,10 +797,10 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• L::Number               - Length of element. 
-• s::Number               - Starting s-position. 
-• s_downstream::Number    - Ending s-position. 
-• orientation::Int        - Longitudinal orientation. +1 or -1. 
+  L::Number               - Length of element. 
+  s::Number               - Starting s-position. 
+  s_downstream::Number    - Ending s-position. 
+  orientation::Int        - Longitudinal orientation. +1 or -1. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -781,8 +809,8 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• lord_status::Lord.T     - Lord status. 
-• slave_status::Slave.T   - Slave status. 
+  lord_status::Lord.T     - Lord status. 
+  slave_status::Slave.T   - Slave status. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -801,17 +829,17 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• offset::Vector            - [x, y, z] offset vector. 
-• t_offset::Number          - Time offset. 
-• x_rot::Number             - Rotation around the x-axis. 
-• y_rot::Number             - Rotation around the y-axis. 
-• tilt::Number              - Rotation around the z-axis. 
-• E_tot_offset::Number      - Total energy offset. Default is NaN (not used). 
-• E_tot_exit::Number        - Fix total energy at exit end. Default is NaN (not used). 
-• pc_exit::Number           - Reference momentum*c at exit end. Default is NaN (not used). 
-• flexible::Bool            - Flexible patch? Default is false. 
-• L_user::Number            - User set Length? Default is NaN (length calculated by bookkeeping code). 
-• ref_coords::BodyLoc.T     - Reference coordinate system used inside the patch. Default is BodyLoc.EXIT_END.
+  offset::Vector            - [x, y, z] offset vector. 
+  t_offset::Number          - Time offset. 
+  x_rot::Number             - Rotation around the x-axis. 
+  y_rot::Number             - Rotation around the y-axis. 
+  tilt::Number              - Rotation around the z-axis. 
+  E_tot_offset::Number      - Total energy offset. Default is NaN (not used). 
+  E_tot_exit::Number        - Fix total energy at exit end. Default is NaN (not used). 
+  pc_exit::Number           - Reference momentum*c at exit end. Default is NaN (not used). 
+  flexible::Bool            - Flexible patch? Default is false. 
+  L_user::Number            - User set Length? Default is NaN (length calculated by bookkeeping code). 
+  ref_coords::BodyLoc.T     - Reference coordinate system used inside the patch. Default is BodyLoc.EXIT_END.
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -820,15 +848,15 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• frequency::Number         - RF frequency. 
-• harmon::Number            - RF frequency harmonic number. 
-• dvoltage_ref::Number      - Sets change in reference energy.
-• voltage::Number           - RF voltage. 
-• gradient::Number          - RF gradient. 
-• phase::Number             - RF phase. 
-• multipass_phase::Number   - RF Phase added to multipass elements. 
-• cavity_type::Cavity.T     - Cavity type. Default is Cavity.STANDING_WAVE. 
-• n_cell::Int               - Number of cavity cells. Default is 1. 
+  frequency::Number         - RF frequency. 
+  harmon::Number            - RF frequency harmonic number. 
+  dvoltage_ref::Number      - Sets change in reference energy.
+  voltage::Number           - RF voltage. 
+  gradient::Number          - RF gradient. 
+  phase::Number             - RF phase. 
+  multipass_phase::Number   - RF Phase added to multipass elements. 
+  cavity_type::Cavity.T     - Cavity type. Default is Cavity.STANDING_WAVE. 
+  n_cell::Int               - Number of cavity cells. Default is 1. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -837,10 +865,10 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• do_auto_amp::Bool           - Will autoscaling set auto_amp? Default is true. 
-• do_auto_phase::Bool         - Will autoscaling set auto_phase? Default is true. 
-• auto_amp::Number            - Auto RF field amplitude scale value. 
-• auto_phase::Number          - Auto RF phase value. 
+  do_auto_amp::Bool           - Will autoscaling set auto_amp? Default is true. 
+  do_auto_phase::Bool         - Will autoscaling set auto_phase? Default is true. 
+  auto_amp::Number            - Auto RF field amplitude scale value. 
+  auto_phase::Number          - Auto RF phase value. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -849,17 +877,14 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• species_ref::Species          - Reference species entering end. 
-• species_ref_exit::Species     - Reference species exit end. 
-• pc_ref::Number                - Reference momentum*c upstream end. 
-• pc_ref_downstream::Number     - Reference momentum*c downstream end. 
-• E_tot_ref::Number             - Reference total energy upstream end. 
-• E_tot_ref_downstream::Number  - Reference total energy downstream end. 
-• time_ref::Number              - Reference time upstream end. 
-• time_ref_downstream::Number   - Reference time downstream end. 
-• dtime_ref::Number             - User set reference time change.
-• β_ref::Number                 - Reference v/c upstream end. 
-• β_ref_downstream::Number      - Reference v/c downstream end. 
+  species_ref::Species          - Reference species entering end. 
+  pc_ref::Number                - Reference momentum*c upstream end. 
+  E_tot_ref::Number             - Reference total energy upstream end. 
+  time_ref::Number              - Reference time upstream end. 
+  time_ref_downstream::Number   - Reference time downstream end. 
+  dtime_ref::Number             - User set reference time change.
+  β_ref::Number                 - Reference v/c upstream end. 
+  γ_ref::Number                 - Reference relativistic gamma factor.
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -868,8 +893,8 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• Ksol::Number        - Normalized solenoid strength.       
-• Bsol::Number        - Solenoid field. 
+  Ksol::Number        - Normalized solenoid strength.       
+  Bsol::Number        - Solenoid field. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -878,8 +903,8 @@ The components of this struct are:
 
 The components of this struct are:
 \begin{example}
-• num_steps::Int    - Number of steps. 
-• ds_step::Number   - Step length. 
+  num_steps::Int    - Number of steps. 
+  ds_step::Number   - Step length. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------

@@ -70,10 +70,10 @@ module AcceleratorLattice
   export eles, next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
   export branch, matches_branch, create_ele_vars, eval_str, Vertex1, LatticeGlobal
   export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole1, BMultipoleGroup, BeamBeamGroup
-  export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, DescriptionGroup, RFCommonGroup, SolenoidGroup
-  export TrackingGroup, LengthGroup, ReferenceGroup, DownstreamReferenceGroup
+  export EMultipole1, EMultipoleGroup, BendGroup, ApertureGroup, DescriptionGroup, RFGroup, SolenoidGroup
+  export TrackingGroup, LengthGroup, ReferenceGroup, DownstreamReferenceGroup, ForkGroup
   export MasterGroup, LordSlaveStatusGroup
-  export GirderGroup, LCavityGroup, PatchGroup, RFCavityGroup, RFAutoGroup
+  export GirderGroup, PatchGroup, RFAutoGroup
   export TwissGroup, Twiss1, Wall2D, Vertex1, InitSpinGroup, InitParticleGroup, show_changed
   export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
   export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
