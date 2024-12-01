@@ -768,6 +768,14 @@ system. The components of this struct are:
 \section{ForkGroup}
 \label{s:fork.g}
 
+The components of this struct are:
+\begin{example}
+  to_line::Union{BeamLine, Nothing}   - Beam line to fork to
+  to_ele::String                      - Element forked to.
+  direction::Int                      - Longitudinal Direction of injected beam.
+  new_branch::Bool                    - New or existing `to_line`?
+\end{example}
+
 %---------------------------------------------------------------------------------------------------
 \section{GirderGroup}
 \label{s:girder.g}
@@ -882,7 +890,7 @@ The components of this struct are:
   E_tot_ref::Number             - Reference total energy upstream end. 
   time_ref::Number              - Reference time upstream end. 
   time_ref_downstream::Number   - Reference time downstream end. 
-  dtime_ref::Number             - User set reference time change.
+  extra_dtime_ref::Number       - User set reference time change.
   β_ref::Number                 - Reference v/c upstream end. 
   γ_ref::Number                 - Reference relativistic gamma factor.
 \end{example}
