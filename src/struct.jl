@@ -862,6 +862,7 @@ See also `DownstreamReferenceGroup
 • `extra_dtime_ref::Number`       - User set additional time change. \\
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
 • `γ_ref::Number`                 - Reference gamma factor upstream end. \\
+• `dvoltage_ref`::Number          - Sets the change in the reference energy. \\
 """
 @kwdef mutable struct ReferenceGroup <: EleParameterGroup
   species_ref::Species = Species()
@@ -870,8 +871,9 @@ See also `DownstreamReferenceGroup
   time_ref::Number = 0.0
   time_ref_downstream::Number = 0.0
   extra_dtime_ref::Number = 0.0
-  β_ref::Number = 0.0
-  γ_ref::Number = 0.0
+  β_ref::Number = NaN
+  γ_ref::Number = NaN
+  dvoltage_ref::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -890,7 +892,6 @@ RF voltage parameters. Also see `RFAutoGroup`.
 • `gradient::Number`        - RF gradient. \\
 • `phase::Number`           - RF phase. \\
 • `multipass_phase::Number` - RF Phase added to multipass elements. \\
-• `dvoltage_ref`::Number    - Sets the change in the reference energy. \\
 • `cavity_type::Cavity.T`   - Cavity type. Default is `Cavity.STANDING_WAVE`. \\
 • `n_cell::Int`             - Number of cavity cells. Default is `1`. \\
 """ RFGroup
@@ -899,7 +900,6 @@ RF voltage parameters. Also see `RFAutoGroup`.
   frequency::Number = 0.0
   harmon::Number = 0.0
   voltage::Number = 0.0
-  dvoltage_ref::Number = 0.0
   gradient::Number = 0.0
   phase::Number = 0.0
   multipass_phase::Number = 0.0

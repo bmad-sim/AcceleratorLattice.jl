@@ -114,12 +114,13 @@ ELE_PARAM_INFO_DICT = Dict(
   :time_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
   :β_ref                  => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c."),
   :γ_ref                  => ParamInfo(ReferenceGroup, Number,      "Reference relativistic gamma factor."),
+  :dvoltage_ref           => ParamInfo(ReferenceGroup, Number,      "Sets change in reference energy.", "volt"),
 
-  :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species,     "Reference species at downstream end."),
-  :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,      "Reference momentum * c at downstream end.", "eV"),
-  :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,      "Reference total energy at downstream end.", "eV"),
-  :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,      "Reference velocity/c at downstream end."),
-  :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,      "Reference relativistic gamma factor at downstream end."),
+  :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species,  "Reference species at downstream end."),
+  :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,   "Reference momentum * c at downstream end.", "eV"),
+  :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,   "Reference total energy at downstream end.", "eV"),
+  :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference velocity/c at downstream end."),
+  :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference relativistic gamma factor at downstream end."),
 
   :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
   :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
@@ -128,11 +129,9 @@ ELE_PARAM_INFO_DICT = Dict(
   :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
   :ref_coords         => ParamInfo(PatchGroup,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
-  :dvoltage_ref       => ParamInfo(RFGroup,       Number,        "Sets change in reference energy.", "volt"),
   :voltage            => ParamInfo(RFGroup,       Number,        "RF voltage.", "volt"),
   :gradient           => ParamInfo(RFGroup,       Number,        "RF gradient.", "volt/m"),
   :phase              => ParamInfo(RFGroup,       Number,        "RF phase.", "rad"),
-
   :multipass_phase    => ParamInfo(RFGroup,       Number,    
                                                    "RF phase added to element and not controlled by multipass lord.", "rad"),
   :frequency          => ParamInfo(RFGroup,       Number,        "RF frequency.", "Hz"),

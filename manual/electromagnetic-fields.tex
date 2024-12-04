@@ -207,7 +207,7 @@ Where $\beta$ is the normalized velocity.
 For static magnetic and electric multipole fields in a bend, the spacial dependence of the
 field is different from multipole fields in an element with a straight geometry as given
 by \Eqs{qlpbb} and \eq{exiey}. The analysis of the multipole fields in a bend here follows
-McMillan\cite{b:mcmillan}.  
+McMillan\cite{McMillan:Multipoles}.  
 
 In the rest of this section, normalized coordinates $\rw = r / \rho$, $\xw / = x /
 \rho$, and $\yw = y / \rho$ will be used where $\rho$ is the bending radius of the
@@ -403,7 +403,7 @@ decomposition is implemented by \bmad. In a lattice file, a \vn{Cartesian} map i
 the \vn{cartesian_map} attribute as explained in Sec.~\sref{s:cart.map}.
 
 The \vn{Cartesian} decomposition is modeled using an extension of the method of Sagan,
-Crittenden, and Rubin\cite{b:wiggler}. In this decomposition, the magnetic(or electric
+Crittenden, and Rubin\cite{Sagan:wiggler}. In this decomposition, the magnetic(or electric
 field is written as a sum of terms $B_i$ (For concreteness the symbol $B_i$ is used but
 the equations below pertain equally well to both electric and magnetic fields) with:
 \begin{equation}
@@ -550,11 +550,11 @@ decomposition is explained in Sec.~\sref{s:cylind.ac}.
 \label{s:cylind.dc}
 
 The DC \vn{cylindrical} parametrization used by \bmad essentially follows Venturini et
-al.\cite{b:vent.map}. See Section~\sref{s:fieldmap} for details on the syntax used to cylindrical
+al.\cite{Venturini:LHC-Quads}. See Section~\sref{s:fieldmap} for details on the syntax used to cylindrical
 maps in \bmad. The electric and magnetic fields are both described by a scalar potential\footnote
   {
-Notice the negative sign here and in \Eq{psps1k} compared to Venturini et al.\cite{b:vent.map}. This
-is to keep the definition of the electric scalar potential $\psi_E$ consistent with the normal
+Notice the negative sign here and in \Eq{psps1k} compared to Venturini et al.\cite{Venturini:LHC-Quads}. 
+This is to keep the definition of the electric scalar potential $\psi_E$ consistent with the normal
 definition.
   }
 \begin{equation}
@@ -654,7 +654,7 @@ For $m \ne 0$, the vector potential is chosen so that $A_\theta$ is zero.
     I_m(k_n \, \rho) \right] \nonumber
 \end{align}
 
-Note: The description of the field using \vn{``generalized gradients''}\cite{b:newton} is similar to
+Note: The description of the field using \vn{``generalized gradients''}\cite{Newton:map} is similar to
 the above equations. The difference is that, with the generalized gradient formalism, terms in
 $\theta$ and $\rho$ are expanded in a Taylor series in $x$ and $y$.
 
@@ -664,7 +664,7 @@ $\theta$ and $\rho$ are expanded in a Taylor series in $x$ and $y$.
 \index{rf fields|hyperbf}
 
 For RF fields, the \vn{cylindrical} mode parametrization used by \bmad essentially
-follows Abell\cite{b:rf.abell}. The electric field is the real part of the complex field
+follows Abell\cite{Abell:RF-maps}. The electric field is the real part of the complex field
 \begin{equation}
   \bfE(\bfr) = \sum_{j=1}^M \, \bfE_j(\bfr) \, \exp[{-2 \pi i \, (f_j \, t + \phi_{0j})}]
   \label{eseei}
@@ -793,15 +793,15 @@ identity
 \index{generalized gradient field modeling}
 
 \bmad has a number of \vn{field map} models that can be used to model electric or magnetic fields
-(\sref{s:fieldmap}). One model involves what are called \vn{generalized gradients}\cite{b:gen.grad}.
+(\sref{s:fieldmap}). One model involves what are called \vn{generalized gradients}\cite{Venturini:magmaps}.
 This model is restricted to modeling DC magnetic or electric fields. In a lattice file, the
 generalized gradient field model is specified using the \vn{gen_grad_map} attribute as explained
 in Sec.~\sref{s:gen.grad.map}.
 
 The electric and magnetic fields are both described by a scalar potential\footnote
   {
-Notice the negative sign here and in \Eq{ppmpp} compared to Venturini et al.\cite{b:gen.grad}. This
-is to keep the definition of the electric scalar potential $\psi_E$ consistent with the normal
+Notice the negative sign here and in \Eq{ppmpp} compared to Venturini et al.\cite{Venturini:magmaps}.
+This is to keep the definition of the electric scalar potential $\psi_E$ consistent with the normal
 definition.
   }
 \begin{equation}
@@ -951,7 +951,7 @@ free.
 The field in the standing wave cell is modeled either with a $p = 0$ or $p = 1$ longitudinal mode
 (set by the \vn{longitudinal_mode} element parameter). The $p = 1$ longitudinal mode models the
 fields as a pillbox with the transverse wall at infinity as detailed in Chapter 3, Section VI of
-reference \cite{b:lee}
+reference \cite{Lee:Physics}
 \begin{align}
   E_s(r, \phi, s, t)    &= 2 \, G \,                 \cos(k \, s) \, \cos(\omega \, t + 2 \, \pi \, \phi) \CRNO
   E_r(r, \phi, s, t)    &= r \, G \, k \,            \sin(k \, s) \, \cos(\omega \, t + 2 \, \pi \, \phi) \\

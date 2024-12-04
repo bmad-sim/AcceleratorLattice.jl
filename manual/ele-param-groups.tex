@@ -289,7 +289,7 @@ The \vn{order} component gives the multipole order.
 There is storage for both normalized (\vn{Kn} and \vn{Ks}) and unnormalized (\vn{Bn} and \vn{Bs})
 field strengths. The letter ``\vn{n}'' designates the normal component and ``\vn{s}'' designates
 the skew component. 
-There is also a \vn{tilt} component which will tilt the entire multipole \cite{???}.
+There is also a \vn{tilt} component which will tilt the entire multipole \sref{???}.
 The \accellat bookkeeping code will take care of calculating the normalized field if the unnormalized
 field is set and vice versa. The reason why the structure has three components, 
 normal, skew and tilt, that describe the field when only two would be sufficient is due convenience.
@@ -467,7 +467,7 @@ Also see \vn{e1_rect} and \vn{e2_rect}. The relationship is
 \end{equation}
 
 Note: The correspondence between \vn{e1} and \vn{e2} and the corresponding parameters used in the
-SAD program \cite{b:sad} is:
+SAD program \cite{Zhou:SADmaps} is:
 \begin{example}
   e1(AccelLattice) =  e1(SAD) * angle + ae1(SAD)
   e2(AccelLattice) =  e2(SAD) * angle + ae2(SAD)
@@ -643,27 +643,30 @@ counterclockwise rotation of the exit face. This is true irregardless of the sig
 \section{DescriptionGroup}
 \label{s:descrip.g}
 
-Element descriptive strings which can be used used when searching. For example
-\begin{example}
-  @ele q1 = Quadrupole(type = "rotating quad", ...)
-  eles(lat, "type = "*rot*")
-\end{example}
-In this example \vn{lat} is the lattice that contains \vn{q1} and the \vn{eles} function
-will return a vector of all elements whose \vn{type} string has the substring ``\vn{rot}''
-in it.
-
-The components of this struct are:
+The components of this group are element descriptive strings:
 \begin{example}
   type::String 
   ID::String 
   class::String 
 \end{example}
+ For example
+\begin{example}
+  @ele q1 = Quadrupole(type = "rotating quad", ...)
+\end{example}
+
+These strings can be used to in element searching:
+\begin{example}
+  eles(lat, "type = "*rot*")     # Can use these strings in searching
+\end{example}
+In this example \vn{lat} is the lattice that contains \vn{q1} and the \vn{eles} function
+will return a vector of all elements whose \vn{type} string has the substring ``\vn{rot}''
+in it.
 
 %---------------------------------------------------------------------------------------------------
 \section{DownstreamReferenceGroup}
-\label{dreference.g}
+\label{s:dreference.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   species_ref_downstream::Species  - Reference species. 
   pc_ref_downstream::Number        - Reference momentum*c. 
@@ -671,7 +674,24 @@ The components of this struct are:
   β_ref_downstream::Number         - Reference v/c. 
   γ_ref_downstream::Number         - Reference relativistic gamma factor.
 \end{example}
+This group holds the reference energy and species at the downstream end of an element.
+Also see the \vn{ReferenceGroup} (\sref{s:reference.g}) documentation. 
+This group and \vn{ReferenceGroup} group are always paired. 
+That is, these two are always both present or both not present in any given element.
 
+For most elements, the values of the parameters in \vn{DownstreamReferenceGroup} will
+be the same as the values in the corresponding \vn{ReferenceGroup} parameters.
+That is, the value of \vn{species_ref_downstream} in \vn{DownstreamReferenceGroup} will be the same
+as the value of \vn{species_ref} in \vn{ReferenceGroup}, the value of \vn{pc_ref_downstream} 
+will be the same as \vn{pc_ref}, etc. Elements where the reference energy (here "energy" refers
+to either pc_ref, E_tot_ref, β, or γ) differs between upstream and downstream
+include \vn{LCavity} and \vn{Patch} elements.
+Elements where the reference energy and species differ between upstream and downstream include
+\vn{Foil} and \vn{Converter} elements.
+
+Parameters of the \vn{DownstreamReferenceGroup} are not user settable and are 
+calculated by the \accellat bookkeeping routines. See the \vn{ReferenceGroup} documentation
+for how these parameters are calculated.
 
 %---------------------------------------------------------------------------------------------------
 \section{EMultipoleGroup}
@@ -699,7 +719,7 @@ The \vn{order} component gives the multipole order.
 There is storage for unnormalized (\vn{En} and \vn{Es}) field strengths however, unlike magnetic
 multipoles, there are no components for normalized field strengths. 
 The letter ``\vn{n}'' designates the normal component and ``\vn{s}'' designates the skew component. 
-There is also a \vn{Etilt} component which will tilt the entire multipole \cite{???}.
+There is also a \vn{Etilt} component which will tilt the entire multipole \sref{???}.
 The reason why the structure has three components, 
 normal, skew and tilt, that describe the field when only two would be sufficient is due convenience.
 Having normal and skew components is convenient when magnet has multiple windings that control
@@ -758,7 +778,7 @@ whether normalized or unnormalized quantities will stay constant if the referenc
 \label{s:floor.pos.g}
 
 The \vn{FloorPositionGroup} stores position and orientation information in the Global coordinate 
-system. The components of this struct are:
+system. The components of this group are:
 \begin{example}
   r::Vector              - [x,y,z] position. 
   q::Quat                - Quaternion orientation. 
@@ -768,7 +788,7 @@ system. The components of this struct are:
 \section{ForkGroup}
 \label{s:fork.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   to_line::Union{BeamLine, Nothing}   - Beam line to fork to
   to_ele::String                      - Element forked to.
@@ -776,11 +796,14 @@ The components of this struct are:
   new_branch::Bool                    - New or existing `to_line`?
 \end{example}
 
+This group is used with a \vn{Fork} element and specifies how the fork element attaches to
+another branch.
+
 %---------------------------------------------------------------------------------------------------
 \section{GirderGroup}
 \label{s:girder.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   eles::Vector{Ele}         - Elements supported by girder. 
   origin_ele::Ele           - Origin reference element. 
@@ -794,7 +817,7 @@ The components of this struct are:
 \section{InitParticleGroup}
 \label{s:init.particle.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   orbit::Vector{Number}     - Phase space 6-vector. 
   spin::Vector{Number}      - Spin 3-vector. \end{example}
@@ -803,7 +826,7 @@ The components of this struct are:
 \section{LengthGroup}
 \label{s:length.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   L::Number               - Length of element. 
   s::Number               - Starting s-position. 
@@ -815,7 +838,7 @@ The components of this struct are:
 \section{LordSlaveStatusGroup}
 \label{s:lord.slave.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   lord_status::Lord.T     - Lord status. 
   slave_status::Slave.T   - Slave status. 
@@ -825,7 +848,7 @@ The components of this struct are:
 \section{MasterGroup}
 \label{s:master.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
@@ -835,7 +858,7 @@ The components of this struct are:
 \section{PatchGroup}
 \label{s:patch.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   offset::Vector            - [x, y, z] offset vector. 
   t_offset::Number          - Time offset. 
@@ -854,11 +877,10 @@ The components of this struct are:
 \section{RFGroup}
 \label{s:rf.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   frequency::Number         - RF frequency. 
   harmon::Number            - RF frequency harmonic number. 
-  dvoltage_ref::Number      - Sets change in reference energy.
   voltage::Number           - RF voltage. 
   gradient::Number          - RF gradient. 
   phase::Number             - RF phase. 
@@ -867,11 +889,14 @@ The components of this struct are:
   n_cell::Int               - Number of cavity cells. Default is 1. 
 \end{example}
 
+
+The voltage
+
 %---------------------------------------------------------------------------------------------------
 \section{RFAutoGroup}
 \label{s:rfauto.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   do_auto_amp::Bool           - Will autoscaling set auto_amp? Default is true. 
   do_auto_phase::Bool         - Will autoscaling set auto_phase? Default is true. 
@@ -883,7 +908,7 @@ The components of this struct are:
 \section{ReferenceGroup}
 \label{s:reference.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   species_ref::Species          - Reference species entering end. 
   pc_ref::Number                - Reference momentum*c upstream end. 
@@ -893,13 +918,72 @@ The components of this struct are:
   extra_dtime_ref::Number       - User set reference time change.
   β_ref::Number                 - Reference v/c upstream end. 
   γ_ref::Number                 - Reference relativistic gamma factor.
+  dvoltage_ref::Number          - Sets change in reference energy.
 \end{example}
+This group holds the reference energy, species, and time parameters at the upstream 
+end of a lattice element.
+Also see the \vn{DownstreamReferenceGroup} group documentation (\sref{s:dreference.g}).
+The \vn{DownstreamReferenceGroup} group holds the reference energy and species
+at the downstream end of the element. 
+This group and \vn{DownstreamReferenceGroup} group are always paired. 
+That is, these two are always both present or both not present in any given element.
+
+For a \vn{Beginning} element, parameters of this group are user settable except for the 
+\vn{dvoltage_ref} parameter. For all other element types, except for \vn{dvoltage_ref} and
+\vn{extra_dtime_ref}, the parameters of this
+group are calculated by the \accellat bookkeeping routines and are not user settable. 
+
+For most elements, the values of the parameters in \vn{DownstreamReferenceGroup} will
+be the same as the values in the corresponding \vn{ReferenceGroup} parameters.
+That is, the value of \vn{species_ref_downstream} in \vn{DownstreamReferenceGroup} will be the same
+as the value of \vn{species_ref} in \vn{ReferenceGroup}, the value of \vn{pc_ref_downstream} 
+will be the same as \vn{pc_ref}, etc. Elements where the reference energy (here "energy" refers
+to either pc_ref, E_tot_ref, β, or γ) differs between upstream and downstream are elements with
+a non-zero \vn{dvoltage_ref} and include \vn{LCavity} and \vn{Patch} elements.
+Elements where the reference energy and species differ between upstream and downstream include
+\vn{Foil} and \vn{Converter} elements.
+
+For elements where \vn{dvoltage_ref} is nonzero the downstream reference energy 
+\vn{E_tot_ref_downstream} is calculated from the upstream \vn{E_tot_ref} via the equation
+\begin{example}
+  E_tot_ref_downstream = E_tot_ref + dvoltage_ref * |Q_ref|
+\end{example}
+where \vn{|Q_ref|} is the magnitude of the charge of the reference particle in units of the
+fundamental charge. Once \vn{E_tot_ref_downstream} has been calculated, the downstream values
+of pc, β, and γ are calculated using the standard formulas. Notice that \vn{dvoltage_ref} is 
+completely independent from the actual voltage seen by a particle which is set by the \vn{voltage}
+parameter of the \vn{RFGroup}.
+
+The downstream reference time \vn{time_ref_downstream} is calculated via
+\begin{example}
+  time_ref_downstream = time_ref + transit_time + extra_dtime_ref
+\end{example}
+where \vn{transit_time} is the time to transit the element assuming a straight line trajectory
+and a linear energy change throughout the element. . The general formula
+for the transit time is
+\begin{example}
+  transit_time = L * (E_tot_ref + E_tot_ref_downstream) / (c * (pc_ref + pc_ref_downstream))
+\end{example}
+where \vn{L} is the length of the element and \vn{c} is the speed of light.
+For elements where there is no energy
+change (\vn{dvoltage_ref} = 0), the transit time calculation simplifies to
+\begin{example}
+  transit_time = L / (β_ref * c)
+\end{example}
+
+The \vn{extra_dtime_ref} parameter in the above is ment as a correction to take into account 
+for particle motion that is not straight or acceleration that is not linear in energy. For example,
+in a wiggler, \vn{extra_dtime_ref} can be used to correct for the oscillatory nature of the
+particle trajectories. 
+Since \accellat does not do tracking (see the discussion in \sref{c:design}), \vn{extra_dtime_ref}
+must be calculated by the User.
+
 
 %---------------------------------------------------------------------------------------------------
 \section{SolenoidGroup}
 \label{s:solenoid.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   Ksol::Number        - Normalized solenoid strength.       
   Bsol::Number        - Solenoid field. 
@@ -909,7 +993,7 @@ The components of this struct are:
 \section{TrackingGroup}
 \label{s:tracking.g}
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
   num_steps::Int    - Number of steps. 
   ds_step::Number   - Step length. 
@@ -921,6 +1005,6 @@ The components of this struct are:
 
 In development
 
-The components of this struct are:
+The components of this group are:
 \begin{example}
 \end{example}
