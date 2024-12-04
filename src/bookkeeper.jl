@@ -403,21 +403,25 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
 
   if has_changed(ele, ReferenceGroup) || has_changed(ele, RFGroup); changed.ref_group = true; end
 
-
-
   if is_null(previous_ele)   # implies BeginningEle
     if rg.species_ref == Species(); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
     drg.species_ref_downstream = rg.species_ref
 
     rg.time_ref_downstream = rg.time_ref + rg.extra_dtime_ref
 
-    if haskey(cdict, :pc_ref) && haskey(cdict, :E_tot_ref)
-      error(f"Beginning element has both pc_ref and E_tot_ref set in {ele_name(ele)}")
+    if count([haskey(cdict, :pc_ref), haskey(cdict, :E_tot_ref), haskey(cdict, :β_ref), has_key(cdict, γ_ref)]) > 1
+      error(f"Beginning element has more than one of pc_ref, E_tot_ref, β_ref, and γ_ref set in {ele_name(ele)}")
     elseif haskey(cdict, :E_tot_ref)
       rg.pc_ref = pc(rg.species_ref, E_tot = rg.E_tot_ref)
-    elseif  haskey(cdict, :pc_ref)
+    elseif haskey(cdict, :pc_ref)
       rg.E_tot_ref = E_tot(rg.species_ref, pc = rg.pc_ref)
-    elseif rg.pc_ref == NaN && rg.E_tot_ref == NaN
+    elseif haskey(cdict, :β_ref)
+      rg.pc_ref = pc(rg.species_ref, β = rg.γ_ref)
+      rg.E_tot_ref = E_tot(rg.species_ref, pc = rg.pc_ref)
+    elseif haskey(cdict, :γ_ref)
+      rg.pc_ref = pc(rg.species_ref, β = rg.γ_ref)
+      rg.E_tot_ref = E_tot(rg.species_ref, pc = rg.pc_ref)
+    else
       error(f"Neither pc_ref nor E_tot_ref set for: {ele_name(ele)}")
     end
 
@@ -445,14 +449,12 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   rg.species_ref      = previous_ele.species_ref_downstream
   drg.species_ref_downstream = rg.species_ref
 
-
-  :RFGroup in ele.pdict ? dvoltage_ref = ele.dvoltage_ref : dvoltage_ref = 0 
-  if dvoltage_ref == 0
+  if rg.dvoltage_ref == 0
     drg.pc_ref_downstream      = rg.pc_ref
     drg.E_tot_ref_downstream   = rg.E_tot_ref
     rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L / (C_LIGHT * rg.pc_ref / rg.E_tot_ref)
   else
-    drg.pc_ref_downstream      = rg.pc_ref + dvoltage_ref
+    drg.pc_ref_downstream      = rg.pc_ref + rg.dvoltage_ref
     drg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
     rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L *
              (rg.E_tot_ref + rg.E_tot_ref_downstream) / (C_LIGHT * (rg.pc_ref + rg.pc_ref_downstream))

@@ -24,14 +24,15 @@ superimpose!(m2, lat.branch[1], offset = 2.7)
 
 #---------------------------------------------------------------------------------------------------
 
-#superimpose!(zs1, eles(lat, "d1"), offset = 0.2);
-#superimpose!(zm1, eles(lat, "m1"), ref_origin = BodyLoc.ENTRANCE_END);
-#superimpose!(zm2, eles(lat, "m1"), ref_origin = BodyLoc.CENTER);
-#superimpose!(zm3, eles(lat, "m1"), ref_origin = BodyLoc.EXIT_END);
+superimpose!(zs1, eles(lat, "d1"), offset = 0.2);
+superimpose!(zm1, eles(lat, "m1"), ref_origin = BodyLoc.ENTRANCE_END);
+superimpose!(zm2, eles(lat, "m1"), ref_origin = BodyLoc.CENTER);
+superimpose!(zm3, eles(lat, "m1"), ref_origin = BodyLoc.EXIT_END);
 
 @testset "Superimpose" begin
   # getproperty. L, s, s_downstream, name, multipoles, reference energy
 end
+
 
 # superimpose at boundary
 # Make sure superimpose at branch start is not before beginning element.
