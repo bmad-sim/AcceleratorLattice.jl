@@ -72,9 +72,9 @@ The transformation is
 function ele_floor_transform(bend::BendGroup, L)
   qa = RotY(bend.angle)
   r_vec = [-L * sinc(bend.angle/(2*pi)) * sin(bend.angle), 0.0, L * sinc(bend.angle/pi)]
-  if bend.ref_tilt == 0; return (r_vec, qa); end
+  if bend.tilt_ref == 0; return (r_vec, qa); end
 
-  qt = RotZ(-bend.ref_tilt)
+  qt = RotZ(-bend.tilt_ref)
   return (rot(qt, r_vec), qt * qa * inv(qt))
 end
 

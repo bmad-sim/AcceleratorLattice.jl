@@ -19,6 +19,9 @@ the `.r` component will be in the first column and the `.q` component will be in
 second column.
 
 When defining custom parameter groups, key/value pairs can be added to `show_column2` as needed.
+
+NOTE! For any show_column2[Group] dict, Output parameters may be a value (will appear in column 2)
+but not a key. This restriction is not fundamental and could be remove with a little programming.
 """ show_column2
 
 show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol}}(
@@ -37,14 +40,13 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
 
   BendGroup => Dict{Symbol,Symbol}(
     :bend_type        => :exact_multipoles,
-    :g                => :g_tot,
+    :g                => :norm_bend_field,
     :angle            => :rho,
-    :L_chord          => :L_rectangle,
     :e1               => :e2,
     :e1_rect          => :e2_rect,
     :edge_int1        => :edge_int2,
-    :bend_field       => :bend_field_tot,
-    :L_sagitta        => :fiducial_pt,
+    :bend_field_ref   => :bend_field,
+    :L_chord          => :L_sagitta,
   ),
 
   Dispersion1 => Dict{Symbol,Symbol}(
@@ -225,7 +227,7 @@ end
 ele_param_value_str(wall2d::Wall2D; default::AbstractString = "???") = "Wall2D(...)"
 ele_param_value_str(who::Nothing; default::AbstractString = "???") = default
 ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
-ele_param_value_str(species::Species; default::AbstractString = "???") = "Species(\"" * full_name(species) * "\")"
+ele_param_value_str(species::Species; default::AbstractString = "???") = "Species(\"" * species.name * "\")"
 ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T <: Ele = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
 ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
@@ -294,7 +296,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
           continue
         end
       end
-      show_elegroup(io, group, docstring, indent = 2)
+      show_elegroup(io, group, ele, docstring, indent = 2)
     end
 
     # Finally print changed params.
@@ -303,7 +305,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       println(io, "  changed:")
       for (key, value) in changed
         nn2 = max(nn, length(string(key)))
-        param_name = rpad(string(key), nn2)
+        param_name = rpad(repr(key), nn2)
         value_str = ele_param_value_str(changed, key)
         if docstring
           ele_print_line(io, f"    {param_name} {value_str} {units(key, eletype)}", description(key, eletype))
@@ -325,22 +327,22 @@ Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
 # show_elegroup
 
 """
-    Internal: show_elegroup(io::IO, group::T, docstring::Bool; indent = 0)
+    Internal: show_elegroup(io::IO, group::T, ele::Ele, docstring::Bool; indent = 0)
 
 Prints lattice element group info. Used by `show_ele`.
 """ show_elegroup
 
-function show_elegroup(io::IO, group::T, docstring::Bool; indent = 0) where T <: EleParameterGroup
+function show_elegroup(io::IO, group::T, ele::Ele, docstring::Bool; indent = 0) where T <: EleParameterGroup
   if docstring
-    show_elegroup_with_doc(io, group, indent = indent)
+    show_elegroup_with_doc(io, group, ele, indent = indent)
   else
-    show_elegroup_wo_doc(io, group, indent = indent)
+    show_elegroup_wo_doc(io, group, ele, indent = indent)
   end
 end
 
 #---------
 
-function show_elegroup(io::IO, group::BMultipoleGroup, docstring::Bool; indent = 0)
+function show_elegroup(io::IO, group::BMultipoleGroup, ele::Ele, docstring::Bool; indent = 0)
   off_str = " "^indent
 
   if length(group.vec) == 0
@@ -362,7 +364,7 @@ end
 
 #---------
 
-function show_elegroup(io::IO, group::EMultipoleGroup, docstring::Bool; indent = 0)
+function show_elegroup(io::IO, group::EMultipoleGroup, ele::Ele, docstring::Bool; indent = 0)
   off_str = " "^indent
 
   if length(group.vec) == 0
@@ -382,7 +384,7 @@ end
 #---------------------------------------------------------------------------------------------------
 # show_elegroup_with_doc
 
-function show_elegroup_with_doc(io::IO, group::T; indent = 0) where T <: EleParameterGroup
+function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterGroup
   gtype = typeof(group)
   nn = max(18, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
@@ -392,12 +394,22 @@ function show_elegroup_with_doc(io::IO, group::T; indent = 0) where T <: ElePara
     value_str = ele_param_value_str(Base.getproperty(group, field))
     ele_print_line(io, f"    {param_name} {value_str} {units(field)}", description(field))
   end
+
+  # Look for associated output parameters.
+  if gtype in keys(show_column2)
+    for key in keynames(show_column2[gtype])
+      param_name = show_column2[gtype][key]
+      if param_name in fieldnames(gtype); continue; end  # Not a output parameter.
+      value_str = ele_param_value_str(Base.getproperty(ele, param_name))
+      ele_print_line(io, f"    (output) {param_name} {value_str} {units(field)}", description(field))
+    end
+  end
 end
 
 #---------------------------------------------------------------------------------------------------
 # show_elegroup_wo_doc
 
-function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = :NONE) where T <: BaseEleParameterGroup
+function show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym::Symbol = :NONE) where T <: BaseEleParameterGroup
   gtype = typeof(group)
   if gtype ∉ keys(show_column2)
     if field_sym == :NONE
@@ -428,7 +440,7 @@ function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = 
   for field_sym in fieldnames(gtype)
     field = Base.getproperty(group, field_sym)
     if typeof(field) ∈ keys(show_column2)
-      show_elegroup_wo_doc(io, field, indent = indent + 2, field_sym = field_sym)
+      show_elegroup_wo_doc(io, field, ele, indent = indent + 2, field_sym = field_sym)
       continue
     end
 
@@ -438,10 +450,19 @@ function show_elegroup_wo_doc(io::IO, group::T; indent = 0, field_sym::Symbol = 
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(field)
       str = f"  {field_name} {vstr} {units(field_sym)}"   # First column entry
+
       field2_sym = col2[field_sym]
-      field_name = rpad(full_parameter_name(field2_sym, gtype), n2)
-      vstr = ele_param_value_str(Base.getproperty(group, field2_sym))
-      str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
+      # If field2_sym represents a output parameter then field2_sym will not be in fieldnames(group)
+      if field2_sym in fieldnames(gtype)
+        field_name = rpad(full_parameter_name(field2_sym, gtype), n2)
+        vstr = ele_param_value_str(Base.getproperty(group, field2_sym))
+        str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
+      else
+        field_name = rpad("$field2_sym (output)", n2)
+        vstr = ele_param_value_str(Base.getproperty(ele, field2_sym))
+        str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
+      end
+
       if length(str) > 50 || length(str2) > 50        # If length is too big print in two lines.
         println(io, " "^indent * str)
         println(io, " "^indent * str2)

@@ -25,8 +25,8 @@ superimpose!(m2, lat.branch[1], offset = 2.7)
 #---------------------------------------------------------------------------------------------------
 
 superimpose!(zs1, eles(lat, "d1"), offset = 0.2);
-superimpose!(zm1, eles(lat, "m1"), ref_origin = BodyLoc.ENTRANCE_END);
-superimpose!(zm2, eles(lat, "m1"), ref_origin = BodyLoc.CENTER);
+#superimpose!(zm1, eles(lat, "m1"), ref_origin = BodyLoc.ENTRANCE_END);
+#superimpose!(zm2, eles(lat, "m1"), ref_origin = BodyLoc.CENTER);
 superimpose!(zm3, eles(lat, "m1"), ref_origin = BodyLoc.EXIT_END);
 
 @testset "Superimpose" begin

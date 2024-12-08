@@ -52,8 +52,6 @@ enum("Slave", ["NOT", "SUPER", "MULTIPASS"], "Type of slave this element is.")
 enum("Loc", ["UPSTREAM_END", "CENTER", "INSIDE", "DOWNSTREAM_END"], "Location in relation to machine coordinates.")
 enum("Select", ["UPSTREAM", "DOWNSTREAM"], "What to select in case of ambiguity.")
 enum("ExactMultipoles", ["OFF", "HORIZONTALLY_PURE", "VERTICALLY_PURE"], "Bend multipole coefficient meaning." )
-enum("FiducialPt", ["ENTRANCE_END", "CENTER", "EXIT_END", "NONE"], 
-                                      "Fiducial point location in relation to body coordinates.")
 enum("TrackingMethod", ["RUNGE_KUTTA", "TIME_RUNGE_KUTTA", "STANDARD"], "Particle tracking method.")
 enum("ParticleState", ["PREBORN", "ALIVE", "LOST", "LOST_NEG_X", "LOST_POS_X", 
                          "LOST_NEG_Y", "LOST_POS_Y", "LOST_PZ", "LOST_Z"], "Particle state.")
