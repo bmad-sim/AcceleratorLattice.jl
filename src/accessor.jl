@@ -81,7 +81,7 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   branch = lat_branch(ele)
   
   # Does ele.pdict[sym] exist? 
-  if haskey(pdict, sym)   
+  if haskey(pdict, sym)
     # Do bookkeeping but only if element is in a lattice.
     if !isnothing(branch) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
     return pdict[sym]
@@ -89,17 +89,20 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   
   # Look for `sym` as part of an ele group
   pinfo = ele_param_info(sym)
-  parent = Symbol(pinfo.parent_group)
-  if !haskey(pdict, parent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
+  parent = pinfo.parent_group
+  symparent = Symbol(parent)
+
+  if parent in OUTPUT_ABSTRACT_TYPES; return output_parameter(sym, ele, parent); end
+  if !haskey(pdict, symparent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
 
   # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
   if pinfo.paramkind <: Vector
     if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
-      pdict[:changed][sym] = getfield(pdict[parent], pinfo.struct_sym)
+      pdict[:changed][sym] = getfield(pdict[symparent], pinfo.struct_sym)
     end
   end
 
-  return get_elegroup_param(ele, pdict[parent], pinfo)
+  return get_elegroup_param(ele, pdict[symparent], pinfo)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -386,4 +389,49 @@ function set_param!(ele::Ele, sym::Symbol, value)
   if haskey(pdict, sym); pdict[sym] = value; return; end
   pinfo = ele_param_info(sym, ele)
   set_elegroup_param!(ele, pdict[Symbol(pinfo.parent_group)], pinfo, value)
+end
+
+#---------------------------------------------------------------------------------------------------
+# output_parameter
+
+"""
+  output_parameter(sym::Symbol, ele::Ele, vert_group::Type{OutputGroup})
+
+"""
+
+function output_parameter(sym::Symbol, ele::Ele, vert_group::Type{OutputGroup})
+  if sym == :rho
+    if :BendGroup ∉ keys(ele.pdict); return NaN; end
+    ele.g == 0 ? (return NaN) : return 1/ele.g
+
+  elseif sym == :L_sagitta
+    if :BendGroup ∉ keys(ele.pdict); return 0.0; end
+    ele.g == 0 ? (return 0.0) : return -cos_one(ele.angle/2) / ele.g
+
+  elseif sym == :bend_field
+    if :BendGroup ∉ keys(ele.pdict); return 0.0; end
+    return norm_bend_field * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
+
+  elseif sym == :norm_bend_field
+    if :BendGroup ∉ keys(ele.pdict); return 0.0; end
+    return ele.g + cos(ele.tilt0) * ele.Kn0 + sin(ele.tilt0) * ele.Ks0
+
+  elseif sym == :β_ref
+    if :ReferenceGroup ∉ keys(ele.pdict); return 0.0; end
+    return ele.pc_ref / ele.E_tot_ref
+
+  elseif sym == :γ_ref
+    if :ReferenceGroup ∉ keys(ele.pdict); return 0.0; end
+    ele.γ_ref             = ele.E_tot_ref / massof(ele.species_ref)
+
+  elseif sym == :β_ref_downstream
+    if :DownstreamReferenceGroup ∉ keys(ele.pdict); return 0.0; end
+    return ele.pc_ref_downstream / ele.E_tot_ref_downstream
+
+  elseif sym == :γ_ref_downstream
+    if :DownstreamReferenceGroup ∉ keys(ele.pdict); return 0.0; end
+    return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
+  end
+
+  error("Parameter is not in the OutputGroup: $sym")
 end

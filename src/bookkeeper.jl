@@ -307,8 +307,7 @@ end
 
 Checks if there is a symbol conflict in `ele`.
 A symbol conflict occurs when two keys in `ele.changed[]` are not allowed to both be simultaneously set.
-For example, `rho` and `g` for a `Bend` cannot be simultaneously set since it is not clear how
-to handle this case (since `rho` * `g` = 1 they are not independent variables).
+For example, `L` and `L_chord` for a `Bend` cannot be simultaneously set.
 
 Returns an array of the names of the parameters present. 
 """  param_conflict_check
@@ -337,23 +336,117 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger,
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, ...)
-# Low level LengthGroup bookkeeping.
+# elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, ...)
+# BMultipoleGroup bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, changed::ChangedLedger, previous_ele::Ele)
-  tg = ele.TrackingGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
+  bmg = ele.BMultipoleGroup
+  cdict = ele.changed
+  if !has_changed(ele, BMultipoleGroup) && !changed.this_ele_length && !changed.ref_group; return; end
+
+  ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
+
+  for param in keys(cdict)
+    if typeof(param) == DataType; continue; end
+    (mtype, order, group) = multipole_type(param)
+    if isnothing(group) || group != BMultipoleGroup || mtype == "tilt"; continue; end
+    mul = multipole!(bmg, order)
+
+    if     mtype[1:2] == "Kn"; mul.Bn = mul.Kn * ff
+    elseif mtype[1:2] == "Ks"; mul.Bs = mul.Ks * ff
+    elseif mtype[1:2] == "Bn"; mul.Kn = mul.Bn / ff
+    elseif mtype[1:2] == "Bs"; mul.Ks = mul.Bs / ff
+    end
+  end    
+
+  # Update multipoles if the reference energy has changed.
+  if changed.ref_group
+    if ele.field_master
+      for mul in bmg.vec
+        mul.Kn = mul.Bn / ff
+        mul.Ks = mul.Bs / ff
+      end
+    else
+      for mul in bmg.vec
+        mul.Bn = mul.Kn * ff
+        mul.Bs = mul.Ks * ff
+      end
+    end
+  end
+
+  clear_changed!(ele, BMultipoleGroup)
+  return
+end
+
+#---------------------------------------------------------------------------------------------------
+# elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, ...)
+# BendGroup bookkeeping.
+
+function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Ele)
+  bg = ele.BendGroup
   cdict = ele.changed
 
-  if haskey(cdict, :num_steps)
-    pop!(cdict, :num_steps)
-    tg.ds_step = ele.L / tg.num_steps
+  if !has_changed(ele, BendGroup) && !changed.this_ele_length && !changed.ref_group; return; end
+
+  sym1 = param_conflict_check(ele, :L, :L_chord)
+  param_conflict_check(ele, :e1, :e1_rect)
+  param_conflict_check(ele, :e2, :e2_rect)
+
+  if haskey(cdict, :angle) && length(sym1) + length(sym2) == 2; error(f"Conflict: {sym1[1]} " *
+                         f"{sym2[1]} cannot both be specified for a Bend element: {ele.name}"); end
+
+  if  haskey(cdict, :angle) && haskey(cdict, :g)
+    L = bg.g * bg.angle
+  elseif haskey(cdict, :angle) && haskey(cdict, :L_chord)
+    if bg.L_chord == 0 && bg.angle != 0; 
+                        error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+    bg.angle == 0 ? bg.g = 0.0 : bg.g = 2.0 * sin(bg.angle/2) / bg.L_chord
+    L = bg.angle * bg.g
+  elseif haskey(cdict, :angle)
+    L = ele.L
+    if L == 0 && bg.angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+    bg.angle == 0 ? bg.g = 0 : bg.g = bg.angle / L
+  elseif changed.this_ele_length
+    L = ele.L
+    bg.angle = L * bg.g
   end
 
-  if haskey(cdict, :ds_step)
-    pop!(cdict, :ds_step)
-    tg.num_steps = ele.L / tg.ds_step
+  bg.bend_field_ref = bg.g * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
+
+  if haskey(cdict, :L_chord)
+    bg.angle = 2 * asin(bg.L_chord * bg.g / 2)
+    bg.g == 0 ? bg.L =  bg.L_chord : bg.L = bg.angle / bg.g
+  else
+    bg.angle = L * bg.g
+    bg.g == 0 ? bg.L_chord = L : bg.L_chord = 2 * sin(bg.angle/2) / bg.g 
   end
 
+  if ele.L != L
+    ele.L = L
+    elegroup_bookkeeper!(ele, LengthGroup, changed, previous_ele)
+  end
+
+  if haskey(cdict, :e1)
+    bg.e1_rect = bg.e1 - 0.5 * bg.angle
+  elseif haskey(cdict, :e1_rect)
+    bg.e1 = bg.e1_rect + 0.5 * bg.angle
+  elseif bg.bend_type == BendType.SECTOR
+    bg.e1_rect = bg.e1 + 0.5 * bg.angle
+  else
+    bg.e1 = bg.e1_rect - 0.5 * bg.angle
+  end
+
+  if haskey(cdict, :e2)
+    bg.e2_rect = bg.e2 - 0.5 * bg.angle
+  elseif haskey(cdict, :e2_rect)
+    bg.e2 = bg.e2_rect + 0.5 * bg.angle
+  elseif bg.bend_type == BendType.SECTOR
+    bg.e2_rect = bg.e2 + 0.5 * bg.angle
+  else
+    bg.e2 = bg.e2_rect - 0.5 * bg.angle
+  end
+
+  clear_changed!(ele, BendGroup)
   return
 end
 
@@ -404,34 +497,30 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   if has_changed(ele, ReferenceGroup) || has_changed(ele, RFGroup); changed.ref_group = true; end
 
   if is_null(previous_ele)   # implies BeginningEle
+    if !changed.ref_group; return; end
     if rg.species_ref == Species(); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
     drg.species_ref_downstream = rg.species_ref
 
     rg.time_ref_downstream = rg.time_ref + rg.extra_dtime_ref
 
-    if count([haskey(cdict, :pc_ref), haskey(cdict, :E_tot_ref), haskey(cdict, :β_ref), has_key(cdict, γ_ref)]) > 1
+    if count([haskey(cdict, :pc_ref), haskey(cdict, :E_tot_ref), haskey(cdict, :β_ref), haskey(cdict, :γ_ref)]) > 1
       error(f"Beginning element has more than one of pc_ref, E_tot_ref, β_ref, and γ_ref set in {ele_name(ele)}")
     elseif haskey(cdict, :E_tot_ref)
-      rg.pc_ref = pc(rg.species_ref, E_tot = rg.E_tot_ref)
+      rg.pc_ref = calc_pc(rg.species_ref, E_tot = rg.E_tot_ref)
     elseif haskey(cdict, :pc_ref)
-      rg.E_tot_ref = E_tot(rg.species_ref, pc = rg.pc_ref)
+      rg.E_tot_ref = calc_E_tot(rg.species_ref, pc = rg.pc_ref)
     elseif haskey(cdict, :β_ref)
-      rg.pc_ref = pc(rg.species_ref, β = rg.γ_ref)
-      rg.E_tot_ref = E_tot(rg.species_ref, pc = rg.pc_ref)
+      rg.pc_ref = calc_pc(rg.species_ref, β = rg.γ_ref)
+      rg.E_tot_ref = calc_E_tot(rg.species_ref, pc = rg.pc_ref)
     elseif haskey(cdict, :γ_ref)
-      rg.pc_ref = pc(rg.species_ref, β = rg.γ_ref)
-      rg.E_tot_ref = E_tot(rg.species_ref, pc = rg.pc_ref)
+      rg.pc_ref = calc_pc(rg.species_ref, β = rg.γ_ref)
+      rg.E_tot_ref = calc_E_tot(rg.species_ref, pc = rg.pc_ref)
     else
-      error(f"Neither pc_ref nor E_tot_ref set for: {ele_name(ele)}")
+      error("Neither pc_ref E_tot_ref, β_ref, nor γ_ref set for: $(ele_name(ele))")
     end
 
     drg.pc_ref_downstream = rg.pc_ref
     drg.E_tot_ref_downstream = rg.E_tot_ref
-
-    rg.β_ref             = rg.pc_ref / rg.E_tot_ref
-    rg.γ_ref             = rg.E_tot_ref / massof(rg.species_ref)
-    drg.β_ref_downstream = drg.pc_ref_downstream / drg.E_tot_ref_downstream
-    drg.γ_ref_downstream = drg.E_tot_ref_downstream / massof(drg.species_ref_downstream)
 
     clear_changed!(ele, ReferenceGroup)
     return
@@ -445,24 +534,18 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   rg.pc_ref           = previous_ele.pc_ref_downstream
   rg.E_tot_ref        = previous_ele.E_tot_ref_downstream
   rg.time_ref         = previous_ele.time_ref_downstream
-  rg.β_ref            = rg.pc_ref / rg.E_tot_ref
   rg.species_ref      = previous_ele.species_ref_downstream
   drg.species_ref_downstream = rg.species_ref
 
-  if rg.dvoltage_ref == 0
+  if rg.dE_tot_ref == 0
     drg.pc_ref_downstream      = rg.pc_ref
     drg.E_tot_ref_downstream   = rg.E_tot_ref
-    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L / (C_LIGHT * rg.pc_ref / rg.E_tot_ref)
+    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L * rg.E_tot_ref / (C_LIGHT * rg.pc_ref)
   else
-    drg.pc_ref_downstream      = rg.pc_ref + rg.dvoltage_ref
-    drg.E_tot_ref_downstream   = E_tot_from_pc(rg.pc_ref_downstream, rg.species_ref)
+    drg.pc_ref_downstream, drg.E_tot_ref_downstream = calc_changed_energy(rg.species_ref, rg.pc_ref, rg.dE_tot_ref)
     rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L *
              (rg.E_tot_ref + rg.E_tot_ref_downstream) / (C_LIGHT * (rg.pc_ref + rg.pc_ref_downstream))
   end
-
-  rg.γ_ref             = rg.E_tot_ref / massof(rg.species_ref)
-  drg.β_ref_downstream = drg.pc_ref_downstream / drg.E_tot_ref_downstream
-  drg.γ_ref_downstream = drg.E_tot_ref_downstream / massof(drg.species_ref_downstream)
 
   # Multipass lord bookkeeping if this is a slave
 
@@ -510,96 +593,6 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup},
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, ...)
-# BendGroup bookkeeping.
-
-function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Ele)
-  bg = ele.BendGroup
-  cdict = ele.changed
-
-  if !has_changed(ele, BendGroup) && !changed.this_ele_length && !changed.ref_group; return; end
-
-  sym1 = param_conflict_check(ele, :L, :L_chord)
-  sym2 = param_conflict_check(ele, :g, :rho)
-  param_conflict_check(ele, :e1, :e1_rect)
-  param_conflict_check(ele, :e2, :e2_rect)
-
-  if haskey(cdict, :angle) && length(sym1) + length(sym2) == 2; error(f"Conflict: {sym1[1]} " *
-                         f"{sym2[1]} cannot both be specified for a Bend element: {ele.name}"); end
-
-  if haskey(cdict, :L_sagitta); error(f"DependentParam: L_sagitta is a dependent parameter and " *
-                                                     f"is not settable for: {ele_name(ele)}"); end
-
-  if haskey(cdict, :rho); bg.g = 1.0 / bg.rho; end
-
-  if  haskey(cdict, :angle) && haskey(cdict, :g)
-    L = bg.g * bg.angle
-  elseif haskey(cdict, :angle) && haskey(cdict, :L_chord)
-    if bg.L_chord == 0 && bg.angle != 0; 
-                        error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
-    bg.angle == 0 ? bg.g = 0.0 : bg.g = 2.0 * sin(bg.angle/2) / bg.L_chord
-    L = bg.angle * bg.g
-  elseif haskey(cdict, :angle)
-    L = ele.L
-    if L == 0 && bg.angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
-    bg.angle == 0 ? bg.g = 0 : bg.g = bg.angle / L
-  elseif changed.this_ele_length
-    L = ele.L
-    bg.angle = L * bg.g
-  end
-
-  bg.g_tot = bg.g + ele.Kn0
-  bg.g == 0 ? bg.rho = Inf : bg.rho = 1.0 / bg.g
-
-  bg.bend_field = bg.g * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
-  bg.bend_field_tot = bg.g_tot * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
-
-  if haskey(cdict, :L_chord)
-    bg.angle = 2 * asin(bg.L_chord * bg.g / 2)
-    bg.g == 0 ? bg.L =  bg.L_chord : bg.L = bg.rho * bg.angle
-  else
-    bg.angle = L * bg.g
-    bg.g == 0 ? bg.L_chord = L : bg.L_chord = 2 * bg.rho * sin(bg.angle/2) 
-  end
-
-  bg.g == 0 ? bg.L_sagitta = 0.0 : bg.L_sagitta = -bg.rho * cos_one(bg.angle/2)
-
-  if ele.L != L
-    ele.L = L
-    elegroup_bookkeeper!(ele, LengthGroup, changed, previous_ele)
-  end
-
-  if haskey(cdict, :e1)
-    bg.e1_rect = bg.e1 - 0.5 * bg.angle
-  elseif haskey(cdict, :e1_rect)
-    bg.e1 = bg.e1_rect + 0.5 * bg.angle
-  elseif bg.bend_type == BendType.SECTOR
-    bg.e1_rect = bg.e1 + 0.5 * bg.angle
-  else
-    bg.e1 = bg.e1_rect - 0.5 * bg.angle
-  end
-
-  if haskey(cdict, :e2)
-    bg.e2_rect = bg.e2 - 0.5 * bg.angle
-  elseif haskey(cdict, :e2_rect)
-    bg.e2 = bg.e2_rect + 0.5 * bg.angle
-  elseif bg.bend_type == BendType.SECTOR
-    bg.e2_rect = bg.e2 + 0.5 * bg.angle
-  else
-    bg.e2 = bg.e2_rect - 0.5 * bg.angle
-  end
-
-  if bg.fiducial_pt == FiducialPt.NONE || bg.fiducial_pt == FiducialPt.CENTER
-    bg.L_rectangle = bg.L_chord
-  else
-    bg.L_rectangle = bg.L * sinc(bg.angle)
-  end
-
-  clear_changed!(ele, BendGroup)
-  return
-end
-
-#---------------------------------------------------------------------------------------------------
 # elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, ...)
 # SolenoidGroup bookkeeping.
 
@@ -625,45 +618,23 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, changed::Cha
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, ...)
-# BMultipoleGroup bookkeeping.
+# elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, ...)
+# Low level LengthGroup bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
-  bmg = ele.BMultipoleGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, changed::ChangedLedger, previous_ele::Ele)
+  tg = ele.TrackingGroup
   cdict = ele.changed
-  if !has_changed(ele, BMultipoleGroup) && !changed.this_ele_length && !changed.ref_group; return; end
 
-  ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
-
-  for param in keys(cdict)
-    if typeof(param) == DataType; continue; end
-    (mtype, order, group) = multipole_type(param)
-    if isnothing(group) || group != BMultipoleGroup || mtype == "tilt"; continue; end
-    mul = multipole!(bmg, order)
-
-    if     mtype[1:2] == "Kn"; mul.Bn = mul.Kn * ff
-    elseif mtype[1:2] == "Ks"; mul.Bs = mul.Ks * ff
-    elseif mtype[1:2] == "Bn"; mul.Kn = mul.Bn / ff
-    elseif mtype[1:2] == "Bs"; mul.Ks = mul.Bs / ff
-    end
-  end    
-
-  # Update multipoles if the reference energy has changed.
-  if changed.ref_group
-    if ele.field_master
-      for mul in bmg.vec
-        mul.Kn = mul.Bn / ff
-        mul.Ks = mul.Bs / ff
-      end
-    else
-      for mul in bmg.vec
-        mul.Bn = mul.Kn * ff
-        mul.Bs = mul.Ks * ff
-      end
-    end
+  if haskey(cdict, :num_steps)
+    pop!(cdict, :num_steps)
+    tg.ds_step = ele.L / tg.num_steps
   end
 
-  clear_changed!(ele, BMultipoleGroup)
+  if haskey(cdict, :ds_step)
+    pop!(cdict, :ds_step)
+    tg.num_steps = ele.L / tg.ds_step
+  end
+
   return
 end
 

@@ -381,24 +381,27 @@ length \vn{L} which is in the \vn{LengthGroup}.
 The parameters of this group are:
 \begin{example}
   bend_type::BendType.T     - Type of bend. Default: BendType.SECTOR.
-  angle::Number             - Design bend angle.
-  rho::Number               - Design bend radius.
-  g::Number                 - Design bend strength = 1/radius.
-  g_tot::Number             - Total bend strength.
-  bend_field::Number        - Design bend field.
-  bend_field_tot::Number    - Total (that is, actual) dipole field.
+  angle::Number             - Reference bend angle.
+  g::Number                 - Reference bend strength = 1/radius.
+  bend_field_ref::Number    - Reference bend field.
   L_chord::Number           - Chord length.
-  L_sagitta::Number         - Sagitta length.
-  L_rectangle::Number       - Rectangular length.
-  ref_tilt::Number          - Reference tilt.
+  tilt_ref::Number          - Reference tilt.
   e1::Number                - Entrance end pole face rotation.
   e2::Number                - Exit end pole face rotation.
   e1_rect::Number           - Entrance end pole face rotation.
   e2_rect::Number           - Exit end pole face rotation.
   edge_int1::Number         - Entrance end fringe field integral.
   edge_int2::Number         - Exit end fringe field integral
-  fiducial_pt::FiducialPt.T            - Default: FiducialPt.NONE
   exact_multipoles::ExactMultipoles.T  - Default: ExactMultipoles.OFF
+\end{example}
+
+
+Associated output parameters:
+\begin{example}
+  rho::Number             - Reference bend radius.
+  L_sagitta::Number       - Sagitta length.
+  bend_field::Number      - Actual dipole field in the plane of the bend.
+  norm_bend_field::Number - Actual dipole strength in the plane of the bend.
 \end{example}
 
 \begin{figure}[ht]
@@ -423,22 +426,28 @@ $y$-axis.
 In detail:
   \begin{description}
   %
-  \index{angle}
   \item[angle] \Newline
-The total design bend angle. A positive \vn{angle} represents a
+The total Reference bend angle. A positive \vn{angle} represents a
 bend towards negative $x$ as shown in \fig{f:bend}.
   %
-  \index{bend_field}
-  \item[bend_field] \Newline
-The \vn{bend_field} parameter is the design magnetic bending field which determines the reference orbit
+  \item[bend_field_ref] \Newline
+The \vn{bend_field_ref} parameter is the reference magnetic bending field which is the field
+that is needed for the reference particle to be bent in a circle of radius \vn{rho}
 and the placement of lattice elements downstream from the bend. The actual (``total'') field is
 a vector sum of
-\vn{bend_field} plus the value of the \vn{Bn0}  and \vn{Bs0} multipoles. If \vn{tilt0} and \vn{Bs0}
+\vn{bend_field_ref} plus the value of the \vn{Bn0}  and \vn{Bs0} multipoles. If \vn{tilt0} and \vn{Bs0}
 are zero, the actual field is
 \begin{example}
-  B-field (total) = bend_field + Bn0
+  B-field (total) = bend_field_ref + Bn0
 \end{example}
 See the discussion of \vn{g} and \vn{Kn0} below for more details.
+  %
+  \item[bend_field] \Newline
+The actual dipole bend field ignoring any skew field component which is set by \vn{Bs0}. 
+The relation between this and \vn{bend_field_ref} is
+\begin{example}
+  bend_field = bend_field_ref + Bn0
+\end{equation}
   %
   \item[bend_type] \Newline
 The \vn{bend_type} parameter sets the ``logical shape'' of the bend. 
@@ -534,50 +543,25 @@ $C_0$ and $C_1$ then
   C_1 = \frac{1}{2 \, \text{field_int}}
 \end{equation}
   %
-  \item[fiducial_pt] \Newline
-The \vn{fiducial_pt} parameter sets a fiducial point which can be used to keep the shape of the bend
-constant when, in a program, the parameters \vn{rho}, \vn{g}, \vn{b_field} or \vn{angle} are varied.
-Varying these parameters typically happens when doing machine design. Using a fiducial point can be
-helpful when designing a machine usin bend magnets that already exist.
-
-The \vn{fiducial_pt} parameter
-has four possible settings:
-\begin{example}
-  none          ! No fiducial point (default).
-  entrance_end  ! The entrance point is the fiducial point.
-  center        ! The center of the ref curve is the fiducial point.
-  exit_end      ! The exit point is the fiducial point.
-\end{example}
-With \vn{fiducial_pt} set to \vn{none} (the default). The bend shape is not held constant. With the
-other three settings, the bend shape will be held constant as discussed in \sref{s:bend.fiducial}.
-With \vn{fiducial_pt} set to \vn{entrance_end}, the reference trajectory at the entrance end is held
-fixed in both position and orientation with respect to the bend face and \vn{g}, \vn{l} and \vn{e2},
-along with the other depdendent parameters, are adjusted to both give the desired change in what was
-varied (which is one of \vn{rho}, \vn{g}, \vn{b_field} or \vn{angle}) and to keep the shape of the
-bend unchanged. See \fig{f:bend.fid1}. Similarly, if \vn{fiducial_pt} is set to \vn{center}, the
-center of the reference trajectory is held fixed in both position and orientation and if
-\vn{fiducial_pt} is set to \vn{exit_end}, the exit point is held fixed in both position and
-orientation.
-  %
   \index{g}\index{rho}
   \item[g, rho] \Newline
-The design bending radius which determines the reference coordinate system is \vn{rho} (see
-\sref{s:ref}). \vn{g} = \vn{1/rho} is the ``bend strength'' and is proportional to the design
-dipole magnetic field. \vn{g} is related to the design magnetic field \vn{bend_field} via
+The Reference bending radius which determines the reference coordinate system is \vn{rho} (see
+\sref{s:ref}). \vn{g} = \vn{1/rho} is the ``bend strength'' and is proportional to the Reference
+dipole magnetic field. \vn{g} is related to the reference magnetic field \vn{bend_field_ref} via
 \begin{equation}
-  \text{g} = \frac{q}{p_0} \, \text{bend_field} 
+  \text{g} = \frac{q}{p_0} \, \text{bend_field_ref} 
   \label{gqpb}
 \end{equation}
 where $q$ is the charge of the reference particle and $p_0$ is the reference momentum. It is
-important to keep in mind that changing \vn{g} will change the design orbit (\sref{s:coords.3}) and
+important to keep in mind that changing \vn{g} will change the Reference orbit (\sref{s:coords.3}) and
 hence will move all downstream lattice elements in space.
 
 The total bend strength felt by a particle is the vector sum of \vn{g} plus the zeroth order
 magnetic multipole. If the multipole \vn{tilt0} and \vn{Ks0} is zero, the total bend strength is
 \begin{example}
-  g_total = g + Kn0
+  norm_bend_field = g + Kn0
 \end{example}
-Changing the multipole strength \vn{Kn0} or \vn{Ks0} leaves the design orbit and the positions of
+Changing the multipole strength \vn{Kn0} or \vn{Ks0} leaves the Reference orbit and the positions of
 all downstream lattice elements
 unchanged but will vary a particle's orbit. One common mistake when designing lattices is to vary
 \vn{g} and not \vn{Kn0} which results in downstream elements moving around. See \Sref{s:ex.chicane}
@@ -671,9 +655,14 @@ The components of this group are:
   species_ref_downstream::Species  - Reference species. 
   pc_ref_downstream::Number        - Reference momentum*c. 
   E_tot_ref_downstream::Number     - Reference total energy. 
+\end{example}
+
+Associated output parameters are:
+\begin{example}
   β_ref_downstream::Number         - Reference v/c. 
   γ_ref_downstream::Number         - Reference relativistic gamma factor.
 \end{example}
+
 This group holds the reference energy and species at the downstream end of an element.
 Also see the \vn{ReferenceGroup} (\sref{s:reference.g}) documentation. 
 This group and \vn{ReferenceGroup} group are always paired. 
@@ -916,10 +905,15 @@ The components of this group are:
   time_ref::Number              - Reference time upstream end. 
   time_ref_downstream::Number   - Reference time downstream end. 
   extra_dtime_ref::Number       - User set reference time change.
-  β_ref::Number                 - Reference v/c upstream end. 
-  γ_ref::Number                 - Reference relativistic gamma factor.
   dvoltage_ref::Number          - Sets change in reference energy.
 \end{example}
+
+Associated output parameters are:
+\begin{example}
+  β_ref::Number                 - Reference v/c upstream end. 
+  γ_ref::Number                 - Reference relativistic gamma factor.
+\end{example}
+
 This group holds the reference energy, species, and time parameters at the upstream 
 end of a lattice element.
 Also see the \vn{DownstreamReferenceGroup} group documentation (\sref{s:dreference.g}).

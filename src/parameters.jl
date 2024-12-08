@@ -69,25 +69,24 @@ ELE_PARAM_INFO_DICT = Dict(
   :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad"),
   :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad"),
 
-  :angle              => ParamInfo(BendGroup,      Number,        "Design bend angle", "rad"),
-  :bend_field         => ParamInfo(BendGroup,      Number,        "Design bend field corresponding to g bending strength", "T"),
-  :bend_field_tot     => ParamInfo(BendGroup,      Number,        "Total bend field corresponding to g_tot bending strength", "T"),
-  :rho                => ParamInfo(BendGroup,      Number,        "Design bend radius", "m"),
-  :g                  => ParamInfo(BendGroup,      Number,        "Design bend strength (1/rho)", "1/m"),
-  :g_tot              => ParamInfo(BendGroup,      Number,        "Total bend strength", "1/m"),
+  :angle              => ParamInfo(BendGroup,      Number,        "Reference bend angle", "rad"),
+  :bend_field_ref     => ParamInfo(BendGroup,      Number,        "Reference bend field corresponding to g bending strength", "T"),
+  :g                  => ParamInfo(BendGroup,      Number,        "Reference bend strength (1/rho)", "1/m"),
   :e1                 => ParamInfo(BendGroup,      Number,        "Bend entrance face angle.", "rad"),
   :e2                 => ParamInfo(BendGroup,      Number,        "Bend exit face angle.", "rad"),
   :e1_rect            => ParamInfo(BendGroup,      Number,        "Bend entrance face angles relative to a rectangular geometry.", "rad"),
   :e2_rect            => ParamInfo(BendGroup,      Number,        "Bend exit face angles relative to a rectangular geometry.", "rad"),
   :L_chord            => ParamInfo(BendGroup,      Number,        "Bend chord length.", "m"),
-  :L_sagitta          => ParamInfo(BendGroup,      Number,        "Bend sagitta length.", "m"),
-  :L_rectangle        => ParamInfo(BendGroup,      Number,        "Rectangular length", "m"),
-  :ref_tilt           => ParamInfo(BendGroup,      Number,        "Bend reference orbit rotation around the upstream z-axis", "rad"),
+  :tilt_ref           => ParamInfo(BendGroup,      Number,        "Bend reference orbit rotation around the upstream z-axis", "rad"),
   :edge_int1          => ParamInfo(BendGroup,      Number,        "Bend entrance edge field integral.", "m"),
   :edge_int2          => ParamInfo(BendGroup,      Number,        "Bend exit edge field integral.", "m"),
   :bend_type          => ParamInfo(BendGroup,      BendType.T,    "Sets the \"logical\" shape of a bend."),
-  :fiducial_pt        => ParamInfo(BendGroup,      FiducialPt.T,  "Fiducial point used with variation of bend parameters."),
   :exact_multipoles   => ParamInfo(BendGroup,      ExactMultipoles.T, "Are multipoles treated exactly?"),
+
+  :rho                => ParamInfo(OutputGroup,   Number,        "Reference bend radius", "m"),
+  :L_sagitta          => ParamInfo(OutputGroup,   Number,        "Bend sagitta length.", "m"),
+  :norm_bend_field           => ParamInfo(OutputGroup,   Number,        "Actual bend strength in the plane of the bend", "1/m"),
+  :bend_field         => ParamInfo(OutputGroup,   Number,        "Actual bend field in the plane of the bend field", "T"),
 
   :to_line            => ParamInfo(ForkGroup,      Union{BeamLine, Nothing}, "Beamline forked to."),
   :to_ele             => ParamInfo(ForkGroup,      String,                   "Lattice element forked to."),
@@ -112,15 +111,17 @@ ELE_PARAM_INFO_DICT = Dict(
   :time_ref               => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
   :extra_dtime_ref        => ParamInfo(ReferenceGroup, Number,      "Additional reference time change.", "sec"),
   :time_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
-  :β_ref                  => ParamInfo(ReferenceGroup, Number,      "Reference velocity/c."),
-  :γ_ref                  => ParamInfo(ReferenceGroup, Number,      "Reference relativistic gamma factor."),
   :dvoltage_ref           => ParamInfo(ReferenceGroup, Number,      "Sets change in reference energy.", "volt"),
+
+  :β_ref                  => ParamInfo(OutputGroup, Number,         "Reference velocity/c."),
+  :γ_ref                  => ParamInfo(OutputGroup, Number,         "Reference relativistic gamma factor."),
 
   :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species,  "Reference species at downstream end."),
   :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,   "Reference momentum * c at downstream end.", "eV"),
   :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,   "Reference total energy at downstream end.", "eV"),
-  :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference velocity/c at downstream end."),
-  :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference relativistic gamma factor at downstream end."),
+
+  :β_ref_downstream       => ParamInfo(OutputGroup, Number,        "Reference velocity/c at downstream end."),
+  :γ_ref_downstream       => ParamInfo(OutputGroup, Number,        "Reference relativistic gamma factor at downstream end."),
 
   :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
   :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
@@ -226,8 +227,10 @@ for (key, info) in ELE_PARAM_INFO_DICT
   info.user_sym = key
 end
 
-DEPENDENT_ELE_PARAMETERS::Vector{Symbol} = [:β_ref, :β_ref_downstream, :γ_ref, :γ_ref_downstream,
-                  :species_ref_downstream, :pc_ref_downstream, :E_tot_ref_downstream, :time_ref_downstream,]
+DEPENDENT_ELE_PARAMETERS::Vector{Symbol} = 
+         [:species_ref_downstream, :pc_ref_downstream, :E_tot_ref_downstream, :time_ref_downstream,]
+
+OUTPUT_ABSTRACT_TYPES::Vector{DataType} = [OutputGroup]
 
 #---------------------------------------------------------------------------------------------------
 # has_parent_group
@@ -621,11 +624,11 @@ ELE_PARAM_GROUP_INFO = Dict(
   BeamBeamGroup         => EleParameterGroupInfo("BeamBeam element parameters", false),
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
-  BMultipole1           => EleParameterGroupInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleGroup`", false),
+  BMultipole            => EleParameterGroupInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleGroup`", false),
   DescriptionGroup      => EleParameterGroupInfo("Informational strings.", false),
   DownstreamReferenceGroup => EleParameterGroupInfo("Downstream element end reference energy and species.", false),
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
-  EMultipole1           => EleParameterGroupInfo("Electric multipole of given order. Substructure contained in `EMultipoleGroup`.", false),
+  EMultipole            => EleParameterGroupInfo("Electric multipole of given order. Substructure contained in `EMultipoleGroup`.", false),
   FloorPositionGroup    => EleParameterGroupInfo("Global floor position and orientation.", true),
   ForkGroup             => EleParameterGroupInfo("Fork element parameters", false),
   GirderGroup           => EleParameterGroupInfo("Girder parameters.", false),

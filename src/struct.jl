@@ -291,10 +291,10 @@ abstract type EleParameterGroup <: BaseEleParameterGroup end
 abstract type EleParameterSubGroup <: BaseEleParameterGroup end
 
 #---------------------------------------------------------------------------------------------------
-# BMultipole1 subgroup
+# BMultipole subgroup
 
 """
-    mutable struct BMultipole1 <: EleParameterSubGroup
+    mutable struct BMultipole <: EleParameterSubGroup
 
 Single magnetic multipole of a given order.
 Used by `BMultipoleGroup`.
@@ -310,7 +310,7 @@ Used by `BMultipoleGroup`.
 • `integrated::Union{Bool,Nothing}` - Integrated or not? \\
   Also determines what stays constant with length changes. \\
 """
-@kwdef mutable struct BMultipole1 <: EleParameterSubGroup  # A single multipole
+@kwdef mutable struct BMultipole <: EleParameterSubGroup  # A single multipole
   Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
   Ks::Number = 0.0                 # EG: "Ks2", "Ks2L"
   Bn::Number = 0.0
@@ -335,10 +335,10 @@ Dispersion parameters for a single axis.
 end
 
 #---------------------------------------------------------------------------------------------------
-# EMultipole1
+# EMultipole
 
 """
-    mutable struct EMultipole1 <: EleParameterSubGroup
+    mutable struct EMultipole <: EleParameterSubGroup
 
 Single electric multipole of a given order.
 Used by `EMultipoleGroup`.
@@ -351,9 +351,9 @@ Used by `EMultipoleGroup`.
 • `order::Int`                  - Multipole order. \\
 • `Eintegrated::Bool`           - Integrated field or not?. \\
   Also determines what stays constant with length changes. \\
-""" EMultipole1
+""" EMultipole
 
-@kwdef mutable struct EMultipole1 <: EleParameterSubGroup
+@kwdef mutable struct EMultipole <: EleParameterSubGroup
   En::Number = 0.0                    # EG: "En2", "En2L"
   Es::Number = 0.0                    # EG: "Es2", "Es2L"
   Etilt::Number = 0.0
@@ -554,56 +554,47 @@ end
 ## Fields
 • `bend_type::BendType.T`     - Is e or e_rect fixed? 
   Also is len or len_chord fixed? Default is `BendType.SECTOR`. \\
-• `angle::Number`             - Design bend angle. \\
-• `rho::Number`               - Design bend radius. \\
-• `g::Number`                 - Design bend strength. Note: Old Bmad `dg -> Kn0`. \\
-• `g_tot::Number`             - Total bend strength = `g + Kn0`. \\
-• `bend_field::Number`        - Design bend field. \\
-• `bend_field_tot::Number`    - Total bend field including `Bn0`. \\
+• `angle::Number`             - Reference bend angle. \\
+• `g::Number`                 - Reference coordinates bend curvature. \\
+• `bend_field_ref::Number`    - Reference bend field. \\
 • `L_chord::Number`           - Chord length. \\
-• `L_sagitta::Number`         - Sagitta length of bend semi circle. \\
-• `L_rectangle::Number`       - Rectangular length. See manual. \\
-• `ref_tilt::Number`          - Tilt angle of reference (machine) coordinate system. \\
+• `tilt_ref::Number`          - Tilt angle of reference (machine) coordinate system. \\
 • `e1::Number`                - Pole face rotation at the entrance end with respect to a sector geometry. \\
 • `e2::Number`                - Pole face rotation at the exit end with respect to a sector geometry. \\
 • `e1_rect::Number`           - Pole face rotation with respect to a rectangular geometry. \\
 • `e2_rect::Number`           - Pole face rotation with respect to a rectangular geometry. \\
 • `edge_int1::Number`         - Field integral at entrance end. \\
 • `edge_int2::Number`         - Field integral at exit end. \\
-• `hgap1::Number`             - Pole gap at entrance end. \\
-• `hgap2::Number`             - Pole gap at exit end. \\
-• `fiducial_pt::FiducialPt.T` - Fiducial point used when the bend geometry is varied. \\
-  Default is `FiducialPt.NONE`. \\
 • `exact_multipoles::ExactMultipoles.T` - Field multipoles treatment. Default is `ExactMultipoles.OFF`. \\
+
+## Output Parameters
+• `rho::Number`               - Reference bend radius. \\ 
+• `L_sagitta::Number`         - Sagitta length of bend semi circle. \\
+• `bend_field::Number`        - Actual bend field in the plane of the bend. \\
+• `norm_bend_field::Number`   - Actual bend strength in the plane of the bend. \\
 
 ## Notes
 For tracking there is no distinction made between sector like (`BendType.SECTOR`) bends and
 rectangular like (`BendType.RECTANGULAR`) bends. The `bend_type` switch is only important when the
 bend angle or length is varied. See the documentation for details.
 
-Whether `bend_field` or `g` is held constant when the reference energy is varied is
+Whether `bend_field_ref` or `g` is held constant when the reference energy is varied is
 determined by the `field_master` setting in the MasterGroup struct.
 """ BendGroup
 
 @kwdef mutable struct BendGroup <: EleParameterGroup
   bend_type::BendType.T = BendType.SECTOR 
   angle::Number = 0.0
-  rho::Number = Inf
-  g::Number = 0.0
-  g_tot::Number = 0.0            
-  bend_field::Number = 0.0    
-  bend_field_tot::Number = 0.0   
+  g::Number = 0.0           
+  bend_field_ref::Number = 0.0
   L_chord::Number = 0.0
-  L_sagitta::Number = 0.0
-  L_rectangle::Number = 0.0
-  ref_tilt::Number = 0.0
+  tilt_ref::Number = 0.0
   e1::Number = 0.0
   e2::Number = 0.0
   e1_rect::Number = 0.0
   e2_rect::Number = 0.0
   edge_int1::Number = 0.5
   edge_int2::Number = 0.5
-  fiducial_pt::FiducialPt.T = FiducialPt.NONE
   exact_multipoles::ExactMultipoles.T = ExactMultipoles.OFF
 end
 
@@ -616,11 +607,33 @@ end
 Vector of magnetic multipoles.
 
 ## Field
-• `vec::Vector{BMultipole1}` - Vector of multipoles. \\
+• `vec::Vector{BMultipole}` - Vector of multipoles. \\
 
 """
 @kwdef mutable struct BMultipoleGroup <: EleParameterGroup
-  vec::Vector{BMultipole1} = Vector{BMultipole1}(undef,0)         # Vector of multipoles.
+  vec::Vector{BMultipole} = Vector{BMultipole}(undef,0)         # Vector of multipoles.
+end
+
+#---------------------------------------------------------------------------------------------------
+# DescriptionGroup
+
+"""
+    mutable struct DescriptionGroup <: EleParameterGroup
+
+Strings that can be set and used with element searches.
+These strings have no affect on tracking.
+
+# Fields
+
+• `type::String` \\
+• `ID::String` \\
+• `class::String` \\
+""" DescriptionGroup
+
+@kwdef mutable struct DescriptionGroup <: EleParameterGroup
+  type::String = ""
+  ID::String = ""
+  class::String = ""
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -640,6 +653,8 @@ a `DownstreamReferenceGroup`.
 • `species_ref_downstream::Species`  - Reference species exit end. \\
 • `pc_ref_downstream::Number`        - Reference `momentum*c` downstream end. \\
 • `E_tot_ref_downstream::Number`     - Reference total energy downstream end. \\
+
+## Associated output parameters:
 • `β_ref_downstream::Number`         - Reference `v/c` upstream end. \\
 • `γ_ref_downstream::Number`         - Reference gamma factor downstream end. \\
 """
@@ -647,8 +662,6 @@ a `DownstreamReferenceGroup`.
   species_ref_downstream::Species = Species()
   pc_ref_downstream::Number = NaN
   E_tot_ref_downstream::Number = NaN
-  β_ref_downstream::Number = 0.0
-  γ_ref_downstream::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -660,10 +673,10 @@ end
 Vector of Electric multipoles.
 
 ## Field
-• `vec::Vector{EMultipole1}`  - Vector of multipoles. \\
+• `vec::Vector{EMultipole}`  - Vector of multipoles. \\
 """
 @kwdef mutable struct EMultipoleGroup <: EleParameterGroup
-  vec::Vector{EMultipole1} = Vector{EMultipole1}([])         # Vector of multipoles. 
+  vec::Vector{EMultipole} = Vector{EMultipole}([])         # Vector of multipoles. 
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -860,9 +873,11 @@ See also `DownstreamReferenceGroup
 • `time_ref::Number`              - Reference time upstream end. \\
 • `time_ref_downstream::Number`   - Reference time downstream end. \\
 • `extra_dtime_ref::Number`       - User set additional time change. \\
+• `dE_tot_ref`::Number            - Sets the change in the reference energy. \\
+
+## Associated output parameters are
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
 • `γ_ref::Number`                 - Reference gamma factor upstream end. \\
-• `dvoltage_ref`::Number          - Sets the change in the reference energy. \\
 """
 @kwdef mutable struct ReferenceGroup <: EleParameterGroup
   species_ref::Species = Species()
@@ -871,9 +886,7 @@ See also `DownstreamReferenceGroup
   time_ref::Number = 0.0
   time_ref_downstream::Number = 0.0
   extra_dtime_ref::Number = 0.0
-  β_ref::Number = NaN
-  γ_ref::Number = NaN
-  dvoltage_ref::Number = 0.0
+  dE_tot_ref::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -931,28 +944,6 @@ RF autoscale parameters. Also see `RFGroup`.
 end
 
 #---------------------------------------------------------------------------------------------------
-# DescriptionGroup
-
-"""
-    mutable struct DescriptionGroup <: EleParameterGroup
-
-Strings that can be set and used with element searches.
-These strings have no affect on tracking.
-
-# Fields
-
-• `type::String` \\
-• `ID::String` \\
-• `class::String` \\
-""" DescriptionGroup
-
-@kwdef mutable struct DescriptionGroup <: EleParameterGroup
-  type::String = ""
-  ID::String = ""
-  class::String = ""
-end
-
-#---------------------------------------------------------------------------------------------------
 # SolenoidGroup
 
 """
@@ -996,7 +987,7 @@ end
 # TwissGroup
 
 """
-Twiss parameters
+    mutable struct TwissGroup <: EleParameterGroup
 
 Lattice element parameter group storing Twiss, dispersion and coupling parameters
 for an element.
@@ -1009,6 +1000,22 @@ for an element.
   x::Dispersion1 = Dispersion1()      # x-axis
   y::Dispersion1 = Dispersion1()      # y-axis
 end
+
+#---------------------------------------------------------------------------------------------------
+# OutputGroup
+
+"""
+    struct OutputGroup <: EleParameterGroup
+
+Abstract type that is used to with output element parameters.
+"""
+
+struct OutputGroup <: EleParameterGroup
+end
+
+
+
+
 
 #---------------------------------------------------------------------------------------------------
 # AbstractLattice 
