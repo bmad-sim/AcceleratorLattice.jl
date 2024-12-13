@@ -4,7 +4,7 @@
 
 \vspace*{-0.3in}
 \accellat uses three coordinate systems as illustrated in \fig{f:coords}. First, the \vn{global} (also
-called ``\vn{floor}'') coordinates are independent of the placement accelerator. Things such as the
+called ``\vn{floor}'') coordinates are independent of the placement of the machine. Things such as the
 building the accelerator is in may be described using \vn{global} coordinates.
 
 \begin{figure}[!b]
@@ -13,17 +13,16 @@ building the accelerator is in may be described using \vn{global} coordinates.
   \caption[The three coordinate system used by \accellat.]
 {The \vn{global} (or ``\vn{floor}'') coordinate system
 is independent of the accelerator.  The \vn{machine} curvilinear coordinate system follows the bends
-of the accelerator.  Each lattice element has \vn{element body} coordinates which, if the element is
-not ``misaligned'' is the same as the \vn{machine} coordinates. 
-The $x=y=0$ curved line of the
-machine coordinate system is known as the ``reference orbit''.}
+of the accelerator. The machine reference curve is the $x = y = 0$ curve of the curvilinear coordinate
+system. Each lattice element has \vn{element body} coordinates which, if the element is
+not ``misaligned'' is the same as the \vn{machine} coordinates.}
   \label{f:coords}
 \end{figure}
 
 It is inconvenient to describe the position of a particle beam using the 
 \vn{global} coordinate system so
 a ``\vn{machine}'' coordinate system is used (\sref{s:machine.coords}).  This curvilinear coordinate
-system defines the nominal position of the lattice elements.  The relationship between the
+system defines the nominal position of the lattice elements. The relationship between the
 \vn{machine} and \vn{global} coordinate systems is described in \sref{s:global}.
 
 The ``nominal'' position of a lattice element is the position of the element without any
@@ -31,13 +30,12 @@ position and orientation shifts (\sref{s:align.g})
 which are sometimes referred to as ``misalignments''. 
 Each lattice element has ``\vn{element body}'' (or just ``\vn{body}'') 
 coordinates which are attached to the physical element and the electric and magnetic
-fields of an element are described with respect to \vn{body} coordinates.  If there are no
-misalignments, the \vn{body} coordinates are aligned with the 
+fields of an element are described with respect to \vn{body} coordinates.  If an element
+has no
+misalignments, the \vn{body} coordinates of the element are aligned with the 
 \vn{machine} coordinates.
 The transformation between \vn{machine} and \vn{body} coordinates is given in
 \sref{s:lab.body.transform}.
-The $x=y=0$ curved line of the
-machine coordinate system is known as the ``\vn{reference orbit}''.
 
 %-----------------------------------------------------------------------------
 \section{Machine Coordinates and Reference Orbit}
@@ -46,7 +44,6 @@ machine coordinate system is known as the ``\vn{reference orbit}''.
 %-----------------------------------------------------------------------------
 \subsection{The Reference Orbit}
 \label{s:ref}
-\index{reference orbit|hyperbf}
 \index{machine coordinates|hyperbf}
 
 \begin{figure}[tb]
@@ -62,8 +59,8 @@ direction of greater $s$.}
   \label{f:machine.coords}
 \end{figure}
 
-The \vn{machine reference orbit} is the curved path used to define a coordinate system for describing
-a particle's position as shown in \fig{f:machine.coords}. The reference orbit is also used for
+The \vn{machine} coordinate system is the curvilinear coordinate system used for describing
+a particle's position as shown in \fig{f:machine.coords}. The machine coordinate system is also used for
 orientating lattice elements in space. At a given time $t$, a particle's position can be described
 by a point $\calO$ on the reference orbit a distance $s$ relative to the reference orbit's zero
 position plus a transverse $(x,y)$ offset. The point $\calO$ on the reference orbit is used as the

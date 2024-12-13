@@ -67,7 +67,7 @@ Overloads the dot struct component selection operator.
 ## Notes
 
 Exceptions: Something like `ele.Kn2L` is handled specially since storage for this parameter may
-not exist (parameter is stored in `ele.pdict[BMultipoleGroup].vec(N).Kn` where `N` is some integer).
+not exist (parameter is stored in `ele.pdict[:BMultipoleGroup].pole(N).Kn` where `N` is some integer).
 
 Also: If `XXX` corresponds to a vector, create `ele.changed[:XXX]` to signal that the vector may have 
 been modified. This is necessary due to how something like `ele.pdict[:GGG].XXX[2] = ...` is evaluated.
@@ -395,11 +395,11 @@ end
 # output_parameter
 
 """
-  output_parameter(sym::Symbol, ele::Ele, vert_group::Type{OutputGroup})
+  output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T <: BaseOutput
 
-"""
+""" output_parameter
 
-function output_parameter(sym::Symbol, ele::Ele, vert_group::Type{OutputGroup})
+function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T <: BaseOutput
   if sym == :rho
     if :BendGroup ∉ keys(ele.pdict); return NaN; end
     ele.g == 0 ? (return NaN) : return 1/ele.g
@@ -433,5 +433,5 @@ function output_parameter(sym::Symbol, ele::Ele, vert_group::Type{OutputGroup})
     return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
   end
 
-  error("Parameter is not in the OutputGroup: $sym")
+  error("Parameter $sym is not in the output group $output_group.")
 end

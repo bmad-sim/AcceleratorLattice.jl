@@ -607,11 +607,11 @@ end
 Vector of magnetic multipoles.
 
 ## Field
-• `vec::Vector{BMultipole}` - Vector of multipoles. \\
+• `pole::Vector{BMultipole}` - Vector of multipoles. \\
 
 """
 @kwdef mutable struct BMultipoleGroup <: EleParameterGroup
-  vec::Vector{BMultipole} = Vector{BMultipole}(undef,0)         # Vector of multipoles.
+  pole::Vector{BMultipole} = Vector{BMultipole}(undef,0)         # Vector of multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -673,10 +673,10 @@ end
 Vector of Electric multipoles.
 
 ## Field
-• `vec::Vector{EMultipole}`  - Vector of multipoles. \\
+• `pole::Vector{EMultipole}`  - Vector of multipoles. \\
 """
 @kwdef mutable struct EMultipoleGroup <: EleParameterGroup
-  vec::Vector{EMultipole} = Vector{EMultipole}([])         # Vector of multipoles. 
+  pole::Vector{EMultipole} = Vector{EMultipole}([])         # Vector of multipoles. 
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -873,7 +873,7 @@ See also `DownstreamReferenceGroup
 • `time_ref::Number`              - Reference time upstream end. \\
 • `time_ref_downstream::Number`   - Reference time downstream end. \\
 • `extra_dtime_ref::Number`       - User set additional time change. \\
-• `dE_tot_ref`::Number            - Sets the change in the reference energy. \\
+• `dE_ref`::Number            - Sets the change in the reference energy. \\
 
 ## Associated output parameters are
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
@@ -886,7 +886,7 @@ See also `DownstreamReferenceGroup
   time_ref::Number = 0.0
   time_ref_downstream::Number = 0.0
   extra_dtime_ref::Number = 0.0
-  dE_tot_ref::Number = 0.0
+  dE_ref::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -1002,20 +1002,42 @@ for an element.
 end
 
 #---------------------------------------------------------------------------------------------------
+# BaseOutput
+
+"""
+    abstract type BaseOutput
+
+Abstract type from which output group structs inherit.
+AcceleratorLattice defines `OutputGroup <: BaseOutput` which is used for output parameters
+defined by AcceleratorLattice. Custom output parameters may be defined by defining a new 
+output group struct and a new `output_parameter` function method.
+
+"""
+abstract type BaseOutput end
+
+#---------------------------------------------------------------------------------------------------
 # OutputGroup
 
 """
-    struct OutputGroup <: EleParameterGroup
+    struct OutputGroup <: BaseOutput
 
-Abstract type that is used to with output element parameters.
-"""
+Holy trait struct that is used to designate output element parameters.
+""" OutputGroup
 
-struct OutputGroup <: EleParameterGroup
+struct OutputGroup <: BaseOutput
 end
 
+#---------------------------------------------------------------------------------------------------
+# AllGroup
 
+"""
+    struct AllGroup 
 
+Struct used for element parameter bookkeeping whose presence represents that parameters 
+in all parameter groups may have changed.
+""" AllGroup
 
+struct AllGroup; end
 
 #---------------------------------------------------------------------------------------------------
 # AbstractLattice 

@@ -2,6 +2,15 @@
 
 Quat = Quaternion{Number}
 
+#---------------------------------------------------------------------------------------------------
+# rot
+
+"""
+    rot(q::Quaternion, v::Vector{T}) where {T} -> Vector{T}
+
+Rotation of a 3-vector `v` by a quaternion `q`.
+""" rot
+
 function rot(q::Quaternion, v::Vector{T}) where {T}
   vv = q * v / q
   return [vv.q1, vv.q2, vv.q3]
@@ -12,6 +21,8 @@ end
 const UNIT_QUAT = Quaternion(1.0, [0.0, 0.0, 0.0])
 
 """
+    struct AxisAngle
+
 The `axis` vector is not necessarily normalized.
 """ AxisAngle
 
@@ -61,7 +72,10 @@ end
 #---------------------------------------------------------------------------------------------------
 
 """
-It is not assumed that the quaternion is normalized
+    RotMat(q::Quaternion{T}) where {T}
+
+Return the rotation matrix corresponding to quaternion `q`.
+It is not assumed that the quaternion is normalized.
 """ RotMat
 
 function RotMat(q::Quaternion{T}) where {T}

@@ -70,7 +70,7 @@ Inserted is a (shallow) copy of `ele` and this copy is returned.
  - `adjust_orientation`  If `true`, and the `branch.type` is a `TrackingBranch`, the orientation 
 parameter of `ele` is adjusted to match the neighboring elements.
 
-No bookkeeping is done by this routine. See also set!, push!, and pop!
+Also see `set!`, `push!`, and `pop!`
 """ Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
 
 function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
@@ -87,7 +87,8 @@ function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation 
   end
 
   set_branch_min_max_changed!(branch, ix_ele)
-
+  ele.pdict[:changed][AllGroup] = true
+  if !isnothing(branch.lat) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   return ele
 end
 
@@ -103,7 +104,7 @@ Inserted is a (shallow) copy of `ele` and this copy is returned.
  - `adjust_orientation`  If `true`, and the `branch.type` is a `TrackingBranch`, the orientation 
 parameter of `ele` is adjusted to match the neighboring elements.
 
-No bookkeeping is done by this routine. See also pop!, push!, and insert!
+Also see `pop!`, `push!`, and `insert!`
 """ set!(branch::Branch, ix_ele::Int, ele::Ele)
 
 function set!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
@@ -120,6 +121,8 @@ function set!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
   end
 
   set_branch_min_max_changed!(branch, ix_ele)
+  ele.pdict[:changed][AllGroup] = true
+  if !isnothing(branch.lat) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   return ele
 end
 
@@ -131,7 +134,7 @@ end
 
 Remove the element with index `ix_ele` in `branch.ele[]`.
 
-No bookkeeping is done by this routine. See also set!, push!, and insert!
+See also `set!`, `push!`, and `insert!`
 """ Base.pop!(branch::Branch, ix_ele::Int, ele::Ele)
 
 function Base.pop!(branch::Branch, ix_ele::Int)
@@ -139,6 +142,8 @@ function Base.pop!(branch::Branch, ix_ele::Int)
   index_and_s_bookkeeper!(branch, ix_ele)
 
   set_branch_min_max_changed!(branch, ix_ele)
+  branch.ele[ix_ele].pdict[:changed][AllGroup] = "changed"
+  if !isnothing(branch.lat) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   return nothing
 end
 
@@ -360,7 +365,7 @@ end
 """
 
 function set_super_slave_names!(lord::Ele)
-  if lord.lord_status != Lord.SUPER; error(f"Argument is not a super_lord: {ele_name(lord)}"); end
+  if lord.lord_status != Lord.SUPER; error("Argument is not a super_lord: $(ele_name(lord))"); end
 
   name_dict = Dict{String,Int}()
   for slave in lord.slaves
@@ -409,9 +414,11 @@ marked as changed.
 function set_branch_min_max_changed!(branch::Branch, ix_ele::Number)
   branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ix_ele)
   branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ix_ele)
+  if !isnothing(branch.lat); branch.lat.parameters_have_changed = true; end
 end
 
 function set_branch_min_max_changed!(branch::Branch, ix_ele_min::Number, ix_ele_max::Number)
   branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ix_ele_min)
   branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ix_ele_max)
+  if !isnothing(branch.lat); branch.lat.parameters_have_changed = true; end
 end

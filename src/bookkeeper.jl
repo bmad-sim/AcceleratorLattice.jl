@@ -153,7 +153,9 @@ function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
 
   # Throw out changed parameters that don't need bookkeeping
 
-  for param in copy(keys(ele.pdict[:changed]))
+  cdict = ele.pdict[:changed]
+
+  for param in copy(keys(cdict))
     if typeof(param) != Symbol    # Something like param = `ReferenceGroup`
       group = param
     else
@@ -163,10 +165,11 @@ function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
     end
 
     if group in keys(ELE_PARAM_GROUP_INFO) && !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed
-      pop!(ele.pdict[:changed], param)
+      pop!(cdict, param)
     end
   end
 
+  if AllGroup in keys(cdict); pop!(cdict, AllGroup); end
   return
 end
 
@@ -362,12 +365,12 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
   # Update multipoles if the reference energy has changed.
   if changed.ref_group
     if ele.field_master
-      for mul in bmg.vec
+      for mul in bmg.pole
         mul.Kn = mul.Bn / ff
         mul.Ks = mul.Bs / ff
       end
     else
-      for mul in bmg.vec
+      for mul in bmg.pole
         mul.Bn = mul.Kn * ff
         mul.Bs = mul.Ks * ff
       end
@@ -406,7 +409,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
     L = ele.L
     if L == 0 && bg.angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
     bg.angle == 0 ? bg.g = 0 : bg.g = bg.angle / L
-  elseif changed.this_ele_length
+  else
     L = ele.L
     bg.angle = L * bg.g
   end
@@ -484,17 +487,19 @@ end
 
 #---------------------------------------------------------------------------------------------------
 # elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, ...)
-# ReferenceGroup bookkeeping
 
-# Note: RF reference bookkeeping, which is complicated and needs information from other structures, 
-# is handled by the RFGroup bookkeeping code. So this routine simply ignores this complication.
+"""
+    elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Ele)
+
+`ReferenceGroup` bookkeeping. This also includes `DownstreamReferenceGroup` bookkeeping.
+"""
 
 function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Ele)
   rg = ele.ReferenceGroup
   drg = ele.DownstreamReferenceGroup
   cdict = ele.changed
 
-  if has_changed(ele, ReferenceGroup) || has_changed(ele, RFGroup); changed.ref_group = true; end
+  if has_changed(ele, ReferenceGroup); changed.ref_group = true; end
 
   if is_null(previous_ele)   # implies BeginningEle
     if !changed.ref_group; return; end
@@ -529,7 +534,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   # Propagate from previous ele
 
   if !changed.this_ele_length && !changed.ref_group; return; end
-  changed.ref_group = true
+
+  old_drg = copy(drg)
 
   rg.pc_ref           = previous_ele.pc_ref_downstream
   rg.E_tot_ref        = previous_ele.E_tot_ref_downstream
@@ -537,14 +543,14 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   rg.species_ref      = previous_ele.species_ref_downstream
   drg.species_ref_downstream = rg.species_ref
 
-  if rg.dE_tot_ref == 0
+  if rg.dE_ref == 0
     drg.pc_ref_downstream      = rg.pc_ref
     drg.E_tot_ref_downstream   = rg.E_tot_ref
     rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L * rg.E_tot_ref / (C_LIGHT * rg.pc_ref)
   else
-    drg.pc_ref_downstream, drg.E_tot_ref_downstream = calc_changed_energy(rg.species_ref, rg.pc_ref, rg.dE_tot_ref)
+    drg.pc_ref_downstream, drg.E_tot_ref_downstream = calc_changed_energy(rg.species_ref, rg.pc_ref, rg.dE_ref)
     rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L *
-             (rg.E_tot_ref + rg.E_tot_ref_downstream) / (C_LIGHT * (rg.pc_ref + rg.pc_ref_downstream))
+             (rg.E_tot_ref + drg.E_tot_ref_downstream) / (C_LIGHT * (rg.pc_ref + drg.pc_ref_downstream))
   end
 
   # Multipass lord bookkeeping if this is a slave
@@ -570,7 +576,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   end
 
   clear_changed!(ele, ReferenceGroup)
-  clear_changed!(ele, RFGroup)
+  changed.ref_group = (old_drg != drg)
+
   return
 end
 
@@ -649,6 +656,7 @@ Has any parameter in `group` changed since the last bookkeeping?
 
 function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   for param in keys(ele.changed)
+    if param == AllGroup; return true; end
     if param == group; return true; end
     info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info); continue; end
