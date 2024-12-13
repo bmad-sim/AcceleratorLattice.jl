@@ -345,14 +345,14 @@ end
 function show_elegroup(io::IO, group::BMultipoleGroup, ele::Ele, docstring::Bool; indent = 0)
   off_str = " "^indent
 
-  if length(group.vec) == 0
+  if length(group.pole) == 0
     println(io, f"{off_str}BMultipoleGroup: No magnetic multipoles")
     return
   end
 
   println(io, f"{off_str}BMultipoleGroup:")
   println(io, f"{off_str}  Order integrated{lpad(\"tilt (rad)\",24)}")
-  for v in group.vec
+  for v in group.pole
     ol = f"{v.order}"
     if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
     uk = units(Symbol(f"Kn{ol}"));  ub = units(Symbol(f"Bn{ol}"))
@@ -367,14 +367,14 @@ end
 function show_elegroup(io::IO, group::EMultipoleGroup, ele::Ele, docstring::Bool; indent = 0)
   off_str = " "^indent
 
-  if length(group.vec) == 0
+  if length(group.pole) == 0
     println(io, f"{off_str}EMultipoleGroup: No electric multipoles")
     return
   end
 
   println(io, f"{off_str}EMultipoleGroup:")
   println(io, f"{off_str}  Order Eintegrated{lpad(\"Etilt (rad)\",23)}")
-  for v in group.vec
+  for v in group.pole
     !isnothing(v.Eintegrated) && v.Eintegrated ? ol = "$(v.order)L" : ol = "$(v.order) "
     ue = units(Symbol("En$(ol)"))
     println(io, f"{off_str}{lpad(v.order,7)}{lpad(v.Eintegrated,11)}{lpad(v.Etilt,24)}{lpad(v.En,24)} En{ol}{lpad(v.Es,24)} Es{ol} ({ue})")

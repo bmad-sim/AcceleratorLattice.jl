@@ -28,7 +28,7 @@ function machine_location(loc::BodyLoc.T, orientation::Int)::Loc.T
   elseif loc == BodyLoc.EXIT_END
     orientation == 1 ? (return Loc.DOWNSTREAM_END) : return Loc.UPSTREAM_END
   else
-    error(f"loc argument values limited to `BodyLoc.ENTRANCE_END`, `BodyLoc.CENTER`,  or `BodyLoc.EXIT_END`. Not: {loc}")
+    error("loc argument values limited to `BodyLoc.ENTRANCE_END`, `BodyLoc.CENTER`,  or `BodyLoc.EXIT_END`. Not: $loc")
   end
 end
 
@@ -62,7 +62,7 @@ function body_location(loc::Loc.T, orientation::Int)
   elseif loc == Loc.DOWNSTREAM_END
     orientation == 1 ? (return BodyLoc.EXIT_END) : return BodyLoc.ENTRANCE_END
   else
-    error(f"ConfusedError: Should not be here! Please report this!")
+    error("ConfusedError: Should not be here! Please report this!")
   end
 end
 

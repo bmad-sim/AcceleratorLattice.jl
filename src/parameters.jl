@@ -111,7 +111,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :time_ref               => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
   :extra_dtime_ref        => ParamInfo(ReferenceGroup, Number,      "Additional reference time change.", "sec"),
   :time_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
-  :dvoltage_ref           => ParamInfo(ReferenceGroup, Number,      "Sets change in reference energy.", "volt"),
+  :dE_ref                 => ParamInfo(ReferenceGroup, Number,      "Change in reference energy.", "volt"),
 
   :β_ref                  => ParamInfo(OutputGroup, Number,         "Reference velocity/c."),
   :γ_ref                  => ParamInfo(OutputGroup, Number,         "Reference relativistic gamma factor."),
@@ -639,7 +639,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   MasterGroup           => EleParameterGroupInfo("Contains field_master parameter.", false),
   PatchGroup            => EleParameterGroupInfo("Patch parameters.", false),
   ReferenceGroup        => EleParameterGroupInfo("Reference energy and species.", true),
-  RFGroup               => EleParameterGroupInfo("`RFCavity` and `LCavity` RF parameters.", true),
+  RFGroup               => EleParameterGroupInfo("`RFCavity` and `LCavity` RF parameters.", false),
   RFAutoGroup           => EleParameterGroupInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
   SolenoidGroup         => EleParameterGroupInfo("`Solenoid` parameters.", false),
   TrackingGroup         => EleParameterGroupInfo("Default tracking settings.", false),
@@ -658,23 +658,23 @@ Returns `nothing` if `vec` array does not contain element with n = `order` and `
 
 function multipole!(mgroup, order; insert::Bool = false)
   if order < 0; return nothing; end
-  ix = multipole_index(mgroup.vec, order)
+  ix = multipole_index(mgroup.pole, order)
 
   if !insert
-    if ix > length(mgroup.vec) || order != mgroup.vec[ix].order; return nothing; end
-    return mgroup.vec[ix]
+    if ix > length(mgroup.pole) || order != mgroup.pole[ix].order; return nothing; end
+    return mgroup.pole[ix]
   end
 
-  if ix > length(mgroup.vec) 
-    ix = length(mgroup.vec) + 1
-    insert!(mgroup.vec, ix, eltype(mgroup.vec)())
-    mgroup.vec[ix].order = order
-  elseif mgroup.vec[ix].order != order
-    insert!(mgroup.vec, ix, eltype(mgroup.vec)())
-    mgroup.vec[ix].order = order
+  if ix > length(mgroup.pole) 
+    ix = length(mgroup.pole) + 1
+    insert!(mgroup.pole, ix, eltype(mgroup.pole)())
+    mgroup.pole[ix].order = order
+  elseif mgroup.pole[ix].order != order
+    insert!(mgroup.pole, ix, eltype(mgroup.pole)())
+    mgroup.pole[ix].order = order
   end
 
-  return mgroup.vec[ix]
+  return mgroup.pole[ix]
 end
 
 #---------------------------------------------------------------------------------------------------

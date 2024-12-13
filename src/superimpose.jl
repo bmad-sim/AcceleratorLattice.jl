@@ -64,6 +64,12 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     ref_ele = ref
   end
 
+  if length(collect(ref_ele)) == 0
+    println("NOTE! No reference element found for superposition of $(ele_name(super_ele)).")
+    return nothing
+  end
+  
+
   lat_list = []
 
   for this_ref in collect(ref_ele)
@@ -215,10 +221,13 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     end
 
     # Here if a super_lord element needs to be constructed.
+    lord_list = [] 
     sbranch = branch.lat.branch["super_lord"]
+
     lord1 = push!(sbranch, super_ele)
     lord1.lord_status = Lord.SUPER
     lord1.pdict[:slaves] = Ele[]
+    push!(lord_list, lord1)
 
     for ele in Region(ele1, ele2, false)
       if ele.L == 0; continue; end
@@ -235,6 +244,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
       elseif ele.slave_status != Slave.SUPER
         lord2 = push!(sbranch, ele)
         lord2.lord_status = Lord.SUPER
+        push!(lord_list, lord2)
 
         slave = set!(branch, ix_ele, UnionEle(name = "", L = ele.L, super_lords = Vector{Ele}([lord1])))
         slave.slave_status = Slave.SUPER
@@ -259,9 +269,12 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
 
     index_and_s_bookkeeper!(branch)
 
-    for lord in sbranch.ele
+    for lord in lord_list
       set_super_slave_names!(lord)
+      if length(lord.slaves) == 1; continue; end
+      initial_superlord_bookkeeping(lord)
     end
+
   end   # for this_ref in collect(ref)
 
   for lat in lat_list
@@ -270,4 +283,78 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     lat.record_changes = true
     if lat.autobookkeeping; bookkeeper!(lat); end
   end
+
+  return nothing
 end
+
+#---------------------------------------------------------------------------------------------------
+# initial_superlord_bookkeeping
+
+"""
+  Internal: initial_superlord_bookkeeping(lord::Ele)
+
+Internal routine for the initial bookkeeping of a newly formed superlord element.
+The only parameters that need bookkeeping are ones that are not the same in the lord and the slave.
+""" initial_superlord_bookkeeping
+
+function initial_superlord_bookkeeping(lord::Ele)
+  if lord.L == 0; return; end
+
+  for (ixs, slave) in enumerate(lord.slaves)
+    # UnionEle elements don't have any parameters to be bookkeeped
+    if typeof(slave) == UnionEle; continue; end
+    L_rel = slave.L / lord.L
+
+    # All non-UnionEle slaves will only have one lord.
+    # dE_ref bookkeeping
+    if lord.dE_ref != 0
+      slave.dE_ref = lord.dE_ref * L_rel
+    end
+
+    # Multipole with length bookkeeping
+    if haskey(lord.pdict, :BMultipoleGroup)
+      for (ix, pole) in enumerate(lord.BMultipoleGroup.pole)
+        if !pole.integrated; continue; end 
+        slave.BMultipoleGroup[ix].Kn = pole.Kn * L_rel
+        slave.BMultipoleGroup[ix].Ks = pole.Ks * L_rel
+        slave.BMultipoleGroup[ix].Bn = pole.Bn * L_rel
+        slave.BMultipoleGroup[ix].Bs = pole.Bs * L_rel
+      end
+    end
+
+    if haskey(lord.pdict, :EMultipoleGroup)
+      for (ix, pole) in enumerate(lord.EMultipoleGroup.pole)
+        if !pole.integrated; continue; end 
+        slave.EMultipoleGroup[ix].En = pole.En * L_rel
+        slave.EMultipoleGroup[ix].Es = pole.Bs * L_rel
+      end
+    end
+
+    # Bend bookkeeping
+    if haskey(lord.pdict, :BendGroup)
+      slave.angle = lord.angle * L_rel
+
+      if ixs < length(lord.slaves)
+        slave.e2 = 0
+        slave.e2_rect = 0.5 * slave.angle
+      end
+
+      if ixs > 1
+        slave.e1 = 0
+        slave.e1_rect = 0.5 * slave.angle
+      end
+
+      ele.g == 0 ? ele.L_chord = L : ele.L_chord = 2 * sin(ele.angle/2) / ele.g 
+    end
+
+    # Misalignment bookkeeping
+    if haskey(lord.pdict, :AlignmentGroup)
+      dL = 0.5 * slave.L + slave.s - lord.s
+      if haskey(lord.pdict, :BendGroup)
+      else
+        slave.r_floor = lord.r_floor + dL * rot(lord.q_floor, [0.0, 0.0, dL])
+      end
+    end
+  end
+end
+
