@@ -85,7 +85,7 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :rho                => ParamInfo(OutputGroup,   Number,        "Reference bend radius", "m"),
   :L_sagitta          => ParamInfo(OutputGroup,   Number,        "Bend sagitta length.", "m"),
-  :norm_bend_field           => ParamInfo(OutputGroup,   Number,        "Actual bend strength in the plane of the bend", "1/m"),
+  :norm_bend_field    => ParamInfo(OutputGroup,   Number,        "Actual bend strength in the plane of the bend", "1/m"),
   :bend_field         => ParamInfo(OutputGroup,   Number,        "Actual bend field in the plane of the bend field", "T"),
 
   :to_line            => ParamInfo(ForkGroup,      Union{BeamLine, Nothing}, "Beamline forked to."),
@@ -161,13 +161,13 @@ ELE_PARAM_INFO_DICT = Dict(
   :custom_aperture    => ParamInfo(ApertureGroup,  Dict,              "Custom aperture info."),
 
   :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", :r),
-  :q_floor            => ParamInfo(FloorPositionGroup, Quat,           "Element quaternion orientation.", "", :q),
+  :q_floor            => ParamInfo(FloorPositionGroup, Quaternion,     "Element quaternion orientation.", "", :q),
 
   :eles               => ParamInfo(GirderGroup,     Vector{Ele},      "Array of supported elements."),
   :origin_ele         => ParamInfo(GirderGroup,     Ele,              "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(GirderGroup,     Loc.T,            "Reference location on reference element. Default is Loc.CENTER."),
   :dr                 => ParamInfo(GirderGroup,     Vector{Number},   "3-vector of girder position with respect to ref ele.", "m"),
-  :dq                 => ParamInfo(GirderGroup,     Quat,             "Quaternion orientation with respect to ref ele."),
+  :dq                 => ParamInfo(GirderGroup,     Quaternion,       "Quaternion orientation with respect to ref ele."),
 
   :Ksol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid strength.", "1/m"),
   :Bsol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid field.", "T"),

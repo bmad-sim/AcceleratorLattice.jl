@@ -691,12 +691,12 @@ ignoring misalignments.
 
 # Fields
 • `r::Vector`              - `[x,y,z]` position. \\
-• `q::Quat`                - Quaternion orientation. \\
+• `q::Quaternion{Number}`  - Quaternion orientation. \\
 """ FloorPositionGroup
 
 @kwdef mutable struct FloorPositionGroup <: EleParameterGroup
   r::Vector = [0.0, 0.0, 0.0]
-  q::Quat = Quat(1.0, 0.0, 0.0, 0.0)
+  q::Quaternion{Number} = Quaternion(1.0, 0.0, 0.0, 0.0)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -734,7 +734,7 @@ Girder parameters.
 • `origin_ele::Ele`           - Origin reference element. \\
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
 • `dr::Vector`                - `[x, y, z]` offset. \\
-• `dq::Quat`                   - Quaternion orientation. \\
+• `dq::Quaternion{Number}`    - Quaternion orientation. \\
 """ GirderGroup
 
 @kwdef mutable struct GirderGroup <: EleParameterGroup
@@ -742,7 +742,7 @@ Girder parameters.
   origin_ele::Ele = NullEle
   origin_ele_ref_pt::Loc.T = Loc.CENTER
   dr::Vector = [0.0, 0.0, 0.0]
-  dq::Quat  = Quat(1.0, 0.0, 0.0, 0.0)
+  dq::Quaternion{Number}  = Quaternion(1.0, 0.0, 0.0, 0.0)
 end
 
 #---------------------------------------------------------------------------------------------------

@@ -351,6 +351,10 @@ function initial_superlord_bookkeeping(lord::Ele)
     if haskey(lord.pdict, :AlignmentGroup)
       dL = 0.5 * slave.L + slave.s - lord.s
       if haskey(lord.pdict, :BendGroup)
+        # Need transformation from lord alignment point to slave alignment point
+        # From lord alignment point to beginning of lord
+        floor = FloorPositionGroup()
+        
       else
         slave.r_floor = lord.r_floor + dL * rot(lord.q_floor, [0.0, 0.0, dL])
       end

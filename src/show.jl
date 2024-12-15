@@ -399,7 +399,7 @@ function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T 
   if gtype in keys(show_column2)
     for key in keynames(show_column2[gtype])
       param_name = show_column2[gtype][key]
-      if param_name in fieldnames(gtype); continue; end  # Not a output parameter.
+      if param_name in fieldnames(gtype); continue; end  # Not an output parameter. Already printed above.
       value_str = ele_param_value_str(Base.getproperty(ele, param_name))
       ele_print_line(io, f"    (output) {param_name} {value_str} {units(field)}", description(field))
     end
