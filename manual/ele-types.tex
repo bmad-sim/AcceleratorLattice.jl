@@ -37,7 +37,7 @@ These elements are:
 
 \newpage
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{ACKicker}
 \label{s:ackicker}
 
@@ -75,7 +75,7 @@ scale short compared to the time scale of the change in the field.
 
 \newpage
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{BeamBeam}
 \label{s:beambeam}
 
@@ -99,7 +99,7 @@ Element parameter groups associated with this element type are:
 
 \newpage
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{BeginningEle}
 \label{s:begin.ele}
 
@@ -128,7 +128,7 @@ Example:
 
 \newpage
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Bend}
 \label{s:bend}
 
@@ -182,7 +182,7 @@ Example:
 
 \newpage
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Collimator}
 \label{s:collimator}
 
@@ -200,7 +200,7 @@ Element parameter groups associated with this element type are:
 \end{example}
 \BOTTOMrule
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Converter}
 \label{s:converter}
 
@@ -221,7 +221,7 @@ Element parameter groups associated with this element type are:
 \end{example}
 \BOTTOMrule
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{CrabCavity}
 \label{s:crabcavity}
 
@@ -244,7 +244,7 @@ Element parameter groups associated with this element type are:
 \BOTTOMrule
 
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Drift}
 \label{s:drift}
 
@@ -262,7 +262,7 @@ Element parameter groups associated with this element type are:
 \end{example}
 \BOTTOMrule
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{EGun}
 \label{s:egun}
 
@@ -283,7 +283,7 @@ Element parameter groups associated with this element type are:
 \end{example}
 \BOTTOMrule
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Fiducial}
 \label{s:fiducial}
 
@@ -307,7 +307,7 @@ Element parameter groups associated with this element type are:
 \BOTTOMrule
 
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{FloorShift}
 \label{s:floorshift}
 
@@ -317,7 +317,7 @@ to a \vn{Marker} (\sref{s:marker}) element.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Foil}
 \label{s:foil}
 
@@ -327,7 +327,7 @@ loss.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Fork}
 \label{s:fork}
 
@@ -336,7 +336,7 @@ A \vn{Fork} element marks the start of an alternative \vn{branch} for the beam
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Girder}
 \label{s:girder}
 
@@ -347,13 +347,13 @@ optical tables can be simulated.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Instrument}
 \label{s:instrument}
 
 An \vn{Instrument} is like a \vn{Drift} except it represents some measurement device.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Kicker}
 \label{s:kicker}
 
@@ -361,7 +361,7 @@ A \vn{Kicker} element gives particles a kick.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{LCavity}
 \label{s:lcavity}
 
@@ -371,13 +371,13 @@ an \vn{LCavity} is not constant.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Marker}
 \label{s:marker}
 
 A \vn{Marker} is a zero length element meant to mark a position in the machine. 
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Mask}
 \label{s:mask}
 
@@ -386,7 +386,7 @@ essentially have an arbitrary shape.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Match}
 \label{s:match}
 
@@ -394,37 +394,96 @@ A \vn{Match} element is used to adjust Twiss and orbit parameters.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Multipole}
 \label{s:mult}
 
 A \vn{Multipole} is a thin magnetic multipole lens.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{NullEle}
 \label{s:nullele}
 
 A \vn{NullEle} is used for bookkeeping purposes. For example, a \vn{NullEle} can be used as
 the default value for a function argument or as a temporary place marker in a lattice.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Octupole}
 \label{s:octupole}
 
 An \vn{Octupole} is a magnetic element with a cubic field dependence
 with transverse position (\sref{s:mag.field}).
 
-%-----------------------------------------------------------------
+%-----------------------------------------------------------------------------
+
+\begin{figure}[bt]
+  \centering
+  \includegraphics[width=5in]{patch-problem.pdf}
+  \caption[The machine reference coordinates in a \vn{Patch} element.]
+{The machine reference coordinates in a \vn{Patch} element. The \vn{Patch} element, shown
+schematically as an irregular quadrilateral, is sandwiched between elements \vn{ele_a} and
+\vn{ele_b}. \vn{L} is the length of the \vn{Patch}. In this example, the \vn{Patch} has a finite
+\vn{y_rot}.}
+  \label{f:patch.prob}
+\end{figure}
+
+%---------------------------------------------------------------------------------------------------
 \section{Patch}
 \label{s:patch}
 
 A \vn{Patch} element shifts the reference orbit and time. Also see \vn{FloorShift}
 (\sref{s:floorshift}) and \vn{Fiducial} (\sref{s:fiducial}) elements. A common application of a patch
-is to orient two lines with respect to each other. 
+is to orient two branch lines with respect to each other. 
 
-NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+A \vn{Patch} (\sref{s:patch}) element is different in that there is no ``natural'' coordinate 
+system to use within the Patch. This is generally not an issue when the region inside the
+Patch is field and aperture free since particle tracking can be done in one step from edge
+to edge. However, when there are fields or apertures an internal
+coordinate system is needed so that the fields or apertures can be unambiguously positioned.
+
+
+
+%----
+There 
+
+
+Generally, if a particle is reasonably near the machine reference curve, there is a one-to-one mapping
+between the particle's position and machine $(x, y, s)$ coordinates. 
+
+
+with a non-zero \vn{x_rot} or non-zero \vn{y_rot} breaks the one-to-one mapping. This is
+illustrated in \fig{f:patch.prob}.  The \vn{Patch} element, shown schematically as an, irregular
+quadrilateral, is sandwiched between elements \vn{ele_a} and \vn{ele_b}. The machine coordinate system
+with origin at $\alpha$ are the coordinates at the end of \vn{ele_a}. The coordinates at the end of
+the \vn{Patch} has its origin labeled $\gamma$. By convention, the length of the patch \vn{L} is
+taken to be the longitudinal distance from $\alpha$ to $\gamma$ with the \vn{Patch}'s exit
+coordinates defining the longitudinal direction. The ``beginning'' point of the \vn{Patch} on the
+reference curve a distance \vn{L} from point $\gamma$ is labeled $\beta$ in the figure.
+
+In the machine $(x, y, s)$ coordinate system a particle at $\alpha$ will have some value $s = s_0$. A
+particle at point $\beta$ will have the same value $s = s_0$ and a particle at $\gamma$ will have $s
+= s_1 = s_0 + L$. A particle at point $r_a$ in \fig{f:patch.prob} illustrates the problem of
+assigning $(x, y, s)$ coordinates to a given position. If the particle is considered to be within
+the region of \vn{ele_a}, the particle's $s$ position will be $s_{a2}$ which is greater than the
+value $s_0$ at the exit end of the element. This contradicts the expectation that particles within
+\vn{ele_a} will have $s \le s_0$.  If, on the other hand, the particle is considered to be within
+the \vn{Patch} region, the particle's $s$ position will be $s_{a1}$ which is less than the value
+$s_0$ at the entrance to the patch. This contradicts the expectation that a particles within the
+\vn{Patch} will have $s \ge s_0$.
+
+To resolve this problem, \accellat considers a particle at position $r_a$ to be within the \vn{Patch}
+region. This means that there is, in theory, no lower limit to the $s$-position that a particle in
+the \vn{Patch} region can have. This also implies that there is a discontinuity in the $s$-position
+of a particle crossing the exit face of \vn{ele1}. Typically, when particles are translated from the
+exit face of one element to the exit face of the next, this \vn{Patch} problem does not appear. It
+only appears when the track between faces is considered.
+
+Notice that a particle at position $r_b$ in \fig{f:patch.prob} can simultaneously be considered to
+be in either \vn{ele_a} or the \vn{Patch}. While this creates an ambiguity it does not complicate
+tracking.
+
+%---------------------------------------------------------------------------------------------------
 \section{Quadrupole}
 \label{s:quadrupole}
 
@@ -432,7 +491,7 @@ A \vn{Quadrupole} is a magnetic element with a linear field dependence
 with transverse offset (\sref{s:mag.field}).
 
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{RFCavity}
 \label{s:rfcavity}
 
@@ -442,7 +501,7 @@ reference energy (\sref{s:phase.space}) through an \vn{RFCavity} is constant.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Sextupole}
 \label{s:sextupole}
 
@@ -450,13 +509,13 @@ A \vn{Sextupole} is a magnetic element with a quadratic field
 dependence with transverse offset (\sref{s:mag.field}).
 
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Solenoid}
 \label{s:solenoid}
 
 A \vn{solenoid} is an element with a longitudinal magnetic field.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Taylor}
 \label{s:taylor}
 
@@ -466,13 +525,13 @@ spin coordinates at the exit end of the element.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{ThickMultipole}
 \label{s:thickmult}
 
 A \vn{ThickMultipole} is a general non-zero length multipole element.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Undulator}
 \label{s:undulator}
 
@@ -481,14 +540,14 @@ Also see \vn{Wiggler} elements.
 
 NOTE: This Element is in development and is incomplete.
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{UnionEle}
 \label{s:unionele}
 
 A \vn{UnionEle} is an element that contains a collection of other elements.
 A \vn{UnionEle} is used when elements overlap spatially which happens with superposition (\sref{c:super}).
 
-%-----------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Wiggler}
 \label{s:wiggler}
 

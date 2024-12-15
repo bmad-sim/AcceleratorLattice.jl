@@ -1,24 +1,5 @@
 #---------------------------------------------------------------------------------------------------
-
-Quat = Quaternion{Number}
-
-#---------------------------------------------------------------------------------------------------
-# rot
-
-"""
-    rot(q::Quaternion, v::Vector{T}) where {T} -> Vector{T}
-
-Rotation of a 3-vector `v` by a quaternion `q`.
-""" rot
-
-function rot(q::Quaternion, v::Vector{T}) where {T}
-  vv = q * v / q
-  return [vv.q1, vv.q2, vv.q3]
-end
-
-#---------------------------------------------------------------------------------------------------
-
-const UNIT_QUAT = Quaternion(1.0, [0.0, 0.0, 0.0])
+# AxisAngle
 
 """
     struct AxisAngle
@@ -32,14 +13,35 @@ struct AxisAngle
 end
 
 #---------------------------------------------------------------------------------------------------
+# QuaternionX, QuaternionY, QuaternionZ
 
-RotX(angle) = Quaternion(cos(angle/2), [sin(angle/2), 0, 0])
-RotY(angle) = Quaternion(cos(angle/2), [0, sin(angle/2), 0])
-RotZ(angle) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
+"""
+    QuaternionX(angle::Number) -> Quaternion
+    QuaternionY(angle::Number) -> Quaternion
+    QuaternionZ(angle::Number) -> Quaternion
+
+Quaternion constructors representing rotations around x, y, and z axes.
+""" QuaternionX, QuaternionY, QuaternionZ
+
+QuaternionX(angle::Number) = Quaternion(cos(angle/2), [sin(angle/2), 0, 0])
+QuaternionY(angle::Number) = Quaternion(cos(angle/2), [0, sin(angle/2), 0])
+QuaternionZ(angle::Number) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
 
 #---------------------------------------------------------------------------------------------------
+# Quaternion
+
+"""
+    Quaternion(aa::AxisAngle) 
+    Quaternion(m::Matrix{T}) 
+    Quaternion(theta::Real, phi::Real, psi::Real)
+    Quaternion(qv::Vector)  # 4-vector
+
+Quaternion constructors. 
+""" Quaternion
 
 Quaternion(qv::Vector) = Quaternion(qv[1], qv[2:end])
+
+Quaternion(theta::Real, phi::Real, psi::Real) = QuaternionY(theta) * QuaternionX(-phi) * QuaternionZ(psi)
 
 function Quaternion(aa::AxisAngle) 
   if aa.angle == 0; return UNIT_QUAT; end
@@ -71,77 +73,45 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
+const UNIT_QUAT = Quaternion(1.0, [0.0, 0.0, 0.0])
+
+#---------------------------------------------------------------------------------------------------
+# rot
+
 """
-    RotMat(q::Quaternion{T}) where {T}
+    rot(q::Quaternion, v::Vector{T}) where {T} -> Vector{T}
 
-Return the rotation matrix corresponding to quaternion `q`.
-It is not assumed that the quaternion is normalized.
-""" RotMat
+Rotation of a 3-vector `v` by a quaternion `q`.
+""" rot
 
-function RotMat(q::Quaternion{T}) where {T}
-  sq1 = q.q0 * q.q0
-  sqx = q.vec[1] * q.vec[1]
-  sqy = q.vec[2] * q.vec[2]
-  sqz = q.vec[3] * q.vec[3]
-  rmat = Matrix{Float64}(undef,3,3)
-
-  # invs (inverse square length) is only required if quaternion is not already normalised                                       
-
-  invs = 1 / (sqx + sqy + sqz + sq1)
-  rmat[1,1] = ( sqx - sqy - sqz + sq1) * invs   # since sq1 + sqx + sqy + sqz =1/invs * invs                                     
-  rmat[2,2] = (-sqx + sqy - sqz + sq1) * invs
-  rmat[3,3] = (-sqx - sqy + sqz + sq1) * invs
-
-  tmp1 = q.vec[1] * q.vec[2]
-  tmp2 = q.vec[3] * q.q0
-  rmat[2,1] = 2 * (tmp1 + tmp2) * invs
-  rmat[1,2] = 2 * (tmp1 - tmp2) * invs
-
-  tmp1 = q.vec[1] * q.vec[3]
-  tmp2 = q.vec[2] * q.q0
-  rmat[3,1] = 2 * (tmp1 - tmp2) * invs
-  rmat[1,3] = 2 * (tmp1 + tmp2) * invs
-  tmp1 = q.vec[2] * q.vec[3]
-  tmp2 = q.vec[1] * q.q0
-  rmat[3,2] = 2 * (tmp1 + tmp2) * invs
-  rmat[2,3] = 2 * (tmp1 - tmp2) * invs
+function rot(q::Quaternion, v::Vector{T}) where {T}
+  vv = q * v / q
+  return [vv.q1, vv.q2, vv.q3]
 end
 
 #---------------------------------------------------------------------------------------------------
-# quat_angles
+# rot_angles
 
 """
-    quat_angles(q; angles0 = [0.0, 0.0, 0.0])
+    rot_angles(q::Quaternion; angles0 = [0.0, 0.0, 0.0]) -> theta, phi, psi
 
-Returns angles `theta`, `phi`, `psi` corresponding to quaternion `q`.
+Return the  `theta`, `phi`, and `psi` rotation angles corresponding to the quaternion `q`.
+""" rot_angles
 
- - `angles0`   `angles0` is used so that the returned angles (which are ambiguous up to factors of pi), 
-are  "close" to `angles0`. This is used when `angles0` corresponds to the orientation of some 
-initial quaternion  `q0` and `q` is "close" to `q0` (for example, `q` and `q0` are the quaternions
-for orientations at the ends of a bend element).
-""" quat_angles
+function rot_angles(q::Quaternion{T}; angles0 = [0.0, 0.0, 0.0]) where {T}
+  m = quat_to_dcm(q)  # The dcm is the inverse (transpose) of the corresponding rotation matrix
 
-function quat_angles(q; angles0 = [0.0, 0.0, 0.0])
-  s00 = q.q.s * q.q.s
-  s11 = q.q.v1 * q.q.v1
-  s22 = q.q.v2 * q.q.v2
-  s33 = q.q.v3 * q.q.v3
-  s12 = q.q.v1 * q.q.v2
-
-  w13 = 2.0 * (s13 * s20)
-  w33 = s00 - s11 - s22 + s33
-
-  # Only theta at +/- psi is well defined here so this is rather arbitrary
-  if abs(w13) + abs(w33) < 1e-12
-    if w23 > 0; return angles0[1], pi/2, atan(-w31, w11) - angles0[1]
-    else;       return angles0[1], -pi/2, atan(w21, w11) + angles0[1]
+  # Special case where cos(phi) is close to zero.
+  # Only theta at +/- psi is well defined here so this is rather arbitrary.
+  if abs(m[3,1]) + abs(m[3,3]) < 1e-14
+    if m[3,2] > 0; return angles0[1],  pi/2, atan(-m[1,3], m[1,1]) - angles0[1]
+    else;          return angles0[1], -pi/2, atan( m[1,3], m[1,1]) + angles0[1]
     end
   end
 
-  # Normal case
-  theta = atan(w13, w33)
-  phi = atan(w23, norm([w13 + w33]))
-  psi = atan(w21, w22)
+  theta = atan(m[3,1], m[3,3])
+  phi = atan(m[3,2], norm(m[3,1]^2, m[3,3]^2))
+  psi = atan(m[1,2], m[2,2])
 
   if angles0 == [0.0, 0.0, 0.0]; return mod(theta, 2pi), phi, psi; end
 
@@ -152,6 +122,46 @@ function quat_angles(q; angles0 = [0.0, 0.0, 0.0])
   else
     return diff2 + angles0
   end
+end
+
+#---------------------------------------------------------------------------------------------------
+
+"""
+    rot_mat(q::Quaternion{T}) where {T}
+
+Return the rotation matrix corresponding to quaternion `q`.
+It is not assumed that the quaternion is normalized.
+""" rot_mat
+
+function rot_mat(q::Quaternion{T}) where {T}
+  sq1 = q.q0 * q.q0
+  sqx = q.q1 * q.q1
+  sqy = q.q2 * q.q2
+  sqz = q.q3 * q.q3
+  rmat = Matrix{Float64}(undef,3,3)
+
+  # invs (inverse square length) is only required if quaternion is not already normalised                                       
+
+  invs = 1 / (sqx + sqy + sqz + sq1)
+  rmat[1,1] = ( sqx - sqy - sqz + sq1) * invs   # since sq1 + sqx + sqy + sqz =1/invs * invs                                     
+  rmat[2,2] = (-sqx + sqy - sqz + sq1) * invs
+  rmat[3,3] = (-sqx - sqy + sqz + sq1) * invs
+
+  tmp1 = q.q1 * q.q2
+  tmp2 = q.q3 * q.q0
+  rmat[2,1] = 2 * (tmp1 + tmp2) * invs
+  rmat[1,2] = 2 * (tmp1 - tmp2) * invs
+
+  tmp1 = q.q1 * q.q3
+  tmp2 = q.q2 * q.q0
+  rmat[3,1] = 2 * (tmp1 - tmp2) * invs
+  rmat[1,3] = 2 * (tmp1 + tmp2) * invs
+  tmp1 = q.q2 * q.q3
+  tmp2 = q.q1 * q.q0
+  rmat[3,2] = 2 * (tmp1 + tmp2) * invs
+  rmat[2,3] = 2 * (tmp1 - tmp2) * invs
+
+  return rmat
 end
 
 #---------------------------------------------------------------------------------------------------

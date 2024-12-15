@@ -2,6 +2,8 @@
 # Script to compare element parameter groups discussed in ele-param-group.tex file with 
 # how the groups are defined in the AcceleratorLattices.jl code to detect errors in the .tex file.
 #
+# Run this script in the root AcceleratorLattice directory
+#
 # Note: In ele-param-group.tex, some example blocks are marked using the syntax:
 #
 # \begin{example} %
@@ -17,7 +19,7 @@
 
 using AcceleratorLattice
 
-fname = "/Users/dcs16/.julia/dev/AcceleratorLattice/manual/ele-param-groups.tex"
+fname = "manual/ele-param-groups.tex"
 epgfile = open(fname, "r")
 
 # Parse parameter group table at beginning of file.

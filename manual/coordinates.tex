@@ -1,94 +1,49 @@
 \chapter{Coordinates}
 \label{s:coords}
-\index{coordinates|hyperbf}
 
-\vspace*{-0.3in}
-\accellat uses three coordinate systems as illustrated in \fig{f:coords}. First, the \vn{global} (also
-called ``\vn{floor}'') coordinates are independent of the placement of the machine. Things such as the
-building the accelerator is in may be described using \vn{global} coordinates.
-
-\begin{figure}[!b]
+\begin{figure}[!hb]
   \centering
   \includegraphics[width=5.0in]{coordinates.pdf}
   \caption[The three coordinate system used by \accellat.]
 {The \vn{global} (or ``\vn{floor}'') coordinate system
 is independent of the accelerator.  The \vn{machine} curvilinear coordinate system follows the bends
-of the accelerator. The machine reference curve is the $x = y = 0$ curve of the curvilinear coordinate
-system. Each lattice element has \vn{element body} coordinates which, if the element is
-not ``misaligned'' is the same as the \vn{machine} coordinates.}
+of the accelerator. The \vn{machine reference curve} is the $x = y = 0$ curve of the curvilinear coordinate
+system. Each lattice element has \vn{element body} coordinates which, if the element has no
+alignment shifts (not ``misaligned''), is the same as the \vn{machine} coordinates.}
   \label{f:coords}
 \end{figure}
 
-It is inconvenient to describe the position of a particle beam using the 
-\vn{global} coordinate system so
-a ``\vn{machine}'' coordinate system is used (\sref{s:machine.coords}).  This curvilinear coordinate
+%---------------------------------------------------------------------------------------------------
+\section{Coordinate Systems}
+\label{s:coords}
+\vspace*{-0.1in}
+
+\accellat uses three coordinate systems as illustrated in \fig{f:coords}. First, the \vn{global} (also
+called ``\vn{floor}'') coordinates are independent of the placement of the machine. Things such as the
+building the accelerator is in may be described using \vn{global} coordinates.
+
+It is inconvenient to describe the position lattice elements and the position of a 
+particle beam using the \vn{global} coordinate system so, for each tracking lattice branch,
+a ``\vn{machine}'' coordinate system is used (\sref{s:machine.coords}). This curvilinear coordinate
 system defines the nominal position of the lattice elements. The relationship between the
-\vn{machine} and \vn{global} coordinate systems is described in \sref{s:global}.
+\vn{machine} and \vn{global} coordinate systems is described in \sref{s:global}. Non-tracking branches
+do not have an associated machine coordinate system.
+
+The \vn{machine reference curve} is the $x = y = 0$ curve of the curvilinear coordinate
+system. The machine reference curve does not have to be continuous. A non-continuous
+reference curve is used, for example, to connect branches together. 
 
 The ``nominal'' position of a lattice element is the position of the element without any
 position and orientation shifts (\sref{s:align.g}) 
 which are sometimes referred to as ``misalignments''. 
 Each lattice element has ``\vn{element body}'' (or just ``\vn{body}'') 
 coordinates which are attached to the physical element and the electric and magnetic
-fields of an element are described with respect to \vn{body} coordinates.  If an element
-has no
-misalignments, the \vn{body} coordinates of the element are aligned with the 
+fields of an element are described with respect to \vn{body} coordinates.  
+If an element has no
+alignment shifts, the \vn{body} coordinates of the element are aligned with the 
 \vn{machine} coordinates.
 The transformation between \vn{machine} and \vn{body} coordinates is given in
 \sref{s:lab.body.transform}.
-
-%-----------------------------------------------------------------------------
-\section{Machine Coordinates and Reference Orbit}
-\label{s:machine.coords}
-
-%-----------------------------------------------------------------------------
-\subsection{The Reference Orbit}
-\label{s:ref}
-\index{machine coordinates|hyperbf}
-
-\begin{figure}[tb]
-  \centering
-  \includegraphics[width=6in]{machine-coords.pdf}
-  \caption[Reference coordinate system.]
-{The reference coordinate system. By construction, a particle's $z$ coordinate is zero.  This
-is not to be confused with the phase space $z$ coordinate (\sref{s:phase.space}). The curvature
-vector $\bfg$ lies in the $x$-$y$ plane and has a magnitude of $1/\rho$ where $\rho$ is the bending
-radius. A) The $z$-axis will normally be parallel to the $s$-axis. B) For \vn{reversed} elements it
-will be antiparallel. In both cases, the particle and reference particle are traveling in the
-direction of greater $s$.}
-  \label{f:machine.coords}
-\end{figure}
-
-The \vn{machine} coordinate system is the curvilinear coordinate system used for describing
-a particle's position as shown in \fig{f:machine.coords}. The machine coordinate system is also used for
-orientating lattice elements in space. At a given time $t$, a particle's position can be described
-by a point $\calO$ on the reference orbit a distance $s$ relative to the reference orbit's zero
-position plus a transverse $(x,y)$ offset. The point $\calO$ on the reference orbit is used as the
-origin of the machine $(x, y, z)$ coordinate system with the $z$--axis tangent to the reference
-orbit. The $z$--axis will generally be pointing in the direction of increasing $s$
-(\fig{f:machine.coords}A) but, as discussed below, will point counter to $s$ for elements that are
-longitudinally \vn{reversed} in orientation (\fig{f:machine.coords}B). 
-The $x$ and $y$--axes are perpendicular to the reference
-orbit and, by construction, the particle is always at $z = 0$. The coordinate system so constructed
-is called the \vn{``machine coordinate system''} when there is need to distinguish it from the 
-\vn{``element body coordinate system''}
-(\sref{s:coords}) which is attached to the physical element. There is a separate reference orbit
-for each branch (\sref{s:branch.def}) of a lattice.
-
-\index{x_offset}\index{y_offset}
-\index{x_rot}\index{y_rot}\index{wiggler}
-The reference orbit may not correspond to the orbit that any actual particle could travel.
-A common example is the \vn{wiggler} element where particles always oscillate about the reference
-orbit which is a straight line.
-
-Do not confuse this reference orbit (which defines the machine coordinate system) with the reference
-orbit about which the transfer maps are calculated (\sref{s:twiss}). The former is fixed by the
-lattice while the latter can be any arbitrary orbit.
-
-%-----------------------------------------------------------------------------
-\subsection{Element Entrance and Exit Coordinates}
-\label{s:ent.exi}
-\index{element body coordinates}
 
 %--------------------------------------
 
@@ -96,7 +51,7 @@ lattice while the latter can be any arbitrary orbit.
   \centering
   \includegraphics[width=5in]{ele-coord-frame.pdf}
 \caption[Lattice elements as LEGO blocks.]{Lattice elements can be imagined as ``LEGO blocks'' which
-fit together to form the reference orbit along with the machine coordinate system. How elements
+fit together to form the machine coordinate system. How elements
 join together is determined in part by their entrance and exit coordinate frames. A) For
 straight line elements the entrance and exit frames are colinear. B) For bends elements, the two
 frames are rotated with respect to each other. C) For \vn{Patch} and \vn{floor_shift} elements the
@@ -106,33 +61,39 @@ exit frame may be arbitrarily positioned with respect to the entrance frame.}
 
 %--------------------------------------
 
-One way of thinking about the reference orbit and machine coordinates is to imagine that each
-element is like a LEGO block with an ``\vn{entrance}'' and an ``\vn{exit}'' coordinate frame as
-illustrated in \fig{f:ele.coord.frame}\footnote
-  {
-Thanks to Dan Abell for this analogy.
-  }. 
-These coordinate frames are attached to the element. that is, things like electric and magnetic
-fields, apertures, etc., are described with respect to the entrance and exit coordinates.  Thus, for
-example, the \vn{e1} edge of a \vn{Bend} (\sref{s:bend}) is always at the \vn{entrance} face and the
-\vn{e2} is always at the \vn{exit} face. Most elements have a ``straight'' geometry as shown in
-\fig{f:ele.coord.frame}A. That is, the reference orbit through the element is a straight line
-segment with the $x$ and $y$ axes always pointing in the same direction.  For a \vn{Bend} element
-(\sref{s:bend}), the reference orbit is a segment of a circular arc as shown in
-\fig{f:ele.coord.frame}B. With the \vn{ref_tilt} parameter of a bend set to zero, the rotation axis
-between the entrance and exit frames is parallel to the $y$-axis (\sref{s:global}). For \vn{Patch}
-(\sref{s:patch}), and \vn{floor_shift} (\sref{s:floorshift}) elements, the exit face can can
-arbitrarily oriented with respect to the entrance end. For the \vn{FloorShift} element the
-interior reference orbit between the
-entrance and exit faces is not defined. For the \vn{Patch} element, the interior reference orbit 
-is dependent upon certain \vn{Patch} element parameter settings.
+%---------------------------------------------------------------------------------------------------
+\section{Element Entrance and Exit Coordinates}
+\label{s:ent.exi}
 
-%-----------------------------------------------------------------------------
-\subsection{Reference Orbit and Machine Coordinates Construction}
+As discussed in the next section, the machine coordinate system is constructed starting with the first
+element in a lattice tracking branch and then building up the coordinate system element-by-element.
+All elements in a tracking branch have an ``\vn{entrance}'' and an ``\vn{exit}'' coordinate frame as
+illustrated in \fig{f:ele.coord.frame}
+These coordinate frames are attached to the element and are part of the \vn{element body coordinates}. 
+The one one element that does not have entrance and exit coordinate frames
+is the \vn{Girder} (\sref{s:girder}) element which supports other elements but these
+elements are stored in a non-tracking branch. There
+is also an exception where, if there is a \vn{fiducial} element (or elements)
+in the branch line, the construction of the machine coordinate system starts at the \vn{fiducial}
+elements.
+
+
+Most elements have a ``straight'' geometry as shown in
+\fig{f:ele.coord.frame}A. That is, the reference curve through the element is a straight line
+segment with the $x$ and $y$ axes always pointing in the same direction. For a \vn{Bend} element
+(\sref{s:bend}), the reference curve is a segment of a circular arc as shown in
+\fig{f:ele.coord.frame}B. With the \vn{ref_tilt} parameter of a bend set to zero, the rotation axis
+between the entrance and exit frames is parallel to the $y$-axis (\sref{s:global}). 
+For \vn{Patch} (\sref{s:patch}) and \vn{floor_shift} (\sref{s:floorshift}), 
+and \vn{fiducial} (\sref{s:fiducial}) elements (\fig{f:ele.coord.frame}C), the exit face can be
+arbitrarily oriented with respect to the entrance end. 
+For the \vn{FloorShift} and \vn{fiducial} elements the interior reference curve between the
+entrance and exit faces is not defined. For the \vn{Patch} element, the interior reference curve 
+is dependent upon certain \vn{Patch} element parameter settings (\sref{s:patch}).
+
+%---------------------------------------------------------------------------------------------------
+\section{Machine Coordinates Construction}
 \label{s:ref.construct}
-\index{reference orbit!construction}
-\index{upstream element end}\index{downstream element end}
-\index{entrance element end}\index{exit element end}
 
 %-----------------------------------------------------------------------------
 \begin{figure}[tb]
@@ -150,43 +111,43 @@ is always out of the page.}
 \end{figure}
 %-----------------------------------------------------------------------------
 
-\index{root branch}
 Assuming for the moment that there are no \vn{Fiducial} elements present, the construction of the
-reference orbit starts at the \vn{BeginningEle} element (\sref{s:begin.ele}) at the start of a
+machine coordinate system starts at the \vn{BeginningEle} element (\sref{s:begin.ele}) at the start of a
 branch. If the branch is a \vn{root} branch (\sref{s:lattice.def}), The orientation of the beginning
 element within the global coordinate system (\sref{s:coords}) can be fixed by setting 
-FloorPositionGroup parameters (\sref{s:floor.position.g}) in the \vn{BeginningEle} element.
+\vn{FloorPositionGroup parameters} (\sref{s:floor.position.g}) in the \vn{BeginningEle} element.
 If the branch is not a \vn{root} branch, the position
 of the beginning element is determined by the position of the \vn{Fork} element
 from which the branch forks from. The default value of $s$ at the \vn{BeginningEle} element is zero
 for both root and non-root branches.
 
 Once the beginning element in a branch is positioned, succeeding elements are concatenated together
-to form the machine coordinates. All elements have an ``\vn{upstream}'' and a ``\vn{downstream}''
+to form the machine coordinate system. All elements have an ``\vn{upstream}'' and a ``\vn{downstream}''
 end as shown in \fig{f:patch.between}A. The \vn{downstream} end of an element is always farther (at
-greater $s$) from the beginning element than the \vn{upstream} end of the element.  Particles travel
+greater $s$) from the beginning element than the \vn{upstream} end of the element. Normally,
+particles will travel
 in the $+s$ direction, so particles will enter an element at the upstream end and exit at the
 downstream end.
 
 If there are \vn{Fiducial} elements, the machine coordinates are constructed beginning at these
 elements working both forwards and backwards along the branch.
 
-Normally, the \vn{upstream} end is the same as the element's \vn{entrance} end 
+If an element is not reversed (\sref{s:ele.reverse}),
+the element's \vn{upstream} end is the same as the element's \vn{entrance} end 
 (\fig{f:ele.coord.frame}) and the
-\vn{downstream} end is the same as the element's \vn{exit} end. However, if an element is reversed
-(\sref{s:ele.reverse}), the element's \vn{exit} end will be \vn{upstream} end and the element's
+\vn{downstream} end is the same as the element's \vn{exit} end. If an element is reversed, 
+the element's \vn{exit} end will be \vn{upstream} end and the element's
 \vn{entrance} end will be the \vn{downstream} end. That is, for a reversed element, particles 
 traveling downstream will
 enter at the element's \vn{exit} end and will exit at the \vn{entrance} end.
 
-The procedure to connect elements together to form the machine coordinates is to mate the
+The procedure to connect elements together to form the machine coordinates is to ignore 
+alignment shifts and mate the
 downstream reference frame of the element with the upstream reference frame of the next element in
-the branch so that, without misalignments, the $(x,y,z)$ axes coincide\footnote
-  {
-If there are misalignments, the \vn{entrance} and \vn{exit} frames will move with the element. However,
-the \vn{upstream} and \vn{downstream} frames, along with the reference orbit and machine
-coordinates, will not move.
-  }. 
+the branch so that the $(x,y,z)$ axes coincide.
+If there are alignment shifts, the \vn{entrance} and \vn{exit} frames will move with the element. 
+However, this does not affect the machine
+coordinate system.
 This is illustrated in \fig{f:patch.between}. \fig{f:patch.between}A shows the general situation
 with the downstream frame of element \vn{A} mated to the upstream frame of element \vn{B}.
 Figures~\ref{f:patch.between}B-C show branches constructed from the following lattice file:
@@ -194,9 +155,9 @@ Figures~\ref{f:patch.between}B-C show branches constructed from the following la
   @ele dft = Drift(L = 2)
   @ele bnd = Bend(l = 2, g = pi/12)
   @ele p = Patch(x_rot = pi)             ! Reflection patch.
-  BL = BeamLine([dft, bnd])              ! No reversal.
-  CL = BeamLine([dft, reverse(bnd)])     ! Illegal. Do not use!
-  DL = BeamLine([dft, p, reverse(bnd)])  ! Valid.
+  BL = BeamLine([dft, bnd])              ! Fig. \ref{f:patch.between}B. No reversal.
+  CL = BeamLine([dft, reverse(bnd)])     ! Fig. \ref{f:patch.between}C. Illegal. Do not use!
+  DL = BeamLine([dft, p, reverse(bnd)])  ! Fig. \ref{f:patch.between}D. Has reversal.
 \end{example}
 The $(x,z)$ coordinates are drawn at the entrance end of the elements and $z$ will always point
 towards the element's exit end.  \fig{f:patch.between}B shows the branch constructed from
@@ -205,9 +166,10 @@ towards the element's exit end.  \fig{f:patch.between}B shows the branch constru
 \vn{BL} except here element \vn{bnd} is reversed. This gives an unphysical situation since a
 particle traveling through \vn{dft} will ``fall off'' when it gets to the end.
 \fig{f:patch.between}D shows the branch constructed from \vn{DL}. Here a ``\vn{reflection}''
-patch \vn{P} (\sref{s:reflect.patch}) has been added to get a plausible geometry. The patch rotates the
-coordinate system around the $y$-axis by 180\Deg (leaving the $y$-axis invariant). It is always the
-case that a reflection patch is needed between reversed and unreversed elements
+patch \vn{P} (\sref{s:reflect.patch}) has been added to get a plausible geometry. 
+In this case the patch rotates the
+coordinate system around the $y$-axis by 180\Deg (leaving the $y$-axis invariant). 
+It is always the case that a reflection patch is needed between reversed and unreversed elements.
 
 Notes:
 \begin{itemize}
@@ -230,69 +192,16 @@ A reflection patch that rotated the coordinates, for example, around the $x$-axi
 setting \vn{x_rot} to \vn{pi}) would also produce a plausible geometry.
 \end{itemize}
 
-%-----------------------------------------------------------------------------
-
-\begin{figure}[bt]
-  \centering
-  \includegraphics[width=5in]{patch-problem.pdf}
-  \caption[The machine reference coordinates in a \vn{Patch} element.]
-{The machine reference coordinates in a \vn{Patch} element. The \vn{Patch} element, shown
-schematically as an irregular quadrilateral, is sandwiched between elements \vn{ele_a} and
-\vn{ele_b}. \vn{L} is the length of the \vn{Patch}. In this example, the \vn{Patch} has a finite
-\vn{y_rot}.}
-  \label{f:patch.prob}
-\end{figure}
-
-%-----------------------------------------------------------------------------
-%-----------------------------------------------------------------------------
-\subsection{Patch Element Coordinates}
-\label{s:patch.prob}
-\index{patch}
-
-Generally, if a particle is reasonably near the reference orbit, there is a one-to-one mapping
-between the particle's position and $(x, y, s)$ coordinates. A \vn{Patch} (\sref{s:patch}) elements
-with a non-zero \vn{x_rot} or non-zero \vn{y_rot} breaks the one-to-one mapping. This is
-illustrated in \fig{f:patch.prob}.  The \vn{Patch} element, shown schematically as an, irregular
-quadrilateral, is sandwiched between elements \vn{ele_a} and \vn{ele_b}. The machine coordinate system
-with origin at $\alpha$ are the coordinates at the end of \vn{ele_a}. The coordinates at the end of
-the \vn{Patch} has its origin labeled $\gamma$. By convention, the length of the patch \vn{L} is
-taken to be the longitudinal distance from $\alpha$ to $\gamma$ with the \vn{Patch}'s exit
-coordinates defining the longitudinal direction. The ``beginning'' point of the \vn{Patch} on the
-reference orbit a distance \vn{L} from point $\gamma$ is labeled $\beta$ in the figure.
-
-In the machine $(x, y, s)$ coordinate system a particle at $\alpha$ will have some value $s = s_0$. A
-particle at point $\beta$ will have the same value $s = s_0$ and a particle at $\gamma$ will have $s
-= s_1 = s_0 + L$. A particle at point $r_a$ in \fig{f:patch.prob} illustrates the problem of
-assigning $(x, y, s)$ coordinates to a given position. If the particle is considered to be within
-the region of \vn{ele_a}, the particle's $s$ position will be $s_{a2}$ which is greater than the
-value $s_0$ at the exit end of the element. This contradicts the expectation that particles within
-\vn{ele_a} will have $s \le s_0$.  If, on the other hand, the particle is considered to be within
-the \vn{Patch} region, the particle's $s$ position will be $s_{a1}$ which is less than the value
-$s_0$ at the entrance to the patch. This contradicts the expectation that a particles within the
-\vn{Patch} will have $s \ge s_0$.
-
-To resolve this problem, \accellat considers a particle at position $r_a$ to be within the \vn{Patch}
-region. This means that there is, in theory, no lower limit to the $s$-position that a particle in
-the \vn{Patch} region can have. This also implies that there is a discontinuity in the $s$-position
-of a particle crossing the exit face of \vn{ele1}. Typically, when particles are translated from the
-exit face of one element to the exit face of the next, this \vn{Patch} problem does not appear. It
-only appears when the track between faces is considered.
-
-Notice that a particle at position $r_b$ in \fig{f:patch.prob} can simultaneously be considered to
-be in either \vn{ele_a} or the \vn{Patch}. While this creates an ambiguity it does not complicate
-tracking.
-
-%-----------------------------------------------------------------------------
+%---------------------------------------------------------------------------------------------------
 \section{Global Coordinates}
 \label{s:global}
-\index{global coordinates|hyperbf}
 
 \begin{figure}[tb]
   \centering
   \includegraphics{global-coords.pdf}
   \caption[The Global Coordinate System]{
 The machine (reference) coordinate system (purple), which is a function of $s$ along the reference
-orbit, is described in the global coordinate system (black) by a position $(X(s), Y(s), Z(s))$ and
+curve, is described in the global coordinate system (black) by a position $(X(s), Y(s), Z(s))$ and
 and by angles $\theta(s)$, $\phi(s)$, and $\psi(s)$.
   }
   \label{f:global.coords}
@@ -325,20 +234,16 @@ with the $(x, y)$ plane. Corresponds to the \vn{tilt} element parameter (\sref{s
 positive $\psi$ forms a right--handed screw with the $z$--axis.
 \end{description}
 
-\index{beginning statement}
-\index{reference orbit!origin in global coordinates}
-\index{global coordinates!reference orbit origin}
-By default, at $s = 0$, the reference orbit's origin coincides with the $(X, Y, Z)$ origin and the
+By default, at $s = 0$, the reference curve's origin coincides with the $(X, Y, Z)$ origin and the
 $x$, $y$, and $z$ axes correspond to the $X$, $Y$, and $Z$ axes respectively. If the lattice has no
 vertical bends (the \vn{ref_tilt} parameter (\sref{s:bend}) of all bends are zero), the $y$--axis
 will always be in the vertical $Y$ direction and the $x$--axis will lie in the horizontal $(X,Z)$
-plane. In this case, $\theta$ decreases as one follows the reference orbit when going through a
+plane. In this case, $\theta$ decreases as one follows the reference curve when going through a
 horizontal bend with a positive bending angle. This corresponds to $x$ pointing radially
 outward. Without any vertical bends, the $Y$ and $y$ axes will coincide, and $\phi$ and $\psi$ will
 both be zero. The \vn{beginning} statement (\sref{s:beginning}) in a lattice file can be use to
 override these defaults.
 
-\index{MAD}
 Following \mad, the global position of an element is characterized by a vector $\bfV$
 \begin{equation}
   \bfV = 
@@ -408,7 +313,6 @@ axis $\Bf u$ (normalized to 1) and angle of rotation $\beta$
 \subsection{Lattice Element Positioning}
 \label{s:ele.pos}
 
-\index{MAD}
 \accellat, again following \mad, computes $\bfV$ and $\bfW$ by starting at the first element of the
 lattice and iteratively using the equations
 \begin{align}
@@ -419,7 +323,7 @@ lattice and iteratively using the equations
 \end{align}
 $\bfL_i$ is the displacement vector for the $i$\Th element and matrix $\bfS_i$ is the rotation of
 the machine reference system of the exit end with respect to the entrance end. For clarity, the
-subscript $i$ in the equations below will be dripped. For all elements whose reference orbit through
+subscript $i$ in the equations below will be dripped. For all elements whose reference curve through
 them is a straight line, the corresponding $\bfL$ and $\bfS$ are
 \begin{equation}
   \bfL = 
@@ -525,7 +429,7 @@ coordinate system defined by $(\bfV, \bfW)$ is
   \bfQ_{VW} = \bfW^{-1} \left( \bfQ_g - \bfV \right)
   \label{rwrv}
 \end{equation}
-This is essentially the inverse of \Eq{vwlv}. That is, vectors propagate inversely to the
+This is essentially the inverse of \Eq{vwlv}. That is, position vectors propagate inversely to the
 propagation of the coordinate system.
 
 Using \Eq{rwrv} with \Eqs{vwlv}, and \eq{wws}, the transformation of a particle's position $\bfq =
@@ -545,13 +449,12 @@ itself orthogonal and its inverse is just the transpose
 \end{equation}
 
 %-----------------------------------------------------------------------------
-\subsection{Crystal and Mirror Element Coordinate Transformation}
+\subsection{Crystal and Mirror Entrance to Exit Coordinate Transformation}
 \label{s:mirror.coords}
 
-\index{crystal}\index{mirror}\index{ref_tilt}
 A \vn{crystal} element (\sref{s:mirror}) diffracts photons and a \vn{mirror} element
 (\sref{s:mirror}) reflects them. For a crystal setup for Bragg diffraction, and for a mirror, the
-reference orbit is modeled as a zero length bend with $\bftilde L = (0, 0, 0)$, as shown in
+reference curve is modeled as a zero length bend with $\bftilde L = (0, 0, 0)$, as shown in
 \fig{f:mirror}A. Shown in the figure is the geometry appropriate for a \vn{ref_tilt} angle of
 $\theta_t = 0$ (the rotation axis is here the $y$-axis). Since the mirror or crystal element is
 modeled to be of zero length, the origin points (marked $\calO$ in the figure) of the entrance and
@@ -586,10 +489,9 @@ Darwin curve. Calculation of the Bragg angles for a crystal is given in
 Section~\sref{s:crystal.ref}.
 
 %-----------------------------------------------------------------------------
-\subsection{Patch and FloorShift Elements Entrance to Exit Transformation}
+\subsection{Patch and FloorShift Entrance to Exit Transformation}
 \label{s:patch.coords}
 
-\index{patch!coordinate transformation}\index{floorshift!coordinate transformation}
 For \vn{Patch} (\sref{s:patch}) and \vn{FloorShift} (\sref{s:floor.ele}) elements, the shift in the
 exit end reference coordinates is given by \Eqs{vwlv} and \eq{wws} with
 \begin{align}
@@ -608,27 +510,8 @@ element, the shift is relative to the reference point on the origin element spec
 \vn{origin_ele} parameter of the \vn{FloorShift}.
 
 %-----------------------------------------------------------------------------
-\subsection{Fiducial and Girder Elements Origin Shift Transformation}
-\label{s:girder.coords}
-
-\index{girder}\index{fiducial}
-For \vn{fiducial} and \vn{girder} elements, the alignment of the
-reference coordinates with respect to ``\vn{origin}'' coordinates is
-analogous to \Eqs{swww}. Explicitly:
-\begin{align}
-  \bfL &= 
-    \begin{pmatrix} 
-      \text{dx_origin} \\ \text{dy_origin} \\ \text{dz_origin}
-    \end{pmatrix}
-    \CRNO
-  \bfS &= \bfR_{y} (\text{dtheta_origin}) \; \bfR_{x} (\text{-dphi_origin}) \; 
-    \bfR_{z} (\text{dpsi_origin})
-\end{align}
-
-%-----------------------------------------------------------------------------
 \subsection{Reflection Patch}
 \label{s:reflect.patch}
-\index{patch!reflection}
 
 A \vn{Patch} (or a series of patches) that reflects the direction of the \vn{z}-axis is called a
 \vn{reflection} \vn{Patch}. By ``reflected direction'' it is meant that the dot product $\Bf z_1
@@ -647,15 +530,29 @@ When there are a series of patches, The transformations of all the patches are c
 to form an effective $\bfS$ which can then be used with \Eq{s330}.
 
 %-----------------------------------------------------------------------------
+\subsection{Fiducial and Girder Coordinate Transformation}
+\label{s:girder.coords}
+
+For \vn{fiducial} and \vn{girder} elements, the alignment of the
+reference coordinates with respect to ``\vn{origin}'' coordinates is
+analogous to \Eqs{swww}. Explicitly:
+\begin{align}
+  \bfL &= 
+    \begin{pmatrix} 
+      \text{dx_origin} \\ \text{dy_origin} \\ \text{dz_origin}
+    \end{pmatrix}
+    \CRNO
+  \bfS &= \bfR_{y} (\text{dtheta_origin}) \; \bfR_{x} (\text{-dphi_origin}) \; 
+    \bfR_{z} (\text{dpsi_origin})
+\end{align}
+
+%-----------------------------------------------------------------------------
 \section{Transformation Between Machine and Element Body Coordinates}
 \label{s:lab.body.transform}
-\index{machine coordinates}
-\index{element body coordinates|hyperbf}
 
 The \vn{element body} coordinates are the coordinate system attached to an element. Without any
-misalignments, where \vn{``misalignments''} are here defined to be any offset, or rotation
-(\sref{s:offset}), the \vn{machine} coordinates (\sref{s:ref}) and \vn{element body} coordinates
-are the same. With misalignments, the transformation between \vn{machine} and \vn{element body}
+alignment shifts, the \vn{machine} coordinates (\sref{s:ref}) and \vn{element body} coordinates
+are the same. With alignment shifts, the transformation between \vn{machine} and \vn{element body}
 coordinates depends upon whether the machine coordinate system is straight (\sref{s:straight.mis}) or
 bent (\sref{s:bend.mis}).
 
@@ -671,12 +568,12 @@ machine coordinates (using $s = L$ in the equations below) and then propagating 
 in a field free drift space to the nominal downstream edge.
 
 %-----------------------------------------------------------------------------
-\subsection{Straight Element Misalignment Transformation}
+\subsection{Straight Element Machine to Body Coordinate Transformation}
 \label{s:straight.mis}
 
 For straight line elements, given a machine coordinate frame $\Lambda_s$ with origin a distance
-$s$ from the beginning of the element, misalignments will shift the coordinates to a new reference
-frame denoted $E_s$. Since misalignments are defined with respect to the middle of the element, the
+$s$ from the beginning of the element, alignment shifts will shift the coordinates to a new reference
+frame denoted $E_s$. Since alignment shifts are defined with respect to the middle of the element, the
 transformation between $\Lambda_s$ and $E_s$ is a three step process:
 \begin{equation}
   \Lambda_s \longrightarrow \Lambda_\text{mid} 
@@ -700,22 +597,22 @@ transformation, by definition of the offset and rotation parameters is
   \label{swww2}
 \end{align}
 
-Notice that with this definition of how elements are misaligned, the position of the center of a
-non-bend misaligned element depends only on the offsets, and is independent of the rotations.
+Notice that with this definition of how elements are shifted, the position of the center of a
+non-bend shifted element depends only on the offsets, and is independent of the rotations.
 
 %-----------------------------------------------------------------------------
-\subsection{Bend Element Misalignment Transformation}
+\subsection{Bend Element Machine to Body Coordinate Transformation}
 \label{s:bend.mis}
 
 For \vn{Bend} elements there is a \vn{ref_tilt} as well as a \vn{tilt} parameter.
-The former affects both the reference orbit and
+The former affects both the reference curve and
 the bend position (\sref{s:bend.orient}). Furthermore, \vn{ref_tilt} is calculated with respect to
 the coordinates at the beginning of the bend while \vn{tilt}, \vn{x_rot},
 \vn{y_rot}, and offsets are calculated with respect to the center of the chord connecting the
 ends of the bend (\sref{s:align.g}). 
 The different reference frame used
 for \vn{ref_tilt} versus everything else means that five transformations are needed to get from the
-machine frame to the element body frame (see \Eq{llee}). Symbolically:
+machine frame at point $s$ to the corresponding element body frame (see \Eq{llee}). Symbolically:
 \begin{equation}
   \Lambda_s \longrightarrow \Lambda_0 \longrightarrow
   \Xi_0 \longrightarrow \Xi_\text{mid} \longrightarrow 
@@ -744,7 +641,7 @@ The transformation is given by \Eq{l00l} with $L \rightarrow L_c/2$ and $L_c$ is
 length.
 %
 \item $\Xi_\text{mid} \longrightarrow \Omega_\text{c,mid}$ \\
-Transform from chord coordinates at the center of the chord to ``misaligned chord coordinates''
+Transform from chord coordinates at the center of the chord to ``shifted chord coordinates''
 at the same point.
 This is the same transform as used for straight elements:
 \begin{align}
@@ -758,12 +655,12 @@ This is the same transform as used for straight elements:
 \end{align}
 %
 \item $\Omega_{c,mid} \longrightarrow \Omega_{c,0}$ \\
-Transform in misaligned chord coordinates from the center of the chord back to the beginning of the
+Transform in align shifted chord coordinates from the center of the chord back to the beginning of the
 chord. This is the reverse of $\Xi_0 \longrightarrow \Xi_\text{mid}$. In this case
 $L \rightarrow -L_c/2$
 %
 \item $\Omega_{c,0} \longrightarrow \Omega_{0}$ \\
-Rotate from misaligned chord coordinates at the entrance end to coordinates 
+Rotate from aligned shifted chord coordinates at the entrance end to coordinates 
 so that the $z$-axis is parallel to the body coordinates (tangent to the arc). 
 This is the reverse of $\Lambda_0 \longrightarrow \Xi_0$. In this case $\alpha_b \rightarrow -\alpha_b/2$
 %
@@ -782,240 +679,3 @@ center of the bend. \Eqs{ustt} and \eq{lrztt} are used with the substitutions
 $\theta_t \rightarrow 0$ and $\alpha_b \rightarrow L/\rho$.
 %
 \end{enumerate}
-
-%-----------------------------------------------------------------------------
-\section{Phase Space Coordinates}
-\label{s:phase.coords}
-\index{phase space coordinates|hyperbf}
-
-%-----------------------------------------------------------------------------
-\subsection{Reference Particle, Reference Energy, and Reference Time}
-\label{s:ref.energy}
-\index{reference particle|hyperbf}
-\index{reference energy|hyperbf}
-\index{reference time|hyperbf}
-
-The \vn{reference energy} and \vn{reference time} are needed in evaluating the phase space
-coordinates of charged particles (\sref{s:phase.space}).
-
-All lattice elements, except for controller elements, have an associated \vn{reference energy}
-energy.  The reference energy at the start of a lattice's \vn{root branch} (\sref{s:branch.def}) is
-set in the lattice file by setting the reference momentum (\vn{p0c}) or total energy (\vn{E_tot})
-using a \vn{parameter} (\sref{s:param}) or \vn{beginning} (\sref{s:beginning}) statement. For other
-branches, the energy at the start of the branch is set using the appropriate line parameter
-(\sref{s:beginning}) statement.
-
-Note that the reference momentum \vn{p0c} is actually the reference momentum times the speed of light
-so that the reference momentum has the same unit (eV) as the reference energy.
-
-\index{custom!reference energy}\index{em_field!reference energy}
-\index{hybrid!reference energy}\index{lcavity!reference energy}
-\index{patch!reference energy}
-For most elements, the reference energy is the same as the reference energy of the proceeding
-element. The following elements are exceptions:
-\begin{example}
-  custom
-  em_field
-  hybrid
-  lcavity
-  patch
-\end{example}
-The reference energy of these elements is determined by tracking a particle (the ``\vn{reference
-particle}'') through the element with the particle starting on the reference orbit and whose energy
-is equal to the reference energy. The energy of the particle at the downstream end is the reference
-energy of the element. Note: Tracking through an element to determine the reference energy is always
-done with the element turned on independent of the setting of the element's \vn{is_on}
-(\sref{s:is.on}) parameter. Reference energy tracking is also done ignoring any orientation parameters
-(\sref{s:offset}) and errors like \vn{voltage_err}.
-
-\index{wiggler!reference time}
-Besides the reference energy, lattice elements have an associated \vn{reference time} which is
-computed, for most elements, by the time-of-flight of the \vn{reference particle} assuming that the
-reference particle is following the reference orbit. Exceptions are \vn{wiggler} elements which uses
-the time-of-flight of the actual undulating trajectory. [Actually what is used in the computation of
-the $z$ phase space coordinate (\Eq{zbctt}) is the sum of reference time deltas of the elements that
-a particle has passed through. It is not possible to assign a unique reference time to an element
-when particles are recirculating through elements as in a storage ring.]
-
-%-----------------------------------------------------------------------------
-\subsection{Charged Particle Phase Space Coordinates}
-\label{s:phase.space}
-\index{phase space coordinates|hyperbf}
-
-\begin{figure}
-\centering \includegraphics{canonical-z.pdf} \caption[Interpreting phase space $z$ at constant
-velocity.]  {Interpreting phase space $z$ at constant velocity: A) The change in $z$ going through
-an element of length $L_0$ is $L_0 - L_p$.  B) At constant time, $z$ is the longitudinal distance
-between the reference particle and the particle.}  \label{f:canonical.z}
-\end{figure}
-
-For charged particles (more correctly, for everything but photons (\sref{s:photon.phase.space})),
-\accellat uses the canonical phase space coordinates
-\begin{equation}
-  \Bf r(s) = (x, p_x, y, p_y, z, p_z)
-\end{equation}
-The longitudinal position $s$ is the independent variable instead of the time. $x$ and $y$, are the
-transverse coordinates of the particle as shown in~\fig{f:machine.coords}A. Note that $x$ and $y$ are
-independent of the position of the reference particle.
-
-The phase space momenta $p_x$ and $p_y$ are normalized by the reference (sometimes called the
-design) momentum $P_0$
-\begin{equation}
-  p_x = \frac{P_x}{P_0}, \qquad
-  p_y = \frac{P_y}{P_0}
-  \label{ppp}
-\end{equation}
-where $P_x$ and $P_y$ are respectively the $x$ and $y$ momentums.
-
-\index{lcavity}\index{rfcavity}
-The phase space $z$ coordinate is 
-\begin{align}
-  z(s) &= -\beta(s) \, c \, (t(s) - t_0(s)) \CRNO
-    &\equiv - \beta(s) \, c \, \Delta t(s)
-  \label{zbctt}
-\end{align}
-$t(s)$ is the time at which the particle is at position $s$, $t_0(s)$ is the time at which the
-reference particle is at position $s$, and $\beta$ is $v/c$ with $v$ being the particle velocity
-(and not the reference velocity). The reference particle is, by definition, ``synchronized'' with
-elements whose fields are oscillating and therefore the actual fields a particle will see when
-traveling through such an element will depend upon the particle's phase space $z$. For example, the
-energy change of a particle traveling through an \vn{lcavity} (\sref{s:lcav}) or \vn{rfcavity}
-(\sref{s:rfcav}) element is $z$ dependent. Exception: With absolute time tracking (\sref{s:rf.time})
-fields are tied to the absolute time and not $z$.
-
-If the particle's velocity is constant, and is the same as the velocity of the reference particle
-(for example, at high energy where $\beta = 1$ for all particles), then $\beta \, c \, t$ is just
-the path length. In this case, the change in $z$ going through an element is
-\begin{equation}
-  \Delta z = L_0 - L_p
-\end{equation}
-where, as shown in \fig{f:canonical.z}A, $L_0$ is the path length of the reference particle (which
-is just the length of the element) and $L_p$ is the path length of the particle in traversing the
-element.  Another way of interpreting phase space $z$ is that, at constant $\beta$, and constant
-time, $z$ is the longitudinal distance between the particle and the reference particle as shown in
-\fig{f:canonical.z}B. with positive $z$ indicating that the particle is ahead of the reference
-particle.
-
-Do not confuse the phase space $z$ with the $z$ that is the particle's longitudinal coordinate in
-the machine reference frame as shown in \fig{f:machine.coords}. By construction, this latter $z$ is
-always zero.
-
-Notice that if a particle gets an instantaneous longitudinal kick so that $\beta$ is discontinuous
-then, from \Eq{zbctt}, phase space $z$ is discontinuous even though the particle itself does not
-move in space. In general, from \Eq{zbctt}, The value of $z$ for a particle at $s_2$ is related to
-the value of $z$ for the particle at $s_1$ by
-\begin{equation}
-  z_2 = \frac{\beta_2}{\beta_1} \, z_1 - 
-  \beta_2 \, c \, (\Delta t_2 - \Delta t_1)
-  \label{zbbzb}
-\end{equation}
-$\Delta t_2 - \Delta t_1$ can be interpreted as the difference in transit time, between the particle
-and the reference particle, in going from $s_1$ to $s_2$.
-
-The longitudinal phase space momentum $p_z$ is given by
-\begin{equation}
-  p_z = \frac{\Delta P}{P_0} \equiv \frac{P - P_0}{P_0}
-  \label{ppppp}
-\end{equation}
-where $P$ is the momentum of the particle. For ultra--relativistic particles $p_z$ can be
-approximated by
-\begin{equation}
-  p_z = \frac{\Delta E}{E_0}
-\end{equation}
-\index{lcavity}
-where $E_0$ is the reference energy (energy here always refers to the total energy) and $\Delta E =
-E - E_0$ is the deviation of the particle's energy from the reference energy. For an \vn{Lcavity}
-element (\sref{s:lcav}) the reference momentum is {\it not} constant so the tracking for an
-\vn{Lcavity} is not canonical.
-
-\index{phase space coordinates!MAD convention}
-\index{MAD!phase space convention}
-\mad uses a different coordinate system where $(z, p_z)$ is replaced by $(-c\Delta t, p_t)$ where
-$p_t \equiv \Delta E / P_0 c$. For highly relativistic particles the two coordinate systems are
-identical.
-
-\index{paraxial approximation}
-\index{bmad_standard!tracking method}
-The relationship, between the phase space momenta and the slopes $x' \equiv dx/ds$ and 
-$y' \equiv dy/ds$ is
-\begin{align}
-  x' &= \frac{p_x}{\sqrt{(1 + p_z)^2 - p_x^2 - p_y^2}} \, (1 + g x) \\
-  y' &= \frac{p_y}{\sqrt{(1 + p_z)^2 - p_x^2 - p_y^2}} \, (1 + g x) 
-  \label{xpa1p}
-\end{align}
-$g = 1/\rho$ is the curvature function with $\rho$ being the radius of curvature of the reference
-orbit and it has been assumed that the bending is in the $x$--$z$ plane.
-
-With the paraxial approximation, and in the relativistic limit, the change in $z$ with position is
-\begin{equation}
-  \frac{dz}{ds} = -g \, x - \frac{1}{2} (x'^2 + y'^2)
-\end{equation}
-This shows that in a linac, without any bends, the $z$ of a particle always decreases.
-
-A particle can also have a spin. The spin is characterized by the spinor $\Psi = \left( \psi_{1},
-\psi_{2} \right)^{T}$ where $\psi_{1,2}$ are complex numbers (\sref{s:spin.dyn}).
-
-%-----------------------------------------------------------------------------
-\subsection{Time-based Phase Space Coordinates}
-\label{s:time.phase.space}
-\index{time!phase space coordinates|hyperbf}
-
-Some specialized routines (for example, time Runge Kutta tracking) use the time $t$ as the
-independent variable for charged particle tracking. This is useful when particles can reverse
-direction since the normal $z$ based tracking cannot handle this. Direction reversal can happen, for
-example, with low energy ``dark current'' electrons that are generated at the walls of the vacuum
-chamber.
-
-When the tracking is time based the phase space coordinates are:
-\begin{equation}
-  (x, c \, p_x, y, c \, p_y, z, c \, p_s)
-\end{equation}
-The positions $x$, $y$, and $z$ are the same as with phase space coordinates
-(\sref{s:phase.space}). The momenta are defined as
-\begin{align}
-c p_x &\equiv m c^2 \gamma \beta_x \CRNO
-c p_y &\equiv m c^2 \gamma \beta_y \\
-c p_s &\equiv m c^2 \gamma \beta_s, \nonumber
-\end{align}
-and internally are stored in units of eV.
-
-%-----------------------------------------------------------------------------
-\subsection{Photon Phase Space Coordinates}
-\label{s:photon.phase.space}
-\index{photon!phase space coordinates|hyperbf}
-
-The phase space coordinates discussed above implicitly assume that
-particles are traveling longitudinally in only one direction. That is,
-the sign of the $s$ component of the momentum cannot be determined
-from the phase space coordinates. This is generally fine for tracking
-high energy beams of charged particles but for photon tracking this
-would oftentimes be problematical. For photons, therefore, a different
-phase space is used:
-\begin{equation}
-  (x, \beta_x, y, \beta_y, z, \beta_z)
-  \label{xbybzb}
-\end{equation}
-Here $(\beta_x, \beta_y, \beta_z)$ is the normalized photon velocity with
-\begin{equation}
-  \beta_x^2 + \beta_y^2 + \beta_z^2 = 1 
-  \label{bbb1}
-\end{equation}
-and $(x, y, z)$ are the reference orbit coordinates with $z$ being the
-distance from the start of the lattice element the photon is in.
-
-In \accellat, the information associated with a photon include its phase
-space coordinates and time along with the photon energy and four
-parameters $E_x, \phi_x$, and $E_y, \phi_y$ specifying the intensity
-and phase of the field along the $x$ and $y$ axes transverse to the
-direction of propagation.  the field in the vicinity of the photon is
-\begin{align}
-  E_x (\Bf r, t) &\sim E_x \, e^{i (k \, (z - z_0) - \omega \, (t - t_\REF) + \phi_x)} \CRNO
-  E_y (\Bf r, t) &\sim E_y \, e^{i (k \, (z - z_0) - \omega \, (t - t_\REF) + \phi_y)} 
-  \label{ertee}
-\end{align}
-where $z_0$ is the photon $z$ position and and $t_\REF$ is the reference time.
-
-The normalization between field and intensity is dependent upon the
-particular parameters of any given simulation and so must be
-determined by the program using \accellat.
-

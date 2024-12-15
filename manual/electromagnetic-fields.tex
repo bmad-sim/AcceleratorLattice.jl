@@ -3,9 +3,7 @@
 %-----------------------------------------------------------------
 \section{Magnetostatic Multipole Fields}
 \label{s:mag.field}
-\index{magnetic fields|hyperbf}
 
-\index{MAD}
 Start with the assumption that the local magnetic field has no longitudinal component
 (obviously this assumption does not work with, say, a solenoid).  Following \mad, ignoring
 skew fields for the moment, the vertical magnetic field along the $y = 0$ axis is expanded
@@ -24,7 +22,6 @@ reference orbit is curved (\sref{s:field.exact})), the field is
   \label{bbb}
 \end{alignat}
 The relation between the field $B_n$ and the normalized field $K_n$ is:
-\index{multipole!KnL, Tn|hyperbf}
 \begin{equation}
   K_n \equiv \frac{q \, B_n}{P_0}
   \label{kqlbp}
@@ -65,7 +62,6 @@ general form is
 \end{align}
 where $\binom{a}{b}$ (``a choose b'') denotes a binomial coefficient.
 
-\index{multipole!KnL, Tn|hyperbf}
 The above equations are for fields with a normal component only. If a given multipole field of order
 $n$ has normal $B_n$ and skew $S_n$ components and is rotated in the $(x, y)$ plane by an angle
 $T_n$, the magnetic field at a point $(x,y)$ can be expressed in complex notation as
@@ -76,7 +72,6 @@ $T_n$, the magnetic field at a point $(x,y)$ can be expressed in complex notatio
 \end{equation}
 where $(r, \theta)$ are the polar coordinates of the point $(x, y)$.
 
-\index{multipole}
 Note that, for compatibility with MAD, the $K0L$ component of a \vn{Multipole} element rotates the
 reference orbit essentially acting as a zero length bend. This is not true for multipoles of any
 other type of element.
@@ -88,7 +83,6 @@ normal $\wt K_n$ and skew $\wt S_n$. The conversion between the two are
   \wt S_n &= K_n \, \sin((n + 1) \, T_n) 
 \end{align}
 
-\index{multipole!an, bn|hyperbf}
 Another representation of the magnetic field used by \bmad divides the fields into normal $b_n$ and
 skew $a_n$ components. In terms of these components the magnetic field for the $n$\Th\ order
 multipole is
@@ -114,10 +108,6 @@ normal component) the magnet should be rotated about its longitudinal axis with 
 \end{equation}
 For example, a normal quadrupole rotated by $45^\circ$ becomes a skew quadrupole.
 
-The multipole fields can be ``\vn{reference energy}'' scaled and/or ``\vn{element strength}''
-scaled.  Scaling here means that the $a_n$ and $b_n$ values used in tracking are scaled from the
-input values given in the lattice file.
-
 \vn{Reference energy} scaling is applied if the \vn{field_master} attribute (\sref{s:field.master})
 is True for an element so that the multipole values specified in the lattice file are not reference
 energy normalized
@@ -127,53 +117,9 @@ energy normalized
   \label{ababq}
 \end{equation}
 
-\index{r0_mag}
-\index{F (multipole scale factor)}
-\vn{Element strength} scaling is applied when the multipoles are associated with a non
-\vn{AB_Multipole} element and if the \vn{scale_multipoles} attribute (\sref{s:multip}) is
-\vn{True}. This scaling uses a measurement radius $r_0$ and a scale factor $F$:
-\begin{equation}
-  \bigl[ a_n, b_n \bigr] \longrightarrow
-  \bigl[ a_n, b_n \bigr]
-  \cdot F \cdot \frac{r_0^{n_\REF}}{r_0^n}
-  \label{ababf}
-\end{equation}
-$r_0$ is set by the \vn{r0_mag} attribute of an element. $F$ and $n_\REF$ are set
-automatically depending upon the type of element as shown in Table~\ref{t:ab}. The
-$\gamma_p$ term is
-
-\index{kicker}\index{hkicker}\index{vkicker}\index{ac_kicker}
-\index{rbend}\index{sbend}\index{elseparator}
-\index{quadrupole}\index{solenoid}\index{sol_quad}
-\index{sextupole}\index{octupole}
-\begin{table}[ht]
-\centering
-\begin{tabular}{lll} \toprule
-\tt
-  {\em Element} & $F$                              & $n_\REF$ \\ \midrule
-  \vn{Elseparator} & $\sqrt{{\tt Hkick}^2 + {\tt Vkick}^2}$ & 0 \\
-  \vn{Hkicker}     & Kick                                   & 0 \\
-  \vn{Kicker},\vn{AC_Kicker}
-                   & $\sqrt{{\tt Hkick}^2 + {\tt Vkick}^2}$ & 0 \\
-  \vn{Rbend}       & G * L                                  & 0 \\
-  \vn{Sbend}       & G * L                                  & 0 \\
-  \vn{Vkicker}     & Kick                                   & 0 \\
-  \vn{Wiggler}     & $\dsfrac{2 \, c \, {\tt L\_pole} \, B_{max}}{\pi \, {\tt p0c}}$ 
-                                                            & 0 \\
-  \vn{Quadrupole}  & K1 * L                                 & 1 \\
-  \vn{Sol_Quad}    & K1 * L                                 & 1 \\
-  \vn{Solenoid}    & KS * L                                 & 1 \\
-  \vn{Sextupole}   & K2 * L                                 & 2 \\
-  \vn{Octupole}    & K3 * L                                 & 3 \\ \bottomrule
-\end{tabular}
-\caption{$F$ and $n_\REF$ for various elements.}
-\label{t:ab}
-\end{table}
-
 %-----------------------------------------------------------------
 \section{Electrostatic Multipole Fields}
 \label{s:elec.field}
-\index{electric fields}
 
 Except for the \vn{elseparator} element, \bmad specifies DC electric fields using normal
 $b_{en}$ and skew $a_{en}$ components (\sref{s:multip}). The potential $\phi_n$ for the
@@ -341,7 +287,6 @@ $\phi_n^r$ and $\phi_n^i$. Similarly, the horizontally pure solutions form a com
 set. [It is, of course, possible to construct other complete sets in which the basis
 functions are neither horizontally pure nor vertically pure.]
 
-\index{exact_multipoles}
 This brings up an important point. To properly simulate a machine, one must first of all
 understand whether the multipole values that have been handed to you are for horizontally
 pure multipoles, vertically, pure multipoles, or perhaps the values do not correspond to
@@ -357,8 +302,6 @@ convert coefficients as needed.]
 %-----------------------------------------------------------------
 \section{Map Decomposition of Magnetic and Electric Fields}
 \label{s:field.map}
-\index{electric fields!map decomposition}
-\index{magnetic fields!map decomposition}
 
 Electric and magnetic fields can be parameterized as the sum over a number of functions
 with each function satisfying Maxwell's equations. These functions are also referred to as
@@ -388,7 +331,6 @@ field using coefficients derived from an expansion of the scalar potential in po
 %-----------------------------------------------------------------
 \section{Cartesian Map Field Decomposition}
 \label{s:cart.map.phys}
-\index{cartesian_map}
 
 Electric and magnetic fields can be parameterized as the sum over a number of functions
 with each function satisfying Maxwell's equations. These functions are also referred to as
@@ -531,7 +473,6 @@ Note: The vector potential for these fields is given in \sref{s:wiggler.std}.
 %-----------------------------------------------------------------
 \section{Cylindrical Map Decomposition}
 \label{s:cylind.map.phys}
-\index{cylindrical map}
 
 Electric and magnetic fields can be parameterized as the sum over a number of functions with each
 function satisfying Maxwell's equations. These functions are also referred to as ``maps'',
@@ -661,7 +602,6 @@ $\theta$ and $\rho$ are expanded in a Taylor series in $x$ and $y$.
 %-----------------------------------------------------------------
 \subsection{AC Cylindrical Map Decomposition}
 \label{s:cylind.ac}
-\index{rf fields|hyperbf}
 
 For RF fields, the \vn{cylindrical} mode parametrization used by \bmad essentially
 follows Abell\cite{Abell:RF-maps}. The electric field is the real part of the complex field
@@ -790,7 +730,6 @@ identity
 %-----------------------------------------------------------------
 \section{Generalized Gradient Map Field Modeling}
 \label{s:gen.grad.phys}
-\index{generalized gradient field modeling}
 
 \bmad has a number of \vn{field map} models that can be used to model electric or magnetic fields
 (\sref{s:fieldmap}). One model involves what are called \vn{generalized gradients}\cite{Venturini:magmaps}.
@@ -919,7 +858,6 @@ The conversion for the cosine like derivatives is:
 %-----------------------------------------------------------------
 \section{RF fields}
 \label{s:rf.fields}
-\index{RF fields|hyperbf}
 
 The following describes the how RF fields are calculated when the \vn{field_calc}
 attribute of an RF element is set to \vn{bmad_standard}.\footnote

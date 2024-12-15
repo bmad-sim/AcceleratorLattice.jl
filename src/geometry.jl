@@ -70,47 +70,26 @@ The transformation is
 """ ele_floor_transform
 
 function ele_floor_transform(bend::BendGroup, L)
-  qa = RotY(bend.angle)
+  qa = QuaternionY(bend.angle)
   r_vec = [-L * sinc(bend.angle/(2*pi)) * sin(bend.angle), 0.0, L * sinc(bend.angle/pi)]
   if bend.tilt_ref == 0; return (r_vec, qa); end
 
-  qt = RotZ(-bend.tilt_ref)
+  qt = QuaternionZ(-bend.tilt_ref)
   return (rot(qt, r_vec), qt * qa * inv(qt))
 end
 
 #---------------------------------------------------------------------------------------------------
-# QuatRotation
+# rot!
 
 """
-    QuatRotation(theta::Real, phi::Real, psi::Real)
+    rot!(floor::FloorPositionGroup, q::Quaternion)
 
-Function to return the quaternion corresponding to a rotation parameterized
-by `theta`, `phi`, and `psi`.
-""" QuatRotation
+Rotates a `FloorPositionGroup`.
+""" rot!
 
-QuatRotation(theta::Real, phi::Real, psi::Real) = RotY(theta) * RotX(-phi) * RotZ(psi)
-
-#---------------------------------------------------------------------------------------------------
-# rotation_angles
-
-"""
-    rotation_angles(q::Quaternion) -> theta, phi, psi
-
-Return the rotation angles corresponding to the quaternion `q`.
-""" floor_angles
-
-function rotation_angles(q::Quaternion{T}) where {T}
-  m = quat_to_dcm(q)
-  # Special case where cos(phi) is close to zero.
-  if abs(m[1,3]) + abs(m[3,3]) < 1e-12
-    return 0.0, pi/2, atan(-m[3,1], m[1,1])
-
-  else
-    theta = atan(m[1,3], m[3,3])
-    phi = atan(m[2,3], sqrt(m[1,3]^2 + m[3,3]^2))
-    psi = atan(m[2,1], m[2,2])
-    return theta, phi, psi
-  end
+function rot!(floor::FloorPositionGroup, q::Quaternion)
+  floor.q = q * floor.q
+  floor.r = rot(q, floor.r)
+  return nothing
 end
-
 
