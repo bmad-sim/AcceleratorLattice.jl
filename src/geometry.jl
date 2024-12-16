@@ -72,24 +72,24 @@ The transformation is
 function ele_floor_transform(bend::BendGroup, L)
   qa = QuaternionY(bend.angle)
   r_vec = [-L * sinc(bend.angle/(2*pi)) * sin(bend.angle), 0.0, L * sinc(bend.angle/pi)]
-  if bend.tilt_ref == 0; return (r_vec, qa); end
 
-  qt = QuaternionZ(-bend.tilt_ref)
-  return (rot(qt, r_vec), qt * qa * inv(qt))
+  if bend.tilt_ref == 0
+    return (r_vec, qa)
+  else
+    qt = QuaternionZ(-bend.tilt_ref)
+    return (rot(qt, r_vec), qt * qa * inv(qt))
+  end
 end
 
 #---------------------------------------------------------------------------------------------------
-# rot!
+# rot
 
 """
-    rot!(floor::FloorPositionGroup, q::Quaternion)
+    rot(floor::FloorPositionGroup, q::Quaternion) -> FloorPositionGroup
 
 Rotates a `FloorPositionGroup`.
-""" rot!
-
-function rot!(floor::FloorPositionGroup, q::Quaternion)
-  floor.q = q * floor.q
-  floor.r = rot(q, floor.r)
-  return nothing
+""" 
+function rot(floor::FloorPositionGroup, q::Quaternion)
+  return FloorPositionGroup(r = rot(q, floor.r), q = q * floor.q)
 end
 

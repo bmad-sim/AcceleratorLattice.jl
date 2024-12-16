@@ -89,20 +89,25 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   
   # Look for `sym` as part of an ele group
   pinfo = ele_param_info(sym)
-  parent = pinfo.parent_group
-  symparent = Symbol(parent)
 
-  if parent in OUTPUT_ABSTRACT_TYPES; return output_parameter(sym, ele, parent); end
-  if !haskey(pdict, symparent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
+  if !isnothing(pinfo.output_group); return output_parameter(sym, ele, pinfo.output_group); end
 
-  # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
-  if pinfo.paramkind <: Vector
-    if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
-      pdict[:changed][sym] = getfield(pdict[symparent], pinfo.struct_sym)
+  # There may be more than one parent but for any given element type the parent will be unique.
+  for parent in collect(pinfo.parent_group)
+    symparent = Symbol(parent)
+    if !haskey(pdict, symparent); continue; end
+
+    # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
+    if pinfo.paramkind <: Vector
+      if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
+        pdict[:changed][sym] = getfield(pdict[symparent], pinfo.struct_sym)
+      end
     end
+
+    return get_elegroup_param(ele, pdict[symparent], pinfo)
   end
 
-  return get_elegroup_param(ele, pdict[symparent], pinfo)
+  error(f"Cannot find {sym} in element {ele_name(ele)}")
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -410,6 +415,7 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
 
   elseif sym == :bend_field
     if :BendGroup ∉ keys(ele.pdict); return 0.0; end
+    norm_bend_field = ele.g + cos(ele.tilt0) * ele.Kn0 + sin(ele.tilt0) * ele.Ks0
     return norm_bend_field * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
   elseif sym == :norm_bend_field

@@ -2,7 +2,24 @@
 # ParamInfo
 
 """
-Holds information for a single element parameter.
+    mutable struct ParamInfo
+
+Struct containing information on an element parameter.
+Values of the `ELE_PARAM_INFO_DICT` `Dict` are `ParamInfo` structs.
+
+## Fields
+• `parent_group::T where T <: Union{DataType,Vector}  - Parent group of the parameter. \\
+• `paramkind::Union{T, Union, UnionAll} where T <: DataType  - Something like Aperture is a Union.
+• `description::String = ""   - 
+• `units::String = ""
+• `output_group::T where T <: Union{DataType, Nothing}
+• `struct_sym::Symbol                     # Symbol in struct.
+• `sub_struct::Union{Function, Nothing}   # Used if parameter parent is not parent_group. 
+                                         #   EG: Twiss.a.beta and sub_struct = T -> T.a
+• `user_sym::Symbol                       # Symbol used in by a user. Generally this is the
+                                         #   the same as struct_sym. An exception is r_floor• `
+
+ keys of the dict 
 
 Possible `kind` values: String, Int, Number, Vector{Number}, Bool, Pointer, etc.
 
@@ -20,34 +37,44 @@ to `Twiss.a.beta` which is 2 levels down from parent struct Twiss.
 abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
-  parent_group::T where T <: Union{DataType,Vector}    # Use the parent_group function to get the parent group.
-  paramkind::Union{T, Union, UnionAll} where T <: DataType  # Something like Aperture is a Union.
+  parent_group::T where T <: Union{DataType,Vector}
+  paramkind::Union{T, Union, UnionAll} where T <: DataType
   description::String = ""
   units::String = ""
-  struct_sym::Symbol                                 # Symbol in struct.
-  sub_struct::Union{Function, Nothing}               # Used if parameter parent is not parent_group. 
-                                                     #    EG: Twiss.a.beta and sub_struct = T -> T.a
-  user_sym::Symbol                                   # Symbol used to construct elements.
+  output_group::T where T <: Union{DataType, Nothing}
+  struct_sym::Symbol
+  sub_struct::Union{Function, Nothing}
+  user_sym::Symbol
 end
 
+#---------------------------------------------------------------------------------------------------
+# ParamInfo constructor. 
 
-# `:XXX` indicates that the struct_sym will be the same as the key in ELE_PARAM_INFO_DICT.
-# `:Z` is always replaced by the key in ELE_PARAM_INFO_DICT.
+"""
+    ParamInfo(parent, kind, description, units::String = "", output_group = nothing, 
+                                     struct_sym::Symbol = :XXX, sub_struct = nothing) = 
+              ParamInfo(parent, kind, description, units, output_group, struct_sym, sub_struct, :Z)
 
-ParamInfo(parent, kind, description) = ParamInfo(parent, kind, description, "", :XXX, nothing, :Z)
-ParamInfo(parent, kind, description, units) = ParamInfo(parent, kind, description, units, :XXX, nothing, :Z)
-ParamInfo(parent, kind, description, units, struct_sym) = ParamInfo(parent, kind, description, units, struct_sym, nothing, :Z)
-ParamInfo(parent, kind, description, units, struct_sym, sub_struct) = ParamInfo(parent, kind, description, units, struct_sym, sub_struct, :Z)
+Constructor for the `ParamInfo` struct.
+
+- `:XXX` indicates that the `struct_sym` will be the same as the key in `ELE_PARAM_INFO_DICT`.
+ EG: `ELE_PARAM_INFO_DICT[:field_master].struct_sym` will have the value `:field_master.`
+- `:Z` is always replaced by the key in `ELE_PARAM_INFO_DICT`.
+"""
+
+ParamInfo(parent, kind, description, units::String = "", output_group = nothing, 
+                                     struct_sym::Symbol = :XXX, sub_struct = nothing) = 
+              ParamInfo(parent, kind, description, units, output_group, struct_sym, sub_struct, :Z)
 
 #---------------------------------------------------------------------------------------------------
 # ELE_PARAM_INFO_DICT
 
-# Note: ":XXX" will get replaced by the key (user name) below so that, for example, 
-# ELE_PARAM_INFO_DICT[:field_master].struct_sym will have the value :field_master.
-
 """
-Dictionary of parameter types. Keys are user names (which can be different from corresponding group name). 
-EG: theta_floor user name corresponds to theta in the FloorPositionGroup.
+    ELE_PARAM_INFO_DICT = Dict{Symbol,ParamInfo}
+
+Dictionary mapping element parameters to `ParamInfo` structs which hold information on the parameters.
+For example, `ELE_PARAM_INFO_DICT[:tilt]` shows that the `tilt` parameter is associated with
+the `ReferenceGroup`, etc. See the documentation on `ParamInfo` for more details.
 """ ELE_PARAM_INFO_DICT
 
 ELE_PARAM_INFO_DICT = Dict(
@@ -83,10 +110,10 @@ ELE_PARAM_INFO_DICT = Dict(
   :bend_type          => ParamInfo(BendGroup,      BendType.T,    "Sets the \"logical\" shape of a bend."),
   :exact_multipoles   => ParamInfo(BendGroup,      ExactMultipoles.T, "Are multipoles treated exactly?"),
 
-  :rho                => ParamInfo(OutputGroup,   Number,        "Reference bend radius", "m"),
-  :L_sagitta          => ParamInfo(OutputGroup,   Number,        "Bend sagitta length.", "m"),
-  :norm_bend_field    => ParamInfo(OutputGroup,   Number,        "Actual bend strength in the plane of the bend", "1/m"),
-  :bend_field         => ParamInfo(OutputGroup,   Number,        "Actual bend field in the plane of the bend field", "T"),
+  :rho                => ParamInfo(BendGroup,   Number,        "Reference bend radius", "m", OutputGroup),
+  :L_sagitta          => ParamInfo(BendGroup,   Number,        "Bend sagitta length.", "m", OutputGroup),
+  :norm_bend_field    => ParamInfo(BendGroup,   Number,        "Actual bend strength in the plane of the bend", "1/m", OutputGroup),
+  :bend_field         => ParamInfo(BendGroup,   Number,        "Actual bend field in the plane of the bend field", "T", OutputGroup),
 
   :to_line            => ParamInfo(ForkGroup,      Union{BeamLine, Nothing}, "Beamline forked to."),
   :to_ele             => ParamInfo(ForkGroup,      String,                   "Lattice element forked to."),
@@ -113,15 +140,15 @@ ELE_PARAM_INFO_DICT = Dict(
   :time_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
   :dE_ref                 => ParamInfo(ReferenceGroup, Number,      "Change in reference energy.", "volt"),
 
-  :β_ref                  => ParamInfo(OutputGroup, Number,         "Reference velocity/c."),
-  :γ_ref                  => ParamInfo(OutputGroup, Number,         "Reference relativistic gamma factor."),
+  :β_ref                  => ParamInfo(ReferenceGroup, Number,         "Reference velocity/c.", "", OutputGroup),
+  :γ_ref                  => ParamInfo(ReferenceGroup, Number,         "Reference relativistic gamma factor.", "", OutputGroup),
 
   :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species,  "Reference species at downstream end."),
   :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,   "Reference momentum * c at downstream end.", "eV"),
   :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,   "Reference total energy at downstream end.", "eV"),
 
-  :β_ref_downstream       => ParamInfo(OutputGroup, Number,        "Reference velocity/c at downstream end."),
-  :γ_ref_downstream       => ParamInfo(OutputGroup, Number,        "Reference relativistic gamma factor at downstream end."),
+  :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference velocity/c at downstream end.", "", OutputGroup),
+  :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference relativistic gamma factor at downstream end.", "", OutputGroup),
 
   :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
   :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
@@ -160,8 +187,8 @@ ELE_PARAM_INFO_DICT = Dict(
   :wall               => ParamInfo(ApertureGroup,  Wall2D,            "Wall defined by array of aperture vertices."),
   :custom_aperture    => ParamInfo(ApertureGroup,  Dict,              "Custom aperture info."),
 
-  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", :r),
-  :q_floor            => ParamInfo(FloorPositionGroup, Quaternion,     "Element quaternion orientation.", "", :q),
+  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
+  :q_floor            => ParamInfo(FloorPositionGroup, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
 
   :eles               => ParamInfo(GirderGroup,     Vector{Ele},      "Array of supported elements."),
   :origin_ele         => ParamInfo(GirderGroup,     Ele,              "Coordinate reference element."),
@@ -189,37 +216,37 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :twiss              => ParamInfo(TwissGroup,  TwissGroup,         "Initial Twiss parameters."),
 
-  :beta_a             => ParamInfo(TwissGroup,  Number,             "A-mode beta Twiss parameter.", "m", :beta, T->T.a),
-  :alpha_a            => ParamInfo(TwissGroup,  Number,             "A-mode alpha Twiss parameter.", "", :alpha, T->T.a),
-  :gamma_a            => ParamInfo(TwissGroup,  Number,             "A-mode gamma Twiss parameter.", "1/m", :gamma, T->T.a),
-  :phi_a              => ParamInfo(TwissGroup,  Number,             "A-mode betatron phase.", "rad", :phi, T->T.a),
-  :eta_a              => ParamInfo(TwissGroup,  Number,             "A-mode position dispersion.", "m", :eta, T->T.a),
-  :etap_a             => ParamInfo(TwissGroup,  Number,             "A-mode momentum dispersion.", "", :etap, T->T.a),
-  :deta_ds_a          => ParamInfo(TwissGroup,  Number,             "A-mode dispersion derivative.", "", :deta_ds, T->T.a),
+  :beta_a             => ParamInfo(TwissGroup,  Number,             "A-mode beta Twiss parameter.", "m", nothing, :beta, T->T.a),
+  :alpha_a            => ParamInfo(TwissGroup,  Number,             "A-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.a),
+  :gamma_a            => ParamInfo(TwissGroup,  Number,             "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.a),
+  :phi_a              => ParamInfo(TwissGroup,  Number,             "A-mode betatron phase.", "rad", nothing, :phi, T->T.a),
+  :eta_a              => ParamInfo(TwissGroup,  Number,             "A-mode position dispersion.", "m", nothing, :eta, T->T.a),
+  :etap_a             => ParamInfo(TwissGroup,  Number,             "A-mode momentum dispersion.", "", nothing, :etap, T->T.a),
+  :deta_ds_a          => ParamInfo(TwissGroup,  Number,             "A-mode dispersion derivative.", "", nothing, :deta_ds, T->T.a),
 
-  :beta_b             => ParamInfo(TwissGroup,  Number,             "B-mode beta Twiss parameter.", "m", :beta, T->T.b),
-  :alpha_b            => ParamInfo(TwissGroup,  Number,             "B-mode alpha Twiss parameter.", "", :alpha, T->T.b),
-  :gamma_b            => ParamInfo(TwissGroup,  Number,             "B-mode gamma Twiss parameter.", "1/m", :gamma, T->T.b),
-  :phi_b              => ParamInfo(TwissGroup,  Number,             "B-mode betatron phase.", "rad", :phi, T->T.b),
-  :eta_b              => ParamInfo(TwissGroup,  Number,             "B-mode position dispersion.", "m", :eta, T->T.b),
-  :etap_b             => ParamInfo(TwissGroup,  Number,             "B-mode momentum dispersion.", "", :etap, T->T.b),
-  :deta_ds_b          => ParamInfo(TwissGroup,  Number,             "B-mode dispersion derivative.", "", :deta_ds, T->T.b),
+  :beta_b             => ParamInfo(TwissGroup,  Number,             "B-mode beta Twiss parameter.", "m", nothing, :beta, T->T.b),
+  :alpha_b            => ParamInfo(TwissGroup,  Number,             "B-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.b),
+  :gamma_b            => ParamInfo(TwissGroup,  Number,             "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.b),
+  :phi_b              => ParamInfo(TwissGroup,  Number,             "B-mode betatron phase.", "rad", nothing, :phi, T->T.b),
+  :eta_b              => ParamInfo(TwissGroup,  Number,             "B-mode position dispersion.", "m", nothing, :eta, T->T.b),
+  :etap_b             => ParamInfo(TwissGroup,  Number,             "B-mode momentum dispersion.", "", nothing, :etap, T->T.b),
+  :deta_ds_b          => ParamInfo(TwissGroup,  Number,             "B-mode dispersion derivative.", "", nothing, :deta_ds, T->T.b),
 
-  :beta_c             => ParamInfo(TwissGroup,  Number,             "C-mode beta Twiss parameter.", "m", :beta, T->T.c),
-  :alpha_c            => ParamInfo(TwissGroup,  Number,             "C-mode alpha Twiss parameter.", "", :alpha, T->T.c),
-  :gamma_c            => ParamInfo(TwissGroup,  Number,             "C-mode gamma Twiss parameter.", "1/m", :gamma, T->T.c),
-  :phi_c              => ParamInfo(TwissGroup,  Number,             "C-mode betatron phase.", "rad", :phi, T->T.c),
-  :eta_c              => ParamInfo(TwissGroup,  Number,             "C-mode position dispersion.", "m", :eta, T->T.c),
-  :etap_c             => ParamInfo(TwissGroup,  Number,             "C-mode momentum dispersion.", "", :etap, T->T.c),
-  :deta_ds_c          => ParamInfo(TwissGroup,  Number,             "C-mode dispersion derivative.", "", :deta_ds, T->T.c),
+  :beta_c             => ParamInfo(TwissGroup,  Number,             "C-mode beta Twiss parameter.", "m", nothing, :beta, T->T.c),
+  :alpha_c            => ParamInfo(TwissGroup,  Number,             "C-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.c),
+  :gamma_c            => ParamInfo(TwissGroup,  Number,             "C-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.c),
+  :phi_c              => ParamInfo(TwissGroup,  Number,             "C-mode betatron phase.", "rad", nothing, :phi, T->T.c),
+  :eta_c              => ParamInfo(TwissGroup,  Number,             "C-mode position dispersion.", "m", nothing, :eta, T->T.c),
+  :etap_c             => ParamInfo(TwissGroup,  Number,             "C-mode momentum dispersion.", "", nothing, :etap, T->T.c),
+  :deta_ds_c          => ParamInfo(TwissGroup,  Number,             "C-mode dispersion derivative.", "", nothing, :deta_ds, T->T.c),
 
-  :eta_x              => ParamInfo(TwissGroup,  Number,             "X-mode position dispersion.", "m", :eta, T->T.x),
-  :etap_x             => ParamInfo(TwissGroup,  Number,             "X-mode momentum dispersion.", "", :etap, T->T.x),
-  :deta_ds_x          => ParamInfo(TwissGroup,  Number,             "X-mode dispersion derivative.", "", :deta_ds, T->T.x),
+  :eta_x              => ParamInfo(TwissGroup,  Number,             "X-mode position dispersion.", "m", nothing, :eta, T->T.x),
+  :etap_x             => ParamInfo(TwissGroup,  Number,             "X-mode momentum dispersion.", "", nothing, :etap, T->T.x),
+  :deta_ds_x          => ParamInfo(TwissGroup,  Number,             "X-mode dispersion derivative.", "", nothing, :deta_ds, T->T.x),
 
-  :eta_y              => ParamInfo(TwissGroup,  Number,             "Y-mode position dispersion.", "m", :eta, T->T.y),
-  :etap_y             => ParamInfo(TwissGroup,  Number,             "Y-mode momentum dispersion.", "", :etap, T->T.y),
-  :deta_ds_y          => ParamInfo(TwissGroup,  Number,             "Y-mode dispersion derivative.", "", :deta_ds, T->T.y),
+  :eta_y              => ParamInfo(TwissGroup,  Number,             "Y-mode position dispersion.", "m", nothing, :eta, T->T.y),
+  :etap_y             => ParamInfo(TwissGroup,  Number,             "Y-mode momentum dispersion.", "", nothing, :etap, T->T.y),
+  :deta_ds_y          => ParamInfo(TwissGroup,  Number,             "Y-mode dispersion derivative.", "", nothing, :deta_ds, T->T.y),
 )
 
 for (key, info) in ELE_PARAM_INFO_DICT
@@ -227,10 +254,28 @@ for (key, info) in ELE_PARAM_INFO_DICT
   info.user_sym = key
 end
 
+#---------------------------------------------------------------------------------------------------
+# associated_names(group::Type{T}) 
+
+"""
+    associated_names(group::Type{T}) -> Vector{Symbol}
+
+List of names (symbols) of parameters associated with element parameter group struct `group`.
+Associated parameters are the fields of the struct plus any associated output parameters.
+""" associated_names
+
+function associated_names(group::Type{T}) where T <: EleParameterGroup
+  names = [field for field in fieldnames(group)]
+  for (key, pinfo) in ELE_PARAM_INFO_DICT
+    if pinfo.parent_group == group && !isnothing(pinfo.output_group); push!(names, pinfo.user_sym); end
+  end
+  return names
+end
+
+#---------------------------------------------------------------------------------------------------
+
 DEPENDENT_ELE_PARAMETERS::Vector{Symbol} = 
          [:species_ref_downstream, :pc_ref_downstream, :E_tot_ref_downstream, :time_ref_downstream,]
-
-OUTPUT_ABSTRACT_TYPES::Vector{DataType} = [OutputGroup]
 
 #---------------------------------------------------------------------------------------------------
 # has_parent_group
@@ -253,15 +298,15 @@ Map element parameter struct field to vector of user symbol(s). User symbols bei
 that a user can use to access the struct field. 
 
 Dict values are vectors since the struct symbol maps to multiple user symbols.
-This mapping only covers stuff in ELE_PARAM_INFO_DICT so this mapping does not, for example, cover multipoles.
+This mapping only covers stuff in `ELE_PARAM_INFO_DICT` so this mapping does not, for example, cover multipoles.
 
-Example: ` ele_param_struct_field_to_user_sym[:beta] => [:beta_b, :beta, :beta_a, :beta_c]`
+Example: `ele_param_struct_field_to_user_sym[:beta] => [:beta_b, :beta, :beta_a, :beta_c]`
 
 The mappings from user name to field for this example are: \\
-• `beta_a` maps to `a.beta` in a TwissGroup
-• `beta_b` maps to `b.beta` in a TwissGroup
-• `beta_c` maps to `c.beta` in a TwissGroup
-• `beta`   maps to `beta` in a Twiss1Group
+• `beta_a` - maps to `a.beta` in a TwissGroup \\
+• `beta_b` - maps to `b.beta` in a TwissGroup \\
+• `beta_c` - maps to `c.beta` in a TwissGroup \\
+• `beta`   - maps to `beta` in a Twiss1Group \\
 """ ele_param_struct_field_to_user_sym
 
 ele_param_struct_field_to_user_sym = Dict{Symbol,Vector{Symbol}}()
@@ -396,13 +441,13 @@ function multipole_param_info(sym::Symbol)
   if group == Nothing; return nothing; end
 
   if mtype == "tilt"
-    return ParamInfo(BMultipoleGroup, Number, "Magnetic multipole tilt for order $order", "rad", :tilt, nothing, sym)
+    return ParamInfo(BMultipoleGroup, Number, "Magnetic multipole tilt for order $order", "rad", nothing, :tilt, nothing, sym)
   elseif mtype == "Etilt"
-    return ParamInfo(EMultipoleGroup, Number, "Electric multipole tilt for order $order", "rad", :Etilt, nothing, sym)
+    return ParamInfo(EMultipoleGroup, Number, "Electric multipole tilt for order $order", "rad", nothing, :Etilt, nothing, sym)
   elseif mtype == "integrated"
-    return ParamInfo(BMultipoleGroup, Bool, "Are stored multipoles integrated for order $order?", "", :integrated, nothing, sym)
+    return ParamInfo(BMultipoleGroup, Bool, "Are stored multipoles integrated for order $order?", "", nothing, :integrated, nothing, sym)
   elseif mtype == "Eintegrated"
-    return ParamInfo(EMultipoleGroup, Bool, "Are stored multipoles integrated for order $order?", "", :Eintegrated, nothing, sym)
+    return ParamInfo(EMultipoleGroup, Bool, "Are stored multipoles integrated for order $order?", "", nothing, :Eintegrated, nothing, sym)
   end
 
   mtype[2] == 's' ? str = "Skew" : str = "Normal (non-skew)"
@@ -420,7 +465,7 @@ function multipole_param_info(sym::Symbol)
     else;           units = "1/m^$(exp+1)"
     end
 
-    return ParamInfo(BMultipoleGroup, Number, "$str, momentum-normalized, magnetic multipole of order $order.", units, insym, nothing, sym)
+    return ParamInfo(BMultipoleGroup, Number, "$str, momentum-normalized, magnetic multipole of order $order.", units, nothing, insym, nothing, sym)
 
   elseif mtype[1] == 'B'
     if order == -1;    units = "T*m"
@@ -428,14 +473,14 @@ function multipole_param_info(sym::Symbol)
     else;              units = "T/m^$exp"
     end
 
-    return ParamInfo(BMultipoleGroup, Number, "$str, magnetic field multipole of order $order.", units, insym, nothing, sym)
+    return ParamInfo(BMultipoleGroup, Number, "$str, magnetic field multipole of order $order.", units, nothing, insym, nothing, sym)
 
   elseif mtype[1] == 'E'
     if order == -1; units = "V"
     else;           units = "V/m^$(exp+1)"
     end
 
-    return ParamInfo(EMultipoleGroup, Number, "$str, electric field multipole of order $order.", units, insym, nothing, sym) 
+    return ParamInfo(EMultipoleGroup, Number, "$str, electric field multipole of order $order.", units, nothing, insym, nothing, sym) 
   end
 end
 

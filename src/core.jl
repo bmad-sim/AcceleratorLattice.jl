@@ -18,6 +18,8 @@ eval_str(str::AbstractString) = eval(Meta.parse(str))
 # Base.length
 
 """
+    Base.length(sym::Symbol)
+
 Returns the length in characters of the string representation of a Symbol.
 Here the string representation includes the leading colon.
 Example: length(:abc) => 4
@@ -29,6 +31,8 @@ Base.length(sym::Symbol) = length(repr(sym))
 # index
 
 """
+    index(str::AbstractString, substr::AbstractString)
+
 Index of substring in string. Assumes all characters are ASCII.
 Returns 0 if substring is not found
 """ index
