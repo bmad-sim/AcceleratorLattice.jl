@@ -80,7 +80,7 @@ export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is
 export ele_param_struct_field_to_user_sym, multipole!, index, integer, rot_angles, Quaternion
 export machine_location, body_location, EleRegion, holy_traits, output_parameter
 export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
-export str_split, str_match, str_unquote, str_quote, str_to_int, OPEN, CLOSED
-export ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST, OUTPUT_ABSTRACT_TYPES
+export str_split, str_match, str_unquote, str_quote, str_to_int, associated_names
+export ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST, OPEN, CLOSED
 
 end # module

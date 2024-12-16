@@ -350,10 +350,14 @@ function initial_superlord_bookkeeping(lord::Ele)
     # Misalignment bookkeeping
     if haskey(lord.pdict, :AlignmentGroup)
       dL = 0.5 * slave.L + slave.s - lord.s
+
       if haskey(lord.pdict, :BendGroup)
         # Need transformation from lord alignment point to slave alignment point
         # From lord alignment point to beginning of lord
-        floor = FloorPositionGroup()
+        floor = FloorPositionGroup(r = [0, 0, -0.5*lord.l_chord])
+        # From z parallel to chord to z parallel to bend curve.
+       ## if lord.ref_tilt
+       ## q = [      
         
       else
         slave.r_floor = lord.r_floor + dL * rot(lord.q_floor, [0.0, 0.0, dL])

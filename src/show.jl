@@ -214,11 +214,17 @@ end
 function ele_param_value_str(ele::Ele, key::Symbol; default::AbstractString = "???", format = "")
   try
     val = Base.getproperty(ele, key)
-    if format == ""
-      return val
+
+    if typeof(val) <: Number
+      if format == ""
+        return string(val)
+      else
+        return eval(Meta.parse("f\"{($val):$format}\""))
+      end
     else
-      return eval(Meta.parse("f\"{($val):$format}\""))
+      ele_param_value_str(val, default = default)
     end
+
   catch
     return default
   end
@@ -229,6 +235,7 @@ ele_param_value_str(who::Nothing; default::AbstractString = "???") = default
 ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
 ele_param_value_str(species::Species; default::AbstractString = "???") = "Species(\"" * species.name * "\")"
 ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T <: Ele = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
+ele_param_value_str(vec::Vector; default::AbstractString = "???") = "[" * join([string(v) for v in vec], ", ") * "]"
 ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
 ele_param_value_str(who; default::AbstractString = "???") = string(who)
@@ -346,19 +353,22 @@ function show_elegroup(io::IO, group::BMultipoleGroup, ele::Ele, docstring::Bool
   off_str = " "^indent
 
   if length(group.pole) == 0
-    println(io, f"{off_str}BMultipoleGroup: No magnetic multipoles")
+    println(io, "$(off_str)BMultipoleGroup: No magnetic multipoles")
     return
   end
 
-  println(io, f"{off_str}BMultipoleGroup:")
-  println(io, f"{off_str}  Order integrated{lpad(\"tilt (rad)\",24)}")
+  println(io, "$(off_str)BMultipoleGroup:")
+  tilt = "tilt (rad)"
+  println(io, "$(off_str)  Order integrated $(lpad(tilt,23))")
   for v in group.pole
-    ol = f"{v.order}"
+    ol = "$(v.order)"
     if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
-    uk = units(Symbol(f"Kn{ol}"));  ub = units(Symbol(f"Bn{ol}"))
-    println(io, f"{off_str}{lpad(v.order,7)}{lpad(v.integrated,11)}{lpad(v.tilt,24)}" *
-                         f"{lpad(v.Kn,24)}  Kn{ol}{lpad(v.Ks,24)}  Ks{ol} ({uk})")
-    println(io, off_str * " "^42 * f"{lpad(v.Bn,24)}  Bn{ol}{lpad(v.Bs,24)}  Bs{ol} ({ub})")
+    uk = units(Symbol("Kn$(ol)"));  ub = units(Symbol("Bn$(ol)"))
+    Kn = "Kn$ol"
+    Bn = "Bn$ol"
+    println(io, "$(off_str)$(lpad(v.order,7))$(lpad(v.integrated,11))$(lpad(v.tilt,24))" *
+                         "$(lpad(v.Kn,24)) $(rpad(Kn,6))$(lpad(v.Ks,24)) Ks$ol ($uk)")
+    println(io, off_str * " "^42 * "$(lpad(v.Bn,24)) $(rpad(Bn,6))$(lpad(v.Bs,24)) Bs$ol ($ub)")
   end
 end
 
@@ -368,46 +378,48 @@ function show_elegroup(io::IO, group::EMultipoleGroup, ele::Ele, docstring::Bool
   off_str = " "^indent
 
   if length(group.pole) == 0
-    println(io, f"{off_str}EMultipoleGroup: No electric multipoles")
+    println(io, "$(off_str)EMultipoleGroup: No electric multipoles")
     return
   end
 
-  println(io, f"{off_str}EMultipoleGroup:")
-  println(io, f"{off_str}  Order Eintegrated{lpad(\"Etilt (rad)\",23)}")
+  println(io, "$(off_str)EMultipoleGroup:")
+  println(io, "$(off_str)  Order Eintegrated{lpad(\"Etilt (rad)\",23)}")
   for v in group.pole
     !isnothing(v.Eintegrated) && v.Eintegrated ? ol = "$(v.order)L" : ol = "$(v.order) "
     ue = units(Symbol("En$(ol)"))
-    println(io, f"{off_str}{lpad(v.order,7)}{lpad(v.Eintegrated,11)}{lpad(v.Etilt,24)}{lpad(v.En,24)} En{ol}{lpad(v.Es,24)} Es{ol} ({ue})")
+    println(io, "$(off_str)$(lpad(v.order,7))$(lpad(v.Eintegrated,11))$(lpad(v.Etilt,24))$(lpad(v.En,24)) En$(ol)$(lpad(v.Es,24)) Es$(ol) ($ue)")
   end
 end
 
 #---------------------------------------------------------------------------------------------------
 # show_elegroup_with_doc
 
+"""
+    show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterGroup
+
+Single column printing of an element group with a docstring printed for each parameter.
+""" show_elegroup_with_doc
+
 function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterGroup
   gtype = typeof(group)
   nn = max(18, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
 
-  for field in fieldnames(gtype)
+  for field in associated_names(gtype)
     param_name = rpad(full_parameter_name(field, gtype), nn)
-    value_str = ele_param_value_str(Base.getproperty(group, field))
+    value_str = ele_param_value_str(ele, field)
     ele_print_line(io, f"    {param_name} {value_str} {units(field)}", description(field))
-  end
-
-  # Look for associated output parameters.
-  if gtype in keys(show_column2)
-    for key in keynames(show_column2[gtype])
-      param_name = show_column2[gtype][key]
-      if param_name in fieldnames(gtype); continue; end  # Not an output parameter. Already printed above.
-      value_str = ele_param_value_str(Base.getproperty(ele, param_name))
-      ele_print_line(io, f"    (output) {param_name} {value_str} {units(field)}", description(field))
-    end
   end
 end
 
 #---------------------------------------------------------------------------------------------------
 # show_elegroup_wo_doc
+
+"""
+    show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym::Symbol = :NONE) where T <: BaseEleParameterGroup
+
+Two column printing of an element group without any docstring.
+""" show_elegroup_wo_doc
 
 function show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym::Symbol = :NONE) where T <: BaseEleParameterGroup
   gtype = typeof(group)
@@ -423,11 +435,11 @@ function show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym:
   col2 = show_column2[gtype]
   n1 = 20
   n2 = 20
-  for name in fieldnames(gtype)
+  for name in associated_names(gtype)
     if name in values(col2)
-      n2 = max(n2, length(name))
+      n2 = max(n2, length(full_parameter_name(name, gtype)))
     else
-      n1 = max(n1, length(name))
+      n1 = max(n1, length(full_parameter_name(name, gtype)))
     end
   end
 
@@ -437,31 +449,19 @@ function show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym:
     println(io, " "^indent * ".$field_sym:")
   end
 
-  for field_sym in fieldnames(gtype)
-    field = Base.getproperty(group, field_sym)
-    if typeof(field) ∈ keys(show_column2)
-      show_elegroup_wo_doc(io, field, ele, indent = indent + 2, field_sym = field_sym)
-      continue
-    end
-
+  for field_sym in associated_names(gtype)
     if field_sym in values(col2); continue; end         # Second column fields handled with first column ones.
 
     if field_sym in keys(col2)
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)
-      vstr = ele_param_value_str(field)
+      vstr = ele_param_value_str(ele, field_sym)
       str = f"  {field_name} {vstr} {units(field_sym)}"   # First column entry
 
       field2_sym = col2[field_sym]
       # If field2_sym represents a output parameter then field2_sym will not be in fieldnames(group)
-      if field2_sym in fieldnames(gtype)
-        field_name = rpad(full_parameter_name(field2_sym, gtype), n2)
-        vstr = ele_param_value_str(Base.getproperty(group, field2_sym))
-        str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
-      else
-        field_name = rpad("$field2_sym (output)", n2)
-        vstr = ele_param_value_str(Base.getproperty(ele, field2_sym))
-        str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
-      end
+      field_name = rpad(full_parameter_name(field2_sym, gtype), n2)
+      vstr = ele_param_value_str(ele, field2_sym)
+      str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
 
       if length(str) > 50 || length(str2) > 50        # If length is too big print in two lines.
         println(io, " "^indent * str)
@@ -472,7 +472,7 @@ function show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym:
 
     else
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)
-      vstr = ele_param_value_str(field)
+      vstr = ele_param_value_str(ele, field_sym)
       println(io, " "^indent * f"  {field_name} {vstr} {units(field_sym)}")
     end
 
@@ -483,8 +483,11 @@ end
 # full_parameter_name
 
 """
+    full_parameter_name(field, group::Type{T}) where T <: BaseEleParameterGroup
+
 For fields where the user name is different (EG: `r_floor` and `r` in a FloorPositionGroup), 
-return the string `struct_name (user_name)` (EG: `r (r_floor)`).
+return the string `struct_name (user_name)` (EG: `r (r_floor)`). Also add `(output)` to 
+names of output parameters.
 """ full_parameter_name
 
 function full_parameter_name(field, group::Type{T}) where T <: BaseEleParameterGroup
@@ -494,8 +497,9 @@ function full_parameter_name(field, group::Type{T}) where T <: BaseEleParameterG
     info = ele_param_info(sym)
     if !has_parent_group(info, group); continue; end
     if info.parent_group != group; continue; end
+    if !isnothing(info.output_group); return "$field (output)"; end
     if sym == field; break; end
-    return f"{field} ({sym})"
+    return "$field ($sym)"
   end
 
   return String(field)
