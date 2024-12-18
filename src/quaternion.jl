@@ -33,7 +33,7 @@ QuaternionZ(angle::Number) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
 """
     Quaternion(aa::AxisAngle) 
     Quaternion(m::Matrix{T}) 
-    Quaternion(theta::Real, phi::Real, psi::Real)
+    Quaternion(x_rot::Real, y_rot::Real, tilt::Real)
     Quaternion(qv::Vector)  # 4-vector
 
 Quaternion constructors. 
@@ -41,7 +41,7 @@ Quaternion constructors.
 
 Quaternion(qv::Vector) = Quaternion(qv[1], qv[2:end])
 
-Quaternion(theta::Real, phi::Real, psi::Real) = QuaternionY(theta) * QuaternionX(-phi) * QuaternionZ(psi)
+Quaternion(x_rot::Real, y_rot::Real, tilt::Real) = QuaternionY(y_rot) * QuaternionX(x_rot) * QuaternionZ(tilt)
 
 function Quaternion(aa::AxisAngle) 
   if aa.angle == 0; return UNIT_QUAT; end

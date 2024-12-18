@@ -353,12 +353,17 @@ function initial_superlord_bookkeeping(lord::Ele)
 
       if haskey(lord.pdict, :BendGroup)
         # Need transformation from lord alignment point to slave alignment point
-        # From lord alignment point to beginning of lord
+        # Translate from lord alignment point to beginning of lord point
         floor = FloorPositionGroup(r = [0, 0, -0.5*lord.l_chord])
-        # From z parallel to chord to z parallel to bend curve.
-       ## if lord.ref_tilt
-       ## q = [      
-        
+        # Rotate from z parallel to lord chord to z tangent to bend curve.
+        if lord.ref_tilt != 0
+          q = []
+        end
+        # On the bend curve: From beginning of lord point to beginning of slave point
+        # From z tangent to bend curve to z parallel to slave chord.
+        # Translate from beginning of slave point to slave alignment point.
+        # Apply total transformation of AlignmentGroup.
+
       else
         slave.r_floor = lord.r_floor + dL * rot(lord.q_floor, [0.0, 0.0, dL])
       end

@@ -121,13 +121,13 @@ Since the geometry is widely used, \vn{OPEN} and \vn{CLOSED} have been defined a
 can be used in place of \vn{BranchGeometry.OPEN} and \vn{BranchGeometry.CLOSED}.
 
 Notice that by specifying a \vn{CLOSED} geometry, it does {\em not} mean that the downstream end of
-the last element of the branch has the same global coordinates (\sref{s:global}) as the global
+the last element of the branch has the same floor coordinates (\sref{s:floor}) as the floor
 coordinates at the beginning. Setting the geometry to \vn{CLOSED} simply signals to a program to
 compute the periodic orbit and periodic Twiss parameters as opposed to calculating orbits and Twiss
 parameters based upon initial orbit and Twiss parameters given at the beginning of the branch.  Indeed,
-it is sometimes convenient to treat branches as closed even though there is no closure in the global
+it is sometimes convenient to treat branches as closed even though there is no closure in the floor
 coordinate sense. For example, when a machine has a number of repeating ``periods'', it may be
-convenient to only use one period in a simulation. Since \accellat ignores closure in the global
+convenient to only use one period in a simulation. Since \accellat ignores closure in the floor
 coordinate sense, it is up to the lattice designer to ensure that a branch is truly geometrically
 closed if that is desired.
 

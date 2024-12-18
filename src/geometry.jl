@@ -10,13 +10,9 @@
 
 ### Notes:
 
-Routine to calculate the non-misaligned global (floor) coordinates of an element at the downstream end
-(if len_scale = 1) given the non-misaligned global coordinates of the preceeding element. 
-
-The coordinates are computed without misalignments. That is, the coordinates are the "machine" 
-coordinates and not the "body" coordinates. To compute coordinates with misalignments, use
-the routine ele_geometry_with_misalignments.
-
+Routine to calculate the floor coordinates without alignment shifts of an element at the downstream end
+(if len_scale = 1) given the floor coordinates without alignment shifts of the preceeding element. 
+That is, the coordinates are the `machine` coordinates and not the `body` coordinates.
 """ propagate_ele_geometry
 
 function propagate_ele_geometry(ele::Ele)
