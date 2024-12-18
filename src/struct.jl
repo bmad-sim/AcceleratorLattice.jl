@@ -170,8 +170,8 @@ end
 @construct_ele_type CrabCavity          "RF crab cavity." 
 @construct_ele_type Drift               "Field free region."
 @construct_ele_type EGun                "Electron gun."
-@construct_ele_type Fiducial            "Global coordinate system fiducial point."
-@construct_ele_type FloorShift          "Global coordinates shift."
+@construct_ele_type Fiducial            "Floor coordinate system fiducial point."
+@construct_ele_type FloorShift          "Floor coordinates shift."
 @construct_ele_type Foil                "Strips electrons from an atom."
 @construct_ele_type Fork                "Connect lattice branches together."
 @construct_ele_type Girder              "Support element."
@@ -447,38 +447,34 @@ Wall2D(v::Vector{Vertex1}) = Wall2D(v, [0.0, 0.0])
 
 Orientation of an element. 
 
-The fields with the `_tot` suffix describe alignment of the element's
-body coordinates with respect to machine coordinates. These fields are calculated by `AcceleratorLattice.`
-
-The fields without the `_tot` suffix are set by the User. If the element is supported on a `Girder`,
-these fields describe the alignment of the element's
-body coordinates with respect to the body coordinates of the `Girder`. If there is no supporting 
-`Girder`, these fields describe alignment of the element's
-body coordinates with respect to machine coordinates and, in this case, have identical values with
-the corresponding `_tot` fields.
+- For `Patch` elements this is the orientation of the exit face with respect to the entrance face.
+- For `FloorShift` and `Fiducial` elements this is the orientation of the element with respect
+  to the reference element.
+- For other elements this is the orientation of element body alignmnet point with respect to 
+the supporting girder if it exists or with respect to the machine coordinates.
 
 ## Fields
-• `offset::Vector`         - [x, y, z] offsets not including any Girder misalignments. \\
-• `offset_tot::Vector`     - [x, y, z] offsets including Girder misalignments. \\
-• `x_rot::Number`          - Rotation around the x-axis not including any Girder misalignments.  \\
-• `x_rot_tot::Number`      - Rotation around the x-axis including Girder misalignment. \\
+• `offset::Vector`         - [x, y, z] offsets not including any Girder . \\
+• `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts.  \\
 • `y_rot::Number`          - Rotation around the y-axis not including any Girder misalignments. \\
-• `y_rot_tot::Number`      - Rotation around the z-axis including Girder misalignment. \\
 • `tilt::Number`           - Rotation around the z-axis not including any Girder misalignment. \\
-  Not used by Bend elements. \\
+
+# Associated Output Parameters
+The `tot` parameters are defined only for elements that can be supported by a `Girder`.
+These parameters are the body coordinates with respect to machine coordinates. 
+These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
+non-tot fields if there is no `Girder`.
+• `offset_tot::Vector`     - [x, y, z] offsets including Girder alignment shifts. \\
+• `x_rot_tot::Number`      - Rotation around the x-axis including Girder misalignment. \\
+• `y_rot_tot::Number`      - Rotation around the z-axis including Girder misalignment. \\
 • `tilt_tot::Number`       - Rotation around the z-axis including Girder misalignment. \\
-  Not used by Bend elements. \\
 """ AlignmentGroup
 
 @kwdef mutable struct AlignmentGroup <: EleParameterGroup
   offset::Vector = [0.0, 0.0, 0.0] 
-  offset_tot::Vector = [0.0, 0.0, 0.0]
   x_rot::Number = 0
-  x_rot_tot::Number = 0
   y_rot::Number = 0
-  y_rot_tot::Number = 0
   tilt::Number = 0
-  tilt_tot::Number = 0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -733,16 +729,12 @@ Girder parameters.
 • `eles:::Vector{Ele}`        - Elements supported by girder. \\
 • `origin_ele::Ele`           - Origin reference element. \\
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
-• `dr::Vector`                - `[x, y, z]` offset. \\
-• `dq::Quaternion{Number}`    - Quaternion orientation. \\
 """ GirderGroup
 
 @kwdef mutable struct GirderGroup <: EleParameterGroup
   eles::Vector{Ele} = Ele[]
   origin_ele::Ele = NullEle
   origin_ele_ref_pt::Loc.T = Loc.CENTER
-  dr::Vector = [0.0, 0.0, 0.0]
-  dq::Quaternion{Number}  = Quaternion(1.0, 0.0, 0.0, 0.0)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -830,11 +822,7 @@ end
 `Patch` element parameters.
 
 ## Fields
-• `offset::Vector`            - `[x, y, z]` offset vector. \\
 • `t_offset::Number`          - Time offset. \\
-• `x_rot::Number`             - Rotation around the `x`-axis. \\
-• `y_rot::Number`             - Rotation around the `y`-axis. \\
-• `tilt::Number`              - Rotation around the `z`-axis. \\
 • `E_tot_offset::Number`      - Total energy offset. Default is `NaN` (not used). \\
 • `E_tot_exit::Number`        - Fix total energy at exit end. Default is `NaN` (not used). \\
 • `pc_exit::Number`           - Reference momentum*c at exit end. Default is `NaN` (not used). \\
@@ -844,11 +832,7 @@ end
 """ PatchGroup
 
 @kwdef mutable struct PatchGroup <: EleParameterGroup
-  offset::Vector = [0.0, 0.0, 0.0]            # [x, y, z] offsets
   t_offset::Number = 0.0                      # Time offset
-  x_rot::Number = 0.0                         # Rotation around the x-axis
-  y_rot::Number = 0.0                         # Rotation around the y-axis
-  tilt::Number = 0.0                          # Rotation around the z-axis
   E_tot_offset::Number = NaN
   E_tot_exit::Number = NaN                    # Reference energy at exit end
   pc_exit::Number = NaN                       # Reference momentum at exit end

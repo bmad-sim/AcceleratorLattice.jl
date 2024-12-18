@@ -8,7 +8,7 @@ Struct containing information on an element parameter.
 Values of the `ELE_PARAM_INFO_DICT` `Dict` are `ParamInfo` structs.
 
 ## Fields
-• `parent_group::T where T <: Union{DataType,Vector}  - Parent group of the parameter. \\
+• `parent_group::T where T <: DataType  - Parent group of the parameter. \\
 • `paramkind::Union{T, Union, UnionAll} where T <: DataType  - Something like Aperture is a Union.
 • `description::String = ""   - 
 • `units::String = ""
@@ -37,7 +37,7 @@ to `Twiss.a.beta` which is 2 levels down from parent struct Twiss.
 abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
-  parent_group::T where T <: Union{DataType,Vector}
+  parent_group::T where T <: DataType
   paramkind::Union{T, Union, UnionAll} where T <: DataType
   description::String = ""
   units::String = ""
@@ -86,15 +86,17 @@ ELE_PARAM_INFO_DICT = Dict(
   :slaves             => ParamInfo(Nothing,        Vector{Ele},   "Array of slaves of element. Will not be present if no slaves exist."),
   :amp_function       => ParamInfo(Nothing,        Function,      "Amplitude function."),
 
-  :offset             => ParamInfo([AlignmentGroup,PatchGroup], Vector{Number}, "[x, y, z] offset of element or, for a patch, exit coordinates.", "m"),
-  :x_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "X-axis rotation of element or, for a patch, exit coordinates.", "rad"),
-  :y_rot              => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Y-axis rotation of element or, for a patch, exit coordinates.", "rad"),
-  :tilt               => ParamInfo([AlignmentGroup,PatchGroup], Number,         "Z-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :offset             => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] offset of element or, for a patch, exit coordinates.", "m"),
+  :x_rot              => ParamInfo(AlignmentGroup, Number,         "X-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :y_rot              => ParamInfo(AlignmentGroup, Number,         "Y-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :tilt               => ParamInfo(AlignmentGroup, Number,         "Z-axis rotation of element or, for a patch, exit coordinates.", "rad"),
 
-  :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m"),
-  :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad"),
-  :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad"),
-  :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad"),
+  :q_align            => ParamInfo(AlignmentGroup, Quaternion,     "Quaternion orientation.", "rad", OutputGroup),
+  :q_align_tot        => ParamInfo(AlignmentGroup, Quaternion,     "Quaternion orientation including Girder orientation.", "rad", OutputGroup),
+  :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m", OutputGroup),
+  :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad", OutputGroup),
+  :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad", OutputGroup),
+  :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad", OutputGroup),
 
   :angle              => ParamInfo(BendGroup,      Number,        "Reference bend angle", "rad"),
   :bend_field_ref     => ParamInfo(BendGroup,      Number,        "Reference bend field corresponding to g bending strength", "T"),
@@ -167,7 +169,6 @@ ELE_PARAM_INFO_DICT = Dict(
   :cavity_type        => ParamInfo(RFGroup,       Cavity.T,      "Type of cavity."),
   :n_cell             => ParamInfo(RFGroup,       Int,           "Number of RF cells."),
 
-
   :voltage_master     => ParamInfo(RFAutoGroup,    Bool,           "Voltage or gradient is constant with length changes?"),
   :auto_amp           => ParamInfo(RFAutoGroup,    Number,    
                                   "Correction to the voltage/gradient calculated by the auto scale code.", ""),
@@ -193,8 +194,6 @@ ELE_PARAM_INFO_DICT = Dict(
   :eles               => ParamInfo(GirderGroup,     Vector{Ele},      "Array of supported elements."),
   :origin_ele         => ParamInfo(GirderGroup,     Ele,              "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(GirderGroup,     Loc.T,            "Reference location on reference element. Default is Loc.CENTER."),
-  :dr                 => ParamInfo(GirderGroup,     Vector{Number},   "3-vector of girder position with respect to ref ele.", "m"),
-  :dq                 => ParamInfo(GirderGroup,     Quaternion,       "Quaternion orientation with respect to ref ele."),
 
   :Ksol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid strength.", "1/m"),
   :Bsol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid field.", "T"),
@@ -262,12 +261,17 @@ end
 
 List of names (symbols) of parameters associated with element parameter group struct `group`.
 Associated parameters are the fields of the struct plus any associated output parameters.
+
+If the "user name" is different from the group field name, the user name is used.
+For example, for a `FloorPositionGroup`, `r_floor` will be in the name list instead of `r`.
 """ associated_names
 
 function associated_names(group::Type{T}) where T <: EleParameterGroup
   names = [field for field in fieldnames(group)]
   for (key, pinfo) in ELE_PARAM_INFO_DICT
-    if pinfo.parent_group == group && !isnothing(pinfo.output_group); push!(names, pinfo.user_sym); end
+    if pinfo.parent_group != group; continue; end
+    if pinfo.user_sym ∉ names; push!(names, pinfo.user_sym); end
+    if pinfo.struct_sym != pinfo.user_sym; deleteat!(names, names .== pinfo.struct_sym); end
   end
   return names
 end
@@ -617,14 +621,13 @@ Order is important. Bookkeeping routines rely on:
 """ PARAM_GROUPS_LIST
 
 base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, 
-                                          DownstreamReferenceGroup, FloorPositionGroup, TrackingGroup]
+         DownstreamReferenceGroup, FloorPositionGroup, TrackingGroup, AlignmentGroup, ApertureGroup]
 alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
-bmultipole_group_list = [MasterGroup, BMultipoleGroup]
-general_group_list = [base_group_list..., alignment_group_list..., multipole_group_list...]
+general_group_list = [base_group_list..., multipole_group_list...]
 
 PARAM_GROUPS_LIST = Dict(  
-    ACKicker            => [base_group_list..., alignment_group_list..., bmultipole_group_list...],
+    ACKicker            => [general_group_list...],
     BeamBeam            => [base_group_list..., BeamBeamGroup],
     BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
     Bend                => [general_group_list..., BendGroup],
@@ -632,7 +635,7 @@ PARAM_GROUPS_LIST = Dict(
     Converter           => [base_group_list...],
     CrabCavity          => [base_group_list...],
     Drift               => [base_group_list...],
-    EGun                => [base_group_list...],
+    EGun                => [general_group_list...],
     Fiducial            => [base_group_list...],
     FloorShift          => [base_group_list...],
     Foil                => [base_group_list...],
@@ -640,7 +643,7 @@ PARAM_GROUPS_LIST = Dict(
     Girder              => [base_group_list..., GirderGroup],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
-    LCavity             => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFGroup],
+    LCavity             => [base_group_list..., MasterGroup, RFAutoGroup, RFGroup],
     Marker              => [base_group_list...],
     Match               => [base_group_list...],
     Multipole           => [general_group_list...],
@@ -648,12 +651,12 @@ PARAM_GROUPS_LIST = Dict(
     Octupole            => [general_group_list...],
     Patch               => [base_group_list..., PatchGroup],
     Quadrupole          => [general_group_list...],
-    RFCavity            => [base_group_list..., alignment_group_list..., MasterGroup, RFAutoGroup, RFGroup],
+    RFCavity            => [base_group_list..., MasterGroup, RFAutoGroup, RFGroup],
     Sextupole           => [general_group_list...],
     Solenoid            => [general_group_list..., SolenoidGroup],
     Taylor              => [base_group_list...],
     Undulator           => [base_group_list...],
-    UnionEle            => [base_group_list..., alignment_group_list...],
+    UnionEle            => [base_group_list...],
     Wiggler             => [base_group_list...],
 )
 

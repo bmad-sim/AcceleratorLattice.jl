@@ -93,21 +93,17 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   if !isnothing(pinfo.output_group); return output_parameter(sym, ele, pinfo.output_group); end
 
   # There may be more than one parent but for any given element type the parent will be unique.
-  for parent in collect(pinfo.parent_group)
-    symparent = Symbol(parent)
-    if !haskey(pdict, symparent); continue; end
+  symparent = Symbol(pinfo.parent_group)
+  if !haskey(pdict, symparent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
 
-    # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
-    if pinfo.paramkind <: Vector
-      if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
-        pdict[:changed][sym] = getfield(pdict[symparent], pinfo.struct_sym)
-      end
+  # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
+  if pinfo.paramkind <: Vector
+    if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
+      pdict[:changed][sym] = getfield(pdict[symparent], pinfo.struct_sym)
     end
-
-    return get_elegroup_param(ele, pdict[symparent], pinfo)
   end
 
-  error(f"Cannot find {sym} in element {ele_name(ele)}")
+  return get_elegroup_param(ele, pdict[symparent], pinfo)  
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -410,33 +406,57 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     ele.g == 0 ? (return NaN) : return 1/ele.g
 
   elseif sym == :L_sagitta
-    if :BendGroup ∉ keys(ele.pdict); return 0.0; end
+    if :BendGroup ∉ keys(ele.pdict); return NaN; end
     ele.g == 0 ? (return 0.0) : return -cos_one(ele.angle/2) / ele.g
 
   elseif sym == :bend_field
-    if :BendGroup ∉ keys(ele.pdict); return 0.0; end
+    if :BendGroup ∉ keys(ele.pdict); return NaN; end
     norm_bend_field = ele.g + cos(ele.tilt0) * ele.Kn0 + sin(ele.tilt0) * ele.Ks0
     return norm_bend_field * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
   elseif sym == :norm_bend_field
-    if :BendGroup ∉ keys(ele.pdict); return 0.0; end
+    if :BendGroup ∉ keys(ele.pdict); return NaN; end
     return ele.g + cos(ele.tilt0) * ele.Kn0 + sin(ele.tilt0) * ele.Ks0
 
   elseif sym == :β_ref
-    if :ReferenceGroup ∉ keys(ele.pdict); return 0.0; end
+    if :ReferenceGroup ∉ keys(ele.pdict); return NaN; end
     return ele.pc_ref / ele.E_tot_ref
 
   elseif sym == :γ_ref
-    if :ReferenceGroup ∉ keys(ele.pdict); return 0.0; end
-    ele.γ_ref             = ele.E_tot_ref / massof(ele.species_ref)
+    if :ReferenceGroup ∉ keys(ele.pdict); return NaN; end
+    return ele.E_tot_ref / massof(ele.species_ref)
 
   elseif sym == :β_ref_downstream
-    if :DownstreamReferenceGroup ∉ keys(ele.pdict); return 0.0; end
+    if :DownstreamReferenceGroup ∉ keys(ele.pdict); return NaN; end
     return ele.pc_ref_downstream / ele.E_tot_ref_downstream
 
   elseif sym == :γ_ref_downstream
-    if :DownstreamReferenceGroup ∉ keys(ele.pdict); return 0.0; end
+    if :DownstreamReferenceGroup ∉ keys(ele.pdict); return NaN; end
     return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
+
+  elseif sym == :offset_tot
+    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
+    return ele.offset
+
+  elseif sym == :x_rot_tot
+    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
+    return ele.x_rot
+
+  elseif sym == :y_rot_tot
+    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
+    return ele.y_tot
+
+  elseif sym == :tilt_tot
+    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
+    return ele.tilt_tot
+
+  elseif sym == :q_align
+    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
+    return Quaternian()
+
+  elseif sym == :q_align_tot
+    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
+    return Quaternian()
   end
 
   error("Parameter $sym is not in the output group $output_group.")

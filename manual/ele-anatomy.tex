@@ -87,7 +87,7 @@ In the REPL, the associated parameter groups can be viewed using Julia's help fu
       •  ApertureGroup -> Vacuum chamber aperture.
       •  BMultipoleGroup -> Magnetic multipoles.
       •  EMultipoleGroup -> Electric multipoles.
-      •  FloorPositionGroup -> Global floor position and orientation.
+      •  FloorPositionGroup -> Floor position and orientation.
       •  LengthGroup -> Length and s-position parameters.
       •  LordSlaveGroup -> Element lord and slave status.
       •  MasterGroup -> Contains field_master parameter.
@@ -224,10 +224,10 @@ result in the s-positions of all downstream elements changing.
 equivilantly the referece momentum), or changes to the \vn{voltage} of an \vn{LCavity} element
 will result in the reference energy of all downstream elements changing.
 %
-\item[Global position dependency:]
-The position of a lattice element in the global coordinate system (\sref{s:global}) is affected
+\item[Floor position dependency:]
+The position of a lattice element in the floor coordinate system (\sref{s:floor}) is affected
 by a) the lengths of all upstream elements, b) the bend angles of all upstream elements, and c)
-the position in global coordinates of the beginning element.
+the position in floor coordinates of the beginning element.
 \end{description}
 
 

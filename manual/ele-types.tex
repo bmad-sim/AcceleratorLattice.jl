@@ -52,7 +52,7 @@ Element parameter groups associated with this element type are:
   AlignmentGroup     -> Element position/orientation shift. \sref{s:align.g} 
   ApertureGroup      -> Vacuum chamber aperture. \sref{s:aperture.g} 
   BMultipoleGroup    -> Magnetic multipoles. \sref{s:bmultipole.g} 
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   MasterGroup        -> Contains field_master parameter. \sref{s:master.g} 
@@ -87,7 +87,7 @@ NOTE: This Element is in development and is incomplete
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
@@ -109,7 +109,7 @@ A \vn{BeginningEle} element must be present as the first element of every tracki
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   InitParticleGroup  -> Initial particle position and spin. \sref{s:init.particle.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
@@ -145,7 +145,7 @@ Element parameter groups associated with this element type are:
   BMultipoleGroup    -> Magnetic multipoles. \sref{s:bmultipole.g} 
   BendGroup          -> Bend element parameters. \sref{s:bend.g} 
   EMultipoleGroup    -> Electric multipoles. \sref{s:emultipole.g} 
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   MasterGroup        -> Contains field_master parameter. \sref{s:master.g} 
@@ -191,7 +191,7 @@ Example:
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
@@ -212,7 +212,7 @@ NOTE: This Element is in development and is incomplete.
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
@@ -234,7 +234,7 @@ NOTE: This Element is in development and is incomplete.
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
@@ -253,7 +253,7 @@ A \vn{Drift} is a field free element.
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
@@ -274,7 +274,7 @@ NOTE: This Element is in development and is incomplete.
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
@@ -288,8 +288,8 @@ Element parameter groups associated with this element type are:
 \label{s:fiducial}
 
 A \vn{Fiducial} element is used to fix the position and orientation of the reference orbit within
-the global coordinate system at the location of the \vn{Fiducial} element. A \vn{Fiducial} element
-will affect the global floor coordinates (\sref{s:global}) of elements both upstream and downstream
+the floor coordinate system at the location of the \vn{Fiducial} element. A \vn{Fiducial} element
+will affect the floor floor coordinates (\sref{s:floor}) of elements both upstream and downstream
 of the fiducial element.
 
 NOTE: This Element is in development and is incomplete.
@@ -297,7 +297,7 @@ NOTE: This Element is in development and is incomplete.
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorPositionGroup -> Global floor position and orientation. \sref{s:floor.pos.g} 
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
   LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
   LordSlaveGroup     -> Element lord and slave status. \sref{s:lord.slave.g} 
   ReferenceGroup     -> Reference energy and species. \sref{s:reference.g} 
@@ -311,7 +311,7 @@ Element parameter groups associated with this element type are:
 \section{FloorShift}
 \label{s:floorshift}
 
-A \vn{FloorShift} element shifts the reference orbit in the global coordinate system without
+A \vn{FloorShift} element shifts the reference orbit in the floor coordinate system without
 affecting particle tracking. That is, in terms of tracking, a \vn{FloorShift} element is equivalent
 to a \vn{Marker} (\sref{s:marker}) element. 
 

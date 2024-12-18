@@ -5,7 +5,7 @@
   \centering
   \includegraphics[width=5.0in]{coordinates.pdf}
   \caption[The three coordinate system used by \accellat.]
-{The \vn{global} (or ``\vn{floor}'') coordinate system
+{The \vn{floor} coordinate system
 is independent of the accelerator.  The \vn{machine} curvilinear coordinate system follows the bends
 of the accelerator. The \vn{machine reference curve} is the $x = y = 0$ curve of the curvilinear coordinate
 system. Each lattice element has \vn{element body} coordinates which, if the element has no
@@ -18,15 +18,15 @@ alignment shifts (not ``misaligned''), is the same as the \vn{machine} coordinat
 \label{s:coords}
 \vspace*{-0.1in}
 
-\accellat uses three coordinate systems as illustrated in \fig{f:coords}. First, the \vn{global} (also
-called ``\vn{floor}'') coordinates are independent of the placement of the machine. Things such as the
-building the accelerator is in may be described using \vn{global} coordinates.
+\accellat uses three coordinate systems as illustrated in \fig{f:coords}. First, the \vn{floor}
+coordinates are independent of the placement of the machine. Things such as the
+building the accelerator is in may be described using \vn{floor} coordinates.
 
 It is inconvenient to describe the position lattice elements and the position of a 
-particle beam using the \vn{global} coordinate system so, for each tracking lattice branch,
+particle beam using the \vn{floor} coordinate system so, for each tracking lattice branch,
 a ``\vn{machine}'' coordinate system is used (\sref{s:machine.coords}). This curvilinear coordinate
 system defines the nominal position of the lattice elements. The relationship between the
-\vn{machine} and \vn{global} coordinate systems is described in \sref{s:global}. Non-tracking branches
+\vn{machine} and \vn{floor} coordinate systems is described in \sref{s:floor}. Non-tracking branches
 do not have an associated machine coordinate system.
 
 The \vn{machine reference curve} is the $x = y = 0$ curve of the curvilinear coordinate
@@ -83,7 +83,7 @@ Most elements have a ``straight'' geometry as shown in
 segment with the $x$ and $y$ axes always pointing in the same direction. For a \vn{Bend} element
 (\sref{s:bend}), the reference curve is a segment of a circular arc as shown in
 \fig{f:ele.coord.frame}B. With the \vn{ref_tilt} parameter of a bend set to zero, the rotation axis
-between the entrance and exit frames is parallel to the $y$-axis (\sref{s:global}). 
+between the entrance and exit frames is parallel to the $y$-axis (\sref{s:floor}). 
 For \vn{Patch} (\sref{s:patch}) and \vn{floor_shift} (\sref{s:floorshift}), 
 and \vn{fiducial} (\sref{s:fiducial}) elements (\fig{f:ele.coord.frame}C), the exit face can be
 arbitrarily oriented with respect to the entrance end. 
@@ -114,7 +114,7 @@ is always out of the page.}
 Assuming for the moment that there are no \vn{Fiducial} elements present, the construction of the
 machine coordinate system starts at the \vn{BeginningEle} element (\sref{s:begin.ele}) at the start of a
 branch. If the branch is a \vn{root} branch (\sref{s:lattice.def}), The orientation of the beginning
-element within the global coordinate system (\sref{s:coords}) can be fixed by setting 
+element within the floor coordinate system (\sref{s:coords}) can be fixed by setting 
 \vn{FloorPositionGroup parameters} (\sref{s:floor.position.g}) in the \vn{BeginningEle} element.
 If the branch is not a \vn{root} branch, the position
 of the beginning element is determined by the position of the \vn{Fork} element
@@ -193,28 +193,28 @@ setting \vn{x_rot} to \vn{pi}) would also produce a plausible geometry.
 \end{itemize}
 
 %---------------------------------------------------------------------------------------------------
-\section{Global Coordinates}
-\label{s:global}
+\section{Floor Coordinates}
+\label{s:floor}
 
 \begin{figure}[tb]
   \centering
-  \includegraphics{global-coords.pdf}
-  \caption[The Global Coordinate System]{
+  \includegraphics{floor-coords.pdf}
+  \caption[The Floor Coordinate System]{
 The machine (reference) coordinate system (purple), which is a function of $s$ along the reference
-curve, is described in the global coordinate system (black) by a position $(X(s), Y(s), Z(s))$ and
+curve, is described in the floor coordinate system (black) by a position $(X(s), Y(s), Z(s))$ and
 and by angles $\theta(s)$, $\phi(s)$, and $\psi(s)$.
   }
-  \label{f:global.coords}
+  \label{f:floor.coords}
 \end{figure}
 
-The Cartesian \vn{global} coordinate system, also called the `floor'' coordinate system, is the
+The Cartesian \vn{floor} coordinate system is the
 coordinate system ``attached to the earth'' that is used to describe the machine coordinate
-system. Following the \mad\ convention, the \vn{global} coordinate axis are labeled $(X, Y,
+system. Following the \mad\ convention, the \vn{floor} coordinate axis are labeled $(X, Y,
 Z)$. Conventionally, $Y$ is the ``vertical'' coordinate and $(X, Z)$ are the ``horizontal''
-coordinates. To describe how the machine coordinate system is oriented within the global coordinate
+coordinates. To describe how the machine coordinate system is oriented within the floor coordinate
 system, each point on the $s$-axis of the machine coordinate system is characterized by its $(X, Y,
 Z)$ position and by three angles $\theta(s)$, $\phi(s)$, and $\psi(s)$ that describe the orientation
-of the machine coordinate axes as shown in \fig{f:global.coords}. These three angles are defined as
+of the machine coordinate axes as shown in \fig{f:floor.coords}. These three angles are defined as
 follows:
 \begin{description}
 %
@@ -244,7 +244,7 @@ outward. Without any vertical bends, the $Y$ and $y$ axes will coincide, and $\p
 both be zero. The \vn{beginning} statement (\sref{s:beginning}) in a lattice file can be use to
 override these defaults.
 
-Following \mad, the global position of an element is characterized by a vector $\bfV$
+Following \mad, the floor position of an element is characterized by a vector $\bfV$
 \begin{equation}
   \bfV = 
   \begin{pmatrix}
@@ -423,7 +423,7 @@ the undiffracted beam (shown in red) as the reference trajectory.
 \subsection{Position Transformation When Transforming Coordinates}
 \label{s:pos.trans}
 
-A point $\bfQ_g = (X, Y, Z)$ defined in the global coordinate system, when expressed in the
+A point $\bfQ_g = (X, Y, Z)$ defined in the floor coordinate system, when expressed in the
 coordinate system defined by $(\bfV, \bfW)$ is
 \begin{equation}
   \bfQ_{VW} = \bfW^{-1} \left( \bfQ_g - \bfV \right)
