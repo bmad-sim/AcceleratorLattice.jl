@@ -1058,7 +1058,6 @@ struct declarations.
   Set to `typemax(Int)` if no elements have been modified. \\
 • `:ix_ele_max_changed` - For tracking branches: Maximum index of elements where parameter changes have been made. \\
   Set to `0` if no elements have been modified. \\
-• `:changed_ele`        - `Set{Ele}` For lord branches: Set of elements whose parameters have been modified. \\
 
 ## Notes
 The constant `NULL_BRANCH` is defined as a placeholder for signaling the absense of a branch.

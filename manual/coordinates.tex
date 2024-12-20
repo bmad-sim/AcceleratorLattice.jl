@@ -6,10 +6,10 @@
   \includegraphics[width=5.0in]{coordinates.pdf}
   \caption[The three coordinate system used by \accellat.]
 {The \vn{floor} coordinate system
-is independent of the accelerator.  The \vn{machine} curvilinear coordinate system follows the bends
-of the accelerator. The \vn{machine reference curve} is the $x = y = 0$ curve of the curvilinear coordinate
+is independent of the accelerator.  The \vn{branch} curvilinear coordinate system follows the bends
+of the accelerator. The \vn{branch reference curve} is the $x = y = 0$ curve of the curvilinear coordinate
 system. Each lattice element has \vn{element body} coordinates which, if the element has no
-alignment shifts (not ``misaligned''), is the same as the \vn{machine} coordinates.}
+alignment shifts (not ``misaligned''), is the same as the \vn{branch} coordinates.}
   \label{f:coords}
 \end{figure}
 
@@ -19,18 +19,19 @@ alignment shifts (not ``misaligned''), is the same as the \vn{machine} coordinat
 \vspace*{-0.1in}
 
 \accellat uses three coordinate systems as illustrated in \fig{f:coords}. First, the \vn{floor}
-coordinates are independent of the placement of the machine. Things such as the
-building the accelerator is in may be described using \vn{floor} coordinates.
+coordinates are coordinates independent of the accelerator. The position of the accelerator 
+itself as well as external objects like the building the accelerator is in  may be described 
+using \vn{floor} coordinates.
 
 It is inconvenient to describe the position lattice elements and the position of a 
 particle beam using the \vn{floor} coordinate system so, for each tracking lattice branch,
-a ``\vn{machine}'' coordinate system is used (\sref{s:machine.coords}). This curvilinear coordinate
+a ``\vn{branch}'' coordinate system is used (\sref{s:branch.coords}). This curvilinear coordinate
 system defines the nominal position of the lattice elements. The relationship between the
-\vn{machine} and \vn{floor} coordinate systems is described in \sref{s:floor}. Non-tracking branches
-do not have an associated machine coordinate system.
+\vn{branch} and \vn{floor} coordinate systems is described in \sref{s:floor}. Non-tracking branches
+do not have an associated branch coordinate system.
 
-The \vn{machine reference curve} is the $x = y = 0$ curve of the curvilinear coordinate
-system. The machine reference curve does not have to be continuous. A non-continuous
+The \vn{branch reference curve} is the $x = y = 0$ curve of the curvilinear coordinate
+system. The branch reference curve does not have to be continuous. A non-continuous
 reference curve is used, for example, to connect branches together. 
 
 The ``nominal'' position of a lattice element is the position of the element without any
@@ -41,8 +42,8 @@ coordinates which are attached to the physical element and the electric and magn
 fields of an element are described with respect to \vn{body} coordinates.  
 If an element has no
 alignment shifts, the \vn{body} coordinates of the element are aligned with the 
-\vn{machine} coordinates.
-The transformation between \vn{machine} and \vn{body} coordinates is given in
+\vn{branch} coordinates.
+The transformation between \vn{branch} and \vn{body} coordinates is given in
 \sref{s:lab.body.transform}.
 
 %--------------------------------------
@@ -51,7 +52,7 @@ The transformation between \vn{machine} and \vn{body} coordinates is given in
   \centering
   \includegraphics[width=5in]{ele-coord-frame.pdf}
 \caption[Lattice elements as LEGO blocks.]{Lattice elements can be imagined as ``LEGO blocks'' which
-fit together to form the machine coordinate system. How elements
+fit together to form the branch coordinate system. How elements
 join together is determined in part by their entrance and exit coordinate frames. A) For
 straight line elements the entrance and exit frames are colinear. B) For bends elements, the two
 frames are rotated with respect to each other. C) For \vn{Patch} and \vn{floor_shift} elements the
@@ -65,7 +66,7 @@ exit frame may be arbitrarily positioned with respect to the entrance frame.}
 \section{Element Entrance and Exit Coordinates}
 \label{s:ent.exi}
 
-As discussed in the next section, the machine coordinate system is constructed starting with the first
+As discussed in the next section, the branch coordinate system is constructed starting with the first
 element in a lattice tracking branch and then building up the coordinate system element-by-element.
 All elements in a tracking branch have an ``\vn{entrance}'' and an ``\vn{exit}'' coordinate frame as
 illustrated in \fig{f:ele.coord.frame}
@@ -74,7 +75,7 @@ The one one element that does not have entrance and exit coordinate frames
 is the \vn{Girder} (\sref{s:girder}) element which supports other elements but these
 elements are stored in a non-tracking branch. There
 is also an exception where, if there is a \vn{fiducial} element (or elements)
-in the branch line, the construction of the machine coordinate system starts at the \vn{fiducial}
+in the branch line, the construction of the branch coordinate system starts at the \vn{fiducial}
 elements.
 
 
@@ -92,14 +93,14 @@ entrance and exit faces is not defined. For the \vn{Patch} element, the interior
 is dependent upon certain \vn{Patch} element parameter settings (\sref{s:patch}).
 
 %---------------------------------------------------------------------------------------------------
-\section{Machine Coordinates Construction}
+\section{Branch Coordinates Construction}
 \label{s:ref.construct}
 
 %-----------------------------------------------------------------------------
 \begin{figure}[tb]
   \centering
   \includegraphics[width=5in]{patch-between.pdf}
-  \caption[Machine coordinates construction.]{A) The machine coordinates are constructed by
+  \caption[Branch coordinates construction.]{A) The branch coordinates are constructed by
 connecting the \vn{downstream} reference frame of one element with the \vn{upstream} reference frame
 of the next element in the branch. Coordinates shown is for the mating of element \vn{A} to element
 {B}.  B) Example with drift element \vn{dft} followed by a bend \vn{bnd}. Both elements are
@@ -112,7 +113,7 @@ is always out of the page.}
 %-----------------------------------------------------------------------------
 
 Assuming for the moment that there are no \vn{Fiducial} elements present, the construction of the
-machine coordinate system starts at the \vn{BeginningEle} element (\sref{s:begin.ele}) at the start of a
+branch coordinate system starts at the \vn{BeginningEle} element (\sref{s:begin.ele}) at the start of a
 branch. If the branch is a \vn{root} branch (\sref{s:lattice.def}), The orientation of the beginning
 element within the floor coordinate system (\sref{s:coords}) can be fixed by setting 
 \vn{FloorPositionGroup parameters} (\sref{s:floor.position.g}) in the \vn{BeginningEle} element.
@@ -122,14 +123,14 @@ from which the branch forks from. The default value of $s$ at the \vn{BeginningE
 for both root and non-root branches.
 
 Once the beginning element in a branch is positioned, succeeding elements are concatenated together
-to form the machine coordinate system. All elements have an ``\vn{upstream}'' and a ``\vn{downstream}''
+to form the branch coordinate system. All elements have an ``\vn{upstream}'' and a ``\vn{downstream}''
 end as shown in \fig{f:patch.between}A. The \vn{downstream} end of an element is always farther (at
 greater $s$) from the beginning element than the \vn{upstream} end of the element. Normally,
 particles will travel
 in the $+s$ direction, so particles will enter an element at the upstream end and exit at the
 downstream end.
 
-If there are \vn{Fiducial} elements, the machine coordinates are constructed beginning at these
+If there are \vn{Fiducial} elements, the branch coordinates are constructed beginning at these
 elements working both forwards and backwards along the branch.
 
 If an element is not reversed (\sref{s:ele.reverse}),
@@ -141,12 +142,12 @@ the element's \vn{exit} end will be \vn{upstream} end and the element's
 traveling downstream will
 enter at the element's \vn{exit} end and will exit at the \vn{entrance} end.
 
-The procedure to connect elements together to form the machine coordinates is to ignore 
+The procedure to connect elements together to form the branch coordinates is to ignore 
 alignment shifts and mate the
 downstream reference frame of the element with the upstream reference frame of the next element in
 the branch so that the $(x,y,z)$ axes coincide.
 If there are alignment shifts, the \vn{entrance} and \vn{exit} frames will move with the element. 
-However, this does not affect the machine
+However, this does not affect the branch
 coordinate system.
 This is illustrated in \fig{f:patch.between}. \fig{f:patch.between}A shows the general situation
 with the downstream frame of element \vn{A} mated to the upstream frame of element \vn{B}.
@@ -178,7 +179,7 @@ If the first element after the \vn{BeginningEle} element at the start of a branc
 \vn{BeginningEle} element will be marked as reversed so that a reflection patch is not needed in
 this circumstance.
 \item
-Irrespective of whether elements are reversed or not, the machine $(x,y,z)$ coordinate system
+Irrespective of whether elements are reversed or not, the branch $(x,y,z)$ coordinate system
 at all $s$-positions will always be a right-handed coordinate system.
 \item
 Care must be take when using reversed elements. For example, if the field of the \vn{bnd} element in
@@ -200,7 +201,7 @@ setting \vn{x_rot} to \vn{pi}) would also produce a plausible geometry.
   \centering
   \includegraphics{floor-coords.pdf}
   \caption[The Floor Coordinate System]{
-The machine (reference) coordinate system (purple), which is a function of $s$ along the reference
+The branch coordinate system (purple), which is a function of $s$ along the branch reference
 curve, is described in the floor coordinate system (black) by a position $(X(s), Y(s), Z(s))$ and
 and by angles $\theta(s)$, $\phi(s)$, and $\psi(s)$.
   }
@@ -208,13 +209,13 @@ and by angles $\theta(s)$, $\phi(s)$, and $\psi(s)$.
 \end{figure}
 
 The Cartesian \vn{floor} coordinate system is the
-coordinate system ``attached to the earth'' that is used to describe the machine coordinate
+coordinate system ``attached to the earth'' that is used to describe the branch coordinate
 system. Following the \mad\ convention, the \vn{floor} coordinate axis are labeled $(X, Y,
 Z)$. Conventionally, $Y$ is the ``vertical'' coordinate and $(X, Z)$ are the ``horizontal''
-coordinates. To describe how the machine coordinate system is oriented within the floor coordinate
-system, each point on the $s$-axis of the machine coordinate system is characterized by its $(X, Y,
+coordinates. To describe how the branch coordinate system is oriented within the floor coordinate
+system, each point on the $s$-axis of the branch coordinate system is characterized by its $(X, Y,
 Z)$ position and by three angles $\theta(s)$, $\phi(s)$, and $\psi(s)$ that describe the orientation
-of the machine coordinate axes as shown in \fig{f:floor.coords}. These three angles are defined as
+of the branch coordinate axes as shown in \fig{f:floor.coords}. These three angles are defined as
 follows:
 \begin{description}
 %
@@ -252,7 +253,7 @@ Following \mad, the floor position of an element is characterized by a vector $\
   \end{pmatrix}
 \end{equation}
 The orientation of an element is described by a unitary rotation matrix $\bfW$. The column vectors
-of $\bfW$ are the unit vectors spanning the machine coordinate axes in the order $(x, y, z)$. $\bfW$
+of $\bfW$ are the unit vectors spanning the branch coordinate axes in the order $(x, y, z)$. $\bfW$
 can be expressed in terms of the orientation angles $\theta$, $\phi$, and $\psi$ via the formula
 \begin{align}
   \bfW &= \bfR_{y}(\theta) \; \bfR_{x}(-\phi) \; \bfR_{z}(\psi) 
@@ -322,7 +323,7 @@ lattice and iteratively using the equations
     \label{wws}
 \end{align}
 $\bfL_i$ is the displacement vector for the $i$\Th element and matrix $\bfS_i$ is the rotation of
-the machine reference system of the exit end with respect to the entrance end. For clarity, the
+the branch coordinate system of the exit end with respect to the entrance end. For clarity, the
 subscript $i$ in the equations below will be dripped. For all elements whose reference curve through
 them is a straight line, the corresponding $\bfL$ and $\bfS$ are
 \begin{equation}
@@ -348,7 +349,7 @@ Where $L$ is the length of the element.
 \caption[Orientation of a Bend.] 
   {
 A) Rotation axes (bold arrows) for four different \vn{ref_tilt} angles of $\theta_t$ = 0, $\pm
-\pi/2$, and $\pi$. $(x_0, y_0, z_0)$ are the machine coordinates at the entrance end of the bend with
+\pi/2$, and $\pi$. $(x_0, y_0, z_0)$ are the branch coordinates at the entrance end of the bend with
 the $z_0$ axis being directed into the page. Any rotation axis will be displaced by a distance of
 the bend radius \vn{rho} from the origin. B) The $(x, y, z)$ coordinates at the exit end of the bend
 for the same four \vn{ref_tilt} angles. In this case the bend angle is taken to be $\pi/2$.
@@ -361,7 +362,7 @@ for the same four \vn{ref_tilt} angles. In this case the bend angle is taken to 
 For a \vn{bend}, the axis of rotation is dependent upon the bend's \vn{ref_tilt} angle
 (\sref{s:offset}) as shown in \fig{f:tilt.bend}A. The axis of rotation points in the negative $y_0$
 direction for \vn{ref_tilt} = 0 and is offset by the bend radius \vn{rho}. Here $(x_0, y_0, z_0)$
-are the machine coordinates at the entrance end of the bend with the $z_0$ axis being directed into
+are the branch coordinates at the entrance end of the bend with the $z_0$ axis being directed into
 the page in the figure.  For a non-zero \vn{ref_tilt}, the rotation axis is itself rotated about the
 $z_0$ axis by the value of \vn{ref_tilt}. \fig{f:tilt.bend}B shows the exit coordinates for four
 different values of \vn{ref_tilt} and for a bend angle \vn{angle} of $\pi/2$.  Notice that for a
@@ -394,10 +395,10 @@ Note: An alternative equation for \vn{\bfS} for a bend is
 \end{equation}
 
 The bend transformation above is so constructed that the transformation is equivalent to rotating
-the machine coordinate system around an axis that is perpendicular to the plane of the bend. This
+the branch coordinate system around an axis that is perpendicular to the plane of the bend. This
 rotation axis is invariant under the bend transformation. For example, for $\theta_t = 0$ (or $\pi$)
-the $y$-axis is the rotation axis and the $y$-axis of the machine coordinates before the bend will be
-parallel to the $y$-axis of the machine coordinates after the bend as shown in \fig{f:tilt.bend}. That
+the $y$-axis is the rotation axis and the $y$-axis of the branch coordinates before the bend will be
+parallel to the $y$-axis of the branch coordinates after the bend as shown in \fig{f:tilt.bend}. That
 is, a lattice with only bends with $\theta_t = 0$ or $\pi$ will lie in the horizontal plane (this
 assuming that the $y$-axis starts out pointing along the $Y$-axis as it does by default).  For
 $\theta_t = \pm\pi/2$, the bend axis is the $x$-axis. A value of $\theta_t = +\pi/2$ represents a
@@ -408,7 +409,7 @@ downward pointing bend.
 \caption[Mirror and crystal geometry] {Mirror and crystal geometry.  The geometry shown here is
 appropriate for a \vn{ref_tilt} angle of $\theta_t = 0$.  $\theta_g$ is the bend angle of the
 incoming (entrance) ray, and $\alpha_b$ is the total bend angle of the reference trajectory. A)
-Geometry for a mirror or a Bragg crystal. Point $\calO$ is the origin of both the machine coordinates
+Geometry for a mirror or a Bragg crystal. Point $\calO$ is the origin of both the branch coordinates
 just before and just after the reflection/diffraction. B) Geometry for a Laue crystal.  Point
 $\calO_{out}$ is the origin of the coordinates just after diffraction is displaced from the origin
 $\calO_{in}$ just before diffraction due to the finite thickness of the crystal. here the bend
@@ -458,7 +459,7 @@ reference curve is modeled as a zero length bend with $\bftilde L = (0, 0, 0)$, 
 \fig{f:mirror}A. Shown in the figure is the geometry appropriate for a \vn{ref_tilt} angle of
 $\theta_t = 0$ (the rotation axis is here the $y$-axis). Since the mirror or crystal element is
 modeled to be of zero length, the origin points (marked $\calO$ in the figure) of the entrance and
-exit machine coordinates are the same. For Laue diffraction, the only difference is that $\bftilde L$
+exit branch coordinates are the same. For Laue diffraction, the only difference is that $\bftilde L$
 is non-zero due to the finite thickness of the crystal as shown in \fig{f:mirror}B. This results in
 a separation between the entrance coordinate origin $\calO_{in}$ and the exit coordinate origin
 $\calO_{out}$.
@@ -479,9 +480,9 @@ perpendicular to the surface.
 For Laue diffraction, the user has the option of using the undiffracted beam (shown in red) as the
 reference trajectory.
 
-The orientation of the exit coordinates (the machine coordinates after the reflection) are only
+The orientation of the exit coordinates (the branch coordinates after the reflection) are only
 affected by the element's \vn{ref_tilt} and bend angle parameters and is independent of all other
-parameters such as the radius of curvature of the surface, etc. The machine $z$-axis of the entrance
+parameters such as the radius of curvature of the surface, etc. The branch $z$-axis of the entrance
 coordinates along with the $z$-axis of the exit coordinates define a plane which is called the
 element's \vn{bend plane}.  For a mirror, the graze angle is a parameter supplied by the user. For a
 crystal, the Bragg angles are calculated so that the reference trajectory is in the middle of the
@@ -547,31 +548,31 @@ analogous to \Eqs{swww}. Explicitly:
 \end{align}
 
 %-----------------------------------------------------------------------------
-\section{Transformation Between Machine and Element Body Coordinates}
+\section{Transformation Between Branch and Element Body Coordinates}
 \label{s:lab.body.transform}
 
 The \vn{element body} coordinates are the coordinate system attached to an element. Without any
-alignment shifts, the \vn{machine} coordinates (\sref{s:ref}) and \vn{element body} coordinates
-are the same. With alignment shifts, the transformation between \vn{machine} and \vn{element body}
-coordinates depends upon whether the machine coordinate system is straight (\sref{s:straight.mis}) or
+alignment shifts, the \vn{branch} coordinates (\sref{s:ref}) and \vn{element body} coordinates
+are the same. With alignment shifts, the transformation between \vn{branch} and \vn{element body}
+coordinates depends upon whether the branch coordinate system is straight (\sref{s:straight.mis}) or
 bent (\sref{s:bend.mis}).
 
 When tracking a particle through an element, the particle starts at the \vn{nominal}
-(\sref{s:coords}) upstream end of the element with the particle's position expressed in machine
+(\sref{s:coords}) upstream end of the element with the particle's position expressed in branch
 coordinates. Tracking from the the nominal upstream end to the actual upstream face of the element
 involves first transforming to element body coordinates (with $s = 0$ in the equations below) and
 then propagating the particle as in a field free drift space from the particle's starting position
 to the actual element face. Depending upon the element's orientation, this tracking may involve
 tracking backwards. Similarly, after a particle has been tracked through the physical element to the
 actual downstream face, the tracking to the nominal downstream end involves transforming to
-machine coordinates (using $s = L$ in the equations below) and then propagating the particle as
+branch coordinates (using $s = L$ in the equations below) and then propagating the particle as
 in a field free drift space to the nominal downstream edge.
 
 %-----------------------------------------------------------------------------
-\subsection{Straight Element Machine to Body Coordinate Transformation}
+\subsection{Straight Element Branch to Body Coordinate Transformation}
 \label{s:straight.mis}
 
-For straight line elements, given a machine coordinate frame $\Lambda_s$ with origin a distance
+For straight line elements, given a branch coordinate frame $\Lambda_s$ with origin a distance
 $s$ from the beginning of the element, alignment shifts will shift the coordinates to a new reference
 frame denoted $E_s$. Since alignment shifts are defined with respect to the middle of the element, the
 transformation between $\Lambda_s$ and $E_s$ is a three step process:
@@ -580,7 +581,7 @@ transformation between $\Lambda_s$ and $E_s$ is a three step process:
   \longrightarrow E_\text{mid} \longrightarrow E_s
   \label{llee}
 \end{equation}
-where $\Lambda_\text{mid}$ and $E_\text{mid}$ are the machine and element reference frames at the
+where $\Lambda_\text{mid}$ and $E_\text{mid}$ are the branch and element reference frames at the
 center of the element.
 
 The first and last transformations from $\Lambda_s$ to $\Lambda_\text{mid}$ and from $E_\text{mid}$
@@ -601,7 +602,7 @@ Notice that with this definition of how elements are shifted, the position of th
 non-bend shifted element depends only on the offsets, and is independent of the rotations.
 
 %-----------------------------------------------------------------------------
-\subsection{Bend Element Machine to Body Coordinate Transformation}
+\subsection{Bend Element Branch to Body Coordinate Transformation}
 \label{s:bend.mis}
 
 For \vn{Bend} elements there is a \vn{ref_tilt} as well as a \vn{tilt} parameter.
@@ -612,7 +613,7 @@ the coordinates at the beginning of the bend while \vn{tilt}, \vn{x_rot},
 ends of the bend (\sref{s:align.g}). 
 The different reference frame used
 for \vn{ref_tilt} versus everything else means that five transformations are needed to get from the
-machine frame at point $s$ to the corresponding element body frame (see \Eq{llee}). Symbolically:
+branch frame at point $s$ to the corresponding element body frame (see \Eq{llee}). Symbolically:
 \begin{equation}
   \Lambda_s \longrightarrow \Lambda_0 \longrightarrow
   \Xi_0 \longrightarrow \Xi_\text{mid} \longrightarrow 
@@ -622,8 +623,8 @@ machine frame at point $s$ to the corresponding element body frame (see \Eq{llee
 
 \begin{enumerate}
 \item $\Lambda_s \longrightarrow \Lambda_0$ \\
-In machine coordinates, transform from $\Lambda_s$, the coordinates at a
-distance $s$ from the beginning of the element, to $\Lambda_0$ the machine coordinates at the 
+In branch coordinates, transform from $\Lambda_s$, the coordinates at a
+distance $s$ from the beginning of the element, to $\Lambda_0$ the branch coordinates at the 
 beginning of the element. This is a
 rotation around the center of curvature of the bend and is given by \Eqs{vwlv} and \eq{wws} with
 \Eqs{ustt} and \eq{lrztt} with the substitution $\alpha_b \rightarrow -s/\rho$.

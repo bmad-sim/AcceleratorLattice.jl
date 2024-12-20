@@ -272,7 +272,6 @@ function new_lord_branch!(lat::Lattice, name::AbstractString, branch_type::Type{
   branch = lat.branch[end]
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = branch_type
-  branch.changed_ele = Set{Ele}()
   return branch
 end
 
