@@ -116,7 +116,7 @@ the $x$-axis.
 \end{figure}
 
 The \vn{AlignmentGroup} gives the alignment (position and angular orientation) of the physical element 
-relative to the nominal position defined by the machine coordinates (\sref{s:orient}).
+relative to the nominal position defined by the branch coordinates (\sref{s:orient}).
 Alignment is specified with respect to the ``alignment reference point'' of an element as shown
 in Fig~\ref{s:alignment}. The \vn{Bend} reference point is chosen to be the center of the chord
 connecting the two ends. 
@@ -133,7 +133,7 @@ One group has a \vn{_tot} suffix:
   tilt_tot::Number   - Rotation around the z-axis. 
 \end{example}
 These ``total alignment'' parameters give the alignment of the element with 
-with respect to the machine coordinates.
+with respect to the branch coordinates.
 The other sub-group of parameters do not have a \vn{_tot} suffix:
 \begin{example}
   offset::Vector - $[x, y, z]$ offset.
@@ -222,20 +222,20 @@ the order of computation with \vn{misalignment_moves_aperture} set to \vn{false}
 \begin{example}
   1) Start at upstream end of element
   2) Check upstream aperture if there is one.
-  3) Convert from machine coordinates to body coordinates.
+  3) Convert from branch coordinates to body coordinates.
   4) Track through the element body.
-  5) Convert from body coordinates to machine coordinates.
+  5) Convert from body coordinates to branch coordinates.
   6) Check downstream aperture if there is one.
   7) End at downstream end of element.
 \end{example}
 With \vn{misalignment_moves_aperture} set to \vn{true}, the computation order is 
 \begin{example}
   1) Start at upstream end of element
-  2) Convert from machine coordinates to body coordinates.
+  2) Convert from branch coordinates to body coordinates.
   3) Check upstream aperture if there is one.
   4) Track through the element body.
   5) Check downstream aperture if there is one.
-  6) Convert from body coordinates to machine coordinates.
+  6) Convert from body coordinates to branch coordinates.
   7) End at downstream end of element.
 \end{example}
 

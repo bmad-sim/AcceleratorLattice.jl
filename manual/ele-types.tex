@@ -133,7 +133,7 @@ Example:
 \label{s:bend}
 
 A \vn{Bend} element represents a dipole bend. Bends have a design bend angle and bend radius
-which determines the location of downstream elements as documented in \sref{s:machine.coords}.
+which determines the location of downstream elements as documented in \sref{s:branch.coords}.
 The actual bending strength that a particle feels can differ from the design value as detailed
 below.
 
@@ -419,8 +419,8 @@ with transverse position (\sref{s:mag.field}).
 \begin{figure}[bt]
   \centering
   \includegraphics[width=5in]{patch-problem.pdf}
-  \caption[The machine reference coordinates in a \vn{Patch} element.]
-{The machine reference coordinates in a \vn{Patch} element. The \vn{Patch} element, shown
+  \caption[The branch reference coordinates in a \vn{Patch} element.]
+{The branch reference coordinates in a \vn{Patch} element. The \vn{Patch} element, shown
 schematically as an irregular quadrilateral, is sandwiched between elements \vn{ele_a} and
 \vn{ele_b}. \vn{L} is the length of the \vn{Patch}. In this example, the \vn{Patch} has a finite
 \vn{y_rot}.}
@@ -448,20 +448,20 @@ coordinate system is needed so that the fields or apertures can be unambiguously
 There 
 
 
-Generally, if a particle is reasonably near the machine reference curve, there is a one-to-one mapping
-between the particle's position and machine $(x, y, s)$ coordinates. 
+Generally, if a particle is reasonably near the branch reference curve, there is a one-to-one mapping
+between the particle's position and branch $(x, y, s)$ coordinates. 
 
 
 with a non-zero \vn{x_rot} or non-zero \vn{y_rot} breaks the one-to-one mapping. This is
 illustrated in \fig{f:patch.prob}.  The \vn{Patch} element, shown schematically as an, irregular
-quadrilateral, is sandwiched between elements \vn{ele_a} and \vn{ele_b}. The machine coordinate system
+quadrilateral, is sandwiched between elements \vn{ele_a} and \vn{ele_b}. The branch coordinate system
 with origin at $\alpha$ are the coordinates at the end of \vn{ele_a}. The coordinates at the end of
 the \vn{Patch} has its origin labeled $\gamma$. By convention, the length of the patch \vn{L} is
 taken to be the longitudinal distance from $\alpha$ to $\gamma$ with the \vn{Patch}'s exit
 coordinates defining the longitudinal direction. The ``beginning'' point of the \vn{Patch} on the
 reference curve a distance \vn{L} from point $\gamma$ is labeled $\beta$ in the figure.
 
-In the machine $(x, y, s)$ coordinate system a particle at $\alpha$ will have some value $s = s_0$. A
+In the branch $(x, y, s)$ coordinate system a particle at $\alpha$ will have some value $s = s_0$. A
 particle at point $\beta$ will have the same value $s = s_0$ and a particle at $\gamma$ will have $s
 = s_1 = s_0 + L$. A particle at point $r_a$ in \fig{f:patch.prob} illustrates the problem of
 assigning $(x, y, s)$ coordinates to a given position. If the particle is considered to be within

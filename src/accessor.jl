@@ -198,7 +198,6 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
           sbranch.ix_ele_min_changed = min(sbranch.ix_ele_min_changed, ele.ix_ele)
           sbranch.ix_ele_max_changed = max(sbranch.ix_ele_max_changed, ele.ix_ele)
         end
-        push!(branch.changed_ele, ele)    # Only used with lord branches. SHOULD BE REMOVED?!
       end
     end
 
