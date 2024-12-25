@@ -296,7 +296,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   end
 
   # Split case 3: Element to be split is not a super_slave. Here create a super_lord.
-  # Important for multipass and governor control that original slave1 is put in super_lord branch
+  # Important for multipass control that original slave1 is put in super_lord branch
   # and the copies are in the tracking branch.
 
   lord = slave1
@@ -312,7 +312,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   slave.L = s_split - slave1.s 
   slave2.L = slave1.s_downstream - s_split
 
-  sbranch = branch.lat.branch["super_lord"]
+  sbranch = branch.lat.branch["super"]
   push!(sbranch.ele, lord)
   lord.pdict[:slaves] = Vector{Ele}([slave, slave2])
   lord.lord_status = Lord.SUPER

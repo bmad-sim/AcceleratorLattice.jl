@@ -29,7 +29,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :offset           => :offset_tot,
     :x_rot            => :x_rot_tot,
     :y_rot            => :y_rot_tot,
-    :tilt             => :tilt_tot,
+    :z_rot            => :z_rot_tot,
   ),
 
   ApertureGroup => Dict{Symbol,Symbol}(
@@ -76,8 +76,6 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
   ),
 
   PatchGroup => Dict{Symbol,Symbol}(
-    :offset           => :tilt,
-    :x_rot            => :y_rot,
     :E_tot_offset     => :t_offset,
     :E_tot_downstream => :pc_downstream,
     :flexible         => :L_user,
@@ -552,7 +550,7 @@ function Base.show(io::IO, branch::Branch)
 
   if n > 0
     g_str = rpad(g_str, 54) * "L"
-    if branch.type != MultipassLordBranch; g_str = g_str * "           s      s_downstream"; end
+    if branch.type != MultipassBranch; g_str = g_str * "           s      s_downstream"; end
   end
 
   println(io, "$g_str")
@@ -562,7 +560,7 @@ function Base.show(io::IO, branch::Branch)
   else
     for ele in branch.ele
       end_str = ""
-      if branch.type == MultipassLordBranch
+      if branch.type == MultipassBranch
         end_str = f"{ele.L:11.6f}"
         if haskey(ele.pdict, :slaves); end_str = end_str * " "^28 * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
       elseif haskey(ele.pdict, :LengthGroup)

@@ -43,11 +43,11 @@ The enum groups are:
 {\tt
 \begin{tabular}{llll} \toprule
   {\it Group}       & {\it Section}             & {\it Group}         & {\it Section}       \\ \midrule
-  BendType          & \sref{s:bendtype}         & Slave               & \sref{s:slave}      \\
+  BendType          & \sref{s:bendtype}         & Slave               & \sref{s:slave.enum} \\
   BodyLoc           & \sref{s:bodyloc}          & Loc                 & \sref{s:loc}        \\
   BranchGeometry    & \sref{s:branchgeometry}   & Select              & \sref{s:select}     \\
   Cavity            & \sref{s:cavity}           & ExactMultipoles     & \sref{s:exactmultipoles} \\
-  Lord              & \sref{s:lord}             & FiducialPt          & \sref{s:fiducialpt} \\
+  Lord              & \sref{s:lord.enum}        & FiducialPt          & \sref{s:fiducialpt} \\
   ParticleState     & \sref{s:particlestate}    &                     &                     \\
   \bottomrule
 \end{tabular}
@@ -146,24 +146,6 @@ Possible values:\\
 \end{tabular}
 \hfill \break \vskip -1.2ex
 
-
-%---------------------------------------------------------------------------------------------------
-\subsection{Lord Enum Group}
-\label{s:lord}
-\vspace*{-2ex}
-
-Type of lord an element is.
-Possible values:\\
-\vspace*{-0.5ex} \\
-\begin{tabular}{ll}
-  Lord & \\
-  \indnt .NOT       & -- Not a lord \\
-  \indnt .SUPER     & -- Is a Super lord (\sref{c:super}) \\
-  \indnt .MULTIPASS & -- Is a Multipass lord (\sref{c:multipass}) \\
-  \indnt .GOVERNOR  & -- Girder and other "minor" lords \\ 
-\end{tabular}
-\hfill \break \vskip -1.2ex
-
 %---------------------------------------------------------------------------------------------------
 \subsection{ParticleState Enum Group}
 \label{s:particlestate}
@@ -192,23 +174,6 @@ The \vn{.LOST_PZ} value is used by $s$ (longitudinal position) based trackers wh
 able to handle particles changing their longitudinal motion direction. For tracking something
 like dark current electrons which can go back and forth longitudinally, a time based tracker
 is needed.
-
-%---------------------------------------------------------------------------------------------------
-\subsection{Slave Enum Group}
-\label{s:slave}
-\vspace*{-2ex}
-
-Type of slave an element is.
-Possible values:\\
-\vspace*{-0.5ex} \\
-\begin{tabular}{ll}
-  Slave & \\
-  \indnt .NOT       & -- Not a slave \\
-  \indnt .SUPER     & -- Is a Super slave (\sref{c:super}) \\
-  \indnt .MULTIPASS & -- Multipass slave (\sref{c:multipass}) \\
-\end{tabular}
-\hfill \break \vskip -1.2ex
-
 
 %---------------------------------------------------------------------------------------------------
 \subsection{Loc Enum Group}

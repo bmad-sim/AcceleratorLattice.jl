@@ -90,9 +90,8 @@ end
 function ele_geometry(ele::Ele)
   if ele isa Bend; return CIRCULAR; end
   if ele isa Patch; return PATCH_GEOMETRY; end
-  if typeof(ele) <: Union{BeginningEle, Fiducial, Fork, 
-                            Marker, Match, NullEle, Taylor}; return ZERO_LENGTH; end
-  if ele isa Girder; return GIRDER_GEOMETRY; end
+  if typeof(ele) in [BeginningEle, Fiducial, Fork, 
+                            Marker, Match, NullEle, Taylor]; return ZERO_LENGTH; end
   return STRAIGHT
 end
 
@@ -151,6 +150,20 @@ function matches_branch(name::AbstractString, branch::Branch)
   else
     return str_match(name, branch.name)
   end
+end
+
+#---------------------------------------------------------------------------------------------------
+# girder
+
+"""
+    girder(ele::Ele) -> Union{Ele, Nothing}
+
+Returns the `Girder' supporting element `ele` or `nothing`.
+""" girder
+
+function girder(ele::Ele)
+  if !haskey(ele.pdict, :girder) return nothing; end
+  return ele.pdict[:girder]
 end
 
 #---------------------------------------------------------------------------------------------------

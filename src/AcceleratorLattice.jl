@@ -66,20 +66,20 @@ export ele_name, show_name, show_ele, msng, E_kinetic, pc, β, β1, γ
 export show_lat, show_branch, show_beamline, bookkeeper!, set_param!
 export Branch, Lattice, BeamLineEle, superimpose!, multipole_type
 export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
-export split!, construct_ele_type, ele_at_s, add_governor!, toggle_integrated!
+export split!, construct_ele_type, ele_at_s, toggle_integrated!
 export eles, next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
 export branch, matches_branch, create_ele_vars, eval_str, Vertex1, LatticeGlobal
 export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole, BMultipoleGroup, BeamBeamGroup
 export EMultipole, EMultipoleGroup, BendGroup, ApertureGroup, DescriptionGroup, RFGroup, SolenoidGroup
 export TrackingGroup, LengthGroup, ReferenceGroup, DownstreamReferenceGroup, ForkGroup
-export MasterGroup, LordSlaveStatusGroup
+export MasterGroup, LordSlaveStatusGroup, ACKickerGroup
 export GirderGroup, PatchGroup, RFAutoGroup, OutputGroup
 export TwissGroup, Twiss1, Wall2D, Vertex1, InitSpinGroup, InitParticleGroup, show_changed
 export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
 export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
 export ele_param_struct_field_to_user_sym, multipole!, index, integer, rot_angles, Quaternion
 export machine_location, body_location, EleRegion, holy_traits, output_parameter
-export BranchType, LordBranch, TrackingBranch, MultipassLordBranch, SuperLordBranch, GovernorBranch
+export BranchType, LordBranch, TrackingBranch, MultipassBranch, SuperBranch, transform
 export str_split, str_match, str_unquote, str_quote, str_to_int, associated_names
 export ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST, OPEN, CLOSED
 

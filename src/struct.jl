@@ -440,6 +440,27 @@ end
 Wall2D(v::Vector{Vertex1}) = Wall2D(v, [0.0, 0.0])
 
 #---------------------------------------------------------------------------------------------------
+#---------------------------------------------------------------------------------------------------
+# ACKickerGroup
+
+"""
+    mutable struct ACKickerGroup <: EleParameterGroup
+
+ACKicker parameters.
+
+## Fields
+• `amp_function::Function`    - Amplitude function. Signature:
+```
+  amp_function(time::Number) -> amplitude::Number
+```
+
+""" ACKickerGroup
+
+@kwdef mutable struct ACKickerGroup <: EleParameterGroup
+  amp_function::Union{Function, Nothing} = nothing
+end
+
+#---------------------------------------------------------------------------------------------------
 # AlignmentGroup
 
 """
@@ -454,34 +475,36 @@ Orientation of an element.
 the supporting girder if it exists or with respect to the machine coordinates.
 
 ## Fields
-• `offset::Vector`         - [x, y, z] offsets not including any Girder . \\
+• `offset::Vector`         - [x, y, z] offsets not including any Girder. \\
 • `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts.  \\
-• `y_rot::Number`          - Rotation around the y-axis not including any Girder misalignments. \\
-• `tilt::Number`           - Rotation around the z-axis not including any Girder misalignment. \\
+• `y_rot::Number`          - Rotation around the y-axis not including any Girder alignment shifts. \\
+• `z_rot::Number`          - Rotation around the z-axis not including any Girder alignment shifts. \\
 
 # Associated Output Parameters
 The `tot` parameters are defined only for elements that can be supported by a `Girder`.
 These parameters are the body coordinates with respect to machine coordinates. 
 These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
 non-tot fields if there is no `Girder`.
-• `offset_tot::Vector`     - [x, y, z] offsets including Girder alignment shifts. \\
-• `x_rot_tot::Number`      - Rotation around the x-axis including Girder misalignment. \\
-• `y_rot_tot::Number`      - Rotation around the z-axis including Girder misalignment. \\
-• `tilt_tot::Number`       - Rotation around the z-axis including Girder misalignment. \\
+• `q_align::Quaternion`      - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
+• `q_align_tot:: Quaternion` - `Quaternion` representation of orienttion with Girder shifts.
+• `offset_tot::Vector`       - `[x, y, z]` offsets including Girder alignment shifts. \\
+• `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
+• `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
+• `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
 """ AlignmentGroup
 
 @kwdef mutable struct AlignmentGroup <: EleParameterGroup
   offset::Vector = [0.0, 0.0, 0.0] 
   x_rot::Number = 0
   y_rot::Number = 0
-  tilt::Number = 0
+  z_rot::Number = 0
 end
 
 #---------------------------------------------------------------------------------------------------
 # ApertureGroup
 
 """
-    struct ApertureGroup <: EleParameterGroup
+    mutable struct ApertureGroup <: EleParameterGroup
 
 Vacuum chamber aperture struct.
 
@@ -491,7 +514,7 @@ Vacuum chamber aperture struct.
 • `wall::Wall2D`                        - Aperture defined by an array of vertices. \\
 • `aperture_shape::ApertureShape.T`     - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
 • `aperture_at::BodyLoc.T`              - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
-• `misalignment_moves_aperture::Bool`   - Do element misalignments move the aperture? Default is false. \\
+• `ele_alignment_moves_aperture::Bool`  - Do element alignments shifts move the aperture? Default is `false`. \\
 • `custom_aperture::Dict`               - Custom aperture information. \\
 """ ApertureGroup
 
@@ -726,15 +749,11 @@ end
 Girder parameters.
 
 ## Fields
-• `eles:::Vector{Ele}`        - Elements supported by girder. \\
-• `origin_ele::Ele`           - Origin reference element. \\
-• `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
+• `supported:::Vector{Ele}`        - Elements supported by girder. \\
 """ GirderGroup
 
 @kwdef mutable struct GirderGroup <: EleParameterGroup
-  eles::Vector{Ele} = Ele[]
-  origin_ele::Ele = NullEle
-  origin_ele_ref_pt::Loc.T = Loc.CENTER
+  supported::Vector{Ele} = Ele[]
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -811,6 +830,26 @@ and normalized field strengths willbe varied. And vice versa when `field_master`
 @kwdef mutable struct MasterGroup <: EleParameterGroup
   is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
+end
+
+#---------------------------------------------------------------------------------------------------
+# OriginEleGroup
+
+"""
+    mutable struct OriginEleGroup <: EleParameterGroup
+
+Used with `Fiducial`, `FloorShift`, and `Girder` elements.
+The `OriginEleGroup` is used to set the coordinate reference frame from which 
+the orientation set by the `AlignmentGroup` is measured. 
+
+## Fields
+• `origin_ele::Ele`           - Origin reference element. Default is NULL_ELE. \\
+• `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
+""" OriginEleGroup
+
+@kwdef mutable struct OriginEleGroup <: EleParameterGroup
+  origin_ele::Ele = NULL_ELE
+  origin_ele_ref_pt::Loc.T = Loc.CENTER
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -1052,7 +1091,7 @@ struct declarations.
 
 ## Standard pdict keys:
 • `:geometry`   - `OPEN` or `CLOSED`. \\
-• `:type`       - `MultipassLordBranch`, `SuperLordBranch`, `GirderBranch`, or `TrackingBranch`.  \\
+• `:type`       - `MultipassBranch`, `SuperBranch`, `GirderBranch`, or `TrackingBranch`.  \\
 • `:ix_branch`  - Index of branch in `lat.branch[]` array. \\
 • `:ix_ele_min_changed` - For tracking branches: Minimum index of elements where parameter changes have been made. \\
   Set to `typemax(Int)` if no elements have been modified. \\
@@ -1085,11 +1124,11 @@ abstract type BranchType end
 abstract type LordBranch <: BranchType end
 abstract type TrackingBranch <: BranchType end
 
-struct MultipassLordBranch <: LordBranch; end
-struct SuperLordBranch <: LordBranch; end
+struct MultipassBranch <: LordBranch; end
+struct SuperBranch <: LordBranch; end
 struct GirderBranch <: LordBranch; end
 
-struct GovernorBranch <: LordBranch; end  # This may never be used!
+## struct GovernorBranch <: LordBranch; end  # This may never be used!
 
 #---------------------------------------------------------------------------------------------------
 # LatticeGlobal

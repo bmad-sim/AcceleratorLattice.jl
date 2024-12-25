@@ -12,10 +12,10 @@ The parmeter groups are:
 \begin{tabular}{llll} \toprule
  {\it Group}          & {\it Section}             & {\it Group}          & {\it Section}            \\ 
  \midrule
- AlignmentGroup       & \sref{s:alignment.g}      & InitParticleGroup    & \sref{s:init.particle.g} \\  
- ApertureGroup        & \sref{s:aperture.g}       & LengthGroup          & \sref{s:length.g}        \\   
- BMultipoleGroup      & \sref{s:bmultipole.g}     & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
- BeamBeamGroup        & \sref{s:beam.beam.g}      & MasterGroup          & \sref{s:master.g}        \\
+ AlignmentGroup       & \sref{s:alignment.g}      & LengthGroup          & \sref{s:length.g}        \\    
+ ApertureGroup        & \sref{s:aperture.g}       & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
+ BMultipoleGroup      & \sref{s:bmultipole.g}     & MasterGroup          & \sref{s:master.g}        \\
+ BeamBeamGroup        & \sref{s:beam.beam.g}      & OriginEleGroup       & \sref{s:origin.ele.g}    \\
  BendGroup            & \sref{s:bend.g}           & PatchGroup           & \sref{s:patch.g}         \\
  DescriptionGroup     & \sref{s:descrip.g}        & RFGroup              & \sref{s:rf.g}            \\
  DownstreamReferenceGroup & \sref{dreference.g}   & RFAutoGroup          & \sref{s:rfauto.g}        \\
@@ -23,6 +23,7 @@ The parmeter groups are:
  FloorPositionGroup   & \sref{s:floor.pos.g}      & SolenoidGroup        & \sref{s:solenoid.g}      \\
  ForkGroup            & \sref{s:fork.g}           & TrackingGroup        & \sref{s:tracking.g}      \\
  GirderGroup          & \sref{s:girder.g}         & TwissGroup           & \sref{s:twiss.g}         \\
+ InitParticleGroup    & \sref{s:init.particle.g}  &                      &                          \\  
   \bottomrule
 \end{tabular}
 } 
@@ -787,11 +788,7 @@ another branch.
 
 The components of this group are:
 \begin{example}
-  eles::Vector{Ele}         - Elements supported by girder. 
-  origin_ele::Ele           - Origin reference element. 
-  origin_ele_ref_pt::Loc.T  - Origin reference point. Default is Loc.CENTER. 
-  dr::Vector                - [x, y, z] offset. 
-  dq::Quat                   - Quaternion orientation. 
+  supported::Vector{Ele}    - Elements supported by girder. 
 \end{example}
 
 
@@ -819,12 +816,40 @@ The components of this group are:
 %---------------------------------------------------------------------------------------------------
 \section{LordSlaveStatusGroup}
 \label{s:lord.slave.g}
+\label{s:lord.enum}
+\label{s:slave.enum}
 
-The components of this group are:
+The components of this group are: \\
 \begin{example}
   lord_status::Lord.T     - Lord status. 
   slave_status::Slave.T   - Slave status. 
 \end{example}
+
+The possible values of \vn{lord_status} are:
+\vspace*{-0.4ex} \\
+\begin{tabular}{ll}
+  Lord & \\
+  \indnt .NOT       & -- Not a lord \\
+  \indnt .SUPER     & -- Is a Super lord (\sref{c:super}) \\
+  \indnt .MULTIPASS & -- Is a Multipass lord (\sref{c:multipass}) \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+
+The possible values of \vn{lord_status} are: \\
+\vspace*{-0.4ex} \\
+\begin{tabular}{ll}
+  Slave & \\
+  \indnt .NOT       & -- Not a slave \\
+  \indnt .SUPER     & -- Is a Super slave (\sref{c:super}) \\
+  \indnt .MULTIPASS & -- Multipass slave (\sref{c:multipass}) \\
+\end{tabular}
+\hfill \break \vskip -1.2ex
+
+Notice that elements that are supported by a \vn{Girder} are not marked as slaves to the \vn{Girder}
+although the supported elements will have a pointer to the supporting girder.
+
+This group is used in lattice element lord/slave bookkeeping (\sref{c:lord.slave.book}). See this
+section for more details.
 
 %---------------------------------------------------------------------------------------------------
 \section{MasterGroup}
@@ -835,6 +860,24 @@ The components of this group are:
   is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
 \end{example}
+
+%---------------------------------------------------------------------------------------------------
+\section{OriginEleGroup}
+\label{s:origin.ele.g}
+
+The components of this group are:
+\begin{example}
+  origin_ele::Ele           - Origin reference element. Default is NULL_ELE.
+  origin_ele_ref_pt::Loc.T  - Origin reference point. Default is Loc.CENTER. 
+\end{example}
+
+The \vn{OriginEleGroup} is used with \vn{Fiducial}, \vn{FloorShift}, and \vn{Girder} elements.
+The \vn{OriginEleGroup} is used to set the coordinate reference frame from which 
+the orientation set by the \vn{AlignmentGroup} is measured. To specify that the floor coordinates are
+to be used, set the \vn{origin_ele} to \vn{NULL_ELE}. Typically this is the same as using the
+beginning element of the first branch of a lattice as long as the first element does not have
+any orientation shifts.
+
 
 %---------------------------------------------------------------------------------------------------
 \section{PatchGroup}

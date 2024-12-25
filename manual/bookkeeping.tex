@@ -1,7 +1,82 @@
-\chapter{AcceleratorLattice Bookkeeping}
+\chapter{Lattice Bookkeeping}
 \label{c:bookkeeping}
 
 Bookkeeping in \accellat mainly involves making sure that dependent parameters are updated as needed.
+This includes dependent parameters within a lattice element, propagating changes through the lattice,
+and lord/slave bookkeeping.
+
+%---------------------------------------------------------------------------------------------------
+\section{Lord/Slave Bookkeeping}
+\label{s:lord.slave.book}
+
+There are two types of lords/slave groupings:
+\begin{example}
+  Superposition: Super lords / Super Slaves        \sref{c:super}
+  Multipass:     Multipass lords Multipass Slaves  \sref{c:multipass}
+\end{example}
+
+The lord and slave slave status of a lattice element is contained in the \vn{LordSlaveStatusGroup}
+parameter group. The components of this group are (\sref{s:lord.slave.g}):
+\begin{example}
+  lord_status::Lord.T     - Lord status. 
+  slave_status::Slave.T   - Slave status. 
+\end{example}
+
+For a given element, some combinations of lord and slave status are not possible. The possibilities are:
+\begin{tabular}{lcccc}
+  \toprule
+  & \multicolumn{4}{c}{\vn{lord_status}} \\
+  \cmidrule(lr){2-5}
+  {\vn{slave_status}} &
+  \begin{sideways}\vn{.NOT}\end{sideways} &
+  \begin{sideways}\vn{.SUPER}\end{sideways} &
+  \begin{sideways}\vn{.MULTIPASS}\end{sideways} &
+  \\ \midrule
+  %                   N   S   M
+  \vn{.NOT}         & X & X & X \\
+  \vn{.SUPER}       & X &   &   \\
+  \vn{.MULTIPASS}   & X & X &   \\
+  \bottomrule
+end{tabular}
+\hfill \break \vskip -1.2ex
+
+Notice that the only possibility for an element to simultaneously be both a lord and a slave is
+for a super lord being a multipass slave.
+
+%---------------------------------------------------------------------------------------------------
+\section{Girders}
+
+\vn{Girders} support a set of supported elements. A \vn{Girder} may support other \vn{Girders}
+and so a hierarchy of \vn{Girders} may be constructed. While a \vn{Girder} may support many elements,
+any given element may only be supported by one \vn{Girder}.
+
+\vn{Girder} elements may support super and multipass lord elements, a \vn{Girder} will never support
+slave elements directly. This includes any super lord element that is also a multipass slave.
+
+A \vn{Girder} element will have a \vn{Vector\{Ele\}} parameter of supported elements \vn{.supported}. 
+Supported elements will have a \vn{.girder} parameter pointing to the supporting \vn{Girder}.
+Elements that do not have a supporting \vn{Girder} will not have this parameter.
+
+%---------------------------------------------------------------------------------------------------
+\section{Superposition}
+\label{s:super.book}
+
+Super lords are formed when elements are superimposed on top of other elements (\sref{c:super}).
+The \accellat bookkeeping routines and take changes to lord element parameters and set the 
+appropriate slave parameters.
+
+When there is a set of lattice elements that are in reality the same physical element, a
+multipass lord can be used to represent the common physical element \sref{c:multipass}. 
+The \accellat bookkeeping routines and take changes to lord element parameters and set the 
+appropriate slave parameters.
+
+\vn{Girder} lords support other elements (possibly including other \vn{Girder} lords). Alignment
+shifts of a \vn{Girder} lord will shift the supported elements accordingly.
+
+%---------------------------------------------------------------------------------------------------
+\section{Lord/Slave Element Pointers}
+
+All three types of lord elements contain a \vn{Vector\{ele\}} of elements called \vn{slaves}.
 
 %---------------------------------------------------------------------------------------------------
 \section{Element Parameter Access}

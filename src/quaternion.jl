@@ -13,19 +13,19 @@ struct AxisAngle
 end
 
 #---------------------------------------------------------------------------------------------------
-# QuaternionX, QuaternionY, QuaternionZ
+# rotX, rotY, rotZ
 
 """
-    QuaternionX(angle::Number) -> Quaternion
-    QuaternionY(angle::Number) -> Quaternion
-    QuaternionZ(angle::Number) -> Quaternion
+    rotX(angle::Number) -> Quaternion
+    rotY(angle::Number) -> Quaternion
+    rotZ(angle::Number) -> Quaternion
 
 Quaternion constructors representing rotations around x, y, and z axes.
-""" QuaternionX, QuaternionY, QuaternionZ
+""" rotX, rotY, rotZ
 
-QuaternionX(angle::Number) = Quaternion(cos(angle/2), [sin(angle/2), 0, 0])
-QuaternionY(angle::Number) = Quaternion(cos(angle/2), [0, sin(angle/2), 0])
-QuaternionZ(angle::Number) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
+rotX(angle::Number) = Quaternion(cos(angle/2), [sin(angle/2), 0, 0])
+rotY(angle::Number) = Quaternion(cos(angle/2), [0, sin(angle/2), 0])
+rotZ(angle::Number) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
 
 #---------------------------------------------------------------------------------------------------
 # Quaternion
@@ -33,7 +33,7 @@ QuaternionZ(angle::Number) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
 """
     Quaternion(aa::AxisAngle) 
     Quaternion(m::Matrix{T}) 
-    Quaternion(x_rot::Real, y_rot::Real, tilt::Real)
+    Quaternion(x_rot::Real, y_rot::Real, z_rot::Real)
     Quaternion(qv::Vector)  # 4-vector
 
 Quaternion constructors. 
@@ -41,7 +41,7 @@ Quaternion constructors.
 
 Quaternion(qv::Vector) = Quaternion(qv[1], qv[2:end])
 
-Quaternion(x_rot::Real, y_rot::Real, tilt::Real) = QuaternionY(y_rot) * QuaternionX(x_rot) * QuaternionZ(tilt)
+Quaternion(x_rot::Real, y_rot::Real, z_rot::Real) = rotY(y_rot) * rotX(x_rot) * rotZ(z_rot)
 
 function Quaternion(aa::AxisAngle) 
   if aa.angle == 0; return UNIT_QUAT; end
@@ -93,30 +93,30 @@ end
 # rot_angles
 
 """
-    rot_angles(q::Quaternion; angles0 = [0.0, 0.0, 0.0]) -> theta, phi, psi
+    rot_angles(q::Quaternion; angles0 = [0.0, 0.0, 0.0]) -> (x_rot, y_rot, z_rot)
 
-Return the  `theta`, `phi`, and `psi` rotation angles corresponding to the quaternion `q`.
+Return the rotation angles corresponding to the quaternion `q`.
 """ rot_angles
 
 function rot_angles(q::Quaternion{T}; angles0 = [0.0, 0.0, 0.0]) where {T}
   m = quat_to_dcm(q)  # The dcm is the inverse (transpose) of the corresponding rotation matrix
 
-  # Special case where cos(phi) is close to zero.
-  # Only theta at +/- psi is well defined here so this is rather arbitrary.
+  # Special case where cos(x_rot) is close to zero.
+  # Only y_rot at +/- z_rot is well defined here so this is rather arbitrary.
   if abs(m[3,1]) + abs(m[3,3]) < 1e-14
-    if m[3,2] > 0; return angles0[1],  pi/2, atan(-m[1,3], m[1,1]) - angles0[1]
-    else;          return angles0[1], -pi/2, atan( m[1,3], m[1,1]) + angles0[1]
+    if m[3,2] > 0; return (-pi/2, angles0[2], atan(-m[1,3], m[1,1]) - angles0[2])
+    else;          return ( pi/2, angles0[2], atan( m[1,3], m[1,1]) + angles0[2])
     end
   end
 
-  theta = atan(m[3,1], m[3,3])
-  phi = atan(m[3,2], norm(m[3,1]^2, m[3,3]^2))
-  psi = atan(m[1,2], m[2,2])
+  yrot = atan(m[3,1], m[3,3])
+  xrot = -atan(m[3,2], norm(m[3,1]^2, m[3,3]^2))
+  zrot = atan(m[1,2], m[2,2])
 
-  if angles0 == [0.0, 0.0, 0.0]; return mod(theta, 2pi), phi, psi; end
+  if angles0 == [0.0, 0.0, 0.0]; return (xrot, mod(yrot, 2pi), zrot); end
 
-  diff1 = [modulo2(theta-angles0[1], pi), modulo2(phi-angles0[2], pi), modulo2(psi-angles0[3], pi)]
-  diff2 = [modulo2(pi+theta-angles0[1], pi), modulo2(pi-phi-angles0[2], pi), modulo2(pi+psi-angles0[3], pi)]
+  diff1 = [modulo2(xrot-angles0[1], pi), modulo2(yrot-angles0[2], pi), modulo2(zrot-angles0[3], pi)]
+  diff2 = [modulo2(pi-xrot-angles0[1], pi), modulo2(pi+yrot-angles0[2], pi), modulo2(pi+zrot-angles0[3], pi)]
   if norm(diff1) < norm(diff2)
     return diff1 + angles0
   else
