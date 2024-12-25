@@ -40,7 +40,7 @@ while true
   group_list[strip(svec[3])] = ref
 end
 
-# Parse sections
+# Parse element group sections
 
 while true
   global line
@@ -75,7 +75,7 @@ while true
     end
   end
 
-  fields_in_struct = string.(fieldnames(eval_str(group)))
+  fields_in_struct = string.(associated_names(eval_str(group)))
   for f in fields_in_struct
     if f ∉ fields_in_file; println("Field `$f` in group $group but not in list in file $fname"); end
   end

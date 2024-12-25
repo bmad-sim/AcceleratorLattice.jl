@@ -91,14 +91,23 @@ ELE_PARAM_INFO_DICT = Dict(
   :offset             => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] offset of element or, for a patch, exit coordinates.", "m"),
   :x_rot              => ParamInfo(AlignmentGroup, Number,         "X-axis rotation of element or, for a patch, exit coordinates.", "rad"),
   :y_rot              => ParamInfo(AlignmentGroup, Number,         "Y-axis rotation of element or, for a patch, exit coordinates.", "rad"),
-  :tilt               => ParamInfo(AlignmentGroup, Number,         "Z-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :z_rot              => ParamInfo(AlignmentGroup, Number,         "Z-axis rotation of element or, for a patch, exit coordinates.", "rad"),
 
-  :q_align            => ParamInfo(AlignmentGroup, Quaternion,     "Quaternion orientation.", "rad", OutputGroup),
-  :q_align_tot        => ParamInfo(AlignmentGroup, Quaternion,     "Quaternion orientation including Girder orientation.", "rad", OutputGroup),
+  :q_align            => ParamInfo(AlignmentGroup, Quaternion,     "Quaternion orientation.", "", OutputGroup),
+  :q_align_tot        => ParamInfo(AlignmentGroup, Quaternion,     "Quaternion orientation including Girder orientation.", "", OutputGroup),
   :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m", OutputGroup),
   :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad", OutputGroup),
   :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad", OutputGroup),
   :z_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad", OutputGroup),
+
+  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,  "Aperture shape. Default is ELLIPTICAL."),
+  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,      "Aperture location. Default is BodyLoc.ENTRANCE_END."),
+  :aperture_shifts_with_alignment
+                      => ParamInfo(ApertureGroup,  Bool,           "Do element alignment shifts move the aperture?"),
+  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number}, "Min/Max horizontal aperture limits.", "m"),
+  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number}, "Min/Max vertical aperture limits.", "m"),
+  :wall               => ParamInfo(ApertureGroup,  Wall2D,         "Wall defined by array of aperture vertices."),
+  :custom_aperture    => ParamInfo(ApertureGroup,  Dict,           "Custom aperture info."),
 
   :angle              => ParamInfo(BendGroup,      Number,         "Reference bend angle", "rad"),
   :bend_field_ref     => ParamInfo(BendGroup,      Number,         "Reference bend field corresponding to g bending strength", "T"),
@@ -119,10 +128,22 @@ ELE_PARAM_INFO_DICT = Dict(
   :norm_bend_field    => ParamInfo(BendGroup,   Number,            "Actual bend strength in the plane of the bend", "1/m", OutputGroup),
   :bend_field         => ParamInfo(BendGroup,   Number,            "Actual bend field in the plane of the bend field", "T", OutputGroup),
 
+  :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species, "Reference species at downstream end."),
+  :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,  "Reference momentum * c at downstream end.", "eV"),
+  :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,  "Reference total energy at downstream end.", "eV"),
+
+  :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference velocity/c at downstream end.", "", OutputGroup),
+  :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference relativistic gamma factor at downstream end.", "", OutputGroup),
+
+  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
+  :q_floor            => ParamInfo(FloorPositionGroup, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
+
   :to_line            => ParamInfo(ForkGroup,      Union{BeamLine, Nothing}, "Beamline forked to."),
   :to_ele             => ParamInfo(ForkGroup,      String,         "Lattice element forked to."),
   :direction          => ParamInfo(ForkGroup,      Int,            "Direction (forwards or backwards) of injection."),
   :new_branch         => ParamInfo(ForkGroup,      Bool,           "Fork to new or existing branch?"),
+
+  :supported          => ParamInfo(GirderGroup,        Vector{Ele},    "Array of elements supported by a Girder."),
 
   :L                  => ParamInfo(LengthGroup,    Number,         "Element length.", "m"),
   :orientation        => ParamInfo(LengthGroup,    Int,            "Longitudinal orientation of element. May be +1 or -1."),
@@ -134,7 +155,16 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :is_on              => ParamInfo(MasterGroup,    Bool,           "Element fields on/off."),
   :field_master       => ParamInfo(MasterGroup,    Bool,           "True: fields are fixed and normalized values change when varying ref energy."),
-  :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup, Bool,  "True: If element is a multipass lord, ref energy is set in lord."),
+
+  :origin_ele         => ParamInfo(OriginEleGroup,     Ele,        "Coordinate reference element."),
+  :origin_ele_ref_pt  => ParamInfo(OriginEleGroup,     Loc.T,      "Reference location on reference element. Default is Loc.CENTER."),
+
+  :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
+  :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
+  :pc_exit            => ParamInfo(PatchGroup,     Number,         "Reference momentum at exit end.", "eV"),
+  :L_user             => ParamInfo(PatchGroup,     Number,         "User set length.", "m"),
+  :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
+  :ref_coords         => ParamInfo(PatchGroup,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
   :species_ref            => ParamInfo(ReferenceGroup, Species,    "Reference species."),
   :pc_ref                 => ParamInfo(ReferenceGroup, Number,     "Reference momentum * c.", "eV"),
@@ -147,20 +177,6 @@ ELE_PARAM_INFO_DICT = Dict(
   :β_ref                  => ParamInfo(ReferenceGroup, Number,     "Reference velocity/c.", "", OutputGroup),
   :γ_ref                  => ParamInfo(ReferenceGroup, Number,     "Reference relativistic gamma factor.", "", OutputGroup),
 
-  :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species, "Reference species at downstream end."),
-  :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,  "Reference momentum * c at downstream end.", "eV"),
-  :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,  "Reference total energy at downstream end.", "eV"),
-
-  :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference velocity/c at downstream end.", "", OutputGroup),
-  :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference relativistic gamma factor at downstream end.", "", OutputGroup),
-
-  :E_tot_offset       => ParamInfo(PatchGroup,     Number,         "Reference energy offset.", "eV"),
-  :E_tot_exit         => ParamInfo(PatchGroup,     Number,         "Reference energy at exit end.", "eV"),
-  :pc_exit            => ParamInfo(PatchGroup,     Number,         "Reference momentum at exit end.", "eV"),
-  :L_user             => ParamInfo(PatchGroup,     Number,         "User set length.", "m"),
-  :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
-  :ref_coords         => ParamInfo(PatchGroup,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
-
   :voltage            => ParamInfo(RFGroup,       Number,          "RF voltage.", "volt"),
   :gradient           => ParamInfo(RFGroup,       Number,          "RF gradient.", "volt/m"),
   :phase              => ParamInfo(RFGroup,       Number,          "RF phase.", "rad"),
@@ -171,7 +187,6 @@ ELE_PARAM_INFO_DICT = Dict(
   :cavity_type        => ParamInfo(RFGroup,       Cavity.T,        "Type of cavity."),
   :n_cell             => ParamInfo(RFGroup,       Int,             "Number of RF cells."),
 
-  :voltage_master     => ParamInfo(RFAutoGroup,    Bool,           "Voltage or gradient is constant with length changes?"),
   :auto_amp           => ParamInfo(RFAutoGroup,    Number,    
                                   "Correction to the voltage/gradient calculated by the auto scale code.", ""),
   :auto_phase         => ParamInfo(RFAutoGroup,    Number,         "Correction RF phase calculated by the auto scale code.", "rad"),
@@ -180,23 +195,6 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :num_steps          => ParamInfo(TrackingGroup,  Int,            "Nominal number of tracking steps."),
   :ds_step            => ParamInfo(TrackingGroup,  Number,         "Nominal distance between tracking steps.", "m"),
-
-  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,  "Aperture shape. Default is ELLIPTICAL."),
-  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,      "Aperture location. Default is BodyLoc.ENTRANCE_END."),
-  :ele_alignment_moves_aperture 
-                      => ParamInfo(ApertureGroup,  Bool,           "Element alignment shifts moves aperture?"),
-  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number}, "Min/Max horizontal aperture limits.", "m"),
-  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number}, "Min/Max vertical aperture limits.", "m"),
-  :wall               => ParamInfo(ApertureGroup,  Wall2D,         "Wall defined by array of aperture vertices."),
-  :custom_aperture    => ParamInfo(ApertureGroup,  Dict,           "Custom aperture info."),
-
-  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
-  :q_floor            => ParamInfo(FloorPositionGroup, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
-
-  :supported          => ParamInfo(GirderGroup,        Vector{Ele},    "Array of elements supported by a Girder."),
-
-  :origin_ele         => ParamInfo(OriginEleGroup,     Ele,        "Coordinate reference element."),
-  :origin_ele_ref_pt  => ParamInfo(OriginEleGroup,     Loc.T,      "Reference location on reference element. Default is Loc.CENTER."),
 
   :Ksol               => ParamInfo(SolenoidGroup,   Number,        "Solenoid strength.", "1/m"),
   :Bsol               => ParamInfo(SolenoidGroup,   Number,        "Solenoid field.", "T"),

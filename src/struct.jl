@@ -514,7 +514,7 @@ Vacuum chamber aperture struct.
 • `wall::Wall2D`                        - Aperture defined by an array of vertices. \\
 • `aperture_shape::ApertureShape.T`     - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
 • `aperture_at::BodyLoc.T`              - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
-• `ele_alignment_moves_aperture::Bool`  - Do element alignments shifts move the aperture? Default is `false`. \\
+• `aperture_shifts_with_alignment:Bool` - Do element alignments shifts move the aperture? Default is `false`. \\
 • `custom_aperture::Dict`               - Custom aperture information. \\
 """ ApertureGroup
 
@@ -524,7 +524,7 @@ Vacuum chamber aperture struct.
   aperture_shape::typeof(ApertureShape) = ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
   wall::Wall2D = Wall2D()
-  misalignment_moves_aperture::Bool = false
+  aperture_shifts_with_alignment::Bool = true
   custom_aperture::Dict = Dict()
 end
 

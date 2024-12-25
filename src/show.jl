@@ -34,7 +34,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
 
   ApertureGroup => Dict{Symbol,Symbol}(
     :x_limit          => :y_limit,
-    :aperture_shape   => :misalignment_moves_aperture,
+    :aperture_shape   => :aperture_shifts_with_alignment,
 
   ),
 
@@ -228,11 +228,12 @@ function ele_param_value_str(ele::Ele, key::Symbol; default::AbstractString = "?
   end
 end
 
+ele_param_value_str(q::Quaternion; default::AbstractString = "???") = "[$(join([string(qi) for qi in q], ", "))]"
 ele_param_value_str(wall2d::Wall2D; default::AbstractString = "???") = "Wall2D(...)"
 ele_param_value_str(who::Nothing; default::AbstractString = "???") = default
 ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
-ele_param_value_str(species::Species; default::AbstractString = "???") = "Species(\"" * species.name * "\")"
-ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T <: Ele = "[" * join([ele_name(ele) for ele in vec_ele], ", ") * "]"
+ele_param_value_str(species::Species; default::AbstractString = "???") = "Species($(str_quote(species.name)))"
+ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T <: Ele = "[$(join([ele_name(ele) for ele in vec_ele], ", "))]"
 ele_param_value_str(vec::Vector; default::AbstractString = "???") = "[" * join([string(v) for v in vec], ", ") * "]"
 ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
@@ -481,21 +482,26 @@ end
 # full_parameter_name
 
 """
-    full_parameter_name(field, group::Type{T}) where T <: BaseEleParameterGroup
+    full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterGroup
 
 For fields where the user name is different (EG: `r_floor` and `r` in a FloorPositionGroup), 
 return the string `struct_name (user_name)` (EG: `r (r_floor)`). Also add `(output)` to 
 names of output parameters.
 """ full_parameter_name
 
-function full_parameter_name(field, group::Type{T}) where T <: BaseEleParameterGroup
+function full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterGroup
+  pinfo = ele_param_info(field, throw_error = false)
+  if !isnothing(pinfo)
+    if !isnothing(pinfo.output_group); return "$field (output)"; end
+    if pinfo.struct_sym != field; return "$(pinfo.user_sym) ($(pinfo.struct_sym))"; end
+    return String(field)
+  end
+
   if field ∉ keys(ele_param_struct_field_to_user_sym); return String(field); end
 
   for sym in ele_param_struct_field_to_user_sym[field]
-    info = ele_param_info(sym)
-    if !has_parent_group(info, group); continue; end
-    if info.parent_group != group; continue; end
-    if !isnothing(info.output_group); return "$field (output)"; end
+    pinfo = ele_param_info(sym, throw_error = false)
+    if !has_parent_group(pinfo, group); continue; end
     if sym == field; break; end
     return "$field ($sym)"
   end
