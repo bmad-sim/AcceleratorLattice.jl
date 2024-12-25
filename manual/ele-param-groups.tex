@@ -12,18 +12,18 @@ The parmeter groups are:
 \begin{tabular}{llll} \toprule
  {\it Group}          & {\it Section}             & {\it Group}          & {\it Section}            \\ 
  \midrule
+ ACKickerGroup        & \sref{s:ackicker.g}       & InitParticleGroup    & \sref{s:init.particle.g} \\
  AlignmentGroup       & \sref{s:alignment.g}      & LengthGroup          & \sref{s:length.g}        \\    
  ApertureGroup        & \sref{s:aperture.g}       & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
  BMultipoleGroup      & \sref{s:bmultipole.g}     & MasterGroup          & \sref{s:master.g}        \\
  BeamBeamGroup        & \sref{s:beam.beam.g}      & OriginEleGroup       & \sref{s:origin.ele.g}    \\
  BendGroup            & \sref{s:bend.g}           & PatchGroup           & \sref{s:patch.g}         \\
  DescriptionGroup     & \sref{s:descrip.g}        & RFGroup              & \sref{s:rf.g}            \\
- DownstreamReferenceGroup & \sref{dreference.g}   & RFAutoGroup          & \sref{s:rfauto.g}        \\
+ DownstreamReferenceGroup & \sref{s:dreference.g} & RFAutoGroup          & \sref{s:rfauto.g}        \\
  EMultipoleGroup      & \sref{s:emultipole.g}     & ReferenceGroup       & \sref{s:reference.g}     \\
  FloorPositionGroup   & \sref{s:floor.pos.g}      & SolenoidGroup        & \sref{s:solenoid.g}      \\
  ForkGroup            & \sref{s:fork.g}           & TrackingGroup        & \sref{s:tracking.g}      \\
  GirderGroup          & \sref{s:girder.g}         & TwissGroup           & \sref{s:twiss.g}         \\
- InitParticleGroup    & \sref{s:init.particle.g}  &                      &                          \\  
   \bottomrule
 \end{tabular}
 } 
@@ -40,10 +40,6 @@ These sub-groups also inherit from \vn{BaseEleParameterGroup}:
   abstract type EleParameterGroup <: BaseEleParameterGroup end
   abstract type EleParameterSubGroup <: BaseEleParameterGroup end
 \end{example}
-
-\newpage
-
-%---------------------------------------------------------------------------------------------------
 
 To see which element types contain a given group, use the \vn{info(::EleParameterGroup)}
 method. Example:
@@ -90,6 +86,21 @@ on lords and slaves of the element.
 %
 \end{itemize}
 
+To simplify the structure of a lattice element, certain element parameters are not stored in the 
+element structure but are calculated as needed. These ``\vn{output}'' cannot be set.
+See \sref{s:ele.access} for details.
+
+%---------------------------------------------------------------------------------------------------
+\section{ACKickerGroup}
+\label{s:ackicker.g}
+
+The \vn{ACKickerGroup} holds parameters associated with \vn{ACKicker} elements.
+
+The parameters of this group are:
+\begin{example}
+  amp_function::Function      - Amplitude function.
+\end{example}
+
 \newpage
 
 %---------------------------------------------------------------------------------------------------
@@ -111,7 +122,7 @@ the $x$-axis.
 
 \begin{figure}
 \centering \includegraphics{alignment2.pdf} \caption[Alignment geometry.]  
-{Alignment geometry. A) \vn{tilt} (or \vn{tilt_tot}) rotation. B) Combined
+{Alignment geometry. A) \vn{z_rot} (or \vn{z_rot_tot}) rotation. B) Combined
 \vn{offset[1]} with \vn{y_rot} (or \vn{offset_tot[1]} with \vn{y_rot_tot}).
 }  \label{f:alignment}
 \end{figure}
@@ -122,35 +133,41 @@ Alignment is specified with respect to the ``alignment reference point'' of an e
 in Fig~\ref{s:alignment}. The \vn{Bend} reference point is chosen to be the center of the chord
 connecting the two ends. 
 This reference point was chosen over using the midpoint on the reference orbit arc since a 
-common simulation problem is to simulate a bend with a \vn{tilt} keeping the entrance and exit
+common simulation problem is to simulate a bend with a \vn{z_rot} keeping the entrance and exit
 endpoints fixed.
 
-The parameters of the \vn{AlignmentGroup} can be divided into two sub-groups. 
-One group has a \vn{_tot} suffix:
-\begin{example}
-  offset_tot::Vector - $[x, y, z]$ offset.
-  x_rot_tot::Number  - Rotation around the x-axis.
-  y_rot_tot::Number  - Rotation around the z-axis.
-  tilt_tot::Number   - Rotation around the z-axis. 
-\end{example}
-These ``total alignment'' parameters give the alignment of the element with 
-with respect to the branch coordinates.
-The other sub-group of parameters do not have a \vn{_tot} suffix:
+The parameters of the \vn{AlignmentGroup} are:
 \begin{example}
   offset::Vector - $[x, y, z]$ offset.
   x_rot::Number  - Rotation around the x-axis.
   y_rot::Number  - Rotation around the z-axis.
-  tilt::Number   - Rotation around the z-axis. 
+  z_rot::Number  - Rotation around the z-axis. 
 \end{example}
-These ``relative alignment'' parameters give the alignment of the element with respect 
-to any \vn{Girder} that is supporting the element. 
-If there is no support \vn{Girder}, the total alignment will be the same as the relative
-alignment. The relative alignment can be set by the User. 
+If the element is supported by a \vn{Girder}, the alignment parameters are with respect to the
+orientation of the \vn{Girder} position. If there is no supporting \vn{Girder}, the alignment
+parameters are with respect to the branch reference coordinates. There are output alignment
+parameters:
+\begin{example}
+  q_align::Quaternion     - Quaternion representation of x_rot, y_rot, z_rot.
+  offset_tot::Vector      - $[x, y, z]$ offset.
+  x_rot_tot::Number       - Rotation around the x-axis.
+  y_rot_tot::Number       - Rotation around the z-axis.
+  z_rot_tot::Number       - Rotation around the z-axis. 
+  q_align_tot::Quaternion - Quaternion  representation of tot rotations.
+\end{example}
+The ``total alignment'' parameters which have a \vn{_tot} suffix are always the alignment 
+of the element with with respect to the branch coordinates.
+If there is no support \vn{Girder}, the total alignment will be the same as the ``relative''
+(non-tot) alignment.
+
+The relative alignment can be set by the User. 
 The total alignment is computed by \accellat based upon the relative alignment and the alignment
 of any \vn{Girder}. \vn{Girder} elements themselves also have both relative and total
 alignments since Girders can support other Girders.
 
-\newpage
+The \vn{q_align} output parameter gives the quaternion representation of 
+\vn{x_rot}, \vn{y_rot} and \vn{z_rot}. Similarly, the\vn{q_align_tot} output parameter gives the
+quaternion representation of \vn{x_rot_tot}, \vn{y_rot_tot} and \vn{z_rot_tot}.
 
 %---------------------------------------------------------------------------------------------------
 \section{ApertureGroup}
@@ -168,15 +185,14 @@ by a set of vertices.
 The \vn{ApertureGroup} stores information about apertures an element may have. 
 The parameters of this group are:
 \begin{example}
-  x_limit::Vector\{Number\}         - Min/Max x-aperture limits. (m)
-  y_limit::Vector\{Number\}         - Min/Max y-aperture limits. (m)
-  aperture_shape::ApertureShape     - Aperture shape. Default: ELLIPTICAL
-  misalignment_moves_aperture::Bool - Alignment affects aperture? 
-                                                      Default: false.
-  aperture_at::BodyLoc.T            - Aperture location. 
-                                         Default: BodyLoc.ENTRANCE_END
-  wall::Wall2D                      - Aperture defined by vertex array.
-  custom_aperture::Dict             - Custom aperture information.
+  x_limit::Vector\{Number\}     - Min/Max x-aperture limits. (m)
+  y_limit::Vector\{Number\}     - Min/Max y-aperture limits. (m)
+  aperture_shape::ApertureShape - Aperture shape. Default: ELLIPTICAL
+  aperture_at::BodyLoc.T        - Aperture location. Default: BodyLoc.ENTRANCE_END
+  wall::Wall2D                  - Aperture defined by vertex array.
+  custom_aperture::Dict         - Custom aperture information.
+  aperture_shifts_with_alignment::Bool 
+                                - Alignment affects aperture? Default: false.
 \end{example}
 
 The aperture location is set by the \vn{aperture_at} parameter. Possible values are
@@ -290,7 +306,6 @@ The \vn{order} component gives the multipole order.
 There is storage for both normalized (\vn{Kn} and \vn{Ks}) and unnormalized (\vn{Bn} and \vn{Bs})
 field strengths. The letter ``\vn{n}'' designates the normal component and ``\vn{s}'' designates
 the skew component. 
-There is also a \vn{tilt} component which will tilt the entire multipole \sref{???}.
 The \accellat bookkeeping code will take care of calculating the normalized field if the unnormalized
 field is set and vice versa. The reason why the structure has three components, 
 normal, skew and tilt, that describe the field when only two would be sufficient is due convenience.
@@ -443,7 +458,7 @@ are zero, the actual field is
 \end{example}
 See the discussion of \vn{g} and \vn{Kn0} below for more details.
   %
-  \item[bend_field] \Newline
+  \item[bend_field (output param), norm_bend_field (output_param)] \Newline
 The actual dipole bend field ignoring any skew field component which is set by \vn{Bs0}. 
 The relation between this and \vn{bend_field_ref} is
 \begin{example}
@@ -541,7 +556,7 @@ $C_0$ and $C_1$ then
   C_1 = \frac{1}{2 \, \text{field_int}}
 \end{equation}
   %
-  \item[g, rho] \Newline
+  \item[g, rho (output param)] \Newline
 The Reference bending radius which determines the reference coordinate system is \vn{rho} (see
 \sref{s:ref}). \vn{g} = \vn{1/rho} is the ``bend strength'' and is proportional to the Reference
 dipole magnetic field. \vn{g} is related to the reference magnetic field \vn{bend_field_ref} via
@@ -570,7 +585,7 @@ represents a field of opposite sign as the field due a positive \vn{hkick}.
   \item[h1, h2] \Newline
 The attributes \vn{h1} and \vn{h2} are the curvature of the entrance and exit pole faces.
   %
-  \item[L, L_arc, L_chord, L_sagitta]  \Newline
+  \item[L, L_arc, L_chord, L_sagitta (output param)]  \Newline
 The \vn{L} parameter, which is in the \vn{LengthGroup} and not the \vn{BendGroup}, 
 is the arc length of the reference trajectory through the bend.
 
@@ -763,8 +778,8 @@ whether normalized or unnormalized quantities will stay constant if the referenc
 The \vn{FloorPositionGroup} stores position and orientation information in the Floor coordinate 
 system. The components of this group are:
 \begin{example}
-  r::Vector              - [x,y,z] position. 
-  q::Quat                - Quaternion orientation. 
+  r_floor::Vector          - [x,y,z] position. 
+  q_floor::Quat            - Quaternion orientation. 
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -898,11 +913,7 @@ length of the patch will be equal to the \vn{z_offset}.}
 
 The components of this group are:
 \begin{example}
-  offset::Vector            - [x, y, z] offset vector. 
   t_offset::Number          - Time offset. 
-  x_rot::Number             - Rotation around the x-axis. 
-  y_rot::Number             - Rotation around the y-axis. 
-  tilt::Number              - Rotation around the z-axis. 
   E_tot_offset::Number      - Total energy offset. Default is NaN (not used). 
   E_tot_exit::Number        - Fix total energy at exit end. Default is NaN (not used). 
   pc_exit::Number           - Reference momentum*c at exit end. Default is NaN (not used). 
@@ -1092,7 +1103,9 @@ The components of this group are:
 \end{example}
 
 
-The voltage
+Whether \vn{voltage} or \vn{gradient} is kept constant with length changes is determined by
+the setting of \vn{field_master} (\sref{s:master.g}). If \vn{field_master} is \vn{true}, the
+\vn{gradient} is kept constant and vice versa.
 
 %---------------------------------------------------------------------------------------------------
 \section{RFAutoGroup}
@@ -1118,7 +1131,7 @@ The components of this group are:
   time_ref::Number              - Reference time upstream end. 
   time_ref_downstream::Number   - Reference time downstream end. 
   extra_dtime_ref::Number       - User set reference time change.
-  dvoltage_ref::Number          - Sets change in reference energy.
+  dE_ref::Number                - Sets change in reference energy.
 \end{example}
 
 Associated output parameters are:

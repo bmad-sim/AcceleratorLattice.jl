@@ -73,7 +73,7 @@ export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole, BMulti
 export EMultipole, EMultipoleGroup, BendGroup, ApertureGroup, DescriptionGroup, RFGroup, SolenoidGroup
 export TrackingGroup, LengthGroup, ReferenceGroup, DownstreamReferenceGroup, ForkGroup
 export MasterGroup, LordSlaveStatusGroup, ACKickerGroup
-export GirderGroup, PatchGroup, RFAutoGroup, OutputGroup
+export GirderGroup, PatchGroup, RFAutoGroup, OutputGroup, full_parameter_name
 export TwissGroup, Twiss1, Wall2D, Vertex1, InitSpinGroup, InitParticleGroup, show_changed
 export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
 export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null

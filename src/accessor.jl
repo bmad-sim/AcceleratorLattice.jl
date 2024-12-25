@@ -429,13 +429,13 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
 
   elseif sym == :q_align
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
-    ag = ele.pdict[:AlginGroup]
-    return Quaternian(ag.x_rot, ag.y_rot, ag.z_rot)
+    ag = ele.pdict[:AlignmentGroup]
+    return Quaternion(ag.x_rot, ag.y_rot, ag.z_rot)
 
   elseif sym == :offset_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.offset; end
-    ag = ele.pdict[:AlginGroup]
+    ag = ele.pdict[:AlignmentGroup]
     orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
     return floor_transform(orient_ele, orient_girder).r
@@ -443,7 +443,7 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
   elseif sym == :x_rot_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.x_rot; end
-    ag = ele.pdict[:AlginGroup]
+    ag = ele.pdict[:AlignmentGroup]
     orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
     return rot_angles(floor_transform(orient_ele, orient_girder).q)[1]
@@ -451,15 +451,15 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
   elseif sym == :y_rot_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.y_rot; end
-    ag = ele.pdict[:AlginGroup]
+    ag = ele.pdict[:AlignmentGroup]
     orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
     return rot_angles(floor_transform(orient_ele, orient_girder).q)[2]
 
   elseif sym == :z_rot_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
-    if isnothing(girder(ele)); return ele.tilt; end
-    ag = ele.pdict[:AlginGroup]
+    if isnothing(girder(ele)); return ele.z_rot; end
+    ag = ele.pdict[:AlignmentGroup]
     orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
     return rot_angles(floor_transform(orient_ele, orient_girder).q)[3]
@@ -467,7 +467,7 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
   elseif sym == :q_align_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.q_align; end
-    ag = ele.pdict[:AlginGroup]
+    ag = ele.pdict[:AlignmentGroup]
     orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
     return floor_transform(orient_ele, orient_girder).q
