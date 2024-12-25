@@ -311,9 +311,9 @@ function Lattice(root_lines::Vector{BeamLine}; name::AbstractString = "lat")
   
   # Lord branches
 
-  new_lord_branch!(lat, "super_lord", SuperLordBranch)
-  new_lord_branch!(lat, "multipass_lord", MultipassLordBranch)
-  new_lord_branch!(lat, "girder_lord", GirderBranch)
+  new_lord_branch!(lat, "super", SuperBranch)
+  new_lord_branch!(lat, "multipass", MultipassBranch)
+  new_lord_branch!(lat, "girder", GirderBranch)
 
   init_multipass_bookkeeper!(lat)
   bookkeeper!(lat)

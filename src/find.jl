@@ -9,7 +9,6 @@ If `reference` is a `Branch`, this routine returns the element whose index is eq
 
 If `reference` is an `Ele`, this routine returns the element with index equal to `reference.ix_ele + offset`
 in the branch containing `reference`. Exceptions: 
-- A non-zero `offset` is not legal for `Governor` elements.
 - If the `reference` is a `multipass_lord`, return the `multipass_lord` whose slaves are all
   `offset` away from the corresponding slaves of `reference`. If no such `mulitpass_lord` exists,
   throw an error.
@@ -36,15 +35,12 @@ function ele_at_offset(reference::Union{Ele,Branch}, offset::Int, wrap::Bool)
     indx = reference.ix_ele + offset
 
     if offset != 0
-      if branch.type == GovernorBranch
-        error("Non-zero offset ($offset) not allowed for Governor reference elements ($reference.name).")
-
-      elseif branch.type == SuperLordBranch
+      if branch.type == SuperBranch
         offset > 0 ? ref = reference.slaves[end] : ref = reference.slaves[1]
         branch = ref.branch
         indx = ref.ix_ele + offset
 
-      elseif branch.type == MultipassLordBranch
+      elseif branch.type == MultipassBranch
         slaves = [ele_at_offset(slave, offset, wrap) for slave in reference.slaves]
         for slave in slaves
           if !(get(slave, :multipass_lord, NULL_ELE) === get(slaves[1], :multipass_lord, nothing))
@@ -52,6 +48,9 @@ function ele_at_offset(reference::Union{Ele,Branch}, offset::Int, wrap::Bool)
           end
         end
         return slave.multipass_lord
+
+      elseif branch.type == GirderBranch
+        error("Not yet implemented!!")
       end
     end
   end
@@ -112,7 +111,7 @@ function eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str
   else
     for branch in branch_vec
       if !matches_branch(branch_id, branch); continue; end
-      if !julia_regex && branch_id == "" && branch.type == SuperLordBranch; continue; end
+      if !julia_regex && branch_id == "" && branch.type == SuperBranch; continue; end
 
       ix_match = 0
       for ele in branch.ele

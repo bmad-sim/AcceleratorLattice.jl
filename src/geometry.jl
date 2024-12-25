@@ -33,18 +33,11 @@ function propagate_ele_geometry(::Type{STRAIGHT}, fstart::FloorPositionGroup, el
 end
 
 function propagate_ele_geometry(::Type{CIRCULAR}, fstart::FloorPositionGroup, ele::Ele)
-  bend::BendGroup = ele.BendGroup
-  (r_trans, q_trans) = ele_floor_transform(bend, ele.L)
-  r_floor = fstart.r + rot(fstart.q, r_trans)
-  q_floor = fstart.q * q_trans
-  return FloorPositionGroup(r_floor, q_floor)
+  df = floor_transform(ele.BendGroup, ele.L)
+  return floor_transform(fstart, df)
 end
 
 function propagate_ele_geometry(::Type{PATCH_GEOMETRY}, fstart::FloorPositionGroup, ele::Ele)
-  error("Not yet implemented!")
-end
-
-function propagate_ele_geometry(::Type{GIRDER_GEOMETRY}, fstart::FloorPositionGroup, ele::Ele)
   error("Not yet implemented!")
 end
 
@@ -53,39 +46,54 @@ function propagate_ele_geometry(::Type{CRYSTAL_GEOMETRY}, fstart::FloorPositionG
 end
 
 #---------------------------------------------------------------------------------------------------
-# ele_floor_transform
+# floor_transform
 
 """
-    ele_floor_transform(bend::BendGroup)
+    floor_transform(bend::BendGroup, L::Number) -> FloorPositionGroup
 
-Returns the (dr, dq) transformation between the beginning of a bend and the end of the bend.
+Returns the transformation of the coordinates from the beginning of a bend to the end of the bend.
 
 The transformation is
   r_end = r_start + rot(q_start, dr)
-  q_end = q_start * dq)
-""" ele_floor_transform
+  q_end = q_start * dq
+""" floor_transform(bend::BendGroup, L::Number)
 
-function ele_floor_transform(bend::BendGroup, L)
-  qa = QuaternionY(bend.angle)
+function floor_transform(bend::BendGroup, L)
+  qa = rotY(bend.angle)
   r_vec = [-L * sinc(bend.angle/(2*pi)) * sin(bend.angle), 0.0, L * sinc(bend.angle/pi)]
 
   if bend.tilt_ref == 0
-    return (r_vec, qa)
+    return FloorPositionGroup(r_vec, qa)
   else
     qt = QuaternionZ(-bend.tilt_ref)
-    return (rot(qt, r_vec), qt * qa * inv(qt))
+    return FloorPositionGroup(rot(qt, r_vec), qt * qa * inv(qt))
   end
+end
+
+#---------------------------------------------------------------------------------------------------
+# floor_transform
+
+"""
+    floor_transform(floor0::FloorPositionGroup, dfloor::FloorPositionGroup) -> FloorPositionGroup
+
+Returns coordinate transformation of `dfloor` applied to `floor0`.
+""" floor_transform(floor0::FloorPositionGroup, dfloor::FloorPositionGroup)
+
+function floor_transform(floor0::FloorPositionGroup, dfloor::FloorPositionGroup)
+  r_floor = floor0.r + rot(floor0.q, dfloor.r)
+  q_floor = floor0.q * dfloor.q
+  return FloorPositionGroup(r_floor, q_floor)
 end
 
 #---------------------------------------------------------------------------------------------------
 # rot
 
 """
-    rot(floor::FloorPositionGroup, q::Quaternion) -> FloorPositionGroup
+    rot(floor0::FloorPositionGroup, q::Quaternion) -> FloorPositionGroup
 
-Rotates a `FloorPositionGroup`.
+Rotates by `q` the floor position `floor0`.
 """ 
-function rot(floor::FloorPositionGroup, q::Quaternion)
-  return FloorPositionGroup(r = rot(q, floor.r), q = q * floor.q)
+function rot(floor0::FloorPositionGroup, q::Quaternion)
+  return FloorPositionGroup(r = rot(q, floor0.r), q = q * floor0.q)
 end
 

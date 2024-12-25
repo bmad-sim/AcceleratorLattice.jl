@@ -345,7 +345,108 @@ girder can be used to simulate any rigid support structure and there are no rest
 lattice elements that are supported are oriented with respect to one another.  Thus, for example,
 optical tables can be simulated.
 
-NOTE: This Element is in development and is incomplete.
+\begin{figure}[t]
+  \centering
+  \includegraphics{girder.pdf}
+  \caption[Girder example.] {
+Girder supporting three elements labeled \vn{A}, \vn{B}, and \vn{C}.  $\calO_A$ is the reference
+frame at the upstream end of element \vn{A} (\sref{s:ref.construct}), $\calO_C$ is the reference
+frame at the downstream end of element \vn{C}, and $\calO_G$ is the default \vn{origin} reference
+frame of the girder if the \vn{origin_ele} parameter is not set. $\bfr_{CA}$ is the vector from
+$\calO_A$ to $\calO_C$. The length \vn{l} of the girder is set to be the difference in $s$ between
+points $\calO_C$ and $\calO_A$.
+  }
+  \label{f:girder}
+\end{figure}
+
+A \vn{girder} is a support structure that orients the elements that are attached to it in space. A
+girder can be used to simulate any rigid support structure and there are no restrictions on how the
+lattice elements that are supported are oriented with respect to one another.  Thus, for example,
+optical tables can be simulated.
+
+Element parameter groups associated with this element type are:
+\TOPrule
+\begin{example}
+  FloorPositionGroup -> Floor floor position and orientation. \sref{s:floor.pos.g} 
+  LengthGroup        -> Length and s-position parameters. \sref{s:length.g} 
+  DescriptionGroup   -> Element descriptive strings. \sref{s:descrip.g} 
+  AlignmentGroup     -> Alignment with respect to the reference. \sref{s:alignment.g}
+\end{example}
+\BOTTOMrule
+
+A simple example of a girder is shown in \fig{f:girder}. Here a girder supports three
+elements labeled \vn{A}, \vn{B}, and \vn{C} where \vn{B} is a bend so the geometry is
+nonlinear. Such a girder may specified in the lattice file like:
+\begin{example}
+  lat = Lattice(...)        # Create lattice
+  create_external_ele(lat)  # Optional: Create external elements 
+  @ele g1 = Girder(supported = [A, B, C], ...)
+  create_girder!(g1)
+\end{example}
+The \vn{create_girder} command must appear after the lattice has been constructed.
+The list of \vn{supported} elements must contain only elements that are in a single
+lattice. Be careful here since lattice creation involves creating copies of the elments
+in the \vn{BeamLines} that define the lattice. Use of the function \vn{create_external_ele}
+may be useful here. The \vn{find} function may also be used to search for the appropriate
+elements in the lattice. 
+
+The list of supported elements does not have to be in any order and may contain elements from
+multiple branches. A \vn{Girder} may not support slave elements.
+If a super slave or multipass slave element is in the list, the slave will
+be removed and the corresponding lords of the slave will be substituted into the list.
+
+A lattice element may have at most one \vn{Girder} supporting it. However, a \vn{Girder} can be
+supported by another \vn{Girder} which in turn can be supported by a third \vn{Girder}, etc. Girders
+that support other Girders must be defined in the lattice file after the supported girders are
+defined.
+
+If all the supported elements of a \vn{Girder} are contained within a single lattice branch
+(lord elements are considered to be in the branch(s) that their slaves are in), The length \vn{L}
+of the \vn{Girder} is calculated by the difference in $s$-position from the upstream end of the
+supported element with minimal $s$-position to the downstream end of the supported element with
+the maximal $s$-position. If there are supported elements in multiple branches, the length is
+set to \vn{NaN}. The girder length is not used in any calculations.
+
+The reference frame from which a \vn{Girder}'s orientation is measured is set by the
+\vn{origin_ele} and \vn{origin_ele_ref_point} parameters (\sref{s:origin.ele.g}).
+Orientation shifts are controlled by the \vn{AlignmentGroup} (\sref{s:align.g}).
+
+When a girder is shifted in space, the elements
+it supports are also shifted.  In this case, the orientation
+attributes give the orientation of
+the element with respect to the \vn{girder}. The orientation with
+respect to the local reference coordinates is given by
+\vn{x_offset_tot}, etc, which are computed from the orientation attributes
+of the element and the \vn{girder}. An example will make this clear:
+\begin{example}
+  q1: quad, l = 2
+  q2: quad, l = 4, x_offset = 0.02, x_pitch = 0.01
+  d: drift, l = 8
+  g4: girder = \{q1, q2\}, x_pitch = 0.002, x_offset = 0.03
+  this_line: line = (q1, d, q2)
+  use, this_line
+\end{example}
+\index{overlay}
+In this example, \vn{g4} supports quadrupoles \vn{q1} and \vn{q2}.
+Since the supported elements are colinear, the computation is greatly
+simplified. The reference frame of \vn{g4}, which is the default
+\vn{origin} frame, is at $s = 7$~meters which is half way between the
+start of \vn{q1} at at $s = 0$~meters and the end of \vn{q2}) which is
+at $s = 14$. The reference frames of \vn{q1} and \vn{q2} are at their
+centers so the $s$ positions of the reference frames is
+\begin{example}
+  Element        S_ref   dS_from_g4
+  q1             1.0     -6.0
+  g4             7.0      0.0
+  q2            12.0      5.0
+\end{example}
+Using a small angle approximation to simplify the calculation, the \vn{x_pitch} of \vn{g4} produces
+an offset at the center of \vn{q2} of $0.01 = 0.002 * 5$. This, added to the offsets of \vn{g4} and
+\vn{q2}, give the total \vn{x_offset}, denoted \vn{x_offset_tot} of \vn{q2} is $0.06 = 0.01 + 0.03 +
+0.02$. The total \vn{x_pitch}, denoted \vn{x_pitch_tot}, of \vn{q2} is $0.022 = 0.02 + 0.001$.
+
+A \vn{Girder} that has its \vn{is_on} attribute set to False is considered to be unsifted with
+respect to it's reference frame.
 
 %---------------------------------------------------------------------------------------------------
 \section{Instrument}

@@ -1,5 +1,7 @@
 using AcceleratorLattice, Test
 
+@ele   z = Bend()
+
 @eles begin
   beginning = BeginningEle(pc_ref = 1e7, species_ref = Species("electron"))
   q1 = Quadrupole(L = 0.6, x_rot = 2, ID = "qz", Ks8L = 123, tilt8 = 2, Bn9 = 3, 

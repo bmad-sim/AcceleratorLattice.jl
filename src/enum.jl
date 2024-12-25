@@ -47,7 +47,7 @@ enum("BodyLoc", ["ENTRANCE_END", "CENTER", "EXIT_END", "BOTH_ENDS", "NOWHERE", "
                                                     "Location in relation to an element's body.")
 enum("BranchGeometry", ["OPEN", "CLOSED"], "Geometry of a branch.")
 enum("Cavity", ["STANDING_WAVE", "TRAVELING_WAVE"], "RF cavity type.")
-enum("Lord", ["NOT", "SUPER", "MULTIPASS", "GOVERNOR GIRDER"], "Type of lord this element is.") 
+enum("Lord", ["NOT", "SUPER", "MULTIPASS"], "Type of lord this element is.") 
 enum("Slave", ["NOT", "SUPER", "MULTIPASS"], "Type of slave this element is.")
 enum("Loc", ["UPSTREAM_END", "CENTER", "INSIDE", "DOWNSTREAM_END"], "Location in relation to machine coordinates.")
 enum("Select", ["UPSTREAM", "DOWNSTREAM"], "What to select in case of ambiguity.")
@@ -147,7 +147,7 @@ end
 holy_traits("ApertureShape", ["RECTANGULAR", "ELLIPTICAL", "VERTEX", "CUSTOM_SHAPE"], "The shape of the aperture.")
 
 holy_traits("EleGeometry", ["STRAIGHT", "CIRCULAR", "ZERO_LENGTH", 
-                   "PATCH_GEOMETRY", "GIRDER_GEOMETRY", "CRYSTAL_GEOMETRY", "MIRROR_GEOMETRY"], 
+                   "PATCH_GEOMETRY", "CRYSTAL_GEOMETRY", "MIRROR_GEOMETRY"], 
                    "Element geometry.")
 
 holy_traits("FieldType", ["ELECTRIC", "MAGNETIC"], "Type of field.")

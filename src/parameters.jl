@@ -73,18 +73,20 @@ ParamInfo(parent, kind, description, units::String = "", output_group = nothing,
     ELE_PARAM_INFO_DICT = Dict{Symbol,ParamInfo}
 
 Dictionary mapping element parameters to `ParamInfo` structs which hold information on the parameters.
-For example, `ELE_PARAM_INFO_DICT[:tilt]` shows that the `tilt` parameter is associated with
-the `ReferenceGroup`, etc. See the documentation on `ParamInfo` for more details.
+For example, `ELE_PARAM_INFO_DICT[:species_ref]` shows that the `species_ref` parameter is associated
+with the `ReferenceGroup`, etc. See the documentation on `ParamInfo` for more details.
 """ ELE_PARAM_INFO_DICT
 
 ELE_PARAM_INFO_DICT = Dict(
-  :name               => ParamInfo(Nothing,        String,        "Name of the element."),
-  :ix_ele             => ParamInfo(Nothing,        Int,           "Index of element in containing branch.ele[] array."),
-  :branch             => ParamInfo(Nothing,        Branch,        "Pointer to branch element is in."),
-  :multipass_lord     => ParamInfo(Nothing,        Ele,           "Element's multipass_lord. Will not be present if no lord exists."),
-  :super_lords        => ParamInfo(Nothing,        Vector{Ele},   "Array of element's super_lords. Will not be present if no lords exist."),
-  :slaves             => ParamInfo(Nothing,        Vector{Ele},   "Array of slaves of element. Will not be present if no slaves exist."),
-  :amp_function       => ParamInfo(Nothing,        Function,      "Amplitude function."),
+  :name               => ParamInfo(Nothing,        String,         "Name of the element."),
+  :ix_ele             => ParamInfo(Nothing,        Int,            "Index of element in containing branch.ele[] array."),
+  :branch             => ParamInfo(Nothing,        Branch,         "Pointer to branch element is in."),
+  :multipass_lord     => ParamInfo(Nothing,        Ele,            "Element's multipass_lord. Will not be present if no lord exists."),
+  :super_lords        => ParamInfo(Nothing,        Vector{Ele},    "Array of element's super_lords. Will not be present if no lords exist."),
+  :slaves             => ParamInfo(Nothing,        Vector{Ele},    "Array of slaves of element. Will not be present if no slaves exist."),
+  :girder             => ParamInfo(Nothing,        Ele,            "Supporting Girder element. Will not be present if no supporting girder."),
+
+  :amp_function       => ParamInfo(ACKickerGroup,  Function,       "Amplitude function."),
 
   :offset             => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] offset of element or, for a patch, exit coordinates.", "m"),
   :x_rot              => ParamInfo(AlignmentGroup, Number,         "X-axis rotation of element or, for a patch, exit coordinates.", "rad"),
@@ -96,58 +98,58 @@ ELE_PARAM_INFO_DICT = Dict(
   :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m", OutputGroup),
   :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad", OutputGroup),
   :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad", OutputGroup),
-  :tilt_tot           => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad", OutputGroup),
+  :z_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad", OutputGroup),
 
-  :angle              => ParamInfo(BendGroup,      Number,        "Reference bend angle", "rad"),
-  :bend_field_ref     => ParamInfo(BendGroup,      Number,        "Reference bend field corresponding to g bending strength", "T"),
-  :g                  => ParamInfo(BendGroup,      Number,        "Reference bend strength (1/rho)", "1/m"),
-  :e1                 => ParamInfo(BendGroup,      Number,        "Bend entrance face angle.", "rad"),
-  :e2                 => ParamInfo(BendGroup,      Number,        "Bend exit face angle.", "rad"),
-  :e1_rect            => ParamInfo(BendGroup,      Number,        "Bend entrance face angles relative to a rectangular geometry.", "rad"),
-  :e2_rect            => ParamInfo(BendGroup,      Number,        "Bend exit face angles relative to a rectangular geometry.", "rad"),
-  :L_chord            => ParamInfo(BendGroup,      Number,        "Bend chord length.", "m"),
-  :tilt_ref           => ParamInfo(BendGroup,      Number,        "Bend reference orbit rotation around the upstream z-axis", "rad"),
-  :edge_int1          => ParamInfo(BendGroup,      Number,        "Bend entrance edge field integral.", "m"),
-  :edge_int2          => ParamInfo(BendGroup,      Number,        "Bend exit edge field integral.", "m"),
-  :bend_type          => ParamInfo(BendGroup,      BendType.T,    "Sets the \"logical\" shape of a bend."),
+  :angle              => ParamInfo(BendGroup,      Number,         "Reference bend angle", "rad"),
+  :bend_field_ref     => ParamInfo(BendGroup,      Number,         "Reference bend field corresponding to g bending strength", "T"),
+  :g                  => ParamInfo(BendGroup,      Number,         "Reference bend strength (1/rho)", "1/m"),
+  :e1                 => ParamInfo(BendGroup,      Number,         "Bend entrance face angle.", "rad"),
+  :e2                 => ParamInfo(BendGroup,      Number,         "Bend exit face angle.", "rad"),
+  :e1_rect            => ParamInfo(BendGroup,      Number,         "Bend entrance face angles relative to a rectangular geometry.", "rad"),
+  :e2_rect            => ParamInfo(BendGroup,      Number,         "Bend exit face angles relative to a rectangular geometry.", "rad"),
+  :L_chord            => ParamInfo(BendGroup,      Number,         "Bend chord length.", "m"),
+  :tilt_ref           => ParamInfo(BendGroup,      Number,         "Bend reference orbit rotation around the upstream z-axis", "rad"),
+  :edge_int1          => ParamInfo(BendGroup,      Number,         "Bend entrance edge field integral.", "m"),
+  :edge_int2          => ParamInfo(BendGroup,      Number,         "Bend exit edge field integral.", "m"),
+  :bend_type          => ParamInfo(BendGroup,      BendType.T,     "Sets the \"logical\" shape of a bend."),
   :exact_multipoles   => ParamInfo(BendGroup,      ExactMultipoles.T, "Are multipoles treated exactly?"),
 
-  :rho                => ParamInfo(BendGroup,   Number,        "Reference bend radius", "m", OutputGroup),
-  :L_sagitta          => ParamInfo(BendGroup,   Number,        "Bend sagitta length.", "m", OutputGroup),
-  :norm_bend_field    => ParamInfo(BendGroup,   Number,        "Actual bend strength in the plane of the bend", "1/m", OutputGroup),
-  :bend_field         => ParamInfo(BendGroup,   Number,        "Actual bend field in the plane of the bend field", "T", OutputGroup),
+  :rho                => ParamInfo(BendGroup,   Number,            "Reference bend radius", "m", OutputGroup),
+  :L_sagitta          => ParamInfo(BendGroup,   Number,            "Bend sagitta length.", "m", OutputGroup),
+  :norm_bend_field    => ParamInfo(BendGroup,   Number,            "Actual bend strength in the plane of the bend", "1/m", OutputGroup),
+  :bend_field         => ParamInfo(BendGroup,   Number,            "Actual bend field in the plane of the bend field", "T", OutputGroup),
 
   :to_line            => ParamInfo(ForkGroup,      Union{BeamLine, Nothing}, "Beamline forked to."),
-  :to_ele             => ParamInfo(ForkGroup,      String,                   "Lattice element forked to."),
-  :direction          => ParamInfo(ForkGroup,      Int,                      "Direction (forwards or backwards) of injection."),
-  :new_branch         => ParamInfo(ForkGroup,      Bool,                     "Fork to new or existing branch?"),
+  :to_ele             => ParamInfo(ForkGroup,      String,         "Lattice element forked to."),
+  :direction          => ParamInfo(ForkGroup,      Int,            "Direction (forwards or backwards) of injection."),
+  :new_branch         => ParamInfo(ForkGroup,      Bool,           "Fork to new or existing branch?"),
 
-  :L                  => ParamInfo(LengthGroup,    Number,        "Element length.", "m"),
-  :orientation        => ParamInfo(LengthGroup,    Int,           "Longitudinal orientation of element. May be +1 or -1."),
-  :s                  => ParamInfo(LengthGroup,    Number,        "Longitudinal s-position at the upstream end.", "m"),
-  :s_downstream       => ParamInfo(LengthGroup,    Number,        "Longitudinal s-position at the downstream end.", "m"),
+  :L                  => ParamInfo(LengthGroup,    Number,         "Element length.", "m"),
+  :orientation        => ParamInfo(LengthGroup,    Int,            "Longitudinal orientation of element. May be +1 or -1."),
+  :s                  => ParamInfo(LengthGroup,    Number,         "Longitudinal s-position at the upstream end.", "m"),
+  :s_downstream       => ParamInfo(LengthGroup,    Number,         "Longitudinal s-position at the downstream end.", "m"),
 
-  :slave_status       => ParamInfo(LordSlaveStatusGroup,    Slave.T,        "Slave status."),
-  :lord_status        => ParamInfo(LordSlaveStatusGroup,    Lord.T,         "Lord status."),
+  :slave_status       => ParamInfo(LordSlaveStatusGroup, Slave.T,  "Slave status."),
+  :lord_status        => ParamInfo(LordSlaveStatusGroup, Lord.T,   "Lord status."),
 
-  :is_on              => ParamInfo(MasterGroup,    Bool,          "Element fields on/off."),
-  :field_master       => ParamInfo(MasterGroup,    Bool,          "True: fields are fixed and normalized values change when varying ref energy."),
-  :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup, Bool, "True: If element is a multipass lord, ref energy is set in lord."),
+  :is_on              => ParamInfo(MasterGroup,    Bool,           "Element fields on/off."),
+  :field_master       => ParamInfo(MasterGroup,    Bool,           "True: fields are fixed and normalized values change when varying ref energy."),
+  :multipass_lord_sets_ref_energy => ParamInfo(MasterGroup, Bool,  "True: If element is a multipass lord, ref energy is set in lord."),
 
-  :species_ref            => ParamInfo(ReferenceGroup, Species,     "Reference species."),
-  :pc_ref                 => ParamInfo(ReferenceGroup, Number,      "Reference momentum * c.", "eV"),
-  :E_tot_ref              => ParamInfo(ReferenceGroup, Number,      "Reference total energy.", "eV"),
-  :time_ref               => ParamInfo(ReferenceGroup, Number,      "Reference time.", "sec"),
-  :extra_dtime_ref        => ParamInfo(ReferenceGroup, Number,      "Additional reference time change.", "sec"),
-  :time_ref_downstream    => ParamInfo(ReferenceGroup, Number,      "Reference time at downstream end.", "sec"),
-  :dE_ref                 => ParamInfo(ReferenceGroup, Number,      "Change in reference energy.", "volt"),
+  :species_ref            => ParamInfo(ReferenceGroup, Species,    "Reference species."),
+  :pc_ref                 => ParamInfo(ReferenceGroup, Number,     "Reference momentum * c.", "eV"),
+  :E_tot_ref              => ParamInfo(ReferenceGroup, Number,     "Reference total energy.", "eV"),
+  :time_ref               => ParamInfo(ReferenceGroup, Number,     "Reference time.", "sec"),
+  :extra_dtime_ref        => ParamInfo(ReferenceGroup, Number,     "Additional reference time change.", "sec"),
+  :time_ref_downstream    => ParamInfo(ReferenceGroup, Number,     "Reference time at downstream end.", "sec"),
+  :dE_ref                 => ParamInfo(ReferenceGroup, Number,     "Change in reference energy.", "volt"),
 
-  :β_ref                  => ParamInfo(ReferenceGroup, Number,         "Reference velocity/c.", "", OutputGroup),
-  :γ_ref                  => ParamInfo(ReferenceGroup, Number,         "Reference relativistic gamma factor.", "", OutputGroup),
+  :β_ref                  => ParamInfo(ReferenceGroup, Number,     "Reference velocity/c.", "", OutputGroup),
+  :γ_ref                  => ParamInfo(ReferenceGroup, Number,     "Reference relativistic gamma factor.", "", OutputGroup),
 
-  :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species,  "Reference species at downstream end."),
-  :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,   "Reference momentum * c at downstream end.", "eV"),
-  :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,   "Reference total energy at downstream end.", "eV"),
+  :species_ref_downstream => ParamInfo(DownstreamReferenceGroup, Species, "Reference species at downstream end."),
+  :pc_ref_downstream      => ParamInfo(DownstreamReferenceGroup, Number,  "Reference momentum * c at downstream end.", "eV"),
+  :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceGroup, Number,  "Reference total energy at downstream end.", "eV"),
 
   :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference velocity/c at downstream end.", "", OutputGroup),
   :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference relativistic gamma factor at downstream end.", "", OutputGroup),
@@ -159,15 +161,15 @@ ELE_PARAM_INFO_DICT = Dict(
   :flexible           => ParamInfo(PatchGroup,     Bool,           "Flexible patch?"),
   :ref_coords         => ParamInfo(PatchGroup,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
-  :voltage            => ParamInfo(RFGroup,       Number,        "RF voltage.", "volt"),
-  :gradient           => ParamInfo(RFGroup,       Number,        "RF gradient.", "volt/m"),
-  :phase              => ParamInfo(RFGroup,       Number,        "RF phase.", "rad"),
+  :voltage            => ParamInfo(RFGroup,       Number,          "RF voltage.", "volt"),
+  :gradient           => ParamInfo(RFGroup,       Number,          "RF gradient.", "volt/m"),
+  :phase              => ParamInfo(RFGroup,       Number,          "RF phase.", "rad"),
   :multipass_phase    => ParamInfo(RFGroup,       Number,    
                                                    "RF phase added to element and not controlled by multipass lord.", "rad"),
-  :frequency          => ParamInfo(RFGroup,       Number,        "RF frequency.", "Hz"),
-  :harmon             => ParamInfo(RFGroup,       Number,        "RF frequency harmonic number.", ""),
-  :cavity_type        => ParamInfo(RFGroup,       Cavity.T,      "Type of cavity."),
-  :n_cell             => ParamInfo(RFGroup,       Int,           "Number of RF cells."),
+  :frequency          => ParamInfo(RFGroup,       Number,          "RF frequency.", "Hz"),
+  :harmon             => ParamInfo(RFGroup,       Number,          "RF frequency harmonic number.", ""),
+  :cavity_type        => ParamInfo(RFGroup,       Cavity.T,        "Type of cavity."),
+  :n_cell             => ParamInfo(RFGroup,       Int,             "Number of RF cells."),
 
   :voltage_master     => ParamInfo(RFAutoGroup,    Bool,           "Voltage or gradient is constant with length changes?"),
   :auto_amp           => ParamInfo(RFAutoGroup,    Number,    
@@ -176,76 +178,77 @@ ELE_PARAM_INFO_DICT = Dict(
   :do_auto_amp        => ParamInfo(RFAutoGroup,    Bool,           "Autoscale voltage/gradient?"),
   :do_auto_phase      => ParamInfo(RFAutoGroup,    Bool,           "Autoscale phase?"),
 
-  :num_steps          => ParamInfo(TrackingGroup,  Int,               "Nominal number of tracking steps."),
-  :ds_step            => ParamInfo(TrackingGroup,  Number,            "Nominal distance between tracking steps.", "m"),
+  :num_steps          => ParamInfo(TrackingGroup,  Int,            "Nominal number of tracking steps."),
+  :ds_step            => ParamInfo(TrackingGroup,  Number,         "Nominal distance between tracking steps.", "m"),
 
-  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,     "Aperture shape. Default is ELLIPTICAL."),
-  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,         "Aperture location. Default is BodyLoc.ENTRANCE_END."),
-  :misalignment_moves_aperture 
-                      => ParamInfo(ApertureGroup,  Bool,              "Element movement moves aperture?"),
-  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "Min/Max horizontal aperture limits.", "m"),
-  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number},    "Min/Max vertical aperture limits.", "m"),
-  :wall               => ParamInfo(ApertureGroup,  Wall2D,            "Wall defined by array of aperture vertices."),
-  :custom_aperture    => ParamInfo(ApertureGroup,  Dict,              "Custom aperture info."),
+  :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,  "Aperture shape. Default is ELLIPTICAL."),
+  :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,      "Aperture location. Default is BodyLoc.ENTRANCE_END."),
+  :ele_alignment_moves_aperture 
+                      => ParamInfo(ApertureGroup,  Bool,           "Element alignment shifts moves aperture?"),
+  :x_limit            => ParamInfo(ApertureGroup,  Vector{Number}, "Min/Max horizontal aperture limits.", "m"),
+  :y_limit            => ParamInfo(ApertureGroup,  Vector{Number}, "Min/Max vertical aperture limits.", "m"),
+  :wall               => ParamInfo(ApertureGroup,  Wall2D,         "Wall defined by array of aperture vertices."),
+  :custom_aperture    => ParamInfo(ApertureGroup,  Dict,           "Custom aperture info."),
 
   :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
   :q_floor            => ParamInfo(FloorPositionGroup, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
 
-  :eles               => ParamInfo(GirderGroup,     Vector{Ele},      "Array of supported elements."),
-  :origin_ele         => ParamInfo(GirderGroup,     Ele,              "Coordinate reference element."),
-  :origin_ele_ref_pt  => ParamInfo(GirderGroup,     Loc.T,            "Reference location on reference element. Default is Loc.CENTER."),
+  :supported          => ParamInfo(GirderGroup,        Vector{Ele},    "Array of elements supported by a Girder."),
 
-  :Ksol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid strength.", "1/m"),
-  :Bsol               => ParamInfo(SolenoidGroup,   Number,           "Solenoid field.", "T"),
+  :origin_ele         => ParamInfo(OriginEleGroup,     Ele,        "Coordinate reference element."),
+  :origin_ele_ref_pt  => ParamInfo(OriginEleGroup,     Loc.T,      "Reference location on reference element. Default is Loc.CENTER."),
+
+  :Ksol               => ParamInfo(SolenoidGroup,   Number,        "Solenoid strength.", "1/m"),
+  :Bsol               => ParamInfo(SolenoidGroup,   Number,        "Solenoid field.", "T"),
 
   :spin               => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle spin"),
   :orbit              => ParamInfo(InitParticleGroup, Vector{Number}, "Initial particle position."),
 
-  :type               => ParamInfo(DescriptionGroup,   String,      "Type of element."),
-  :ID                 => ParamInfo(DescriptionGroup,   String,      "Identification name."),
-  :class              => ParamInfo(DescriptionGroup,   String,      "Classification of element."),
+  :type               => ParamInfo(DescriptionGroup,   String,     "Type of element."),
+  :ID                 => ParamInfo(DescriptionGroup,   String,     "Identification name."),
+  :class              => ParamInfo(DescriptionGroup,   String,     "Classification of element."),
 
-  :beta               => ParamInfo(Twiss1,      Number,             "Beta Twiss parameter.", "m"),
-  :alpha              => ParamInfo(Twiss1,      Number,             "Alpha Twiss parameter.", ""),
-  :gamma              => ParamInfo(Twiss1,      Number,             "Gamma Twiss parameter.", "1/m"),
-  :phi                => ParamInfo(Twiss1,      Number,             "Betatron phase.", "rad"),
-  :eta                => ParamInfo(Twiss1,      Number,             "Position dispersion.", "m"),
-  :etap               => ParamInfo(Twiss1,      Number,             "Momentum dispersion.", ""),
-  :deta_ds            => ParamInfo(Twiss1,      Number,             "Dispersion derivative.", ""),
+  :beta               => ParamInfo(Twiss1,      Number,            "Beta Twiss parameter.", "m"),
+  :alpha              => ParamInfo(Twiss1,      Number,            "Alpha Twiss parameter.", ""),
+  :gamma              => ParamInfo(Twiss1,      Number,            "Gamma Twiss parameter.", "1/m"),
+  :phi                => ParamInfo(Twiss1,      Number,            "Betatron phase.", "rad"),
+  :eta                => ParamInfo(Twiss1,      Number,            "Position dispersion.", "m"),
+  :etap               => ParamInfo(Twiss1,      Number,            "Momentum dispersion.", ""),
+  :deta_ds            => ParamInfo(Twiss1,      Number,            "Dispersion derivative.", ""),
 
-  :twiss              => ParamInfo(TwissGroup,  TwissGroup,         "Initial Twiss parameters."),
+  :twiss              => ParamInfo(TwissGroup,  TwissGroup,        "Initial Twiss parameters."),
 
-  :beta_a             => ParamInfo(TwissGroup,  Number,             "A-mode beta Twiss parameter.", "m", nothing, :beta, T->T.a),
-  :alpha_a            => ParamInfo(TwissGroup,  Number,             "A-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.a),
-  :gamma_a            => ParamInfo(TwissGroup,  Number,             "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.a),
-  :phi_a              => ParamInfo(TwissGroup,  Number,             "A-mode betatron phase.", "rad", nothing, :phi, T->T.a),
-  :eta_a              => ParamInfo(TwissGroup,  Number,             "A-mode position dispersion.", "m", nothing, :eta, T->T.a),
-  :etap_a             => ParamInfo(TwissGroup,  Number,             "A-mode momentum dispersion.", "", nothing, :etap, T->T.a),
-  :deta_ds_a          => ParamInfo(TwissGroup,  Number,             "A-mode dispersion derivative.", "", nothing, :deta_ds, T->T.a),
+  :beta_a             => ParamInfo(TwissGroup,  Number,            "A-mode beta Twiss parameter.", "m", nothing, :beta, T->T.a),
+  :alpha_a            => ParamInfo(TwissGroup,  Number,            "A-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.a),
+  :gamma_a            => ParamInfo(TwissGroup,  Number,            "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.a),
+  :phi_a              => ParamInfo(TwissGroup,  Number,            "A-mode betatron phase.", "rad", nothing, :phi, T->T.a),
+  :eta_a              => ParamInfo(TwissGroup,  Number,            "A-mode position dispersion.", "m", nothing, :eta, T->T.a),
+  :etap_a             => ParamInfo(TwissGroup,  Number,            "A-mode momentum dispersion.", "", nothing, :etap, T->T.a),
+  :deta_ds_a          => ParamInfo(TwissGroup,  Number,            "A-mode dispersion derivative.", "", nothing, :deta_ds, T->T.a),
 
-  :beta_b             => ParamInfo(TwissGroup,  Number,             "B-mode beta Twiss parameter.", "m", nothing, :beta, T->T.b),
-  :alpha_b            => ParamInfo(TwissGroup,  Number,             "B-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.b),
-  :gamma_b            => ParamInfo(TwissGroup,  Number,             "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.b),
-  :phi_b              => ParamInfo(TwissGroup,  Number,             "B-mode betatron phase.", "rad", nothing, :phi, T->T.b),
-  :eta_b              => ParamInfo(TwissGroup,  Number,             "B-mode position dispersion.", "m", nothing, :eta, T->T.b),
-  :etap_b             => ParamInfo(TwissGroup,  Number,             "B-mode momentum dispersion.", "", nothing, :etap, T->T.b),
-  :deta_ds_b          => ParamInfo(TwissGroup,  Number,             "B-mode dispersion derivative.", "", nothing, :deta_ds, T->T.b),
+  :beta_b             => ParamInfo(TwissGroup,  Number,            "B-mode beta Twiss parameter.", "m", nothing, :beta, T->T.b),
+  :alpha_b            => ParamInfo(TwissGroup,  Number,            "B-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.b),
+  :gamma_b            => ParamInfo(TwissGroup,  Number,            "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.b),
+  :phi_b              => ParamInfo(TwissGroup,  Number,            "B-mode betatron phase.", "rad", nothing, :phi, T->T.b),
+  :eta_b              => ParamInfo(TwissGroup,  Number,            "B-mode position dispersion.", "m", nothing, :eta, T->T.b),
+  :etap_b             => ParamInfo(TwissGroup,  Number,            "B-mode momentum dispersion.", "", nothing, :etap, T->T.b),
+  :deta_ds_b          => ParamInfo(TwissGroup,  Number,            "B-mode dispersion derivative.", "", nothing, :deta_ds, T->T.b),
 
-  :beta_c             => ParamInfo(TwissGroup,  Number,             "C-mode beta Twiss parameter.", "m", nothing, :beta, T->T.c),
-  :alpha_c            => ParamInfo(TwissGroup,  Number,             "C-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.c),
-  :gamma_c            => ParamInfo(TwissGroup,  Number,             "C-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.c),
-  :phi_c              => ParamInfo(TwissGroup,  Number,             "C-mode betatron phase.", "rad", nothing, :phi, T->T.c),
-  :eta_c              => ParamInfo(TwissGroup,  Number,             "C-mode position dispersion.", "m", nothing, :eta, T->T.c),
-  :etap_c             => ParamInfo(TwissGroup,  Number,             "C-mode momentum dispersion.", "", nothing, :etap, T->T.c),
-  :deta_ds_c          => ParamInfo(TwissGroup,  Number,             "C-mode dispersion derivative.", "", nothing, :deta_ds, T->T.c),
+  :beta_c             => ParamInfo(TwissGroup,  Number,            "C-mode beta Twiss parameter.", "m", nothing, :beta, T->T.c),
+  :alpha_c            => ParamInfo(TwissGroup,  Number,            "C-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.c),
+  :gamma_c            => ParamInfo(TwissGroup,  Number,            "C-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.c),
+  :phi_c              => ParamInfo(TwissGroup,  Number,            "C-mode betatron phase.", "rad", nothing, :phi, T->T.c),
+  :eta_c              => ParamInfo(TwissGroup,  Number,            "C-mode position dispersion.", "m", nothing, :eta, T->T.c),
+  :etap_c             => ParamInfo(TwissGroup,  Number,            "C-mode momentum dispersion.", "", nothing, :etap, T->T.c),
+  :deta_ds_c          => ParamInfo(TwissGroup,  Number,            "C-mode dispersion derivative.", "", nothing, :deta_ds, T->T.c),
 
-  :eta_x              => ParamInfo(TwissGroup,  Number,             "X-mode position dispersion.", "m", nothing, :eta, T->T.x),
-  :etap_x             => ParamInfo(TwissGroup,  Number,             "X-mode momentum dispersion.", "", nothing, :etap, T->T.x),
-  :deta_ds_x          => ParamInfo(TwissGroup,  Number,             "X-mode dispersion derivative.", "", nothing, :deta_ds, T->T.x),
+  :eta_x              => ParamInfo(TwissGroup,  Number,            "X-mode position dispersion.", "m", nothing, :eta, T->T.x),
+  :etap_x             => ParamInfo(TwissGroup,  Number,            "X-mode momentum dispersion.", "", nothing, :etap, T->T.x),
+  :deta_ds_x          => ParamInfo(TwissGroup,  Number,            "X-mode dispersion derivative.", "", nothing, :deta_ds, T->T.x),
 
-  :eta_y              => ParamInfo(TwissGroup,  Number,             "Y-mode position dispersion.", "m", nothing, :eta, T->T.y),
-  :etap_y             => ParamInfo(TwissGroup,  Number,             "Y-mode momentum dispersion.", "", nothing, :etap, T->T.y),
-  :deta_ds_y          => ParamInfo(TwissGroup,  Number,             "Y-mode dispersion derivative.", "", nothing, :deta_ds, T->T.y),
+  :eta_y              => ParamInfo(TwissGroup,  Number,            "Y-mode position dispersion.", "m", nothing, :eta, T->T.y),
+  :etap_y             => ParamInfo(TwissGroup,  Number,            "Y-mode momentum dispersion.", "", nothing, :etap, T->T.y),
+  :deta_ds_y          => ParamInfo(TwissGroup,  Number,            "Y-mode dispersion derivative.", "", nothing, :deta_ds, T->T.y),
 )
 
 for (key, info) in ELE_PARAM_INFO_DICT
@@ -622,12 +625,11 @@ Order is important. Bookkeeping routines rely on:
 
 base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, 
          DownstreamReferenceGroup, FloorPositionGroup, TrackingGroup, AlignmentGroup, ApertureGroup]
-alignment_group_list = [AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 general_group_list = [base_group_list..., multipole_group_list...]
 
 PARAM_GROUPS_LIST = Dict(  
-    ACKicker            => [general_group_list...],
+    ACKicker            => [general_group_list..., ACKickerGroup],
     BeamBeam            => [base_group_list..., BeamBeamGroup],
     BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
     Bend                => [general_group_list..., BendGroup],
@@ -636,11 +638,11 @@ PARAM_GROUPS_LIST = Dict(
     CrabCavity          => [base_group_list...],
     Drift               => [base_group_list...],
     EGun                => [general_group_list...],
-    Fiducial            => [base_group_list...],
-    FloorShift          => [base_group_list...],
+    Fiducial            => [DescriptionGroup, FloorPositionGroup, AlignmentGroup, OriginEleGroup],
+    FloorShift          => [DescriptionGroup, FloorPositionGroup, AlignmentGroup, OriginEleGroup],
     Foil                => [base_group_list...],
     Fork                => [base_group_list..., ForkGroup],
-    Girder              => [base_group_list..., GirderGroup],
+    Girder              => [LengthGroup, DescriptionGroup, FloorPositionGroup, AlignmentGroup, OriginEleGroup, GirderGroup],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
     LCavity             => [base_group_list..., MasterGroup, RFAutoGroup, RFGroup],
@@ -667,9 +669,10 @@ end
 
 
 ELE_PARAM_GROUP_INFO = Dict(
+  ACKickerGroup         => EleParameterGroupInfo("ACKicker element parameters.", false),
   AlignmentGroup        => EleParameterGroupInfo("Element position/orientation shift.", false),
   ApertureGroup         => EleParameterGroupInfo("Vacuum chamber aperture.", false),
-  BeamBeamGroup         => EleParameterGroupInfo("BeamBeam element parameters", false),
+  BeamBeamGroup         => EleParameterGroupInfo("BeamBeam element parameters.", false),
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
   BMultipoleGroup       => EleParameterGroupInfo("Magnetic multipoles.", true),
   BMultipole            => EleParameterGroupInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleGroup`", false),
@@ -685,12 +688,23 @@ ELE_PARAM_GROUP_INFO = Dict(
   LengthGroup           => EleParameterGroupInfo("Length and s-position parameters.", true),
   LordSlaveStatusGroup  => EleParameterGroupInfo("Element lord and slave status.", false),
   MasterGroup           => EleParameterGroupInfo("Contains field_master parameter.", false),
+  OriginEleGroup        => EleParameterGroupInfo("Defines coordinate origin for Girder, FloorShift and Fiducial elements.", false),
   PatchGroup            => EleParameterGroupInfo("Patch parameters.", false),
   ReferenceGroup        => EleParameterGroupInfo("Reference energy and species.", true),
   RFGroup               => EleParameterGroupInfo("`RFCavity` and `LCavity` RF parameters.", false),
   RFAutoGroup           => EleParameterGroupInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
   SolenoidGroup         => EleParameterGroupInfo("`Solenoid` parameters.", false),
   TrackingGroup         => EleParameterGroupInfo("Default tracking settings.", false),
+)
+
+#---------------------------------------------------------------------------------------------------
+# 
+
+BOOKKEEPING_VECTOR_PARAMETERS = Dict(
+  BeginningEle          => [:r_floor],
+  Fiducial              => [:offset],
+  FloorShift            => [:offset],
+  Patch                 => [:offset],
 )
 
 #---------------------------------------------------------------------------------------------------

@@ -69,9 +69,6 @@ Overloads the dot struct component selection operator.
 Exceptions: Something like `ele.Kn2L` is handled specially since storage for this parameter may
 not exist (parameter is stored in `ele.pdict[:BMultipoleGroup].pole(N).Kn` where `N` is some integer).
 
-Also: If `XXX` corresponds to a vector, create `ele.changed[:XXX]` to signal that the vector may have 
-been modified. This is necessary due to how something like `ele.pdict[:GGG].XXX[2] = ...` is evaluated.
-
 Also see: `get_elegroup_param`
 """ Base.getproperty(ele::Ele, sym::Symbol)
 
@@ -81,29 +78,16 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   branch = lat_branch(ele)
   
   # Does ele.pdict[sym] exist? 
-  if haskey(pdict, sym)
-    # Do bookkeeping but only if element is in a lattice.
-    if !isnothing(branch) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
-    return pdict[sym]
-  end
+  if haskey(pdict, sym); return pdict[sym]; end
   
   # Look for `sym` as part of an ele group
   pinfo = ele_param_info(sym)
-
   if !isnothing(pinfo.output_group); return output_parameter(sym, ele, pinfo.output_group); end
 
-  # There may be more than one parent but for any given element type the parent will be unique.
   symparent = Symbol(pinfo.parent_group)
   if !haskey(pdict, symparent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
 
-  # Mark as changed just in case getproperty is called in a construct like "q.x_limit[2] = ..."
-  if pinfo.paramkind <: Vector
-    if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
-      pdict[:changed][sym] = getfield(pdict[symparent], pinfo.struct_sym)
-    end
-  end
-
-  return get_elegroup_param(ele, pdict[symparent], pinfo)  
+  return get_elegroup_param(ele, pdict[symparent], pinfo)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -116,12 +100,6 @@ Element accessor with default. Useful for elements that are not part of a lattic
 """ Base.get_prop(ele::Ele, sym::Symbol, default)
 
 function Base.get(ele::Ele, sym::Symbol, default)
-  # Do bookkeeping but only if element is in a lattice.
-  lat = lattice(ele)
-  if !isnothing(lat) && lat.autobookkeeping
-    bookkeeper!(lat)
-  end
-  
   try
     return Base.getproperty(ele, sym)
   catch
@@ -148,6 +126,8 @@ function Base.setproperty!(lat::Lattice, sym::Symbol, value)
   getfield(lat, :pdict)[sym] = value
 end
 
+#-----------------
+
 function Base.setproperty!(branch::Branch, sym::Symbol, value)
   if sym == :name; return setfield!(branch, :name, value); end
   if sym == :lat; return setfield!(branch, :lat, value); end
@@ -155,11 +135,15 @@ function Base.setproperty!(branch::Branch, sym::Symbol, value)
   getfield(branch, :pdict)[sym] = value
 end
 
+#-----------------
+
 function Base.setproperty!(bl::BeamLine, sym::Symbol, value)
   if sym == :id; return setfield!(branch, :id, value); end
   if sym == :line; return setfield!(branch, :line, value); end
   getfield(branch, :pdict)[sym] = value
 end
+
+#-----------------
 
 function Base.setproperty!(ele::Ele, sym::Symbol, value)
   pdict::Dict{Symbol,Any} = ele.pdict
@@ -167,8 +151,8 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
   pinfo = ele_param_info(sym, ele)
   check_if_settable(ele, sym, pinfo)
 
-  # All parameters that do not have a parent struct are not "normal" and setting 
-  # them does not have to be recorded in pdict[:changed]. 
+  # For parameters that are not part of an element parameter group struct (EG lord/slave info),
+  # any changes do not have to be recorded in pdict[:changed]. 
 
   parent = pinfo.parent_group
   if parent == Nothing
@@ -181,29 +165,39 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value)
     end
 
     set_elegroup_param!(ele, pdict[Symbol(parent)], pinfo, value)
+    ele_parameter_has_changed!(ele)
+  end
+end
 
-    # Record changes for bookkeeping.
-    # There is no bookkeeping done for elements outside of a lattice.
-    # Also if bookkeeping is in process, no need to record changes.
+#---------------------------------------------------------------------------------------------------
+# ele_parameter_has_changed!
 
-    if isnothing(branch) || isnothing(branch.lat); return; end
+"""
+    ele_parameter_has_changed!(ele)
 
-    if branch.lat.record_changes
-      if branch.type == TrackingBranch
-        branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ele.ix_ele)
-        branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ele.ix_ele)
-      else
-        for slave in ele.slaves
-          sbranch = slave.branch
-          sbranch.ix_ele_min_changed = min(sbranch.ix_ele_min_changed, ele.ix_ele)
-          sbranch.ix_ele_max_changed = max(sbranch.ix_ele_max_changed, ele.ix_ele)
-        end
+Record that an element parameter in `ele` has changed.
+Also call the bookkeeper if the element is in a lattice and autobookkeeping is on.
+""" ele_parameter_has_changed!
+
+function ele_parameter_has_changed!(ele)
+  branch = lat_branch(ele)
+  if isnothing(branch) || isnothing(branch.lat); return; end
+
+  if branch.lat.record_changes
+    if branch.type == TrackingBranch
+      branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ele.ix_ele)
+      branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ele.ix_ele)
+    else
+      for slave in ele.slaves
+        sbranch = slave.branch
+        sbranch.ix_ele_min_changed = min(sbranch.ix_ele_min_changed, ele.ix_ele)
+        sbranch.ix_ele_max_changed = max(sbranch.ix_ele_max_changed, ele.ix_ele)
       end
     end
-
-    branch.lat.parameters_have_changed = true
-    if branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   end
+
+  branch.lat.parameters_have_changed = true
+  if branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -433,29 +427,50 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     if :DownstreamReferenceGroup ∉ keys(ele.pdict); return NaN; end
     return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
 
+  elseif sym == :q_align
+    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    ag = ele.pdict[:AlginGroup]
+    return Quaternian(ag.x_rot, ag.y_rot, ag.z_rot)
+
   elseif sym == :offset_tot
-    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
-    return ele.offset
+    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if isnothing(girder(ele)); return ele.offset; end
+    ag = ele.pdict[:AlginGroup]
+    orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
+    orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
+    return floor_transform(orient_ele, orient_girder).r
 
   elseif sym == :x_rot_tot
-    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
-    return ele.x_rot
+    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if isnothing(girder(ele)); return ele.x_rot; end
+    ag = ele.pdict[:AlginGroup]
+    orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
+    orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
+    return rot_angles(floor_transform(orient_ele, orient_girder).q)[1]
 
   elseif sym == :y_rot_tot
-    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
-    return ele.y_tot
+    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if isnothing(girder(ele)); return ele.y_rot; end
+    ag = ele.pdict[:AlginGroup]
+    orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
+    orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
+    return rot_angles(floor_transform(orient_ele, orient_girder).q)[2]
 
-  elseif sym == :tilt_tot
-    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
-    return ele.tilt_tot
-
-  elseif sym == :q_align
-    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
-    return Quaternian()
+  elseif sym == :z_rot_tot
+    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if isnothing(girder(ele)); return ele.tilt; end
+    ag = ele.pdict[:AlginGroup]
+    orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
+    orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
+    return rot_angles(floor_transform(orient_ele, orient_girder).q)[3]
 
   elseif sym == :q_align_tot
-    if :AlignGroup ∉ keys(ele.pdict); return NaN; end
-    return Quaternian()
+    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if isnothing(girder(ele)); return ele.q_align; end
+    ag = ele.pdict[:AlginGroup]
+    orient_girder = FloorPositionGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
+    orient_ele = FloorPositionGroup(ele.offset, ele.q_align)
+    return floor_transform(orient_ele, orient_girder).q
   end
 
   error("Parameter $sym is not in the output group $output_group.")
