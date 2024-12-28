@@ -126,20 +126,30 @@ colliding beam machine.
 
 The next level up from lattice \vn{elements} are the \vn{branches}.
 Each branch holds an array of lattice elements. 
-A branch is of type \vn{Branch}. All
-branches have a name \vn{Branch.name} inherited from the \vn{BeamLine} that defines
-the branch in the lattice file and branches contains an array of elements \vn{Branch.ele[]}
+A branch is of type \vn{Branch}. 
 
 There are two types of \vn{branches}: branches whose \vn{Branch.type} parameter is set to
 a suitable subtype of \vn{LordBranch} holds Lord elements and 
-branches whose \vn{branch.type} parameter is set to \vn{TrackingBranch}  holds an ordered
-list of elements that can be tracked through.
+branches whose \vn{Branch.type} parameter is set to \vn{TrackingBranch} holds an ordered
+list of elements that can be tracked through. \accellat defines three lord branches named:
+\begin{example}
+  "super"       -- Contains super lord elements.
+  "multipass"   -- Contains multipass lord elements.
+  "girder"      -- Contains Girder elements.
+\end{example}
+Additional lord branches may be added by the user if desired.
 
 A tracking branch can represent a LINAC, X-Ray beam line, storage ring, etc.
 For all tracking branches, the first element in the element array
 must be of type \vn{BeginningEle} (\sref{s:begin.ele}).
 Additionally, for all tracking branches, 
 the end element must be of type \vn{Marker} (\sref{s:mark}).
+
+All tracking branches have a name \vn{Branch.name} inherited from the \vn{BeamLine} that defines
+the branch in the lattice file and branches contains an array of elements \vn{Branch.ele[]}.
+If the \vn{BeamLine} used to instantiate a tracking branch does not have a name, The default name
+is used. The default name is \vn{"bN"} where \vn{N} is the index of the
+branch in the \vn{Lattice.branch} array.
 
 %---------------------------------------------------------------------------
 \section{Lattices}
@@ -150,8 +160,9 @@ A \vn{lattice} (\sref{s:lattice.def}) is the root structure holding the informat
 as complicated as an entire accelerator complex with multiple storage rings, Linacs, transfer
 lines, etc. All lattices are of type \vn{Lattice}.
 
-Essentially, a \vn{lattice}, has an array of \vn{branches} with each branch describing part of the
-machine. Branches can be interconnected to form a unified whole.
+Essentially, a \vn{lattice}, has an array \vn{Lattice.branch[]} of \vn{branches} with each branch 
+describing part of the machine. 
+Branches can be interconnected to form a unified whole.
 Tracking branches can be interconnected using \vn{Fork} elements (\sref{s:fork}). 
 This is used to simulate forking beam lines such as a connections to a transfer line, dump line, or an
 X-ray beam line. The \vn{branch} from which other \vn{branches} fork but is not forked to by any
@@ -159,6 +170,25 @@ other \vn{branch} is called a \vn{root} branch.
 
 A lattice may contain multiple \vn{root} \vn{branches}. For example, a pair of intersecting storage
 rings will generally have two \vn{root} branches, one for each ring.
+
+Branches can be accessed by name using the overloaded index operator for \vn{Lattice}. 
+For example, if \vn{lat} is an instance of a lattice, the super lord branch (\sref{s:branch.def}),
+which has the name \vn{"super"}, can be accessed via:
+\begin{example}
+  lat["super"]     # Access by branch name
+  lat.branch[2]    # Access by branch index
+\end{example}
+Where it is assumed for this example that the super lord branch has index 2.
+
+Similarly, lattice elements can be accessed by name or by index.
+For example, if \vn{lat} is a lattice instance, and \vn{"q1"} is the name of an element or
+elements that are in a branch named "b2", the following are equivalent:
+\begin{example}
+  elist = lat["q1"]
+  elist = find(lat, "q1")
+  b2 = lat.branch["b2"]; elist = b2["q1"]
+\end{example}
+\vn{elist} will be a vector of elements since a name may match to multiple elements.
 
 %---------------------------------------------------------------------------
 \section{AcceleratorLattice Conventions}

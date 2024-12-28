@@ -13,10 +13,10 @@ Values of the `ELE_PARAM_INFO_DICT` `Dict` are `ParamInfo` structs.
 • `description::String = ""   - 
 • `units::String = ""
 • `output_group::T where T <: Union{DataType, Nothing}
-• `struct_sym::Symbol                     # Symbol in struct.
-• `sub_struct::Union{Function, Nothing}   # Used if parameter parent is not parent_group. 
-                                         #   EG: Twiss.a.beta and sub_struct = T -> T.a
-• `user_sym::Symbol                       # Symbol used in by a user. Generally this is the
+• `struct_sym::Symbol                    # Symbol in struct.
+• `sub_struct::Union{Symbol, Nothing}    # Used if parameter parent is not parent_group. 
+                                         #   EG: Twiss.a.beta has sub_struct = :a
+• `user_sym::Symbol                      # Symbol used in by a user. Generally this is the
                                          #   the same as struct_sym. An exception is r_floor• `
 
  keys of the dict 
@@ -41,10 +41,10 @@ abstract type Pointer end
   paramkind::Union{T, Union, UnionAll} where T <: DataType
   description::String = ""
   units::String = ""
-  output_group::T where T <: Union{DataType, Nothing}
-  struct_sym::Symbol
-  sub_struct::Union{Function, Nothing}
-  user_sym::Symbol
+  output_group::T where T <: Union{DataType, Nothing} = nothing
+  struct_sym::Symbol = :XXX
+  sub_struct::Union{Symbol, Nothing} = nothing
+  user_sym::Symbol = :Z
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -139,9 +139,8 @@ ELE_PARAM_INFO_DICT = Dict(
   :q_floor            => ParamInfo(FloorPositionGroup, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
 
   :to_line            => ParamInfo(ForkGroup,      Union{BeamLine, Nothing}, "Beamline forked to."),
-  :to_ele             => ParamInfo(ForkGroup,      String,         "Lattice element forked to."),
+  :to_ele             => ParamInfo(ForkGroup,      Union{String,Ele},        "Lattice element forked to."),
   :direction          => ParamInfo(ForkGroup,      Int,            "Direction (forwards or backwards) of injection."),
-  :new_branch         => ParamInfo(ForkGroup,      Bool,           "Fork to new or existing branch?"),
 
   :supported          => ParamInfo(GirderGroup,        Vector{Ele},    "Array of elements supported by a Girder."),
 
@@ -214,39 +213,23 @@ ELE_PARAM_INFO_DICT = Dict(
   :etap               => ParamInfo(Twiss1,      Number,            "Momentum dispersion.", ""),
   :deta_ds            => ParamInfo(Twiss1,      Number,            "Dispersion derivative.", ""),
 
-  :twiss              => ParamInfo(TwissGroup,  TwissGroup,        "Initial Twiss parameters."),
+  :beta_a             => ParamInfo(TwissGroup,  Number,            "A-mode beta Twiss parameter.", "m", nothing, :beta, :a),
+  :alpha_a            => ParamInfo(TwissGroup,  Number,            "A-mode alpha Twiss parameter.", "", nothing, :alpha, :a),
+  :gamma_a            => ParamInfo(TwissGroup,  Number,            "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :a),
+  :phi_a              => ParamInfo(TwissGroup,  Number,            "A-mode betatron phase.", "rad", nothing, :phi, :a),
 
-  :beta_a             => ParamInfo(TwissGroup,  Number,            "A-mode beta Twiss parameter.", "m", nothing, :beta, T->T.a),
-  :alpha_a            => ParamInfo(TwissGroup,  Number,            "A-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.a),
-  :gamma_a            => ParamInfo(TwissGroup,  Number,            "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.a),
-  :phi_a              => ParamInfo(TwissGroup,  Number,            "A-mode betatron phase.", "rad", nothing, :phi, T->T.a),
-  :eta_a              => ParamInfo(TwissGroup,  Number,            "A-mode position dispersion.", "m", nothing, :eta, T->T.a),
-  :etap_a             => ParamInfo(TwissGroup,  Number,            "A-mode momentum dispersion.", "", nothing, :etap, T->T.a),
-  :deta_ds_a          => ParamInfo(TwissGroup,  Number,            "A-mode dispersion derivative.", "", nothing, :deta_ds, T->T.a),
+  :beta_b             => ParamInfo(TwissGroup,  Number,            "B-mode beta Twiss parameter.", "m", nothing, :beta, :b),
+  :alpha_b            => ParamInfo(TwissGroup,  Number,            "B-mode alpha Twiss parameter.", "", nothing, :alpha, :b),
+  :gamma_b            => ParamInfo(TwissGroup,  Number,            "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :b),
+  :phi_b              => ParamInfo(TwissGroup,  Number,            "B-mode betatron phase.", "rad", nothing, :phi, :b),
 
-  :beta_b             => ParamInfo(TwissGroup,  Number,            "B-mode beta Twiss parameter.", "m", nothing, :beta, T->T.b),
-  :alpha_b            => ParamInfo(TwissGroup,  Number,            "B-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.b),
-  :gamma_b            => ParamInfo(TwissGroup,  Number,            "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.b),
-  :phi_b              => ParamInfo(TwissGroup,  Number,            "B-mode betatron phase.", "rad", nothing, :phi, T->T.b),
-  :eta_b              => ParamInfo(TwissGroup,  Number,            "B-mode position dispersion.", "m", nothing, :eta, T->T.b),
-  :etap_b             => ParamInfo(TwissGroup,  Number,            "B-mode momentum dispersion.", "", nothing, :etap, T->T.b),
-  :deta_ds_b          => ParamInfo(TwissGroup,  Number,            "B-mode dispersion derivative.", "", nothing, :deta_ds, T->T.b),
+  :eta_x              => ParamInfo(TwissGroup,  Number,            "X-mode position dispersion.", "m", nothing, :eta, :x),
+  :etap_x             => ParamInfo(TwissGroup,  Number,            "X-mode momentum dispersion.", "", nothing, :etap, :x),
+  :deta_ds_x          => ParamInfo(TwissGroup,  Number,            "X-mode dispersion derivative.", "", nothing, :deta_ds, :x),
 
-  :beta_c             => ParamInfo(TwissGroup,  Number,            "C-mode beta Twiss parameter.", "m", nothing, :beta, T->T.c),
-  :alpha_c            => ParamInfo(TwissGroup,  Number,            "C-mode alpha Twiss parameter.", "", nothing, :alpha, T->T.c),
-  :gamma_c            => ParamInfo(TwissGroup,  Number,            "C-mode gamma Twiss parameter.", "1/m", nothing, :gamma, T->T.c),
-  :phi_c              => ParamInfo(TwissGroup,  Number,            "C-mode betatron phase.", "rad", nothing, :phi, T->T.c),
-  :eta_c              => ParamInfo(TwissGroup,  Number,            "C-mode position dispersion.", "m", nothing, :eta, T->T.c),
-  :etap_c             => ParamInfo(TwissGroup,  Number,            "C-mode momentum dispersion.", "", nothing, :etap, T->T.c),
-  :deta_ds_c          => ParamInfo(TwissGroup,  Number,            "C-mode dispersion derivative.", "", nothing, :deta_ds, T->T.c),
-
-  :eta_x              => ParamInfo(TwissGroup,  Number,            "X-mode position dispersion.", "m", nothing, :eta, T->T.x),
-  :etap_x             => ParamInfo(TwissGroup,  Number,            "X-mode momentum dispersion.", "", nothing, :etap, T->T.x),
-  :deta_ds_x          => ParamInfo(TwissGroup,  Number,            "X-mode dispersion derivative.", "", nothing, :deta_ds, T->T.x),
-
-  :eta_y              => ParamInfo(TwissGroup,  Number,            "Y-mode position dispersion.", "m", nothing, :eta, T->T.y),
-  :etap_y             => ParamInfo(TwissGroup,  Number,            "Y-mode momentum dispersion.", "", nothing, :etap, T->T.y),
-  :deta_ds_y          => ParamInfo(TwissGroup,  Number,            "Y-mode dispersion derivative.", "", nothing, :deta_ds, T->T.y),
+  :eta_y              => ParamInfo(TwissGroup,  Number,            "Y-mode position dispersion.", "m", nothing, :eta, :y),
+  :etap_y             => ParamInfo(TwissGroup,  Number,            "Y-mode momentum dispersion.", "", nothing, :etap, :y),
+  :deta_ds_y          => ParamInfo(TwissGroup,  Number,            "Y-mode dispersion derivative.", "", nothing, :deta_ds, :y),
 )
 
 for (key, info) in ELE_PARAM_INFO_DICT

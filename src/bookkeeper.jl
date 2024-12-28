@@ -395,8 +395,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
   param_conflict_check(ele, :e1, :e1_rect)
   param_conflict_check(ele, :e2, :e2_rect)
 
-  if haskey(cdict, :angle) && length(sym1) + length(sym2) == 2; error(f"Conflict: {sym1[1]} " *
-                         f"{sym2[1]} cannot both be specified for a Bend element: {ele.name}"); end
+  if haskey(cdict, :angle) && haskey(cdict, :g) && length(sym1) == 1
+    error("Conflict: $(sym1[1]), g, and angle cannot simultaneously be specified for a Bend element $(ele.name)"); end
 
   if  haskey(cdict, :angle) && haskey(cdict, :g)
     L = bg.g * bg.angle
@@ -670,9 +670,11 @@ end
 # clear_changed!
 
 """
-     clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+    clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+    clear_changed!(ele::Ele)
 
-Clear any parameter as having been changed that is associated with `group`.
+Clear record of any parameter in `ele` as having been changed that is associated with `group`.
+If group is not present, clear all records.
 
 Exception: A superlord or multipasslord is not touched since these lords must retain changed
 information until bookkeeping has finished for all slaves. The appropriate lord/slave
@@ -695,6 +697,10 @@ function clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   return
 end
 
+function clear_changed!(ele::Ele)
+  ele.pdict[:changed] = Dict{Union{Symbol,DataType},Any}()
+end
+
 #---------------------------------------------------------------------------------------------------
 # reinstate_changed
 
@@ -707,7 +713,7 @@ function reinstate_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGro
   for param in keys(ele.changed)
     info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info) || info.parent_group != group; continue; end
-    Base.setproperty!(ele, param, ele.changed[param])
+    Base.setproperty!(ele, param, ele.changed[param], false)
   end
 
   return
@@ -765,3 +771,44 @@ function init_multipass_bookkeeper!(lat::Lattice)
   return
 end
 
+#---------------------------------------------------------------------------------------------------
+# fork_bookkeeper
+
+"""
+  fork_bookkeeper(fork::Ele)
+
+Adds the `Branch` that is forked to to the lattice.
+""" fork_bookkeeper
+
+function fork_bookkeeper(fork::Ele)
+  # No to_line means fork to existing element.
+  if isnothing(fork.to_line)
+    if typeof(fork.to_ele) != Ele; error("Since to_line is not specified for fork $(fork.name),\n" *
+                                         "to_ele must be an actual element in a lattice."); end
+    lat = lattice(ele)
+    if isnothing(lat); error("Since to_line is not specified for fork $(fork.name),\n" *
+                             "to_ele must be in a lattice and not external."); end
+
+  # Fork to new branch
+  else
+    to_branch = new_tracking_branch!(lat, fork.to_line)
+    if typeof(fork.to_ele) == Ele; error(
+      "Since to_line is specified, to_ele must be something (String, Regex) that can be used with \n" *
+      "the `find` function to locate the element in the new branch and cannot be an existing element."); end
+    to_ele = find(fork.to_ele)
+    if length(to_ele) == 0; error("to_ele ($(fork.to_ele)) not found in new branch for fork $(fork.name)."); end
+    if length(to_ele) > 1; error("Multiple elements matched to to_ele ($(fork.to_ele)) for fork $(fork.name)."); end
+    fork.to_ele = to_ele[1]
+
+    to_ele = fork.to_ele
+    if to_ele.ix_ele == 1
+      if to_ele.species_ref == Species("Null"); to_ele.species_ref = fork.species_ref; end
+      if to_ele.pc_ref == NaN && to_ele.E_tot_ref == NaN
+        to_ele.pc_ref = fork.pc_ref
+        to_ele.E_tot_ref = fork.pc_ref
+      end
+    end
+  end
+
+  return
+end

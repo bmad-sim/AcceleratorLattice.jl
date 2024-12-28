@@ -228,16 +228,25 @@ end
 # new_tracking_branch!
 
 """
-    Internal: new_tracking_branch!(lat::Lattice, beamline::Union{BeamLine, Tuple})
+    Internal: new_tracking_branch!(lat::Lattice, beamline::Union{BeamLine, Tuple}) -> new_branch
 
-Adds a `BeamLine` to the lattice creating a new `Branch`.
+Adds a tracking `BeamLine` to the lattice creating a new `Branch`.
+This function can be called after the lord branches have been instantiated. 
+The new branch is put just after the last existing tracking branch before any lord branches.
 
 Used by the `Lattice` function.
 """ new_tracking_branch!
 
 function new_tracking_branch!(lat::Lattice, bline::BeamLine)
-  push!(lat.branch, Branch(name = bline.pdict[:name], lat = lat, pdict = Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
-  branch = lat.branch[end]
+  ib = 0
+  for outer ib in reverse(1:length(lat.branch))
+    if lat.branch[ib].type == TrackingBranch; break; end
+  end
+
+  insert!(lat.branch, ib+1, Branch(name = bline.pdict[:name], lat = lat, 
+                              pdict = Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
+  branch = lat.branch[ib+1]
+
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = TrackingBranch
   if branch.name == ""; branch.name = "b" * string(length(lat.branch)); end
@@ -264,7 +273,12 @@ function new_tracking_branch!(lat::Lattice, bline::BeamLine)
   branch.ix_ele_max_changed = length(branch.ele)
   index_and_s_bookkeeper!(branch)
 
-  return nothing
+  # Add fork lines
+  for ele in branch.ele
+    if typeof(ele) == Fork; fork_bookkeeper(ele); end
+  end
+
+  return branch
 end
 
 function new_lord_branch!(lat::Lattice, name::AbstractString, branch_type::Type{T}) where T <: BranchType

@@ -61,9 +61,12 @@ end
 
 """ 
     Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true) -> ::Ele
+    Base.insert!(lat::Lattice, girder::Girder)
 
-Insert an element `ele` at index `ix_ele` in branch `branch`.
+Insert a copy of an element in a lattice. Returned is the inserted element.
+For th`ele` at index `ix_ele` in branch `branch` 
 All elements with indexes of `ix_ele` and higher are pushed one element down the array.
+Returned is the inserted element.
 
 Inserted is a (shallow) copy of `ele` and this copy is returned.
 
@@ -72,6 +75,8 @@ parameter of `ele` is adjusted to match the neighboring elements.
 
 Also see `set!`, `push!`, and `pop!`
 """ Base.insert!(branch::Branch, ix_ele::Int, ele::Ele)
+
+#----------------
 
 function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
   ele = copy(ele)
@@ -88,8 +93,25 @@ function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation 
 
   set_branch_min_max_changed!(branch, ix_ele)
   ele.pdict[:changed][AllGroup] = true
+  if typeof(ele) == Fork; fork_bookkeeper(ele); end
   if !isnothing(branch.lat) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   return ele
+end
+
+#----------------
+
+function Base.insert!(lat::Lattice, girder::Girder)
+  gbranch = lat.branch["girder"]
+  push!(gbranch.ele, copy(girder))
+  girder = gbranch.ele[end]
+
+  for ele in girder.supported
+    if !(lat === lattice(ele)); error("Supported element $(ele.name) in girder $(girder.name) " *
+                                      "not associated with lattice girder is to be placed in."); end 
+    ele.pdict[:girder] = girder
+  end
+
+  return girder
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -305,12 +327,14 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   pop!(slave.pdict, :multipass_lord, nothing)
   slave.pdict[:super_lords] = Vector{Ele}([lord])
   slave.slave_status = Slave.SUPER
+  clear_changed!(slave) 
 
   branch.ele[slave.ix_ele] = slave
   slave2 = copy(slave)
   insert!(branch.ele, slave.ix_ele+1, slave2)
   slave.L = s_split - slave1.s 
   slave2.L = slave1.s_downstream - s_split
+  clear_changed!(slave2) 
 
   sbranch = branch.lat.branch["super"]
   push!(sbranch.ele, lord)

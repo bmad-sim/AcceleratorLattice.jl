@@ -65,7 +65,7 @@ function floor_transform(bend::BendGroup, L)
   if bend.tilt_ref == 0
     return FloorPositionGroup(r_vec, qa)
   else
-    qt = QuaternionZ(-bend.tilt_ref)
+    qt = rotZ(-bend.tilt_ref)
     return FloorPositionGroup(rot(qt, r_vec), qt * qa * inv(qt))
   end
 end

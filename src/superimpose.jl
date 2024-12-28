@@ -12,6 +12,8 @@ If `ref` is a vector, one superposition is done per element of `ref`.
 The set of `ref` elements do not all have to be contained within a single lattice.
 See the AcceleratorLattice manual for more details.
 
+Returned is a vector of superimposed elements.
+
 ### Input
 - `super_ele`     Element to be copied and the copies to be superimposed on the lattice.
                   `Drift` and `BeginningEle` type elements are not allowed.
@@ -65,11 +67,11 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
   end
 
   if length(collect(ref_ele)) == 0
-    println("NOTE! No reference element found for superposition of $(ele_name(super_ele)).")
+    println("NOTE! No reference element found for superposition of $(ele_name(super_ele)) so no superposition done.")
     return nothing
   end
   
-
+  super_list = []
   lat_list = []
 
   for this_ref in collect(ref_ele)
@@ -109,11 +111,11 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     if L_super == 0 && offset == 0 
       if machine_ref_origin == Loc.UPSTREAM_END || (machine_ref_origin == Loc.CENTER && ref_ele.L == 0)
         ix_insert = max(ref_ix_ele, 2)
-        insert!(branch, ix_insert, super_ele)
+        push!(super_list, insert!(branch, ix_insert, super_ele))
         continue
       elseif machine_ref_origin == Loc.DOWNSTREAM_END 
         ix_insert = min(ref_ix_ele+1, length(ref_ele.branch.ele))
-        insert!(branch, ix_insert, super_ele)
+        push!(super_list, insert!(branch, ix_insert, super_ele))
         continue
       end
     end
@@ -145,7 +147,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
       else
         ele_at, _ = split!(branch, s1, select = Select.UPSTREAM, ele_near = ref_ele)
       end
-      insert!(branch, ele_at.ix_ele, super_ele)
+      push!(super_list, insert!(branch, ele_at.ix_ele, super_ele))
       continue
     end
 
@@ -206,7 +208,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     n_ele = 0
     for ele in Region(ele1, ele2, false)
       n_ele += 1
-      if typeof(ele) == Drift; all_drift = false; end
+      if typeof(ele) != Drift; all_drift = false; end
     end
 
     #
@@ -214,6 +216,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     if all_drift
       ix_super = ele1.ix_ele
       super_ele = set!(branch, ix_super, super_ele)
+      push!(super_list, super_ele)
       if n_ele > 1; deleatat!(branch.ele, ix_super+1:ix_super+n_ele-1); end
       if typeof(branch.ele[ix_super-1]) == Drift; set_drift_slice_names(branch.ele[ix_super-1]); end
       if typeof(branch.ele[ix_super+1]) == Drift; set_drift_slice_names(branch.ele[ix_super+1]); end
@@ -228,6 +231,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     lord1.lord_status = Lord.SUPER
     lord1.pdict[:slaves] = Ele[]
     push!(lord_list, lord1)
+    push!(super_list, lord1)
 
     for ele in Region(ele1, ele2, false)
       if ele.L == 0; continue; end
@@ -284,7 +288,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
     if lat.autobookkeeping; bookkeeper!(lat); end
   end
 
-  return nothing
+  return super_list
 end
 
 #---------------------------------------------------------------------------------------------------

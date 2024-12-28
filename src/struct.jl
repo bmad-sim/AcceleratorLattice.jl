@@ -329,9 +329,9 @@ Dispersion parameters for a single axis.
 """ Dispersion1
 
 @kwdef mutable struct Dispersion1 <: EleParameterSubGroup
-  eta::Number = 0           # Position dispersion.
-  etap::Number = 0          # Momentum dispersion.
-  deta_ds::Number = 0       # Dispersion derivative.
+  eta::Number = NaN           # Position dispersion.
+  etap::Number = NaN          # Momentum dispersion.
+  deta_ds::Number = NaN       # Dispersion derivative.
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -364,11 +364,17 @@ end
 #---------------------------------------------------------------------------------------------------
 # Twiss subgroup.
 
+"""
+    mutable struct Twiss <: EleParameterSubGroup
+
+Twiss parameters for used for BeamBeam element to describe the strong beam.
+""" Twiss
+
 @kwdef mutable struct Twiss <: EleParameterSubGroup
-  beta_a::Number = 0
-  alpha_a::Number = 0
-  beta_b::Number = 0
-  alpha_b::Number = 0
+  beta_a::Number = NaN
+  alpha_a::Number = NaN
+  beta_b::Number = NaN
+  alpha_b::Number = NaN
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -382,13 +388,13 @@ Twiss parameters for a single mode.
 """ Twiss1
 
 @kwdef mutable struct Twiss1 <: EleParameterSubGroup
-  beta::Number = 0          # Beta Twiss
-  alpha::Number = 0         # Alpha Twiss
-  gamma::Number = 0         # Gamma Twiss
-  phi::Number = 0           # Phase
-  eta::Number = 0           # Position dispersion.
-  etap::Number = 0          # Momentum dispersion.
-  deta_ds::Number = 0       # Dispersion derivative.
+  beta::Number = NaN          # Beta Twiss
+  alpha::Number = NaN         # Alpha Twiss
+  gamma::Number = NaN         # Gamma Twiss
+  phi::Number = NaN           # Phase
+  eta::Number = NaN           # Position dispersion.
+  etap::Number = NaN          # Momentum dispersion.
+  deta_ds::Number = NaN       # Dispersion derivative.
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -727,17 +733,15 @@ end
 Fork element parameters.
 
 ## Fields
-• `to_line::Union{BeamLine, Nothing}`   - Beam line to fork to. \\
-• `to_ele::String`                      - Element forked to. \\
-• `direction::Int`                      - Longitudinal Direction of injected beam. \\
-• `new_branch::Bool`                    - New or existing `to_line`? \\
+• `to_line::Union{BeamLine,Nothing}`  - Beam line to fork to. \\
+• `to_ele`                            - On input: Element ID or element itself. \\
+• `direction::Int`                    - Longitudinal Direction of injected beam. \\
 """ ForkGroup
 
 @kwdef mutable struct ForkGroup <: EleParameterGroup
-  to_line::Union{BeamLine, Nothing} = nothing
-  to_ele::String = ""
+  to_line::Union{BeamLine,Nothing} = nothing
+  to_ele::Union = ""
   direction::Int = +1
-  new_branch::Bool = true
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -1019,7 +1023,6 @@ for an element.
 @kwdef mutable struct TwissGroup <: EleParameterGroup
   a::Twiss1 = Twiss1()                # a-mode
   b::Twiss1 = Twiss1()                # b-mode
-  c::Twiss1 = Twiss1()                # c-mode
   x::Dispersion1 = Dispersion1()      # x-axis
   y::Dispersion1 = Dispersion1()      # y-axis
 end
