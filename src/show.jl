@@ -81,9 +81,16 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :flexible         => :L_user,
   ),
 
+  DescriptionGroup => Dict{Symbol,Symbol}(
+    :type             => :ID,
+  ),
+
   DownstreamReferenceGroup => Dict{Symbol,Symbol}(
     :pc_ref_downstream  => :E_tot_ref_downstream,
     :β_ref_downstream   => :γ_ref_downstream,
+  ),
+
+  InitParticleGroup => Dict{Symbol,Symbol}(
   ),
 
   ReferenceGroup => Dict{Symbol,Symbol}(
@@ -109,10 +116,6 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :Ksol             => :Bsol,
   ),
 
-  DescriptionGroup => Dict{Symbol,Symbol}(
-    :type             => :ID,
-  ),
-
   TrackingGroup => Dict{Symbol,Symbol}(
     :num_steps        => :ds_step,
   ),
@@ -124,10 +127,15 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
   ),
 
   TwissGroup => Dict{Symbol,Symbol}(
+    :beta_a           => :beta_b,
+    :alpha_a          => :alpha_b,
+    :gamma_a          => :gamma_b,
+    :phi_a            => :phi_b,
+    :eta_x            => :eta_y,
+    :etap_x           => :etap_y,
+    :deta_ds_x        => :deta_ds_y,
   ),
 
-  InitParticleGroup => Dict{Symbol,Symbol}(
-  ),
 )
 
 #---------------------------------------------------------------------------------------------------
@@ -333,12 +341,12 @@ Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
 # show_elegroup
 
 """
-    Internal: show_elegroup(io::IO, group::T, ele::Ele, docstring::Bool; indent = 0)
+    Internal: show_elegroup(io::IO, group::EleParameterGroup, ele::Ele, docstring::Bool; indent = 0)
 
 Prints lattice element group info. Used by `show_ele`.
 """ show_elegroup
 
-function show_elegroup(io::IO, group::T, ele::Ele, docstring::Bool; indent = 0) where T <: EleParameterGroup
+function show_elegroup(io::IO, group::EleParameterGroup, ele::Ele, docstring::Bool; indent = 0)
   if docstring
     show_elegroup_with_doc(io, group, ele, indent = indent)
   else
@@ -415,18 +423,18 @@ end
 # show_elegroup_wo_doc
 
 """
-    show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym::Symbol = :NONE) where T <: BaseEleParameterGroup
+    show_elegroup_wo_doc(io::IO, group::BaseEleParameterGroup, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
 
 Two column printing of an element group without any docstring.
 """ show_elegroup_wo_doc
 
-function show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym::Symbol = :NONE) where T <: BaseEleParameterGroup
+function show_elegroup_wo_doc(io::IO, group::BaseEleParameterGroup, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
   gtype = typeof(group)
   if gtype ∉ keys(show_column2)
-    if field_sym == :NONE
+    if group_show_name == :NONE
       println(io, " "^indent * "Show for field of type $gtype not yet implemented.")
     else
-      println(io, " "^indent * "Show for this field `$field_sym` of type $gtype not yet implemented.")
+      println(io, " "^indent * "Show for this field `$group_show_name` of type $gtype not yet implemented.")
     end
     return
   end
@@ -442,10 +450,10 @@ function show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym:
     end
   end
 
-  if field_sym == :NONE
+  if group_show_name == :NONE
     println(io, " "^indent * "$(gtype):")
   else
-    println(io, " "^indent * ".$field_sym:")
+    println(io, " "^indent * ".$group_show_name:")
   end
 
   for field_sym in associated_names(gtype)
@@ -470,6 +478,7 @@ function show_elegroup_wo_doc(io::IO, group::T, ele::Ele; indent = 0, field_sym:
       end
 
     else
+      if field_sym in fieldnames(gtype) && typeof(getfield(group, field_sym)) <: EleParameterSubGroup; continue; end
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(ele, field_sym)
       println(io, " "^indent * f"  {field_name} {vstr} {units(field_sym)}")
@@ -493,7 +502,13 @@ function full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseElePa
   pinfo = ele_param_info(field, throw_error = false)
   if !isnothing(pinfo)
     if !isnothing(pinfo.output_group); return "$field (output)"; end
-    if pinfo.struct_sym != field; return "$(pinfo.user_sym) ($(pinfo.struct_sym))"; end
+    if pinfo.struct_sym != field
+      if isnothing(pinfo.sub_struct)
+        return "$(pinfo.user_sym) (.$(pinfo.struct_sym))"
+      else
+        return "$(pinfo.user_sym) (.$(pinfo.sub_struct).$(pinfo.struct_sym))"
+      end
+    end
     return String(field)
   end
 
@@ -770,15 +785,15 @@ Used by `info` function.
 """ info1
 
 function info1(info::ParamInfo)
-  println(f"  User name:       {info.user_sym}")
+  println("  User name:       $(info.user_sym)")
   if isnothing(info.sub_struct)
-    println(f"  Stored in:       {info.parent_group}.{info.struct_sym}")
+    println("  Stored in:       $(info.parent_group).$(info.struct_sym)")
   else
-    println(f"  Stored in:       {info.sub_struct(info.parent_group)}.{info.struct_sym}")
+    println("  Stored in:       $(info.parent_group).$(info.sub_struct).$(info.struct_sym)")
   end
-  println(f"  Parameter type:  {info.paramkind}")
-  if info.units != ""; println(f"  Units:           {info.units}"); end
-  println(f"  Description:     {info.description}")
+  println("  Parameter type:  $(info.paramkind)")
+  if info.units != ""; println("  Units:           $(info.units)"); end
+  println("  Description:     $(info.description)")
   return nothing
 end
 

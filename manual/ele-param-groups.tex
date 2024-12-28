@@ -775,12 +775,16 @@ whether normalized or unnormalized quantities will stay constant if the referenc
 \section{FloorPositionGroup}
 \label{s:floor.pos.g}
 
-The \vn{FloorPositionGroup} stores position and orientation information in the Floor coordinate 
+The \vn{FloorPositionGroup} stores the nominal (calculated without alignment shifts) 
+position and orientation in the floor coordinates of the upstream end of the element.
 system. The components of this group are:
 \begin{example}
-  r_floor::Vector          - [x,y,z] position. 
-  q_floor::Quat            - Quaternion orientation. 
+  r::Vector          - [x,y,z] position. Accessed using \vn{r_floor}
+  q::Quaternion      - Quaternion orientation. Accessed using \vn{q_floor}.
 \end{example}
+
+
+
 
 %---------------------------------------------------------------------------------------------------
 \section{ForkGroup}
@@ -788,14 +792,14 @@ system. The components of this group are:
 
 The components of this group are:
 \begin{example}
-  to_line::Union{BeamLine, Nothing}   - Beam line to fork to
-  to_ele::String                      - Element forked to.
-  direction::Int                      - Longitudinal Direction of injected beam.
-  new_branch::Bool                    - New or existing `to_line`?
+  to_line::Union{BeamLine,Branch}   - Beam line to fork to
+  to_ele::Union{String,Ele}         - Element forked to.
+  direction::Int                    - Longitudinal Direction of injected beam.
 \end{example}
 
 This group is used with a \vn{Fork} element and specifies how the fork element attaches to
-another branch.
+another branch. 
+
 
 %---------------------------------------------------------------------------------------------------
 \section{GirderGroup}
@@ -859,6 +863,9 @@ The possible values of \vn{lord_status} are: \\
   \indnt .MULTIPASS & -- Multipass slave (\sref{c:multipass}) \\
 \end{tabular}
 \hfill \break \vskip -1.2ex
+
+All elements in a tracking branch have this element group even if the type of element (For example,
+\vn{Drift} elements) is such that the element will never be a lord or a slave.
 
 Notice that elements that are supported by a \vn{Girder} are not marked as slaves to the \vn{Girder}
 although the supported elements will have a pointer to the supporting girder.

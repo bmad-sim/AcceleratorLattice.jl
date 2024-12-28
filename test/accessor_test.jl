@@ -36,3 +36,4 @@ bele = lat.branch[1].ele[1]
   @test !(beginning === lat.branch[1].ele[1])
 end
 
+# Needs to test all parameter groups including output parameters.

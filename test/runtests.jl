@@ -30,3 +30,6 @@ using AcceleratorLattice, Test
 end;
 
 print("")  # To surpress trailing garbage output
+
+# Fork test with multipass and superimpose. 
+# lattice copy test. Make sure forked to element pointers are properly handled.

@@ -27,6 +27,10 @@ superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)
 # Notice element d2 has a negative length
 
 b = lat.branch[1]
+bsuper = lat.branch["super"]
+
+eles(lat, "z2")
+eles(bsuper, "z2")
 
 # !!! Test ele_at_offset with, EG multipass
 
@@ -46,8 +50,6 @@ end
   @test eles(lat, "d") == eles(lat, "fodo>>8, fodo>>20, multipass>>2")
   @test eles(lat, "Marker::*") == eles(lat, "fodo>>10, fodo>>11, fodo>>23, ln2>>5, ln3>>5, ln3>>8")
   @test eles(lat, "Marker::*-1") == eles(lat, "fodo>>9, fodo>>10, fodo>>22, ln2>>4, ln3>>4, ln3>>7")
-  @test eles(lat, "m1#2") == eles(lat, "fodo>>11")
-  @test eles(lat, "m1#2+1") == eles(lat, "fodo>>12")
   @test eles(lat.branch[5], "d") == eles(lat, "multipass>>2")
   @test eles(lat, "multipass>>d") == eles(lat, "multipass>>2")
   @test eles(lat, "%d") == eles(lat, "fodo>>22, multipass>>1, multipass>>3")
@@ -57,7 +59,7 @@ end
   @test eles(lat, "ID=`z1`") == eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
   @test eles(lat, "ID=`z1` ~fodo>>9 ~fodo>>22") == eles(lat, "fodo>>7, fodo>>15, fodo>>21")
   @test eles(lat, "ID=`z1` & fodo>>9") == eles(lat, "fodo>>9")
-  @test b["z1"] == eles(lat, "super>>3")
+  @test bsuper["z2"] == eles(lat, "super>>1")
   @test eles(lat, "Quadrupole::* ~*!*") == 
                 eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21, fodo>>22, multipass>>1, multipass>>3")
   @test_throws ErrorException eles(lat, "quadrupole::*")

@@ -145,11 +145,11 @@ end
 
 #-----------------
 
-function Base.setproperty!(ele::Ele, sym::Symbol, value)
+function Base.setproperty!(ele::Ele, sym::Symbol, value, check_settable = true)
   pdict::Dict{Symbol,Any} = ele.pdict
   if haskey(pdict, sym); pdict[sym] = value; return pdict[sym]; end
   pinfo = ele_param_info(sym, ele)
-  check_if_settable(ele, sym, pinfo)
+  if (check_settable); check_if_settable(ele, sym, pinfo); end
 
   # For parameters that are not part of an element parameter group struct (EG lord/slave info),
   # any changes do not have to be recorded in pdict[:changed]. 
@@ -206,8 +206,9 @@ end
 """
   Base.getindex(lat::Lattice}, name::AbstractString)
 
-Match `lat[name]` to either a branch with name `name` or all lattice elements which
-match. See `eles` function for more details on matching to lattice elements.
+If `lat[name]` matches a branch name, return the branch. No wild cards permitted here.
+If `lat[name]` does not match a branch name, return list of matching lattice elements.
+In this case the returned vector is equivalent to `eles(lat, name)`.
 """ Base.getindex(lat::Lattice, name::AbstractString)
 
 function Base.getindex(lat::Lattice, name::AbstractString)
@@ -281,12 +282,10 @@ EG: integrated multipole value even if stored value is not integrated.
 """ get_elegroup_param
 
 function get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
-  if !isnothing(pinfo.sub_struct)                       # Example see: ParamInfo(:a_beta)
-    return getfield(pinfo.sub_struct(group), pinfo.struct_sym)
-  elseif pinfo.parent_group == pinfo.paramkind               # Example see: ParamInfo(:twiss)
+  if pinfo.parent_group == pinfo.paramkind               # Example see: ParamInfo(:twiss)
     return group
   else
-    return getfield(group, pinfo.struct_sym)
+    return getfield(base_field(group, pinfo), pinfo.struct_sym)
   end
 end
 
@@ -333,7 +332,7 @@ function set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInf
   if !isnothing(pinfo.sub_struct)    # Example see: ParamInfo(:a_beta)  
     return setfield!(pinfo.sub_struct(group), pinfo.struct_sym, value)
   else
-    return setfield!(group, pinfo.struct_sym, value)
+    return setfield!(base_field(group, pinfo), pinfo.struct_sym, value)
   end
 end
 
@@ -383,6 +382,25 @@ function set_param!(ele::Ele, sym::Symbol, value)
   if haskey(pdict, sym); pdict[sym] = value; return; end
   pinfo = ele_param_info(sym, ele)
   set_elegroup_param!(ele, pdict[Symbol(pinfo.parent_group)], pinfo, value)
+end
+
+#---------------------------------------------------------------------------------------------------
+# base_field(group, pinfo)
+
+"""
+    base_field(group::EleParameterGroup, pinfo::ParamInfo) -> BaseEleParameterGroup
+
+Return group containing parameter described by `pinfo`. For most parameters this will be the `group`
+itself. However, for example, for the parameter `eta_a`, `group` will be a `TwissGroup` instance
+and returned is the sub group `group.a`.
+""" base_field(group::EleParameterGroup, pinfo::ParamInfo) 
+
+function base_field(group::EleParameterGroup, pinfo::ParamInfo)
+  if isnothing(pinfo.sub_struct) 
+    return group           
+  else                 # Example see: ParamInfo(:a_beta)
+    return getfield(group, pinfo.sub_struct)
+  end
 end
 
 #---------------------------------------------------------------------------------------------------
