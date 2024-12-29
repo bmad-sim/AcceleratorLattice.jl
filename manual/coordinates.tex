@@ -71,24 +71,22 @@ element in a lattice tracking branch and then building up the coordinate system 
 All elements in a tracking branch have an ``\vn{entrance}'' and an ``\vn{exit}'' coordinate frame as
 illustrated in \fig{f:ele.coord.frame}
 These coordinate frames are attached to the element and are part of the \vn{element body coordinates}. 
-The one one element that does not have entrance and exit coordinate frames
-is the \vn{Girder} (\sref{s:girder}) element which supports other elements but these
-elements are stored in a non-tracking branch. There
-is also an exception where, if there is a \vn{fiducial} element (or elements)
-in the branch line, the construction of the branch coordinate system starts at the \vn{fiducial}
-elements.
+An exception occurs if there are \vn{Fiducial} elements (\sref[s:fiducial}) in a branch. 
+\vn{Fiducial} elements only have a single coordinate frame that is tied to global coordinates 
+and construction of the branch coordinate system starts at this coordinate system. 
+See \sref{s:fiducial} for more details.
+Note that \vn{Girder} elements (\sref{s:girder}) also only have a single coordinate frame.
 
-
-Most elements have a ``straight'' geometry as shown in
+Most element types have a ``straight'' geometry as shown in
 \fig{f:ele.coord.frame}A. That is, the reference curve through the element is a straight line
 segment with the $x$ and $y$ axes always pointing in the same direction. For a \vn{Bend} element
 (\sref{s:bend}), the reference curve is a segment of a circular arc as shown in
 \fig{f:ele.coord.frame}B. With the \vn{ref_tilt} parameter of a bend set to zero, the rotation axis
 between the entrance and exit frames is parallel to the $y$-axis (\sref{s:floor}). 
-For \vn{Patch} (\sref{s:patch}) and \vn{floor_shift} (\sref{s:floorshift}), 
-and \vn{fiducial} (\sref{s:fiducial}) elements (\fig{f:ele.coord.frame}C), the exit face can be
+For \vn{Patch} (\sref{s:patch}) and \vn{floor_shift} (\sref{s:floorshift})
+elements (\fig{f:ele.coord.frame}C), the exit face can be
 arbitrarily oriented with respect to the entrance end. 
-For the \vn{FloorShift} and \vn{fiducial} elements the interior reference curve between the
+For \vn{FloorShift} elements the interior reference curve between the
 entrance and exit faces is not defined. For the \vn{Patch} element, the interior reference curve 
 is dependent upon certain \vn{Patch} element parameter settings (\sref{s:patch}).
 
@@ -131,14 +129,16 @@ in the $+s$ direction, so particles will enter an element at the upstream end an
 downstream end.
 
 If there are \vn{Fiducial} elements, the branch coordinates are constructed beginning at these
-elements working both forwards and backwards along the branch.
+elements working both forwards and backwards along the branch. 
+If there are multiple \vn{Fiducial} elements in a branch, there must be flexible \vn{Patch}
+elements (\sref{s:patch}) between them.
 
 If an element is not reversed (\sref{s:ele.reverse}),
 the element's \vn{upstream} end is the same as the element's \vn{entrance} end 
 (\fig{f:ele.coord.frame}) and the
-\vn{downstream} end is the same as the element's \vn{exit} end. If an element is reversed, 
-the element's \vn{exit} end will be \vn{upstream} end and the element's
-\vn{entrance} end will be the \vn{downstream} end. That is, for a reversed element, particles 
+\vn{downstream} end is the same as the element's \vn{exit} end and
+vice versa if the element is reversed, 
+That is, for a reversed element, particles 
 traveling downstream will
 enter at the element's \vn{exit} end and will exit at the \vn{entrance} end.
 
@@ -151,7 +151,7 @@ However, this does not affect the branch
 coordinate system.
 This is illustrated in \fig{f:patch.between}. \fig{f:patch.between}A shows the general situation
 with the downstream frame of element \vn{A} mated to the upstream frame of element \vn{B}.
-Figures~\ref{f:patch.between}B-C show branches constructed from the following lattice file:
+Figures~\ref{f:patch.between}B-C show branches constructed from the following:
 \begin{example}
   @ele dft = Drift(L = 2)
   @ele bnd = Bend(l = 2, g = pi/12)
