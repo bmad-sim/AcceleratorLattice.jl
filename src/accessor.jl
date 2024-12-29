@@ -208,7 +208,7 @@ end
 
 If `lat[name]` matches a branch name, return the branch. No wild cards permitted here.
 If `lat[name]` does not match a branch name, return list of matching lattice elements.
-In this case the returned vector is equivalent to `eles(lat, name)`.
+In this case the returned vector is equivalent to `eles_search(lat, name)`.
 """ Base.getindex(lat::Lattice, name::AbstractString)
 
 function Base.getindex(lat::Lattice, name::AbstractString)
@@ -216,7 +216,7 @@ function Base.getindex(lat::Lattice, name::AbstractString)
     if br.name == name; return br; end
   end
 
-  return eles(lat, name)
+  return eles_search(lat, name)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ Match `branch[name]` to all lattice elements in `branch.ele[]` array.
 """ Base.getindex(branch::Branch, name::AbstractString)
 
 function Base.getindex(branch::Branch, name::AbstractString)
-  return eles(branch, name)
+  return eles_search(branch, name)
 
   error(f"No element with name: {name}")
 end

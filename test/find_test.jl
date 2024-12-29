@@ -21,7 +21,7 @@ fodo = bl([b1, s1, -2*ln1, m1, m1, ln2, reverse(qf), reverse(ln2), d2, reverse(b
 lat = Lattice([bl([beginning, fodo], name = "fodo"), bl([beginning, ln2], name = "ln2"), ln3])
 
 superimpose!(z2, lat.branch[3], offset = 0.1, ele_origin = BodyLoc.ENTRANCE_END)
-superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)
+superimpose!(z1, eles_search(lat, "1>>d")[1], offset = 0.1)
 
 #---------------------------------------------------------------------------------------------------
 # Notice element d2 has a negative length
@@ -29,8 +29,8 @@ superimpose!(z1, eles(lat, "1>>d#1"), offset = 0.1)
 b = lat.branch[1]
 bsuper = lat.branch["super"]
 
-eles(lat, "z2")
-eles(bsuper, "z2")
+eles_search(lat, "z2")
+eles_search(bsuper, "z2")
 
 # !!! Test ele_at_offset with, EG multipass
 
@@ -46,29 +46,29 @@ eles(bsuper, "z2")
   @test ele_at_s(b, b.ele[21].s, select = Select.DOWNSTREAM, ele_near = b.ele[21]) == b.ele[21]
 end
 
-@testset "eles" begin
-  @test eles(lat, "d") == eles(lat, "fodo>>8, fodo>>20, multipass>>2")
-  @test eles(lat, "Marker::*") == eles(lat, "fodo>>10, fodo>>11, fodo>>23, ln2>>5, ln3>>5, ln3>>8")
-  @test eles(lat, "Marker::*-1") == eles(lat, "fodo>>9, fodo>>10, fodo>>22, ln2>>4, ln3>>4, ln3>>7")
-  @test eles(lat.branch[5], "d") == eles(lat, "multipass>>2")
-  @test eles(lat, "multipass>>d") == eles(lat, "multipass>>2")
-  @test eles(lat, "%d") == eles(lat, "fodo>>22, multipass>>1, multipass>>3")
-  @test eles(lat, "z1-1") == eles(lat, "1>>4")
-  @test eles(lat, "z1+1") == eles(lat, "fodo>>6")
-  @test eles(lat, "z2-1") == eles(lat, "ln3>>2")
-  @test eles(lat, "ID=`z1`") == eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
-  @test eles(lat, "ID=`z1` ~fodo>>9 ~fodo>>22") == eles(lat, "fodo>>7, fodo>>15, fodo>>21")
-  @test eles(lat, "ID=`z1` & fodo>>9") == eles(lat, "fodo>>9")
-  @test bsuper["z2"] == eles(lat, "super>>1")
-  @test eles(lat, "Quadrupole::* ~*!*") == 
-                eles(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21, fodo>>22, multipass>>1, multipass>>3")
-  @test_throws ErrorException eles(lat, "quadrupole::*")
+@testset "eles_search" begin
+  @test eles_search(lat, "d", order = Order.BY_S) == eles_search(lat, "fodo>>8, multipass>>2, fodo>>20")
+  @test eles_search(lat, "Marker::*") == eles_search(lat, "fodo>>10, fodo>>11, fodo>>23, ln2>>5, ln3>>5, ln3>>8")
+  @test eles_search(lat, "Marker::*-1") == eles_search(lat, "fodo>>9, fodo>>10, fodo>>22, ln2>>4, ln3>>4, ln3>>7")
+  @test eles_search(lat.branch[5], "d") == eles_search(lat, "multipass>>2")
+  @test eles_search(lat, "multipass>>d") == eles_search(lat, "multipass>>2")
+  @test eles_search(lat, "%d") == eles_search(lat, "fodo>>22, multipass>>1, multipass>>3")
+  @test eles_search(lat, "z1-1") == eles_search(lat, "1>>4")
+  @test eles_search(lat, "z1+1") == eles_search(lat, "fodo>>6")
+  @test eles_search(lat, "z2-1") == eles_search(lat, "ln3>>2")
+  @test eles_search(lat, "ID=`z1`") == eles_search(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
+  @test eles_search(lat, "ID=`z1` ~fodo>>9 ~fodo>>22") == eles_search(lat, "fodo>>7, fodo>>15, fodo>>21")
+  @test eles_search(lat, "ID=`z1` & fodo>>9") == eles_search(lat, "fodo>>9")
+  @test bsuper["z2"] == eles_search(lat, "super>>1")
+  @test eles_search(lat, "Quadrupole::* ~*!*") == 
+                eles_search(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21, fodo>>22, multipass>>1, multipass>>3")
+  @test_throws ErrorException eles_search(lat, "quadrupole::*")
 end
 
-# Function to print right-hand-side for "eles" testset. Used to create new tests. Just use the LHS as the argument.
+# Function to print right-hand-side for "eles_search" testset. Used to create new tests. Just use the LHS as the argument.
 #
 #function toe(vec)
-#  str = "eles(lat, \""
+#  str = "eles_search(lat, \""
 #  for ele in vec
 #    str *= ele_name(ele, "!#") * ", "
 #  end

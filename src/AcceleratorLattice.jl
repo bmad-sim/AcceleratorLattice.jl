@@ -67,7 +67,8 @@ export show_lat, show_branch, show_beamline, bookkeeper!, set_param!
 export Branch, Lattice, BeamLineEle, superimpose!, multipole_type
 export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, ele_floor_transform
 export split!, construct_ele_type, ele_at_s, toggle_integrated!
-export eles, next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
+export eles_search, eles_substitute_lords!, eles_sort!
+export next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
 export branch, matches_branch, create_ele_vars, eval_str, Vertex1, LatticeGlobal
 export EleParameterGroup, AlignmentGroup, FloorPositionGroup, BMultipole, BMultipoleGroup, BeamBeamGroup
 export EMultipole, EMultipoleGroup, BendGroup, ApertureGroup, DescriptionGroup, RFGroup, SolenoidGroup
