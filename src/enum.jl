@@ -55,6 +55,7 @@ enum("ExactMultipoles", ["OFF", "HORIZONTALLY_PURE", "VERTICALLY_PURE"], "Bend m
 enum("TrackingMethod", ["RUNGE_KUTTA", "TIME_RUNGE_KUTTA", "STANDARD"], "Particle tracking method.")
 enum("ParticleState", ["PREBORN", "ALIVE", "LOST", "LOST_NEG_X", "LOST_POS_X", 
                          "LOST_NEG_Y", "LOST_POS_Y", "LOST_PZ", "LOST_Z"], "Particle state.")
+enum("Order", ["BY_S", "BY_INDEX", "NONE"], "Ordering of vectors of elements selected from some lattice.")
 
 # Useful abbreviations
 
