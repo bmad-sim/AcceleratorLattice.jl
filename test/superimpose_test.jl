@@ -8,7 +8,7 @@ using AcceleratorLattice, Test
                           En1L = 1, Etilt1 = 2, Es2 = 3, Etilt2 = 4)
   q2 = Quadrupole(L = 0.6, Kn1 = -0.3);
   d1 = Drift(L = 1.0);
-  lc1 = LCavity(L = 1.0, dE_ref = 2e7);
+  lc1 = LCavity(L = 1.0, dE_ref = 2e7, voltage = 10e7);
   d3 = Drift(L = 1.0);
   m1 = Marker();
   m2 = Marker();
@@ -50,6 +50,7 @@ b2 = lat.branch[2]
   @test b2.ele[1].slaves == [b1.ele[9], b1.ele[11]]
   @test b2.ele[2].slaves == [b1.ele[13], b1.ele[15]]
   @test length.([sup_m1, sup_sm1, sup_zs2, sup_zm4, sup_m2, sup_zm2, sup_zm3]) == [1, 1, 2, 1, 1, 1, 1]
+  #@test 
 end
 
 #---------------------------------------------------------------------------------------------------

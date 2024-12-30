@@ -148,8 +148,9 @@ the end element must be of type \vn{Marker} (\sref{s:mark}).
 All tracking branches have a name \vn{Branch.name} inherited from the \vn{BeamLine} that defines
 the branch in the lattice file and branches contains an array of elements \vn{Branch.ele[]}.
 If the \vn{BeamLine} used to instantiate a tracking branch does not have a name, The default name
-is used. The default name is \vn{"bN"} where \vn{N} is the index of the
-branch in the \vn{Lattice.branch} array.
+is used. The default name is \vn{"Bn"} where \vn{n} is the index of the
+branch in the \vn{Lattice.branch} array. For example, \vn{"B2"} would be the default name of 
+\vn{lat.branch[2]} (assuming that this is a tracking branch).
 
 %---------------------------------------------------------------------------
 \section{Lattices}
@@ -182,11 +183,11 @@ Where it is assumed for this example that the super lord branch has index 2.
 
 Similarly, lattice elements can be accessed by name or by index.
 For example, if \vn{lat} is a lattice instance, and \vn{"q1"} is the name of an element or
-elements that are in a branch named "b2", the following are equivalent:
+elements that are in a branch named "B2", the following are equivalent:
 \begin{example}
   elist = lat["q1"]
   elist = find(lat, "q1")
-  b2 = lat.branch["b2"]; elist = b2["q1"]
+  b2 = lat.branch["B2"]; elist = b2["q1"]
 \end{example}
 \vn{elist} will be a vector of elements since a name may match to multiple elements.
 

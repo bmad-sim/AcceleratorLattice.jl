@@ -249,7 +249,7 @@ function new_tracking_branch!(lat::Lattice, bline::BeamLine)
 
   branch.pdict[:ix_branch] = length(lat.branch)
   branch.pdict[:type] = TrackingBranch
-  if branch.name == ""; branch.name = "b" * string(length(lat.branch)); end
+  if branch.name == ""; branch.name = "B" * string(length(lat.branch)); end
   info = LatticeConstructionInfo([], bline.pdict[:orientation], 0)
 
   if haskey(bline.pdict, :species_ref); branch.ele[1].species_ref = bline.pdict[:species_ref]; end

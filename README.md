@@ -64,7 +64,7 @@ Ele: "qf" (b1>>2)   Quadrupole
         1      false                     0.0                    0.34  Kn1                     0.0  Ks1 (1/m^2)
                                                -0.011341179236737171  Bn1                    -0.0  Bs1 (T/m^1)
   EMultipoleGroup: No electric multipoles
-  FloorPositionGroup:
+  OrientationGroup:
     r (r_floor)          [0.0, 0.0, 0.0] m
     q (q_floor)          1.0 + 0.0⋅i + 0.0⋅j + 0.0⋅k 
     theta (theta_floor)  0.0 rad

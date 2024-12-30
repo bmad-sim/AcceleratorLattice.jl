@@ -82,31 +82,49 @@ end
 
 """
     Internal: eles_atomic(where_search, who, branch_id, ele_type, param_id, 
-                                                  match_str, offset, wrap)  -> ele_vector::Ele[]
+                                                  match_str, wrap)  -> ele_vector::Ele[]
 
-Internal function. Called by the `eles_search_a_group` function which in turn is called by `eles`.
+Internal function. Find all elements that match an "atomic" construct.
+Called by the `eles_search_a_block` function which in turn is called by `eles_search`.
 """ eles_atomic
 
-function eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str, offset, wrap)
+function eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str, wrap)
+
+  # Parse out offset
+
+  chunks = str_split(match_str, ["+", "-"])
+  offset = 0
+
+  if length(chunks) > 1
+    if length(chunks) != 3; error("Malformed element ID: $who"); end
+    match_str = chunks[1]
+    offset = integer(chunks[2] * chunks[3])
+  end
+
+  # What branches to search?
 
   ele_list = Ele[]
   ix_ele = integer(match_str, -1)
-  branches_searched = []
 
   if typeof(where_search) == Lattice
     lat = where_search
-    branch_vec = lat.branch
+    if ix_ele != -1 && branch_id == ""
+      branch_vec = [lat.branch[1]]
+    else
+      branch_vec = lat.branch
+    end
+
   else
     branch_vec = collect(where_search)
   end
 
-  # Search branches
+  # Search for element
 
   for branch in branch_vec
     if !matches_branch(branch_id, branch); continue; end
-    push!(branches_searched, branch)
 
     if ix_ele != -1 && param_id == :name
+      if ix_ele > length(branch.ele); error("Element index above branch.ele[] range: $(who)"); end
       push!(ele_list, ele_at_offset(branch.ele[ix_ele], offset, wrap))
     else
       for ele in branch.ele
@@ -121,38 +139,36 @@ function eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str
 end
 
 #---------------------------------------------------------------------------------------------------
-# eles_search_a_group
+# eles_search_a_block
 
 """
-  Internal: eles_search_a_group(where_search::Union{Lattice,Branch}, who::Union{AbstractString,Regex}; 
-                                                                                wrap::Bool = true)
+  Internal: eles_search_a_block(where_search::Union{Lattice,Branch}, 
+                                            who::Union{AbstractString,Regex}; wrap::Bool = true)
 
-Internal routine called by `eles` to search for matches to a string that represents a single "group".
-A string representing a single group is a string that does not contain, ",", "&", nor "~".
+Internal routine called by `eles` to search for matches to a string that represents a single "block".
+A string representing a single block is a string that does not contain, ",", "&", nor "~".
 See the `eles` documentation for details.
 Returned is a list that is naturally sorted by index.
-""" eles_search_a_group
+""" eles_search_a_block
 
-function eles_search_a_group(where_search::Union{Lattice,Branch}, who::Union{AbstractString,Regex},
+function eles_search_a_block(where_search::Union{Lattice,Branch}, who::Union{AbstractString,Regex},
                                                                               wrap::Bool = true)
   # Julia regex is simple
-  if typeof(who) == Regex; return eles_search_a_group(where_search, who); end
+  if typeof(who) == Regex; return eles_search_a_block(where_search, who); end
 
   # Not Julia regex
   ele_type = nothing
   branch_id = ""       # Branch ID used with "branch_id>>ele_id" construct
   param_id = :name
   match_str = ""
-  offset = 0
 
-  # Parse `who`
+  # Parse `who`. Will accept constructs of the form "branch>>type::name" or "type::branch>>name"
 
   this_who = replace(who, "'" => "\'")
-  chunks = str_split(this_who, [">>", "::", ":", "+", "-", "=", "`", " "])
+  chunks = str_split(this_who, [">>", "::", ":", "=", "`", " "])
 
   if length(chunks) > 2 && chunks[2] == "::"
-    ele_type = Symbol(chunks[1])
-    if ele_type ∉ Symbol.(subtypes(Ele)); error("Element type not recognized: $ele_type"); end
+    ele_type = chunks[1]
     chunks = chunks[3:end]
   end
 
@@ -161,6 +177,16 @@ function eles_search_a_group(where_search::Union{Lattice,Branch}, who::Union{Abs
     chunks = chunks[3:end]
   end
 
+  if length(chunks) > 2 && chunks[2] == "::"   # Need this test for "branch>>type::name" construct
+    ele_type = chunks[1]
+    chunks = chunks[3:end]
+  end
+
+  if !isnothing(ele_type)
+    ele_type = Symbol(ele_type)
+    if ele_type ∉ Symbol.(subtypes(Ele)); error("Element type not recognized: $ele_type"); end
+  end
+
   if length(chunks) > 4 && chunks[2] == "="
     if chunks[3] != "`" || chunks[5] != "`" error("Malformed back ticks in element match string: $who"); end
     param_id = Symbol(chunks[1])
@@ -169,52 +195,39 @@ function eles_search_a_group(where_search::Union{Lattice,Branch}, who::Union{Abs
   else
     match_str = chunks[1]
     chunks = chunks[2:end]
-  end
-
-  if length(chunks) > 0 && (chunks[1] == "-" || chunks[1] == "+")
-    if length(chunks) == 1; error("Malformed `-` or `+` character in element match string: $who"); end
-    offset = integer(chunks[1] * chunks[2])
-    chunks = chunks[3:end]
   end
 
   # Non-range construct
 
   if length(chunks) == 0
-   return eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str, offset, wrap) 
+    return eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str, wrap) 
   end
 
   # Range construct
   # Note: ele_type not used in search for range end points.
 
-  ele_vec = eles_atomic(where_search, who, branch_id, nothing, param_id, match_str, offset, wrap) 
+  ele_vec = eles_atomic(where_search, who, branch_id, nothing, param_id, match_str, wrap) 
 
-  if chunks[1] != ":"; error("Malformed group: $who"); end
+  if chunks[1] != ":"; error("Malformed construct: $who"); end
   if length(ele_vec) == 0; error("First element in range construct does not match anything in the lattice: $who"); end
   if length(ele_vec) > 1; error("First element in range construct matches multiple elements: $who"); end
 
   param_id = :name
   match_str = ""
-  offset = 0
 
-  if length(chunks) > 4 && chunks[2] == "="
-    if chunks[3] != "`" || chunks[5] != "`" error("Malformed back ticks in element match string: $who"); end
-    param_id = Symbol(chunks[1])
-    match_str = chunks[4]
-    chunks = chunks[6:end]
+  if length(chunks) > 5 && chunks[3] == "="
+    if chunks[4] != "`" || chunks[6] != "`" error("Malformed back ticks in element match string: $who"); end
+    param_id = Symbol(chunks[2])
+    match_str = chunks[5]
+    chunks = chunks[7:end]
   else
-    match_str = chunks[1]
-    chunks = chunks[2:end]
-  end
-
-  if length(chunks) > 0 && (chunks[1] == "-" || chunks[1] == "+")
-    if length(chunks) == 1; error("Malformed `-` or `+` character in element match string: $who"); end
-    offset = integer(chunks[1] * chunks[2])
+    match_str = chunks[2]
     chunks = chunks[3:end]
   end
 
-  if length(chunks) > 0; error("Extra stuff in group construct: $who"); end
+  if length(chunks) > 0; error("Extra stuff in search string: $who"); end
 
-  ele_vec2 = eles_atomic(where_search, who, branch_id, nothing, param_id, match_str, offset, wrap) 
+  ele_vec2 = eles_atomic(where_search, who, branch_id, nothing, param_id, match_str, wrap) 
   if length(ele_vec2) == 0; error("Second element in range construct does not match anything in the lattice: $who"); end
   if length(ele_vec2) > 1; error("Second element in range construct matches multiple elements: $who"); end
 
@@ -238,7 +251,7 @@ function eles_search_a_group(where_search::Union{Lattice,Branch}, who::Union{Abs
   if isnothing(ele_type)
     return ele_vec
   else
-    return ele_vec[typeof(ele_vec) .== ele_type] 
+    return ele_vec[Symbol.(typeof.(ele_vec)) .== ele_type] 
   end
 end
 
@@ -246,10 +259,11 @@ end
 # eles_search
 
 """
-    eles_search(where_search, who::Union{AbstractString,Regex}; 
-             order::Order.T = Order.NONE, substitute_lords = false, wrap::Bool = true) -> Ele[]
+    eles_search(where_search, who::Union{AbstractString,Regex}; order::Order.T = Order.NONE, 
+             substitute_lords = false, wrap::Bool = true, scalar = false) -> Union{Ele[], Ele, Nothing}
 
-Returns a vector of all elements that match `who`. 
+Returns a vector of all elements that match `who`.
+If the last character of 
 
 ## Arguments
 - `where_search`  Where to search. Either a lattice (all branches searched), lattice branch, or 
@@ -262,6 +276,10 @@ Returns a vector of all elements that match `who`.
 - `substitute_lords` If `true`, for every matched element that is a slave, remove the slave and
   add to the output list the slave's super or multipass lords.
 - `wrap`          Used if there is an `offset` specified in the search string (see below).
+- `scalar`        If `false`, return vector of elements (which may have zero length), 
+  If `true`, return a single element if `who` matches to a single element or otherwise return `nothing`.
+  As a shortcut, if the last character of `who` is a `#` character, remove this character and set
+  `scalar` to `true`.
 
 ## AL Regex
 
@@ -269,26 +287,32 @@ The "AcceleratorLattice" (AL) regex syntax has wild card characters `“*”` an
 The `“*”` character will match any number of characters (including zero) while 
 `“%”` maches to any single character. 
 
-AL regex expressions are built up from "atomic" expressions which are of the form:
+AL regex expressions are built up from "blocks" which are of the form:
 ```
  {branch_id>>}ele_id{+/-offset}
 ```
 Curly brackets `{...}` denote optional fields.
 - `branch_id`   Optional lattice branch index or name. Alternative is to specify the branch
   using the `where_search` argument. A branch is searched if it matches both `where_search`
-  and `branch_id`. 
-- `ele_id`      Element name (which can contain wild card characters), index, or 
-  `parameter='match_str'` construct.
+  and `branch_id`. If `ele_id` is an integer and `branch_id` is not present, branch 1 is
+  is used.
+- `ele_id`      Element name. See below.
 - `+/-offset`   If present, return element(s) whose index is offset from the elements matched to.
 
-A `group` is either an `atom` with an optional `type` prefix or a `"range"` construct:
+A `ele_id` is of the form:
 ```
   {ele_type::}atom           # or
-  {ele_type::}atom1:atom2    # Range construct
+  {ele_type::}atom1:atom2    # range construct
 
 ```
-
-where `ele_type`  is an optional element type (EG: `Quadrupole`, `Drift`, etc.).
+where `ele_type` is an optional element type (EG: `Quadrupole`, `Drift`, etc.) and `atom`
+is an element name (which can contain wild card characters), index, or
+`parameter='match_str'` construct. Here `parameter` is the name of any string component of
+an element. Standard string components are
+• `type`     Example: `type = 'abc'` \\
+• `class`    Example: `class = 'abc'` \\
+• `ID`       Example: `ID = 'abc'` \\
+Notice that here strings to be matched to use single quotes.
 
 With the range construct, `atom1` and `atom2` must both evaluate to a single element in the
 same branch.
@@ -303,11 +327,11 @@ same branch.
   at the range ends do not have to be of type `ele_type`.
 
 Group expressions may be combined using the operators `","` (union), `"~"` (negation) or `"&"` (intersection):
-If there are more than two group expressions involved, evaluation is left to right. For example:
+If there are more than two block expressions involved, evaluation is left to right. For example:
 ```
-  "<group1>, <group2>"              # Union of <group1> and <group2>.
-  "<group1>, <group2> & <group3>"   # Intersection of <group3> with the union of <group1> and <group2>.
-  "<group1> ~<group2>"              # All elements in <group1> that are not in <group2>.
+  "<block1>, <block2>"              # Union of <block1> and <block2>.
+  "<block1>, <block2> & <block3>"   # Intersection of <block3> with the union of <block1> and <block2>.
+  "<block1> ~<block2>"              # All elements in <block1> that are not in <block2>.
 ```
 
 ## Notes
@@ -321,10 +345,17 @@ If there are more than two group expressions involved, evaluation is left to rig
 ## Examples
 ```
   eles_search(lat, "r>>d")             # All elements named "d" in the branch with name "r".
-  eles_search(lat, "Marker::*")        # All Marker elements
+  eles_search(lat, "Bend::* ~*!*")     # All Bend elements which are not multipass nor super slaves.
+                                       #   This works since all slaves have a "!" in their name.
   eles_search(lat, "Marker::%5-1")     # All elements just before Marker elements with two character names
-                                #   ending in the digit "5"
-  eles_search(lat.branch["super"], "ID=`abc`")
+                                       #   ending in the digit "5".
+  eles_search(lat.branch["super"], "ID=`abc`")  # All super lord elements with ID string equal to "abc".
+  eles_search(lat, "1>>Patch::4:10")   # All Patch elements in branch 1 between elements 4 through 10.
+  eles_search(lat, "Patch::1>>4:10")   # Same as above
+  eles_search(lat, "Qa+1:Qb+2")        # All elements between the element after "Qa" through the
+                                       #   element that is second after "Qb",
+  eles_search(lat, "34")               # Element with index 34 in branch 1. Notice that if the 
+                                       #    ele ID is not an integer, all branches are searched.
 ```
 
 Note: The index operator `[...]` is overloaded so that `branch[who]` where `branch` is a `Branch` 
@@ -333,13 +364,23 @@ instance, or `lat[who]` where `lat` is a
 """ eles_search
 
 function eles_search(where_search::Union{Lattice,Branch}, who::Union{AbstractString,Regex}; 
-                              order::Order.T = Order.NONE, substitute_lords = false, wrap::Bool = true)
+          order::Order.T = Order.NONE, substitute_lords = false, wrap::Bool = true, scalar = false)
+
+  # See if end of `who` is a "#" character
+
+  if length(who) > 0 && who[end] == '#'
+    who = who[1:end-1]
+    scalar = true
+  end
+
+  # Break `who` into blocks for searching
+
   if typeof(who) == Regex
-    ele_list = eles_search_a_group(where_search, who, wrap)
+    ele_list = eles_search_a_block(where_search, who, wrap)
 
   else
     list = str_split(who, "~&,")
-    ele_list = eles_search_a_group(where_search, list[1])
+    ele_list = eles_search_a_block(where_search, list[1])
     list = list[2:end]
 
     while true
@@ -349,21 +390,13 @@ function eles_search(where_search::Union{Lattice,Branch}, who::Union{AbstractStr
       list2 = eles_search(where_search, list[2], wrap = wrap)
 
       if list[1] == "&"
-        combo_list = Ele[]
-        for ele1 in ele_list
-          if ele1 in list2; push!(combo_list, ele1); continue; end
-        end
-        ele_list = combo_list
+        ele_list = intersect(ele_list, list2)
 
       elseif list[1] == "~"
-        combo_list = Ele[]
-        for ele1 in ele_list
-          if ele1 ∉ list2; push!(combo_list, ele1); continue; end
-        end
-        ele_list = combo_list
+        ele_list = setdiff(ele_list, list2)
 
       elseif list[1] == ","
-        ele_list = append!(ele_list, list2)
+        ele_list = unique(append!(ele_list, list2))
 
       else
         error("ParseError: Cannot parse: $who")
@@ -373,8 +406,19 @@ function eles_search(where_search::Union{Lattice,Branch}, who::Union{AbstractStr
     end
   end
 
+  # End stuff
+
   if substitute_lords; eles_substitute_lords!(ele_list); end
-  return eles_sort!(ele_list, order = order)
+
+  if scalar
+    if length(ele_list) == 1
+      return ele_list[1]
+    else
+      return nothing
+    end
+  else
+    return eles_sort!(ele_list, order = order)
+  end
 end
 
 #---------------------------------------------------------------------------------------------------

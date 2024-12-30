@@ -135,14 +135,11 @@ ELE_PARAM_INFO_DICT = Dict(
   :β_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference velocity/c at downstream end.", "", OutputGroup),
   :γ_ref_downstream       => ParamInfo(DownstreamReferenceGroup, Number,   "Reference relativistic gamma factor at downstream end.", "", OutputGroup),
 
-  :r_floor            => ParamInfo(FloorPositionGroup, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
-  :q_floor            => ParamInfo(FloorPositionGroup, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
-
   :to_line            => ParamInfo(ForkGroup,      Union{BeamLine, Nothing}, "Beamline forked to."),
   :to_ele             => ParamInfo(ForkGroup,      Union{String,Ele},        "Lattice element forked to."),
   :direction          => ParamInfo(ForkGroup,      Int,            "Direction (forwards or backwards) of injection."),
 
-  :supported          => ParamInfo(GirderGroup,        Vector{Ele},    "Array of elements supported by a Girder."),
+  :supported          => ParamInfo(GirderGroup,    Vector{Ele},    "Array of elements supported by a Girder."),
 
   :L                  => ParamInfo(LengthGroup,    Number,         "Element length.", "m"),
   :orientation        => ParamInfo(LengthGroup,    Int,            "Longitudinal orientation of element. May be +1 or -1."),
@@ -154,6 +151,9 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :is_on              => ParamInfo(MasterGroup,    Bool,           "Element fields on/off."),
   :field_master       => ParamInfo(MasterGroup,    Bool,           "True: fields are fixed and normalized values change when varying ref energy."),
+
+  :r_floor            => ParamInfo(OrientationGroup, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
+  :q_floor            => ParamInfo(OrientationGroup, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
 
   :origin_ele         => ParamInfo(OriginEleGroup,     Ele,        "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(OriginEleGroup,     Loc.T,      "Reference location on reference element. Default is Loc.CENTER."),
@@ -247,7 +247,7 @@ List of names (symbols) of parameters associated with element parameter group st
 Associated parameters are the fields of the struct plus any associated output parameters.
 
 If the "user name" is different from the group field name, the user name is used.
-For example, for a `FloorPositionGroup`, `r_floor` will be in the name list instead of `r`.
+For example, for a `OrientationGroup`, `r_floor` will be in the name list instead of `r`.
 """ associated_names
 
 function associated_names(group::Type{T}) where T <: EleParameterGroup
@@ -605,7 +605,7 @@ Order is important. Bookkeeping routines rely on:
 """ PARAM_GROUPS_LIST
 
 base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, 
-         DownstreamReferenceGroup, FloorPositionGroup, TrackingGroup, AlignmentGroup, ApertureGroup]
+         DownstreamReferenceGroup, OrientationGroup, TrackingGroup, AlignmentGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 general_group_list = [base_group_list..., multipole_group_list...]
 
@@ -619,11 +619,11 @@ PARAM_GROUPS_LIST = Dict(
     CrabCavity          => [base_group_list...],
     Drift               => [base_group_list...],
     EGun                => [general_group_list...],
-    Fiducial            => [DescriptionGroup, FloorPositionGroup, AlignmentGroup, OriginEleGroup],
-    FloorShift          => [DescriptionGroup, FloorPositionGroup, AlignmentGroup, OriginEleGroup],
+    Fiducial            => [DescriptionGroup, OrientationGroup, AlignmentGroup, OriginEleGroup],
+    FloorShift          => [DescriptionGroup, OrientationGroup, AlignmentGroup, OriginEleGroup],
     Foil                => [base_group_list...],
     Fork                => [base_group_list..., ForkGroup],
-    Girder              => [LengthGroup, DescriptionGroup, FloorPositionGroup, AlignmentGroup, OriginEleGroup, GirderGroup],
+    Girder              => [LengthGroup, DescriptionGroup, OrientationGroup, AlignmentGroup, OriginEleGroup, GirderGroup],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
     LCavity             => [base_group_list..., MasterGroup, RFAutoGroup, RFGroup],
@@ -661,7 +661,6 @@ ELE_PARAM_GROUP_INFO = Dict(
   DownstreamReferenceGroup => EleParameterGroupInfo("Downstream element end reference energy and species.", false),
   EMultipoleGroup       => EleParameterGroupInfo("Electric multipoles.", false),
   EMultipole            => EleParameterGroupInfo("Electric multipole of given order. Substructure contained in `EMultipoleGroup`.", false),
-  FloorPositionGroup    => EleParameterGroupInfo("Global floor position and orientation.", true),
   ForkGroup             => EleParameterGroupInfo("Fork element parameters", false),
   GirderGroup           => EleParameterGroupInfo("Girder parameters.", false),
   InitParticleGroup     => EleParameterGroupInfo("Initial particle position and spin.", false),
@@ -669,6 +668,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   LengthGroup           => EleParameterGroupInfo("Length and s-position parameters.", true),
   LordSlaveStatusGroup  => EleParameterGroupInfo("Element lord and slave status.", false),
   MasterGroup           => EleParameterGroupInfo("Contains field_master parameter.", false),
+  OrientationGroup      => EleParameterGroupInfo("Global floor position and orientation.", true),
   OriginEleGroup        => EleParameterGroupInfo("Defines coordinate origin for Girder, FloorShift and Fiducial elements.", false),
   PatchGroup            => EleParameterGroupInfo("Patch parameters.", false),
   ReferenceGroup        => EleParameterGroupInfo("Reference energy and species.", true),

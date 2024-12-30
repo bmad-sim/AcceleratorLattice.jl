@@ -12,18 +12,18 @@ The parmeter groups are:
 \begin{tabular}{llll} \toprule
  {\it Group}          & {\it Section}             & {\it Group}          & {\it Section}            \\ 
  \midrule
- ACKickerGroup        & \sref{s:ackicker.g}       & InitParticleGroup    & \sref{s:init.particle.g} \\
- AlignmentGroup       & \sref{s:alignment.g}      & LengthGroup          & \sref{s:length.g}        \\    
- ApertureGroup        & \sref{s:aperture.g}       & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
- BMultipoleGroup      & \sref{s:bmultipole.g}     & MasterGroup          & \sref{s:master.g}        \\
+ ACKickerGroup        & \sref{s:ackicker.g}       & LengthGroup          & \sref{s:length.g}        \\    
+ AlignmentGroup       & \sref{s:alignment.g}      & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
+ ApertureGroup        & \sref{s:aperture.g}       & MasterGroup          & \sref{s:master.g}        \\
+ BMultipoleGroup      & \sref{s:bmultipole.g}     & OrientationGroup     & \sref{s:orientation.g}   \\ 
  BeamBeamGroup        & \sref{s:beam.beam.g}      & OriginEleGroup       & \sref{s:origin.ele.g}    \\
  BendGroup            & \sref{s:bend.g}           & PatchGroup           & \sref{s:patch.g}         \\
  DescriptionGroup     & \sref{s:descrip.g}        & RFGroup              & \sref{s:rf.g}            \\
  DownstreamReferenceGroup & \sref{s:dreference.g} & RFAutoGroup          & \sref{s:rfauto.g}        \\
  EMultipoleGroup      & \sref{s:emultipole.g}     & ReferenceGroup       & \sref{s:reference.g}     \\
- FloorPositionGroup   & \sref{s:floor.pos.g}      & SolenoidGroup        & \sref{s:solenoid.g}      \\
- ForkGroup            & \sref{s:fork.g}           & TrackingGroup        & \sref{s:tracking.g}      \\
- GirderGroup          & \sref{s:girder.g}         & TwissGroup           & \sref{s:twiss.g}         \\
+ ForkGroup            & \sref{s:fork.g}           & SolenoidGroup        & \sref{s:solenoid.g}      \\
+ GirderGroup          & \sref{s:girder.g}         & TrackingGroup        & \sref{s:tracking.g}      \\
+ InitParticleGroup    & \sref{s:init.particle.g}  & TwissGroup           & \sref{s:twiss.g}         \\
   \bottomrule
 \end{tabular}
 } 
@@ -772,21 +772,6 @@ Similarly, the setting of the \vn{field_master} parmeter (\sref{s:master.g}) wil
 whether normalized or unnormalized quantities will stay constant if the reference energy is varied.
 
 %---------------------------------------------------------------------------------------------------
-\section{FloorPositionGroup}
-\label{s:floor.pos.g}
-
-The \vn{FloorPositionGroup} stores the nominal (calculated without alignment shifts) 
-position and orientation in the floor coordinates of the upstream end of the element.
-system. The components of this group are:
-\begin{example}
-  r::Vector          - [x,y,z] position. Accessed using \vn{r_floor}
-  q::Quaternion      - Quaternion orientation. Accessed using \vn{q_floor}.
-\end{example}
-
-
-
-
-%---------------------------------------------------------------------------------------------------
 \section{ForkGroup}
 \label{s:fork.g}
 
@@ -882,6 +867,21 @@ The components of this group are:
   is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
 \end{example}
+
+%---------------------------------------------------------------------------------------------------
+\section{OrientationGroup}
+\label{s:orientation.g}
+
+The \vn{OrientationGroup} stores the nominal (calculated without alignment shifts) 
+position and angular orientation in the floor coordinates of the upstream end of the element.
+system. The components of this group are:
+\begin{example}
+  r::Vector          - [x,y,z] position. Accessed using \vn{r_floor}
+  q::Quaternion      - Quaternion orientation. Accessed using \vn{q_floor}.
+\end{example}
+
+
+
 
 %---------------------------------------------------------------------------------------------------
 \section{OriginEleGroup}

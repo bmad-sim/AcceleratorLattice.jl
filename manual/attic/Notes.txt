@@ -71,7 +71,7 @@ Note: Could also have defined parameters to be Union{Float64,Missing} but this p
 
 * Implementation note: Bookkeeping is element-by-element rather then parameter group by parameter group since 
 the parameter groups are not necessarily independent. For example, the reference time will depend upon
-the FloorPositionGroup if the lattice contains a flexible patch. 
+the OrientationGroup if the lattice contains a flexible patch. 
 
 * Using Strings for the keys of ele.pdict[] would have worked instead of Symbols. Using Symbols gives
 a slightly cleaner look to the code.

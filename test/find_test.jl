@@ -29,12 +29,6 @@ superimpose!(z1, eles_search(lat, "1>>d")[1], offset = 0.1)
 b = lat.branch[1]
 bsuper = lat.branch["super"]
 
-eles_search(lat, "z2")
-eles_search(bsuper, "z2")
-
-# !!! Test ele_at_offset with, EG multipass
-
-
 @testset "ele_at_s" begin
   @test ele_at_s(b, b.ele[4].s, select = Select.UPSTREAM) === b.ele[2]
   @test ele_at_s(b, b.ele[4].s, select = Select.DOWNSTREAM) === b.ele[4]
@@ -54,7 +48,7 @@ end
   @test eles_search(lat, "multipass>>d") == eles_search(lat, "multipass>>2")
   @test eles_search(lat, "%d") == eles_search(lat, "fodo>>22, multipass>>1, multipass>>3")
   @test eles_search(lat, "z1-1") == eles_search(lat, "1>>4")
-  @test eles_search(lat, "z1+1") == eles_search(lat, "fodo>>6")
+  @test eles_search(b, "z1+1") == eles_search(lat, "fodo>>6")
   @test eles_search(lat, "z2-1") == eles_search(lat, "ln3>>2")
   @test eles_search(lat, "ID=`z1`") == eles_search(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
   @test eles_search(lat, "ID=`z1` ~fodo>>9 ~fodo>>22") == eles_search(lat, "fodo>>7, fodo>>15, fodo>>21")
@@ -62,8 +56,14 @@ end
   @test bsuper["z2"] == eles_search(lat, "super>>1")
   @test eles_search(lat, "Quadrupole::* ~*!*") == 
                 eles_search(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21, fodo>>22, multipass>>1, multipass>>3")
-  @test_throws ErrorException eles_search(lat, "quadrupole::*")
+  @test eles_search(lat, "2>>2:4  ~Quadrupole::*") == [lat.branch[2].ele[3]]
+  @test eles_search(lat, "2>>2:4") == lat.branch[2].ele[2:4]
+  @test_throws ErrorException eles_search(lat, "quadrupole::*")   # quadrupole should be capitalized.
 end
+
+# !!! Test ele_at_offset with, EG multipass
+
+
 
 # Function to print right-hand-side for "eles_search" testset. Used to create new tests. Just use the LHS as the argument.
 #
