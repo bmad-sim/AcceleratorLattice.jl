@@ -429,6 +429,9 @@ Two column printing of an element group without any docstring.
 """ show_elegroup_wo_doc
 
 function show_elegroup_wo_doc(io::IO, group::BaseEleParameterGroup, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
+  # If output field for column 1 or column 2 is wider than this, print the fields on two lines.
+  col_width_cut = 55
+
   gtype = typeof(group)
   if gtype ∉ keys(show_column2)
     if group_show_name == :NONE
@@ -470,11 +473,11 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParameterGroup, ele::Ele; in
       vstr = ele_param_value_str(ele, field2_sym)
       str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
 
-      if length(str) > 50 || length(str2) > 50        # If length is too big print in two lines.
+      if length(str) > col_width_cut || length(str2) > col_width_cut        # If length is too big print in two lines.
         println(io, " "^indent * str)
         println(io, " "^indent * str2)
       else                                            # Can print as a single line.
-        println(io, " "^indent * f"{rpad(str, 50)}{str2}")
+        println(io, " "^indent * f"{rpad(str, col_width_cut)}{str2}")
       end
 
     else
