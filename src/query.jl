@@ -153,6 +153,37 @@ function matches_branch(name::AbstractString, branch::Branch)
 end
 
 #---------------------------------------------------------------------------------------------------
+# slave_index
+
+"""
+    slave_index(slave::Ele) -> Int
+
+For a super or multipass slave element, returns the index of the slave in the `lord.slaves[]`
+array. Exception: A `UnionEle` super slave has multiple lords. In this case, zero is returned.
+""" slave_index
+
+function slave_index(slave::Ele) 
+  if slave.slave_status == Slave.SUPER
+    if typeof(slave) == UnionEle; return 0; end
+    lord = slave.super_lords[1]
+    for ix in 1:length(lord.slaves)
+      if lord.slaves[ix].ix_ele == slave.ix_ele; return ix; end
+    end
+
+  elseif slave.slave_status == Slave.MULTIPASS
+    lord = slave.multipass_lord[1]
+    for ix in 1:length(lord.slaves)
+      if lord.slaves[ix].ix_ele == slave.ix_ele; return ix; end
+    end
+
+  else
+    error("Element is not a super nor a multipass slave.")
+  end
+
+  error("Bookkeeping error! Please contact an AcceleratorLattice maintainer!")
+end
+
+#---------------------------------------------------------------------------------------------------
 # girder
 
 """

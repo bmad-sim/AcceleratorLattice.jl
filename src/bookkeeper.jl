@@ -196,10 +196,12 @@ Internal bookkeeping for a non-`UnionEle` super slave.
 function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
   # A non-UnionEle super slave has only one lord
   lord = slave.super_lords[1]
+  L_rel = slave.L / lord.L
+  ix_slave = slave_index(slave)
 
   # Bookkeeping of the superlord is only done if the slave is the first superslave of the lord.
   # Here the ReferenceGroup of the slave needs to be bookkeeped first.
-  if lord.slaves[1] === slave
+  if ix_slave == 1
     elegroup_bookkeeper!(slave, ReferenceGroup, changed, previous_ele)
     bookkeeper_ele!(lord, changed, previous_ele) 
   end
@@ -211,10 +213,58 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
     if isnothing(pinfo); continue; end
     group = pinfo.parent_group
     if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end  # Ignore custom stuff
-    if group == LengthGroup; continue; end     # Do not modify length of slave
-    if group == ReferenceGroup; continue; end  # Slave ReferenceGroup independent of lord
-    if group == DownstreamReferenceGroup; continue; end
 
+    if group == LengthGroup; continue; end     # Do not modify length of slave
+
+    if group == ReferenceGroup
+      slave.dE_ref = lord.dE_ref * L_rel
+      slave.extra_dtime_ref = lord.extra_dtime_ref * L_rel
+    end
+
+    if group == RFGroup
+      slave.voltage = lord.voltage * L_rel
+    end
+
+    if group == BMultipoleGroup
+      for (ix, mlord) in enumerate(lord.param[:BMultipoleGroup].pole)
+        if !mlord.integrated; continue; end
+        mslave = slave.param[:BMultipole].pole[ix]
+        mslave.Kn = mlord.Kn * L_rel
+        mslave.Bn = mlord.Bn * L_rel
+        mslave.Ks = mlord.Ks * L_rel
+        mslave.Bs = mlord.Bs * L_rel
+      end
+    end
+
+    if group == EMultipoleGroup
+      for (ix, elord) in enumerate(lord.param[:EMultipoleGroup].pole)
+        if !elord.integrated; continue; end
+        eslave = slave.param[:EMultipole].pole[ix]
+        eslave.En = elord.En * L_rel
+        eslave.Es = elord.Es * L_rel
+      end
+    end
+
+    if group == BendGroup
+      sbend = slave.pdict[:BendGroup]
+      sbend.angle = lord.angle * L_rel
+      if ix_slave < length(lord.slaves)
+        sbend.e2 = 0
+        sbend.e2_rect = 0.5 * sbend.angle
+      elseif ix_slave > 1
+        sbend.e1 = 0
+        sbend.e1_rect = 0.5 * sbend.angle
+      end
+    end
+
+    if group == TrackingGroup
+      if lord.num_steps > 0
+        slave.num_steps = nint(lord.num_steps * L_rel)
+      end
+    end
+
+    if group == DownstreamReferenceGroup; continue; end
+    if group == OrientationGroup; continue; end
     slave.pdict[Symbol(group)] = lord.pdict[Symbol(group)]
     slave.pdict[:changed][group] = "changed"
   end
@@ -582,19 +632,19 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, ...)
-# FloorPositionGroup bookkeeper
+# elegroup_bookkeeper!(ele::Ele, group::Type{OrientationGroup}, ...)
+# OrientationGroup bookkeeper
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{FloorPositionGroup}, 
+function elegroup_bookkeeper!(ele::Ele, group::Type{OrientationGroup}, 
                                               changed::ChangedLedger, previous_ele::Ele)
-  fpg = ele.FloorPositionGroup
+  fpg = ele.OrientationGroup
   cdict = ele.changed
 
-  if has_changed(ele, FloorPositionGroup) || changed.this_ele_length; changed.floor_position = true; end
+  if has_changed(ele, OrientationGroup) || changed.this_ele_length; changed.floor_position = true; end
   if !changed.floor_position; return; end
 
-  ele.FloorPositionGroup = propagate_ele_geometry(previous_ele)
-  clear_changed!(ele, FloorPositionGroup)
+  ele.OrientationGroup = propagate_ele_geometry(previous_ele)
+  clear_changed!(ele, OrientationGroup)
 
   return
 end

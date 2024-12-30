@@ -335,7 +335,7 @@ Dispersion parameters for a single axis.
 end
 
 #---------------------------------------------------------------------------------------------------
-# EMultipole
+# EMultipole subgroup
 
 """
     mutable struct EMultipole <: EleParameterSubGroup
@@ -705,26 +705,6 @@ Vector of Electric multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
-# FloorPositionGroup
-
-"""
-    mutable struct FloorPositionGroup <: EleParameterGroup
-
-Position and orientation in global coordinates.
-In a lattice element this group gives the coordinates at the entrance end of the element
-ignoring misalignments.
-
-# Fields
-• `r::Vector`              - `[x,y,z]` position. \\
-• `q::Quaternion{Number}`  - Quaternion orientation. \\
-""" FloorPositionGroup
-
-@kwdef mutable struct FloorPositionGroup <: EleParameterGroup
-  r::Vector = [0.0, 0.0, 0.0]
-  q::Quaternion{Number} = Quaternion(1.0, 0.0, 0.0, 0.0)
-end
-
-#---------------------------------------------------------------------------------------------------
 # ForkGroup
 
 """
@@ -834,6 +814,26 @@ and normalized field strengths willbe varied. And vice versa when `field_master`
 @kwdef mutable struct MasterGroup <: EleParameterGroup
   is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
+end
+
+#---------------------------------------------------------------------------------------------------
+# OrientationGroup
+
+"""
+    mutable struct OrientationGroup <: EleParameterGroup
+
+Position and angular orientation.
+In a lattice element, this group gives the orientation at the entrance end of the element
+ignoring alignment shifts.
+
+# Fields
+• `r::Vector`              - `[x,y,z]` position. \\
+• `q::Quaternion{Number}`  - Quaternion orientation. \\
+""" OrientationGroup
+
+@kwdef mutable struct OrientationGroup <: EleParameterGroup
+  r::Vector = [0.0, 0.0, 0.0]
+  q::Quaternion{Number} = Quaternion(1.0, 0.0, 0.0, 0.0)
 end
 
 #---------------------------------------------------------------------------------------------------

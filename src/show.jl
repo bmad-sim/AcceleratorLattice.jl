@@ -9,12 +9,12 @@ second column when displaying the elements of an element parameter group using t
 
 Example `show_column2` key/value pair:
 ```julia
-  FloorPositionGroup => Dict{Symbol,Symbol}(
+  OrientationGroup => Dict{Symbol,Symbol}(
     :r                => :q,
     :phi              => :psi,
   )
 ```
-In this example, when printing the `FloorPositionGroup`, in the line showing the `.r` component,
+In this example, when printing the `OrientationGroup`, in the line showing the `.r` component,
 the `.r` component will be in the first column and the `.q` component will be in the
 second column.
 
@@ -53,7 +53,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :eta              => :etap,
   ),
 
-  FloorPositionGroup => Dict{Symbol,Symbol}(
+  OrientationGroup => Dict{Symbol,Symbol}(
     :r                => :q,
   ),
 
@@ -493,7 +493,7 @@ end
 """
     full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterGroup
 
-For fields where the user name is different (EG: `r_floor` and `r` in a FloorPositionGroup), 
+For fields where the user name is different (EG: `r_floor` and `r` in a OrientationGroup), 
 return the string `struct_name (user_name)` (EG: `r (r_floor)`). Also add `(output)` to 
 names of output parameters.
 """ full_parameter_name
