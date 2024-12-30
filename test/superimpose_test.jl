@@ -1,14 +1,12 @@
 using AcceleratorLattice, Test
 
-@ele   z = Bend()
-
 @eles begin
   beginning = BeginningEle(pc_ref = 1e7, species_ref = Species("electron"))
   q1 = Quadrupole(L = 0.6, x_rot = 2, ID = "qz", Ks8L = 123, tilt8 = 2, Bn9 = 3, 
                           En1L = 1, Etilt1 = 2, Es2 = 3, Etilt2 = 4)
   q2 = Quadrupole(L = 0.6, Kn1 = -0.3);
   d1 = Drift(L = 1.0);
-  lc1 = LCavity(L = 1.0, dE_ref = 2e7, voltage = 10e7);
+  lc1 = LCavity(L = 1.0, dE_ref = 2e7, voltage = 10e7, extra_dtime_ref = 1e-8);
   d3 = Drift(L = 1.0);
   m1 = Marker();
   m2 = Marker();
@@ -26,7 +24,6 @@ ln1 = BeamLine([beginning, d1, lc1, d1, d3]);
 lat = Lattice([ln1])
 
 sup_zs2 = superimpose!(zs2, eles_search(lat, "d1"), offset = 0.25)
-
 sup_m1 = superimpose!(m1, lat.branch[1], offset = 0, ref_origin = BodyLoc.ENTRANCE_END)
 sup_sm1 = superimpose!(zm1, eles_search(lat, "m1"), ref_origin = BodyLoc.ENTRANCE_END);
 sup_zm4 = superimpose!(zm4, eles_search(lat, "lc1"), offset = 0.2);

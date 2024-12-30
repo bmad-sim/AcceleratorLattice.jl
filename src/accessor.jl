@@ -204,11 +204,14 @@ end
 # Base.getindex(lat::Lattice, name::AbstractString)
 
 """
-  Base.getindex(lat::Lattice}, name::AbstractString)
+  Base.getindex(lat::Lattice, name::AbstractString)
+  Base.getindex(lat::Lattice, ix_branch::Int)
 
 If `lat[name]` matches a branch name, return the branch. No wild cards permitted here.
 If `lat[name]` does not match a branch name, return list of matching lattice elements.
 In this case the returned vector is equivalent to `eles_search(lat, name)`.
+
+For `lat[ix_branch]`, return `lat.branch[ix_branch]`.
 """ Base.getindex(lat::Lattice, name::AbstractString)
 
 function Base.getindex(lat::Lattice, name::AbstractString)
@@ -217,6 +220,11 @@ function Base.getindex(lat::Lattice, name::AbstractString)
   end
 
   return eles_search(lat, name)
+end
+
+function Base.getindex(lat::Lattice, ix_branch::Int)
+  if ix_branch > length(lat.branch); error("Index above length of lat.branch[] array."); end
+  return lat.branch[ix_branch]
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -240,15 +248,20 @@ end
 # Base.getindex(branch::Branch, name::AbstractString)
 
 """
-  Base.getindex(branch::Branch}, name::AbstractString) -> Ele[]
+  Base.getindex(branch::Branch, name::AbstractString) -> Ele[]
+  Base.getindex(branch::Branch, ix_ele::Int) -> Ele
 
-Match `branch[name]` to all lattice elements in `branch.ele[]` array.
-""" Base.getindex(branch::Branch, name::AbstractString)
+`branch[name]` matches to all lattice elements in `branch.ele[]` array.
+`branch[ix_ele]` matches to `branch.ele[ix_ele]`.
+""" Base.getindex(branch::Branch, name::AbstractString), Base.getindex(branch::Branch, ix_ele::Int)
 
 function Base.getindex(branch::Branch, name::AbstractString)
   return eles_search(branch, name)
+end
 
-  error(f"No element with name: {name}")
+function Base.getindex(branch::Branch, ix_ele::Int)
+  if ix_ele > length(branch.ele); error("Index above length of branch.ele[] array."); end
+  return branch.ele[ix_ele]
 end
 
 #---------------------------------------------------------------------------------------------------
