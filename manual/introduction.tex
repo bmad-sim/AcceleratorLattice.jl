@@ -114,7 +114,7 @@ Lattice elements can be divided into two classes.
 One class are the elements that particles are tracked through. These ``tracking'' elements are
 contained in the ``tracking branches'' (\sref{s:branch.def}) of the lattice. Other elements, 
 called ``\vn{lord}'' elements, are used to
-represent relationships between elements. ``\vn{Super_lord}'' elements (\sref{c:super}) are
+represent relationships between elements. ``\vn{Super-lord}'' elements (\sref{c:super}) are
 used when elements overlap spatially. ``\vn{Multipass_lord}'' elements (\ref{c:multipass})
 are used when a beam goes through the same elements multiple times like in a recirculating Linac
 or when different beam go through the same elements like in the interaction region of a
@@ -279,13 +279,13 @@ statement. With \accellat, element definitions must come before the element is u
 %
 \item
 With \bmad superposition of two non-drift elements, if there existed the appropriate
-combined type, will result in a \vn{super_slave} of the appropriate combined type. For example,
-a \vn{solenoid} superimposed over a \vn{quadrupole} would give a \vn{sol_quad} \vn{super_slave} with
-\vn{solenoid} and \vn{quadrupole} \vn{super_lords}. The problem here is that calculation of the
-\vn{super_slave} parameters may not be possible. For example if the \vn{super_lord}
-elements are misaligned, in general it is not possible to compute a corresponding \vn{super_slave}
-misalignment. To avoid this, \accellat creates a \vn{UnionEle} \vn{super_slave} element
-(which in \bmad is known as a ``jumbo'' \vn{super_slave}). It is up to the tracking routines to
+combined type, will result in a super-slave of the appropriate combined type. For example,
+a \vn{solenoid} superimposed over a \vn{quadrupole} would give a \vn{sol_quad} super slave with
+\vn{solenoid} and \vn{quadrupole} super lords. The problem here is that calculation of the
+super slave parameters may not be possible. For example if the super lord
+elements are misaligned, in general it is not possible to compute a corresponding super slave
+misalignment. To avoid this, \accellat creates a \vn{UnionEle} super slave element
+(which in \bmad is known as a ``jumbo'' super slave). It is up to the tracking routines to
 figure out how to track though a \vn{UnionEle}
 %
 \item

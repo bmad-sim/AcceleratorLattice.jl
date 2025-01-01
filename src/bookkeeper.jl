@@ -1,25 +1,4 @@
 #---------------------------------------------------------------------------------------------------
-# ChangedLedger
-
-"""
-    Internal: mutable struct ChangedLedger
-
-When bookkeeping a branch, element-by-element, starting from the beginning of the branch,
-the ledger keeps track of what has changed so that the change can propagate to the 
-following elements. 
-
-Ledger parameters, when toggled to true, will never be reset for the remainder of the branch bookkeeping.
-The exception is the `this_ele_length` parameter which is reset for each element.
-""" ChangedLedger
-
-@kwdef mutable struct ChangedLedger
-  this_ele_length::Bool = false
-  s_position::Bool = false
-  ref_group::Bool = false
-  floor_position::Bool = false
-end
-
-#---------------------------------------------------------------------------------------------------
 # bookkeeper!(Lattice)
 
 """
@@ -32,24 +11,31 @@ bookkeeping code will propagate that change through the reset of the lattice.
 function bookkeeper!(lat::Lattice)
   if !lat.parameters_have_changed; return; end
   lat.parameters_have_changed = false
+  push_bookkeeping_state!(lat, autobookkeeping = false, auditing_enabled = false)
 
-  # Tracking branch bookkeeping
+  try
+    # Tracking branch bookkeeping
+    for (ix, branch) in enumerate(lat.branch)
+      if branch.type != TrackingBranch; continue; end
+      branch.pdict[:ix_branch] = ix
+      bookkeeper_tracking_branch!(branch)
+    end
 
-  for (ix, branch) in enumerate(lat.branch)
-    if branch.type != TrackingBranch; continue; end
-    branch.pdict[:ix_branch] = ix
-    bookkeeper_tracking_branch!(branch)
-  end
-
-  # Check for unbookkeeped parameters
-  for branch in lat.branch
-    for ele in branch.ele
-      for param in keys(ele.pdict[:changed])
-        println("WARNING! Unbookkeeped parameter: $(repr(param)) in element $(ele_name(ele)). Please report this!")
+    # Check for unbookkeeped parameters
+    for branch in lat.branch
+      for ele in branch.ele
+        for param in keys(ele.pdict[:changed])
+          println("WARNING! Unbookkeeped parameter: $(repr(param)) in element $(ele_name(ele)). Please report this!")
+        end
       end
     end
+
+  catch this_err
+    pop_bookkeeping_state!(lat)
+    rethrow(this_err)
   end
 
+  pop_bookkeeping_state!(lat)
   return
 end
 
@@ -67,7 +53,7 @@ Or dependent parameters cannot be directly changed.
 function check_if_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothing})
   branch = lat_branch(ele)
   lat = lattice(ele)
-  if !isnothing(lat) && !lat.record_changes; return; end
+  if !isnothing(lat) && !lat.auditing_enabled; return; end
 
   if !isnothing(lat)
     if get(ele, :slave_status, 0) == Slave.MULTIPASS || get(ele, :slave_status, 0) == Slave.SUPER
@@ -109,7 +95,7 @@ function bookkeeper_tracking_branch!(branch::Branch)
     elseif ele.slave_status == Slave.SUPER
       bookkeeper_superslave!(ele, changed, previous_ele)
     elseif ele.slave_status == Slave.MULTIPASS
-      bookkeeper_multipassslave!(ele, changed, previous_ele)
+      bookkeeper_multipass_slave!(ele, changed, previous_ele)
     else
       bookkeeper_ele!(ele, changed, previous_ele)
     end
@@ -196,64 +182,28 @@ Internal bookkeeping for a non-`UnionEle` super slave.
 function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
   # A non-UnionEle super slave has only one lord
   lord = slave.super_lords[1]
-  L_rel = slave.L / lord.L
   ix_slave = slave_index(slave)
+  L_rel = slave.L / lord.L
 
-  # Bookkeeping of the superlord is only done if the slave is the first superslave of the lord.
-  # Here the ReferenceGroup of the slave needs to be bookkeeped first.
+  # Bookkeeping of the super lord is only done if the slave is the first superslave of the lord.
   if ix_slave == 1
-    elegroup_bookkeeper!(slave, ReferenceGroup, changed, previous_ele)
     bookkeeper_ele!(lord, changed, previous_ele) 
   end
 
   # Transfer info from lord to slave
-  for param in copy(keys(lord.pdict[:changed]))
-    if typeof(param) != Symbol; continue; end
-    pinfo = ele_param_info(param)
-    if isnothing(pinfo); continue; end
-    group = pinfo.parent_group
-    if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end  # Ignore custom stuff
-
+  for group in PARAM_GROUPS_LIST[typeof(lord)]
     if group == LengthGroup; continue; end     # Do not modify length of slave
+    if group == DownstreamReferenceGroup; continue; end
+    if group == OrientationGroup; continue; end
 
-    if group == ReferenceGroup
-      slave.dE_ref = lord.dE_ref * L_rel
-      slave.extra_dtime_ref = lord.extra_dtime_ref * L_rel
-    end
-
-    if group == RFGroup
-      slave.voltage = lord.voltage * L_rel
-    end
-
-    if group == BMultipoleGroup
-      for (ix, mlord) in enumerate(lord.param[:BMultipoleGroup].pole)
-        if !mlord.integrated; continue; end
-        mslave = slave.param[:BMultipole].pole[ix]
-        mslave.Kn = mlord.Kn * L_rel
-        mslave.Bn = mlord.Bn * L_rel
-        mslave.Ks = mlord.Ks * L_rel
-        mslave.Bs = mlord.Bs * L_rel
-      end
-    end
+    if has_changed(lord, group); slave.pdict[Symbol(group)] = copy(group); end
 
     if group == EMultipoleGroup
-      for (ix, elord) in enumerate(lord.param[:EMultipoleGroup].pole)
+      for (ix, elord) in enumerate(lord.pdict[:EMultipoleGroup].pole)
         if !elord.integrated; continue; end
         eslave = slave.param[:EMultipole].pole[ix]
         eslave.En = elord.En * L_rel
         eslave.Es = elord.Es * L_rel
-      end
-    end
-
-    if group == BendGroup
-      sbend = slave.pdict[:BendGroup]
-      sbend.angle = lord.angle * L_rel
-      if ix_slave < length(lord.slaves)
-        sbend.e2 = 0
-        sbend.e2_rect = 0.5 * sbend.angle
-      elseif ix_slave > 1
-        sbend.e1 = 0
-        sbend.e1_rect = 0.5 * sbend.angle
       end
     end
 
@@ -263,33 +213,52 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
       end
     end
 
-    if group == DownstreamReferenceGroup; continue; end
-    if group == OrientationGroup; continue; end
+    # alignment bookkeeping
+    if has_changed(lord, AlignmentGroup)
+      dL = 0.5 * slave.L + slave.s - lord.s
+
+      if haskey(lord.pdict, :BendGroup)
+        # Need transformation from lord alignment point to slave alignment point
+        # Translate from lord alignment point to beginning of lord point
+        floor = OrientationGroup(r = [0, 0, -0.5*lord.l_chord])
+        # Rotate from z parallel to lord chord to z tangent to bend curve.
+        if lord.ref_tilt != 0
+          q = []
+        end
+        # On the bend curve: From beginning of lord point to beginning of slave point
+        # From z tangent to bend curve to z parallel to slave chord.
+        # Translate from beginning of slave point to slave alignment point.
+        # Apply total transformation of AlignmentGroup.
+
+      else
+        slave.r_floor = lord.r_floor + dL * rot(lord.q_floor, [0.0, 0.0, dL])
+      end
+    end
+
     slave.pdict[Symbol(group)] = lord.pdict[Symbol(group)]
     slave.pdict[:changed][group] = "changed"
   end
 
   # Now bookkeep the slave
-  changed2 = ChangedLedger()
-  bookkeeper_ele!(slave, changed2, previous_ele)  # In case slave parameters have changed.
+  bookkeeper_ele!(slave, changed, previous_ele)  # In case slave parameters have changed.
 
   # If last slave of lord, clear lord.changed dict.
-  if lord.slaves[end] == slave; lord.pdict[:changed] = Dict{Symbol,Any}(); end
+  if ix_slave == length(lord.slaves); lord.pdict[:changed] = Dict{Symbol,Any}(); end
 
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper_multipassslave!(ele, changed, previous_ele)
+# bookkeeper_multipass_slave!(ele, changed, previous_ele)
 
 """
-    Internal: bookkeeper_multipassslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
+    Internal: bookkeeper_multipass_slave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
 
 Internal bookkeeping for multipass slave.
 
-""" bookkeeper_multipassslave!
+""" bookkeeper_multipass_slave!
 
-function bookkeeper_multipassslave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
+function bookkeeper_multipass_slave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
   lord = slave.multipass_lord
   cdict = lord.changed
 
@@ -399,30 +368,48 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
 
   ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
-  for param in keys(cdict)
-    if typeof(param) == DataType; continue; end
-    (mtype, order, group) = multipole_type(param)
-    if isnothing(group) || group != BMultipoleGroup || mtype == "tilt"; continue; end
-    mul = multipole!(bmg, order)
-
-    if     mtype[1:2] == "Kn"; mul.Bn = mul.Kn * ff
-    elseif mtype[1:2] == "Ks"; mul.Bs = mul.Ks * ff
-    elseif mtype[1:2] == "Bn"; mul.Kn = mul.Bn / ff
-    elseif mtype[1:2] == "Bs"; mul.Ks = mul.Bs / ff
-    end
-  end    
-
-  # Update multipoles if the reference energy has changed.
-  if changed.ref_group
-    if ele.field_master
-      for mul in bmg.pole
-        mul.Kn = mul.Bn / ff
-        mul.Ks = mul.Bs / ff
+  if ele.slave_status == Slave.SUPER
+    lord = ele.super_lords[1]
+    L_rel = ele.L / lord.L
+    for (ix, lpole) in enumerate(lord.param[:BMultipoleGroup].pole)
+      epole = ele.param[:BMultipole].pole[ix]
+      if lpole.integrated
+        epole.Kn = lpole.Kn * L_rel
+        epole.Bn = lpole.Bn * L_rel
+        epole.Ks = lpole.Ks * L_rel
+        epole.Bs = lpole.Bs * L_rel
+      else
+        ele.param[:BMultipole].pole[ix] = copy(lpole)
       end
-    else
-      for mul in bmg.pole
-        mul.Bn = mul.Kn * ff
-        mul.Bs = mul.Ks * ff
+    end
+
+  # Not a slave case
+  else
+    for param in keys(cdict)
+      if typeof(param) == DataType; continue; end
+      (mtype, order, group) = multipole_type(param)
+      if isnothing(group) || group != BMultipoleGroup || mtype == "tilt"; continue; end
+      mul = multipole!(bmg, order)
+
+      if     mtype[1:2] == "Kn"; mul.Bn = mul.Kn * ff
+      elseif mtype[1:2] == "Ks"; mul.Bs = mul.Ks * ff
+      elseif mtype[1:2] == "Bn"; mul.Kn = mul.Bn / ff
+      elseif mtype[1:2] == "Bs"; mul.Ks = mul.Bs / ff
+      end
+    end
+
+    # Update multipoles if the reference energy has changed.
+    if changed.ref_group
+      if ele.field_master
+        for mul in bmg.pole
+          mul.Kn = mul.Bn / ff
+          mul.Ks = mul.Bs / ff
+        end
+      else
+        for mul in bmg.pole
+          mul.Bn = mul.Kn * ff
+          mul.Bs = mul.Ks * ff
+        end
       end
     end
   end
@@ -441,65 +428,85 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
 
   if !has_changed(ele, BendGroup) && !changed.this_ele_length && !changed.ref_group; return; end
 
-  sym1 = param_conflict_check(ele, :L, :L_chord)
-  param_conflict_check(ele, :e1, :e1_rect)
-  param_conflict_check(ele, :e2, :e2_rect)
+  if ele.slave_status == Slave.SUPER
+    lord = ele.super_lords[1]
+    L_rel = ele.L / lord.L
+    ix_slave = slave_index(slave)
+    ele.BendGroup = copy(lord.BendGroup)
+    bg = ele.BendGroup
+    bg.angle = lord.angle * L_rel
+    if ix_slave < length(lord.slaves)
+      bg.e2 = 0
+      bg.e2_rect = 0.5 * bg.angle
+    elseif ix_slave > 1
+      bg.e1 = 0
+      bg.e1_rect = 0.5 * bg.angle
+    end
+    ele.g == 0 ? ele.L_chord = ele.L : ele.L_chord = 2 * sin(ele.angle/2) / ele.g 
 
-  if haskey(cdict, :angle) && haskey(cdict, :g) && length(sym1) == 1
-    error("Conflict: $(sym1[1]), g, and angle cannot simultaneously be specified for a Bend element $(ele.name)"); end
-
-  if  haskey(cdict, :angle) && haskey(cdict, :g)
-    L = bg.g * bg.angle
-  elseif haskey(cdict, :angle) && haskey(cdict, :L_chord)
-    if bg.L_chord == 0 && bg.angle != 0; 
-                        error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
-    bg.angle == 0 ? bg.g = 0.0 : bg.g = 2.0 * sin(bg.angle/2) / bg.L_chord
-    L = bg.angle * bg.g
-  elseif haskey(cdict, :angle)
-    L = ele.L
-    if L == 0 && bg.angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
-    bg.angle == 0 ? bg.g = 0 : bg.g = bg.angle / L
+  # Not a slave
   else
-    L = ele.L
-    bg.angle = L * bg.g
+    sym1 = param_conflict_check(ele, :L, :L_chord)
+    param_conflict_check(ele, :e1, :e1_rect)
+    param_conflict_check(ele, :e2, :e2_rect)
+
+    if haskey(cdict, :angle) && haskey(cdict, :g) && length(sym1) == 1
+      error("Conflict: $(sym1[1]), g, and angle cannot simultaneously be specified for a Bend element $(ele.name)"); end
+
+    if  haskey(cdict, :angle) && haskey(cdict, :g)
+      L = bg.g * bg.angle
+    elseif haskey(cdict, :angle) && haskey(cdict, :L_chord)
+      if bg.L_chord == 0 && bg.angle != 0; 
+                          error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+      bg.angle == 0 ? bg.g = 0.0 : bg.g = 2.0 * sin(bg.angle/2) / bg.L_chord
+      L = bg.angle * bg.g
+    elseif haskey(cdict, :angle)
+      L = ele.L
+      if L == 0 && bg.angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+        bg.angle == 0 ? bg.g = 0 : bg.g = bg.angle / L
+    else
+      L = ele.L
+      bg.angle = L * bg.g
+    end
+
+    bg.bend_field_ref = bg.g * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
+
+    if haskey(cdict, :L_chord)
+      bg.angle = 2 * asin(bg.L_chord * bg.g / 2)
+      bg.g == 0 ? bg.L =  bg.L_chord : bg.L = bg.angle / bg.g
+    else
+      bg.angle = L * bg.g
+      bg.g == 0 ? bg.L_chord = L : bg.L_chord = 2 * sin(bg.angle/2) / bg.g 
+    end
+
+    if ele.L != L
+      ele.L = L
+      elegroup_bookkeeper!(ele, LengthGroup, changed, previous_ele)
+    end
+
+    if haskey(cdict, :e1)
+      bg.e1_rect = bg.e1 - 0.5 * bg.angle
+    elseif haskey(cdict, :e1_rect)
+      bg.e1 = bg.e1_rect + 0.5 * bg.angle
+    elseif bg.bend_type == BendType.SECTOR
+      bg.e1_rect = bg.e1 + 0.5 * bg.angle
+    else
+      bg.e1 = bg.e1_rect - 0.5 * bg.angle
+    end
+
+    if haskey(cdict, :e2)
+      bg.e2_rect = bg.e2 - 0.5 * bg.angle
+    elseif haskey(cdict, :e2_rect)
+      bg.e2 = bg.e2_rect + 0.5 * bg.angle
+    elseif bg.bend_type == BendType.SECTOR
+      bg.e2_rect = bg.e2 + 0.5 * bg.angle
+    else
+      bg.e2 = bg.e2_rect - 0.5 * bg.angle
+    end
+
+    clear_changed!(ele, BendGroup)
   end
 
-  bg.bend_field_ref = bg.g * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
-
-  if haskey(cdict, :L_chord)
-    bg.angle = 2 * asin(bg.L_chord * bg.g / 2)
-    bg.g == 0 ? bg.L =  bg.L_chord : bg.L = bg.angle / bg.g
-  else
-    bg.angle = L * bg.g
-    bg.g == 0 ? bg.L_chord = L : bg.L_chord = 2 * sin(bg.angle/2) / bg.g 
-  end
-
-  if ele.L != L
-    ele.L = L
-    elegroup_bookkeeper!(ele, LengthGroup, changed, previous_ele)
-  end
-
-  if haskey(cdict, :e1)
-    bg.e1_rect = bg.e1 - 0.5 * bg.angle
-  elseif haskey(cdict, :e1_rect)
-    bg.e1 = bg.e1_rect + 0.5 * bg.angle
-  elseif bg.bend_type == BendType.SECTOR
-    bg.e1_rect = bg.e1 + 0.5 * bg.angle
-  else
-    bg.e1 = bg.e1_rect - 0.5 * bg.angle
-  end
-
-  if haskey(cdict, :e2)
-    bg.e2_rect = bg.e2 - 0.5 * bg.angle
-  elseif haskey(cdict, :e2_rect)
-    bg.e2 = bg.e2_rect + 0.5 * bg.angle
-  elseif bg.bend_type == BendType.SECTOR
-    bg.e2_rect = bg.e2 + 0.5 * bg.angle
-  else
-    bg.e2 = bg.e2_rect - 0.5 * bg.angle
-  end
-
-  clear_changed!(ele, BendGroup)
   return
 end
 
@@ -536,6 +543,41 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::Chang
 end
 
 #---------------------------------------------------------------------------------------------------
+# elegroup_bookkeeper!(ele::Ele, group::Type{RFGroup}, ...)
+
+"""
+    elegroup_bookkeeper!(ele::Ele, group::Type{RFGroup}, changed::ChangedLedger, previous_ele::Ele)
+
+`RFGroup` bookkeeping.
+"""
+
+function elegroup_bookkeeper!(ele::Ele, group::Type{RFGroup}, changed::ChangedLedger, previous_ele::Ele)
+  rg = ele.RFGroup
+  cdict = ele.changed
+
+  if !has_changed(ele, RFGroup) && !has_changed(ele, ReferenceGroup) && !changed.this_ele_length
+    return
+  end
+
+  if ele.slave_status == Slave.SUPER
+    lord = ele.super_lords[1]
+    L_rel = ele.L / lord.L
+    rg.voltage = lord.voltage * L_rel
+  end
+
+  if ele.field_master
+    rg.voltage = rg.gradient * ele.L
+  elseif ele.L == 0
+    rg.gradient = NaN
+  else
+    rg.gradient = rg.voltage / ele.L
+  end
+
+  clear_changed!(ele, RFGroup)
+  return
+end
+
+#---------------------------------------------------------------------------------------------------
 # elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, ...)
 
 """
@@ -550,6 +592,15 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   cdict = ele.changed
 
   if has_changed(ele, ReferenceGroup); changed.ref_group = true; end
+
+  if ele.slave_status == Slave.SUPER
+    lord = ele.super_lords[1]
+    L_rel = ele.L / lord.L
+    ele.dE_ref = lord.dE_ref * L_rel
+    ele.extra_dtime_ref = lord.extra_dtime_ref * L_rel
+  end
+
+  #
 
   if is_null(previous_ele)   # implies BeginningEle
     if !changed.ref_group; return; end
@@ -705,6 +756,17 @@ Has any parameter in `group` changed since the last bookkeeping?
 """
 
 function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+  if ele.slave_status == Slave.SUPER
+    lord = ele.super_lords[1]         # UnionEle slave handled elsewhere.
+    for param in keys(lord.changed)
+      if param == AllGroup; return true; end
+      if param == group; return true; end
+      info = lord_param_info(param, lord, throw_error = false)
+      if isnothing(info); continue; end
+      if info.parent_group == group; return true; end
+    end
+  end
+
   for param in keys(ele.changed)
     if param == AllGroup; return true; end
     if param == group; return true; end
@@ -720,19 +782,20 @@ end
 # clear_changed!
 
 """
-    clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+    clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParameterGroup
     clear_changed!(ele::Ele)
 
 Clear record of any parameter in `ele` as having been changed that is associated with `group`.
 If group is not present, clear all records.
 
-Exception: A superlord or multipasslord is not touched since these lords must retain changed
+Exception: A super lord or multipasslord is not touched since these lords must retain changed
 information until bookkeeping has finished for all slaves. The appropriate lord/slave
 bookkeeping code will handle this.
 """ clear_changed!
 
-function clear_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
-  if ele.lord_status == Lord.SUPER || ele.lord_status == Lord.MULTIPASS; return; end
+function clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParameterGroup
+  if !clear_lord && (ele.lord_status == Lord.SUPER || 
+                     ele.lord_status == Lord.MULTIPASS); return; end
 
   for param in keys(ele.changed)
     if param == group
@@ -862,3 +925,37 @@ function fork_bookkeeper(fork::Ele)
 
   return
 end
+
+#---------------------------------------------------------------------------------------------------
+# push_bookkeeping_state
+
+"""
+    push_bookkeeping_state!(lat::Lattice; auditing_enabled::Union{Bool,Nothing} = nothing, 
+                                autobookkeeping::Union{Bool,Nothing} = nothing)
+
+Push the current state of `auditing_enabled` and `autobookkeeping` onto a saved state stack and set
+these parameters to the corresponding arguments if the arguments are not `nothing`.
+""" push_bookkeeping_state!
+
+function push_bookkeeping_state!(lat::Lattice; auditing_enabled::Union{Bool,Nothing} = nothing, 
+                                     autobookkeeping::Union{Bool,Nothing} = nothing)
+  push!(lat.private[:bookkeeping_state], lat.pdict)
+  if !isnothing(auditing_enabled); lat.pdict[:auditing_enabled] = auditing_enabled; end
+  if !isnothing(autobookkeeping); lat.pdict[:autobookkeeping] = autobookkeeping; end
+end
+
+#---------------------------------------------------------------------------------------------------
+# pop_bookkeeping_state!
+
+"""
+    pop_bookkeeping_state!(lat::Lattice)
+
+Restore the state of `auditing_enabled` and `autobookkeeping` from the saved state stack.
+""" pop_bookkeeping_state!
+
+function pop_bookkeeping_state!(lat::Lattice)
+  lat.pdict[:auditing_enabled] = lat.private[:bookkeeping_state][end][:auditing_enabled]
+  lat.pdict[:autobookkeeping] = lat.private[:bookkeeping_state][end][:autobookkeeping]
+  pop!(lat.private[:bookkeeping_state])
+end
+

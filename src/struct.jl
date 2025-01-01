@@ -1160,24 +1160,46 @@ Lattice structure.
 
 ## Fields
 
-• `name::String`. \\
-• `branch::Vector{Branch}`. \\
-• `pdict::Dict{Symbol,Any}`. \\
+• `name::String`                Name of lattice. \\
+• `branch::Vector{Branch}`      Array of branches. \\
+• `pdict::Dict{Symbol,Any}`     Lattice parameter dictionaries. \\
+• `private::Dict{Symbol, Any}`  Private storage space. \\
 
 ## Standard pdict keys
 
-• `:record_changes`         - Bool: Record parameter changes? \\
-• `:autobookkeeping`        - Bool: Automatic bookkeeping enabled? \\
-• `parameters_have_changed` - Bool: Have any parameters changed since the last bookkeeping? \\
+• `:auditing_enabled`        - Bool: parameter changes monitored? \\
+• `:autobookkeeping`         - Bool: Automatic bookkeeping enabled? \\
+• `:parameters_have_changed` - Bool: Have any parameters changed since the last bookkeeping? \\
 
-The `:record_changes` is usually `true` but can be set `false` by bookkeeping routines that 
-want to make parameter changes without leaving a record. Also if `:record_changes` is `false`,
-changes to parameters that normally should not be changed are allowed. This enables bookkeeping
-code to modify, for example, dependent parameters.
+The `:auditing_enabled` is usually `true` but can be set `false` by bookkeeping routines that 
+want to make parameter changes without ele.pdict[:changed] being added to. 
+Also if `:auditing_enabled` is `false`, changes to parameters that normally should not be changed are allowed. 
+This enables bookkeeping code to modify, for example, dependent parameters.
 """
-mutable struct Lattice <: AbstractLattice
-  name::String
-  branch::Vector{Branch}
-  pdict::Dict{Symbol,Any}
+@kwdef mutable struct Lattice <: AbstractLattice
+  name::String = ""
+  branch::Vector{Branch} = Vector{Branch}()
+  pdict::Dict{Symbol,Any} = Dict{Symbol,Any}()
+  private::Dict{Symbol,Any} = Dict{Symbol,Any}()
 end
 
+#---------------------------------------------------------------------------------------------------
+# ChangedLedger
+
+"""
+    Internal: mutable struct ChangedLedger
+
+When bookkeeping a branch, element-by-element, starting from the beginning of the branch,
+the ledger keeps track of what has changed so that the change can propagate to the 
+following elements. 
+
+Ledger parameters, when toggled to true, will never be reset for the remainder of the branch bookkeeping.
+The exception is the `this_ele_length` parameter which is reset for each element.
+""" ChangedLedger
+
+@kwdef mutable struct ChangedLedger
+  this_ele_length::Bool = false
+  s_position::Bool = false
+  ref_group::Bool = false
+  floor_position::Bool = false
+end

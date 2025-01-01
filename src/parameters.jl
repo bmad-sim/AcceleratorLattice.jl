@@ -82,7 +82,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :ix_ele             => ParamInfo(Nothing,        Int,            "Index of element in containing branch.ele[] array."),
   :branch             => ParamInfo(Nothing,        Branch,         "Pointer to branch element is in."),
   :multipass_lord     => ParamInfo(Nothing,        Ele,            "Element's multipass_lord. Will not be present if no lord exists."),
-  :super_lords        => ParamInfo(Nothing,        Vector{Ele},    "Array of element's super_lords. Will not be present if no lords exist."),
+  :super_lords        => ParamInfo(Nothing,        Vector{Ele},    "Array of element's super lords. Will not be present if no lords exist."),
   :slaves             => ParamInfo(Nothing,        Vector{Ele},    "Array of slaves of element. Will not be present if no slaves exist."),
   :girder             => ParamInfo(Nothing,        Ele,            "Supporting Girder element. Will not be present if no supporting girder."),
 
@@ -495,7 +495,7 @@ function ele_param_info(who::Union{Symbol,DataType}; throw_error = true)
     if haskey(ELE_PARAM_INFO_DICT, who); (return ELE_PARAM_INFO_DICT[who]); end
     # Is a multipole? Otherwise unrecognized.
     info = multipole_param_info(who)
-    if isnothing(info) && throw_error; error(f"Unrecognized element parameter: {who}"); end
+    if isnothing(info) && throw_error; error("Unrecognized element parameter: $who"); end
     return info
   end
 
@@ -672,7 +672,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   OriginEleGroup        => EleParameterGroupInfo("Defines coordinate origin for Girder, FloorShift and Fiducial elements.", false),
   PatchGroup            => EleParameterGroupInfo("Patch parameters.", false),
   ReferenceGroup        => EleParameterGroupInfo("Reference energy and species.", true),
-  RFGroup               => EleParameterGroupInfo("`RFCavity` and `LCavity` RF parameters.", false),
+  RFGroup               => EleParameterGroupInfo("`RFCavity` and `LCavity` RF parameters.", true),
   RFAutoGroup           => EleParameterGroupInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
   SolenoidGroup         => EleParameterGroupInfo("`Solenoid` parameters.", false),
   TrackingGroup         => EleParameterGroupInfo("Default tracking settings.", false),

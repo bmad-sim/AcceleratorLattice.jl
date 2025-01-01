@@ -129,7 +129,7 @@ one would expect. \vn{S{\#}1} is the part of \vn{S} that is outside \vn{Q} but b
 element is just a solenoid. Next comes \vn{M}, \vn{S{\#}1}, and finally \vn{D\#2} is the rest of the
 drift outside \vn{S}.
 
-In the above example, \vn{Q} and \vn{S} will be \vn{super_lord} elements (\vn{s:lord.slave}) and
+In the above example, \vn{Q} and \vn{S} will be super lord elements (\vn{s:lord.slave}) and
 four elements in the tracking part of the lattice will be \vn{super_slave} elements. This is
 illustrated in \fig{f:super.ex}B.
 
@@ -339,7 +339,7 @@ elements in the lattice named \vn{a_drft}, the following is not allowed:
   my_oct: octupole, ..., superimpose, ref = a_drft##2  ! This is an error
 \end{example}
 
-When the parameters of a super_slave are computed from the parameters of its super_lords, some types
+When the parameters of a super_slave are computed from the parameters of its super lords, some types
 of parameters may be ``missing''. For example, it is, in general, not possible to set appropriate
 aperture parameters (\sref{s:limit}) of a super_slave if the lords of the slave have differing
 aperture settings. When doing calculations, \bmad will use the corresponding parameters stored in
@@ -434,7 +434,7 @@ The result is shown in \fig{f:super.ex}C. The tracking part of the lattice will 
 \end{example}
 \index{lord_pad1}\index{lord_pad2}
 \vn{Q} and part of \vn{S} have been combined into a jumbo \vn{super_slave} named \vn{Q{\B}S}. Since
-the \vn{super_lord} elements of a jumbo \vn{super_slave} may not completely span the slave two
+the super lord elements of a jumbo \vn{super_slave} may not completely span the slave two
 parameters of each lord will be set to show the position of the lord within the slave. These two
 parameters are
 \begin{example}
@@ -442,7 +442,7 @@ parameters are
   lord_pad2    ! offset at downstream end
 \end{example}
 \vn{lord_pad1} is the distance between the upstream edge of the jumbo \vn{super_slave} and a
-\vn{super_lord}. \vn{lord_pad2} is the distance between the downstream edge of a \vn{super_lord} and
+super lord. \vn{lord_pad2} is the distance between the downstream edge of a super lord and
 the downstream edge of the jumbo \vn{super_slave}. With the present example, the lords have the
 following padding:
 \begin{example}

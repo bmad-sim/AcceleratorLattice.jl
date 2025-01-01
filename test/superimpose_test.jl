@@ -25,11 +25,11 @@ lat = Lattice([ln1])
 
 sup_zs2 = superimpose!(zs2, eles_search(lat, "d1"), offset = 0.25)
 sup_m1 = superimpose!(m1, lat.branch[1], offset = 0, ref_origin = BodyLoc.ENTRANCE_END)
-sup_sm1 = superimpose!(zm1, eles_search(lat, "m1"), ref_origin = BodyLoc.ENTRANCE_END);
-sup_zm4 = superimpose!(zm4, eles_search(lat, "lc1"), offset = 0.2);
+sup_sm1 = superimpose!(zm1, eles_search(lat, "m1"), ref_origin = BodyLoc.ENTRANCE_END)
+sup_zm4 = superimpose!(zm4, eles_search(lat, "lc1"), offset = 0.2)
 sup_m2 = superimpose!(m2, lat.branch[1], offset = 2.7)
-sup_zm2 = superimpose!(zm2, eles_search(lat, "m1"), ref_origin = BodyLoc.CENTER);
-sup_zm3 = superimpose!(zm3, eles_search(lat, "m1"), ref_origin = BodyLoc.EXIT_END);
+sup_zm2 = superimpose!(zm2, eles_search(lat, "m1"), ref_origin = BodyLoc.CENTER)
+sup_zm3 = superimpose!(zm3, eles_search(lat, "m1"), ref_origin = BodyLoc.EXIT_END)
 
 b1 = lat.branch[1]
 b2 = lat.branch[2]
