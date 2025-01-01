@@ -198,6 +198,21 @@ function girder(ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
+# multipass_lord
+
+"""
+    multipass_lord(ele::Ele) -> Union{Vector{Ele}, Nothing}
+
+Returns the multipass lord of element `ele`. 
+If no super lords exist for `ele`, `nothing` is returned.
+""" multipass_lord
+
+function multipass_lord(ele::Ele)
+  if !haskey(ele.pdict, :multipass_lord) return nothing; end
+  return ele.pdict[:multipass_lord]
+end
+
+#---------------------------------------------------------------------------------------------------
 # min_ele_length
 
 """

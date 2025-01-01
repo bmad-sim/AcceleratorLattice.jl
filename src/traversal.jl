@@ -20,8 +20,8 @@ To include `end_ele` in the iteration range, use the construct:
   for ele in Region(start_ele, end_ele, false)
 ```
 
-It is permissible for `start_ele` and/or `end_ele` to be a `super_lord`. In any case, the
-iteration region will never include any `super_lord` elements. but rather their corresponding `super_slave`s.
+It is permissible for `start_ele` and/or `end_ele` to be a super lord. In any case, the
+iteration region will never include any super lord elements. but rather their corresponding `super_slave`s.
 """ Region
 
 @kwdef mutable struct Region
@@ -48,8 +48,8 @@ function Base.iterate(x::Region)
   x.start_ele.lord_status == Lord.SUPER ? start_ele = x.start_ele.slaves[1] : start_ele = x.start_ele
   x.end_ele.lord_status   == Lord.SUPER ? end_ele   = x.end_ele.slaves[1]   : end_ele   = x.end_ele
   if !(start_ele.branch === end_ele.branch); error("Start and end elements are not in the same branch"); end
-  if start_ele.lord_status != Lord.NOT; error("Start element may not be a non-super_lord lord."); end
-  if end_ele.lord_status   != Lord.NOT; error("End element may not be a non-super_lord lord."); end
+  if start_ele.lord_status == Lord.MULTIPASS; error("Start element may not be a multipass lord."); end
+  if end_ele.lord_status   == Lord.MULTIPASS; error("End element may not be a multipass lord."); end
   return (start_ele, start_ele)
 end
 

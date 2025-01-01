@@ -299,6 +299,8 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
     insert!(branch.ele, slave1.ix_ele+1, slave2)  # Just after slave1
     slave1.L = s_split - slave1.s
     slave2.L = slave1.s_downstream - s_split
+    slave1.pdict[:changed][AllGroup] = true
+    slave2.pdict[:changed][AllGroup] = true
 
     # Now update the slave lists for the super lords to include the new slave.
     # Notice that the lord list of the slaves does not have to be modified.
@@ -317,29 +319,30 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
     return (slave2, true)
   end
 
-  # Split case 3: Element to be split is not a super_slave. Here create a super_lord.
-  # Important for multipass control that original slave1 is put in super_lord branch
+  # Split case 3: Element to be split is not a super_slave. Here create a super lord.
+  # Important for multipass control that original slave1 is put in the super lord branch
   # and the copies are in the tracking branch.
 
   lord = slave1
 
-  slave = copy(slave1)
-  pop!(slave.pdict, :multipass_lord, nothing)
-  slave.pdict[:super_lords] = Vector{Ele}([lord])
-  slave.slave_status = Slave.SUPER
-  clear_changed!(slave) 
+  slave1 = copy(slave1)
+  pop!(slave1.pdict, :multipass_lord, nothing)
+  slave1.pdict[:super_lords] = Vector{Ele}([lord])
+  slave1.slave_status = Slave.SUPER
 
-  branch.ele[slave.ix_ele] = slave
-  slave2 = copy(slave)
-  insert!(branch.ele, slave.ix_ele+1, slave2)
-  slave.L = s_split - slave1.s 
-  slave2.L = slave1.s_downstream - s_split
-  clear_changed!(slave2) 
-
+  branch.ele[slave1.ix_ele] = slave1
+  slave2 = copy(slave1)
+  insert!(branch.ele, slave1.ix_ele+1, slave2)
+  slave1.L = s_split - lord.s 
+  slave2.L = lord.s_downstream - s_split
+  slave1.pdict[:changed][AllGroup] = true
+  slave2.pdict[:changed][AllGroup] = true
+ 
   sbranch = branch.lat.branch["super"]
   push!(sbranch.ele, lord)
-  lord.pdict[:slaves] = Vector{Ele}([slave, slave2])
+  lord.pdict[:slaves] = Vector{Ele}([slave1, slave2])
   lord.lord_status = Lord.SUPER
+  lord.pdict[:changed][AllGroup] = true
 
   index_and_s_bookkeeper!(branch)
   index_and_s_bookkeeper!(sbranch)
@@ -385,11 +388,11 @@ end
 """
     Internal: set_super_slave_names!(lord::Ele) -> nothing
 
-`lord` is a super_lord and all of the slaves of this lord will have their name set.
+`lord` is a super lord and all of the slaves of this lord will have their name set.
 """
 
 function set_super_slave_names!(lord::Ele)
-  if lord.lord_status != Lord.SUPER; error("Argument is not a super_lord: $(ele_name(lord))"); end
+  if lord.lord_status != Lord.SUPER; error("Argument is not a super lord: $(ele_name(lord))"); end
 
   name_dict = Dict{String,Int}()
   for slave in lord.slaves

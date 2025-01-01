@@ -12,7 +12,7 @@ in the branch containing `reference`. Exceptions:
 - If the `reference` is a `multipass_lord`, return the `multipass_lord` whose slaves are all
   `offset` away from the corresponding slaves of `reference`. If no such `mulitpass_lord` exists,
   throw an error.
-- If the `reference` is a `super_lord` element the index of the returned element is `N + offset` where, 
+- If the `reference` is a super lord element the index of the returned element is `N + offset` where, 
   if `offset` is positive, `N` is the index of the last (that is, downstream) `super_slave` element and,
   if `index` is negative, `N` is the index of the first (that is, upstream) `super_slave` element.
 
@@ -317,10 +317,10 @@ Notice that here strings to be matched to use single quotes.
 With the range construct, `atom1` and `atom2` must both evaluate to a single element in the
 same branch.
 
-- With a range, if `atom1` is a `super_lord` element, For evaluating the range, the first slave of
-  the `super_lord` will be used for the boundary element of the range. 
-  If `atom2` is a `super_lord` element,
-  the last slave of the `super_lord` will be used for the boundary element of the range.
+- With a range, if `atom1` is a super lord element, For evaluating the range, the first slave of
+  the super lord will be used for the boundary element of the range. 
+  If `atom2` is a super lord element,
+  the last slave of the super lord will be used for the boundary element of the range.
 - To exclude the boundary elements from the returned list, use the appropriate `offset`.
 - In a range construct the `ele_type` is used to remove elements from the returned list but
   do not affect matching to the elements at the ends of the range. That is, the elements

@@ -23,6 +23,7 @@ function Base.getproperty(lat::Lattice, sym::Symbol)
   if sym == :name; return getfield(lat, :name); end
   if sym == :branch; return getfield(lat, :branch); end
   if sym == :pdict; return getfield(lat, :pdict); end
+  if sym == :private; return getfield(lat, :private); end
 
   return getfield(lat, :pdict)[sym]
 end
@@ -160,7 +161,7 @@ function Base.setproperty!(ele::Ele, sym::Symbol, value, check_settable = true)
 
   else
     branch = lat_branch(ele)
-    if isnothing(branch) || isnothing(branch.lat) || branch.lat.record_changes
+    if isnothing(branch) || isnothing(branch.lat) || branch.lat.auditing_enabled
       pdict[:changed][sym] = get_elegroup_param(ele, pdict[Symbol(parent)], pinfo)
     end
 
@@ -183,7 +184,7 @@ function ele_parameter_has_changed!(ele)
   branch = lat_branch(ele)
   if isnothing(branch) || isnothing(branch.lat); return; end
 
-  if branch.lat.record_changes
+  if branch.lat.auditing_enabled
     if branch.type == TrackingBranch
       branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ele.ix_ele)
       branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ele.ix_ele)
@@ -357,9 +358,9 @@ function set_elegroup_param!(ele::Ele, group::BMultipoleGroup, pinfo::ParamInfo,
   if isnothing(mul.integrated)
     mul.integrated = (mtype[end] == 'L')
   elseif (mtype[end] == 'L') != mul.integrated
-    error(f"Cannot set non-integrated multipole value for integrated multipole and " * 
-          f"vice versa for {pinfo.user_sym} in {ele_name(ele)}.\n" *
-          f"Use toggle_integrated! to change the integrated status.")
+    error("Cannot set non-integrated multipole value for integrated multipole and " * 
+          "vice versa for {pinfo.user_sym} in $(ele_name(ele)).\n" *
+          "Use toggle_integrated! to change the integrated status.")
   end
  
   return setfield!(mul, pinfo.struct_sym, value)
@@ -373,9 +374,9 @@ function set_elegroup_param!(ele::Ele, group::EMultipoleGroup, pinfo::ParamInfo,
   if isnothing(mul.Eintegrated)
     mul.Eintegrated = (mtype[end] == 'L')
   elseif (mtype[end] == 'L') != mul.Eintegrated
-    error(f"Cannot set non-integrated multipole value for integrated multipole and " * 
-          f"vice versa for {pinfo.user_sym} in {ele_name(ele)}.\n" *
-          f"Use toggle_integrated! to change the integrated status.")
+    error("Cannot set non-integrated multipole value for integrated multipole and " * 
+          "vice versa for {pinfo.user_sym} in $(ele_name(ele)).\n" *
+          "Use toggle_integrated! to change the integrated status.")
   end
 
   return setfield!(mul, pinfo.struct_sym, value)

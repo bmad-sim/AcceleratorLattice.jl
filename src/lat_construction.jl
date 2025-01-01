@@ -313,11 +313,14 @@ Returns a `Lattice` containing branches for the expanded beamlines and branches 
 Lattice(root_line::BeamLine; name = "lat") = Lattice([root_line], name = name)
 
 function Lattice(root_lines::Vector{BeamLine}; name::AbstractString = "lat") 
-  lat = Lattice(name, Branch[], Dict{Symbol,Any}(:LatticeGlobal => LatticeGlobal(),
-                                             :record_changes => false,
+  lat = Lattice(name = name, pdict = Dict{Symbol,Any}(
+                                             :LatticeGlobal => LatticeGlobal(),
+                                             :auditing_enabled => false,
                                              :autobookkeeping => false,
-                                             :parameters_have_changed => true
-  ))
+                                             :parameters_have_changed => true),
+                            private = Dict{Symbol,Any}(:bookkeeping_state => Vector{Dict}())
+                                            
+  )
   
   for root in root_lines
     new_tracking_branch!(lat, root)
@@ -333,7 +336,7 @@ function Lattice(root_lines::Vector{BeamLine}; name::AbstractString = "lat")
   bookkeeper!(lat)
   lat_sanity_check(lat)
 
-  lat.record_changes = true
+  lat.auditing_enabled = true
   lat.autobookkeeping = true
   return lat
 end
