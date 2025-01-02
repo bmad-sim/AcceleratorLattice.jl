@@ -349,7 +349,7 @@ If there are more than two block expressions involved, evaluation is left to rig
                                        #   This works since all slaves have a "!" in their name.
   eles_search(lat, "Marker::%5-1")     # All elements just before Marker elements with two character names
                                        #   ending in the digit "5".
-  eles_search(lat.branch["super"], "ID=`abc`")  # All super lord elements with ID string equal to "abc".
+  eles_search(lat.branch[SuperBranch], "ID=`abc`")  # All super lord elements with ID string equal to "abc".
   eles_search(lat, "1>>Patch::4:10")   # All Patch elements in branch 1 between elements 4 through 10.
   eles_search(lat, "Patch::1>>4:10")   # Same as above
   eles_search(lat, "Qa+1:Qb+2")        # All elements between the element after "Qa" through the
@@ -543,3 +543,60 @@ function ele_at_s(branch::Branch, s::Real; select::Select.T = Select.UPSTREAM, e
     end
   end
 end
+
+#---------------------------------------------------------------------------------------------------
+# lat_ele_dict
+
+"""
+    lat_ele_dict(lat::Lattice) -> Dict{String, Vector{Ele}}
+
+Return a dictionary of `ele_name => Vector{Ele}` mapping of lattice element names to arrays of
+elements with that name. Using a dictionary for name lookup will be much faster than 
+searching using the `eles` function.
+
+## Output
+
+Dict{String, Vector{Ele}} dictionary where the keys are element names and the values are 
+vectors of elements of whose name matches the key. The element vectors are ordered by s-position.
+
+## Example
+```
+eled = lat_ele_dict(lat)    # Create Dictionary
+eled["q23w"]                
+```
+""" lat_ele_dict
+
+function lat_ele_dict(lat::Lattice)
+  eled = Dict{String,Vector{Ele}}()
+
+  for branch in lat.branch
+    if branch.type == SuperBranch || branch.type == MultipassBranch; continue; end
+    for ele in branch.ele
+      lat_ele_dict(ele, eled)
+    end
+  end
+
+  return eled
+end
+
+# Internal function used by lat_ele_dict above.
+
+function lat_ele_dict(ele::Ele, eled::Dict)
+  if haskey(eled, ele.name)
+    eled[ele.name]
+    push!(eled[ele.name], ele)
+  else
+    eled[ele.name] = Vector{Ele}([ele])
+  end
+
+  if ele.slave_status == Slave.SUPER
+    for lord in ele.super_lords
+      lat_ele_dict(lord, eled)
+    end
+  end
+
+  if ele.slave_status == Slave.MULTIPASS
+    lat_ele_dict(ele.multipass_lord, eled)
+  end
+end
+

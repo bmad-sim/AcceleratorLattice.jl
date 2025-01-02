@@ -37,7 +37,7 @@ b2 = lat.branch[2]
 @testset "Superimpose1" begin
   @test [e.name for e in b1.ele] == 
                ["beginning",  "zm1",  "zm2",  "m1",  "zm3",  "d1!1",  "zs2", "d1!2",  "lc1!s1",
-                "zm4",  "lc1!s2",  "d1!1",  "zs2!s1",  "m2",  "zs2!s2",  "d1!2",  "d3",  "end_ele"]
+                "zm4",  "lc1!s2",  "d1!1",  "zs2!s1",  "m2",  "zs2!s2",  "d1!2",  "d3",  "end1"]
   @test [e.name for e in b2.ele] == ["lc1", "zs2"]
   @test b1.ele[9].super_lords  == [b2.ele[1]]
   @test b1.ele[11].super_lords  == [b2.ele[1]]

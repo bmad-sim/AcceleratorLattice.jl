@@ -282,7 +282,7 @@ parameter group.
 To see in which element types contain a given parameter group, use the `info(::EleParameterGroup)`
 method. To see what parameter groups are contained in a Example:
 ```
-    info(AlignmentGroup)      # List element types that contain AlignmentGroup
+    info(BodyShiftGroup)      # List element types that contain BodyShiftGroup
 ```
 """ BaseEleParameterGroup, EleParameterGroup, EleParameterSubGroup
 
@@ -467,46 +467,6 @@ ACKicker parameters.
 end
 
 #---------------------------------------------------------------------------------------------------
-# AlignmentGroup
-
-"""
-    mutable struct AlignmentGroup <: EleParameterGroup
-
-Orientation of an element. 
-
-- For `Patch` elements this is the orientation of the exit face with respect to the entrance face.
-- For `FloorShift` and `Fiducial` elements this is the orientation of the element with respect
-  to the reference element.
-- For other elements this is the orientation of element body alignmnet point with respect to 
-the supporting girder if it exists or with respect to the machine coordinates.
-
-## Fields
-• `offset::Vector`         - [x, y, z] offsets not including any Girder. \\
-• `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts.  \\
-• `y_rot::Number`          - Rotation around the y-axis not including any Girder alignment shifts. \\
-• `z_rot::Number`          - Rotation around the z-axis not including any Girder alignment shifts. \\
-
-# Associated Output Parameters
-The `tot` parameters are defined only for elements that can be supported by a `Girder`.
-These parameters are the body coordinates with respect to machine coordinates. 
-These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
-non-tot fields if there is no `Girder`.
-• `q_align::Quaternion`      - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
-• `q_align_tot:: Quaternion` - `Quaternion` representation of orienttion with Girder shifts.
-• `offset_tot::Vector`       - `[x, y, z]` offsets including Girder alignment shifts. \\
-• `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
-• `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
-• `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
-""" AlignmentGroup
-
-@kwdef mutable struct AlignmentGroup <: EleParameterGroup
-  offset::Vector = [0.0, 0.0, 0.0] 
-  x_rot::Number = 0
-  y_rot::Number = 0
-  z_rot::Number = 0
-end
-
-#---------------------------------------------------------------------------------------------------
 # ApertureGroup
 
 """
@@ -520,7 +480,7 @@ Vacuum chamber aperture struct.
 • `wall::Wall2D`                        - Aperture defined by an array of vertices. \\
 • `aperture_shape::ApertureShape.T`     - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
 • `aperture_at::BodyLoc.T`              - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
-• `aperture_shifts_with_alignment:Bool` - Do element alignments shifts move the aperture? Default is `false`. \\
+• `aperture_shifts_with_body:Bool` - Do element alignments shifts move the aperture? Default is `false`. \\
 • `custom_aperture::Dict`               - Custom aperture information. \\
 """ ApertureGroup
 
@@ -530,7 +490,7 @@ Vacuum chamber aperture struct.
   aperture_shape::typeof(ApertureShape) = ELLIPTICAL
   aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
   wall::Wall2D = Wall2D()
-  aperture_shifts_with_alignment::Bool = true
+  aperture_shifts_with_body::Bool = true
   custom_aperture::Dict = Dict()
 end
 
@@ -637,6 +597,46 @@ Vector of magnetic multipoles.
 """
 @kwdef mutable struct BMultipoleGroup <: EleParameterGroup
   pole::Vector{BMultipole} = Vector{BMultipole}(undef,0)         # Vector of multipoles.
+end
+
+#---------------------------------------------------------------------------------------------------
+# BodyShiftGroup
+
+"""
+    mutable struct BodyShiftGroup <: EleParameterGroup
+
+Defines the position and orientation of an element. 
+
+- For `Patch` elements this is the orientation of the exit face with respect to the entrance face.
+- For `FloorShift` and `Fiducial` elements this is the orientation of the element with respect
+  to the reference element.
+- For other elements this is the orientation of element body alignment point with respect to 
+the supporting girder if it exists or with respect to the machine coordinates.
+
+## Fields
+• `offset::Vector`         - [x, y, z] offsets not including any Girder. \\
+• `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts.  \\
+• `y_rot::Number`          - Rotation around the y-axis not including any Girder alignment shifts. \\
+• `z_rot::Number`          - Rotation around the z-axis not including any Girder alignment shifts. \\
+
+# Associated Output Parameters
+The `tot` parameters are defined only for elements that can be supported by a `Girder`.
+These parameters are the body coordinates with respect to machine coordinates. 
+These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
+non-tot fields if there is no `Girder`.
+• `q_shift::Quaternion`      - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
+• `q_shift_tot:: Quaternion` - `Quaternion` representation of orienttion with Girder shifts.
+• `offset_tot::Vector`       - `[x, y, z]` offsets including Girder alignment shifts. \\
+• `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
+• `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
+• `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
+""" BodyShiftGroup
+
+@kwdef mutable struct BodyShiftGroup <: EleParameterGroup
+  offset::Vector = [0.0, 0.0, 0.0] 
+  x_rot::Number = 0
+  y_rot::Number = 0
+  z_rot::Number = 0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -844,7 +844,7 @@ end
 
 Used with `Fiducial`, `FloorShift`, and `Girder` elements.
 The `OriginEleGroup` is used to set the coordinate reference frame from which 
-the orientation set by the `AlignmentGroup` is measured. 
+the orientation set by the `BodyShiftGroup` is measured. 
 
 ## Fields
 • `origin_ele::Ele`           - Origin reference element. Default is NULL_ELE. \\
@@ -1195,6 +1195,13 @@ following elements.
 
 Ledger parameters, when toggled to true, will never be reset for the remainder of the branch bookkeeping.
 The exception is the `this_ele_length` parameter which is reset for each element.
+
+# Fields
+• `this_ele_length::Bool` \\
+• `s_position::Bool` \\
+• `ref_group::Bool` \\
+• `floor_position::Bool` \\
+
 """ ChangedLedger
 
 @kwdef mutable struct ChangedLedger

@@ -207,10 +207,11 @@ end
 """
   Base.getindex(lat::Lattice, name::AbstractString)
   Base.getindex(lat::Lattice, ix_branch::Int)
+  Base.getindex(lat::Lattice, typ::Type{T} where T <: BranchType)
 
 If `lat[name]` matches a branch name, return the branch. No wild cards permitted here.
 If `lat[name]` does not match a branch name, return list of matching lattice elements.
-In this case the returned vector is equivalent to `eles_search(lat, name)`.
+In this case, the returned vector is equivalent to `eles_search(lat, name)`.
 
 For `lat[ix_branch]`, return `lat.branch[ix_branch]`.
 """ Base.getindex(lat::Lattice, name::AbstractString)
@@ -223,26 +224,44 @@ function Base.getindex(lat::Lattice, name::AbstractString)
   return eles_search(lat, name)
 end
 
+#------------
+
 function Base.getindex(lat::Lattice, ix_branch::Int)
   if ix_branch > length(lat.branch); error("Index above length of lat.branch[] array."); end
   return lat.branch[ix_branch]
 end
+
+#------------
+
+Base.getindex(lat::Lattice, typ::Type{T} where T <: BranchType) = lat.branch[typ]
 
 #---------------------------------------------------------------------------------------------------
 # Base.getindex(branch::Vector{Branch}, name::AbstractString)
 
 """
   Base.getindex(branch::Vector{Branch}, name::AbstractString)
+  Base.getindex(branch::Vector{Branch}, typ::Type{T} where T <: BranchType)
 
-Match `branch[name]` to branch in `branch[]` array using the names of the branches.
-""" Base.getindex(branch::Vector{Branch}, name::AbstractString)
+Match `branch[name]` or `branch[type]` to branch in `branch[]` array using the names or types
+of the branches. If there are multiple matches the match with the smallest index is returned.
+""" Base.getindex(branch::Vector{Branch})
 
 function Base.getindex(branch::Vector{Branch}, name::AbstractString)
   for br in branch
     if br.name == name; return br; end
   end
 
-  error(f"No branch with name: {name}")
+  error("Cannot find branch with name: $name")
+end
+
+#-----------
+
+function Base.getindex(branch::Vector{Branch}, typ::Type{T} where T <: BranchType)
+  for br in branch
+    if br.type == typ; return br; end
+  end
+
+  error("Cannot find branch of type: $typ")
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -459,49 +478,49 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     if :DownstreamReferenceGroup ∉ keys(ele.pdict); return NaN; end
     return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
 
-  elseif sym == :q_align
-    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
-    ag = ele.pdict[:AlignmentGroup]
+  elseif sym == :q_shift
+    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
+    ag = ele.pdict[:BodyShiftGroup]
     return Quaternion(ag.x_rot, ag.y_rot, ag.z_rot)
 
   elseif sym == :offset_tot
-    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.offset; end
-    ag = ele.pdict[:AlignmentGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_align)
+    ag = ele.pdict[:BodyShiftGroup]
+    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
     return coord_transform(orient_ele, orient_girder).r
 
   elseif sym == :x_rot_tot
-    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.x_rot; end
-    ag = ele.pdict[:AlignmentGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_align)
+    ag = ele.pdict[:BodyShiftGroup]
+    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[1]
 
   elseif sym == :y_rot_tot
-    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.y_rot; end
-    ag = ele.pdict[:AlignmentGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_align)
+    ag = ele.pdict[:BodyShiftGroup]
+    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[2]
 
   elseif sym == :z_rot_tot
-    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.z_rot; end
-    ag = ele.pdict[:AlignmentGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_align)
+    ag = ele.pdict[:BodyShiftGroup]
+    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[3]
 
-  elseif sym == :q_align_tot
-    if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
-    if isnothing(girder(ele)); return ele.q_align; end
-    ag = ele.pdict[:AlignmentGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_align)
+  elseif sym == :q_shift_tot
+    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
+    if isnothing(girder(ele)); return ele.q_shift; end
+    ag = ele.pdict[:BodyShiftGroup]
+    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
     return coord_transform(orient_ele, orient_girder).q
   end
 

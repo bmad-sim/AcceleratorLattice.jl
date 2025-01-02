@@ -57,7 +57,6 @@ include("lat_construction.jl")
 include("output_lat.jl")
 include("query.jl")
 include("find.jl")
-include("external_ele.jl")
 
 # Note! Element types, enums, and Holy traits are exported automatically when constructed.
 
@@ -70,7 +69,7 @@ export split!, construct_ele_type, ele_at_s, toggle_integrated!
 export eles_search, eles_substitute_lords!, eles_sort!
 export next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
 export branch, matches_branch, create_ele_vars, eval_str, Vertex1, LatticeGlobal
-export EleParameterGroup, AlignmentGroup, OrientationGroup, BMultipole, BMultipoleGroup, BeamBeamGroup
+export EleParameterGroup, BodyShiftGroup, OrientationGroup, BMultipole, BMultipoleGroup, BeamBeamGroup
 export EMultipole, EMultipoleGroup, BendGroup, ApertureGroup, DescriptionGroup, RFGroup, SolenoidGroup
 export TrackingGroup, LengthGroup, ReferenceGroup, DownstreamReferenceGroup, ForkGroup
 export MasterGroup, LordSlaveStatusGroup, ACKickerGroup
@@ -83,7 +82,7 @@ export machine_location, body_location, EleRegion, holy_traits, output_parameter
 export BranchType, LordBranch, TrackingBranch, MultipassBranch, SuperBranch, transform
 export str_split, str_match, str_unquote, str_quote, str_to_int, associated_names
 export ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST, OPEN, CLOSED
-export rotX, rotY, rotZ, rot, rot!
+export rotX, rotY, rotZ, rot, rot!, bend_quaternion, lat_ele_dict
 
 # From LinearAlgebra
 export norm

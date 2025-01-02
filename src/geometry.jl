@@ -2,8 +2,9 @@
 # propagate_ele_geometry
 
 """
-    propagate_ele_geometry(floor_start::OrientationGroup, ele::Ele)
-    propagate_ele_geometry(ele::Ele)
+    propagate_ele_geometry(geometry::Type{<:EleGeometry}, floor_start::OrientationGroup, 
+                                                                     ele::Ele) -> OrientationGroup
+    propagate_ele_geometry(ele::Ele) -> OrientationGroup
 
   Returns the floor position at the end of the element given the floor position at the beginning.
   Normally this routine is called with `floor_start` equal to ele.param[:floor_position].
@@ -33,7 +34,7 @@ function propagate_ele_geometry(::Type{STRAIGHT}, fstart::OrientationGroup, ele:
 end
 
 function propagate_ele_geometry(::Type{CIRCULAR}, fstart::OrientationGroup, ele::Ele)
-  df = coord_transform(ele.L, ele.BendGroup.angle, ele.BendGroup.tilt_ref)
+  df = coord_transform(ele.L, ele.BendGroup.g, ele.BendGroup.tilt_ref)
   return coord_transform(fstart, df)
 end
 
@@ -57,9 +58,9 @@ point that is an arc distance `ds` from the first point.
 The transformation is
   r_end = r_start + rot(dr, q_start)
   q_end = q_start * dq
-""" coord_transform(ds::Number, g::Number, tilt_ref::Number)
+""" coord_transform(ds::Number, g::Number, tilt_ref::Number = 0.0)
 
-function coord_transform(ds::Number, g::Number, tilt_ref::Number)
+function coord_transform(ds::Number, g::Number, tilt_ref::Number = 0.0)
   if g == 0
     return OrientationGroup([0.0, 0.0, ds], Quaternion())
 
@@ -102,7 +103,7 @@ Quaternion representing the coordinate rotation for a bend through an angle `ang
 a `tilt_ref` reference tilt.
 """ bend_quaternion
 
-return bend_quaternion(angle::Number, tilt_ref::Number)
+function bend_quaternion(angle::Number, tilt_ref::Number)
   if tilt_ref == 0
     return rotY(-angle)
   else

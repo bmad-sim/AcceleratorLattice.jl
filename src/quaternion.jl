@@ -17,7 +17,6 @@ rotZ(angle::Number) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
 # Quaternion
 
 """
-    Quaternion(aa::AxisAngle) 
     Quaternion(m::Matrix{T})
     Quaternion(x_rot::Number, y_rot::Number, z_rot::Number)
     Quaternion(axis::Vector, angle::Number)
@@ -32,13 +31,6 @@ rotZ(angle::Number) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
 Quaternion() = Quaternion(1.0, 0.0, 0.0, 0.0)
 
 Quaternion(x_rot::Number, y_rot::Number, z_rot::Number) = rotY(y_rot) * rotX(x_rot) * rotZ(z_rot)
-
-function Quaternion(aa::AxisAngle) 
-  if aa.angle == 0; return UNIT_QUAT; end
-  m = mag(aa.axis)
-  if m == 0; error("RangeError: Length of axis is zero."); end
-  return Quaternion(cos(0.5*aa.angle), sin(0.5*aa.angle)*axis / m)
-end
 
 function Quaternion(m::Matrix{T}) where T <: Number
   trace = tr(m)
@@ -65,10 +57,6 @@ function Quaternion(axis::Vector, angle::Number)
   axis = axis / norm(axis)
   return Quaternion(cos(0.5*angle), axis*sin(0.5*angle))
 end
-
-#---------------------------------------------------------------------------------------------------
-
-const UNIT_QUAT = Quaternion(1.0, [0.0, 0.0, 0.0])
 
 #---------------------------------------------------------------------------------------------------
 # rot!

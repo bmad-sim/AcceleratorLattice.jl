@@ -13,7 +13,7 @@ The parmeter groups are:
  {\it Group}          & {\it Section}             & {\it Group}          & {\it Section}            \\ 
  \midrule
  ACKickerGroup        & \sref{s:ackicker.g}       & LengthGroup          & \sref{s:length.g}        \\    
- AlignmentGroup       & \sref{s:alignment.g}      & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
+ BodyShiftGroup       & \sref{s:alignment.g}      & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
  ApertureGroup        & \sref{s:aperture.g}       & MasterGroup          & \sref{s:master.g}        \\
  BMultipoleGroup      & \sref{s:bmultipole.g}     & OrientationGroup     & \sref{s:orientation.g}   \\ 
  BeamBeamGroup        & \sref{s:beam.beam.g}      & OriginEleGroup       & \sref{s:origin.ele.g}    \\
@@ -44,7 +44,7 @@ These sub-groups also inherit from \vn{BaseEleParameterGroup}:
 To see which element types contain a given group, use the \vn{info(::EleParameterGroup)}
 method. Example:
 \begin{example}
-  julia> info(AlignmentGroup)
+  julia> info(BodyShiftGroup)
   ApertureGroup: Vacuum chamber aperture.
   ...
   Found in:
@@ -104,13 +104,13 @@ The parameters of this group are:
 \newpage
 
 %---------------------------------------------------------------------------------------------------
-\section{AlignmentGroup}
+\section{BodyShiftGroup}
 \label{s:alignment.g}
 
 \begin{figure}[bt]
 \centering \includegraphics{alignment-ref.pdf} 
 \caption[Element alignment.]  
-{AlignmentGroup parameters The reference point is the origin
+{BodyShiftGroup parameters The reference point is the origin
 about which the element alignment is calculated. 
 A) For straight elements, the reference point is in the center of the element. 
 For \vn{Bend} elements, the reference point is at the midpoint of the chord connecting
@@ -127,7 +127,7 @@ the $x$-axis.
 }  \label{f:alignment}
 \end{figure}
 
-The \vn{AlignmentGroup} gives the alignment (position and angular orientation) of the physical element 
+The \vn{BodyShiftGroup} gives the alignment (position and angular orientation) of the physical element 
 relative to the nominal position defined by the branch coordinates (\sref{s:orient}).
 Alignment is specified with respect to the ``alignment reference point'' of an element as shown
 in Fig~\ref{s:alignment}. The \vn{Bend} reference point is chosen to be the center of the chord
@@ -136,7 +136,7 @@ This reference point was chosen over using the midpoint on the reference orbit a
 common simulation problem is to simulate a bend with a \vn{z_rot} keeping the entrance and exit
 endpoints fixed.
 
-The parameters of the \vn{AlignmentGroup} are:
+The parameters of the \vn{BodyShiftGroup} are:
 \begin{example}
   offset::Vector - $[x, y, z]$ offset.
   x_rot::Number  - Rotation around the x-axis.
@@ -148,12 +148,12 @@ orientation of the \vn{Girder} position. If there is no supporting \vn{Girder}, 
 parameters are with respect to the branch reference coordinates. There are output alignment
 parameters:
 \begin{example}
-  q_align::Quaternion     - Quaternion representation of x_rot, y_rot, z_rot.
+  q_shift::Quaternion     - Quaternion representation of x_rot, y_rot, z_rot.
   offset_tot::Vector      - $[x, y, z]$ offset.
   x_rot_tot::Number       - Rotation around the x-axis.
   y_rot_tot::Number       - Rotation around the z-axis.
   z_rot_tot::Number       - Rotation around the z-axis. 
-  q_align_tot::Quaternion - Quaternion  representation of tot rotations.
+  q_shift_tot::Quaternion - Quaternion  representation of tot rotations.
 \end{example}
 The ``total alignment'' parameters which have a \vn{_tot} suffix are always the alignment 
 of the element with with respect to the branch coordinates.
@@ -165,8 +165,8 @@ The total alignment is computed by \accellat based upon the relative alignment a
 of any \vn{Girder}. \vn{Girder} elements themselves also have both relative and total
 alignments since Girders can support other Girders.
 
-The \vn{q_align} output parameter gives the quaternion representation of 
-\vn{x_rot}, \vn{y_rot} and \vn{z_rot}. Similarly, the\vn{q_align_tot} output parameter gives the
+The \vn{q_shift} output parameter gives the quaternion representation of 
+\vn{x_rot}, \vn{y_rot} and \vn{z_rot}. Similarly, the\vn{q_shift_tot} output parameter gives the
 quaternion representation of \vn{x_rot_tot}, \vn{y_rot_tot} and \vn{z_rot_tot}.
 
 %---------------------------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ The parameters of this group are:
   aperture_at::BodyLoc.T        - Aperture location. Default: BodyLoc.ENTRANCE_END
   wall::Wall2D                  - Aperture defined by vertex array.
   custom_aperture::Dict         - Custom aperture information.
-  aperture_shifts_with_alignment::Bool 
+  aperture_shifts_with_body::Bool 
                                 - Alignment affects aperture? Default: false.
 \end{example}
 
@@ -895,7 +895,7 @@ The components of this group are:
 
 The \vn{OriginEleGroup} is used with \vn{Fiducial}, \vn{FloorShift}, and \vn{Girder} elements.
 The \vn{OriginEleGroup} is used to set the coordinate reference frame from which 
-the orientation set by the \vn{AlignmentGroup} is measured. To specify that the floor coordinates are
+the orientation set by the \vn{BodyShiftGroup} is measured. To specify that the floor coordinates are
 to be used, set the \vn{origin_ele} to \vn{NULL_ELE}. Typically this is the same as using the
 beginning element of the first branch of a lattice as long as the first element does not have
 any orientation shifts.

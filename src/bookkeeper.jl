@@ -1,24 +1,27 @@
 #---------------------------------------------------------------------------------------------------
-# bookkeeper!(Lattice)
+# bookkeeper!(Lattice; init::Bool = false)
 
 """
-    bookkeeper!(lat::Lattice)
+    bookkeeper!(lat::Lattice; init::Bool = false)
 
 All Lattice bookkeeping. For example, if the reference energy is changed at the start of a branch the 
 bookkeeping code will propagate that change through the reset of the lattice. 
+
+If `init` is set `true`, maximal bookkeeping will be done. 
+Setting `true` meant to be used when the lattice is instantiated.
 """ bookkeeper!(lat::Lattice)
 
-function bookkeeper!(lat::Lattice)
-  if !lat.parameters_have_changed; return; end
+function bookkeeper!(lat::Lattice; init::Bool = false)
+  if !lat.parameters_have_changed && !init; return; end
   lat.parameters_have_changed = false
   push_bookkeeping_state!(lat, autobookkeeping = false, auditing_enabled = false)
 
-  try
+#  try
     # Tracking branch bookkeeping
     for (ix, branch) in enumerate(lat.branch)
       if branch.type != TrackingBranch; continue; end
       branch.pdict[:ix_branch] = ix
-      bookkeeper_tracking_branch!(branch)
+      bookkeeper_tracking_branch!(branch, init = init)
     end
 
     # Check for unbookkeeped parameters
@@ -30,10 +33,10 @@ function bookkeeper!(lat::Lattice)
       end
     end
 
-  catch this_err
-    pop_bookkeeping_state!(lat)
-    rethrow(this_err)
-  end
+#  catch this_err
+#    pop_bookkeeping_state!(lat)
+#    rethrow(this_err)
+#  end
 
   pop_bookkeeping_state!(lat)
   return
@@ -70,23 +73,33 @@ function check_if_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothin
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper_tracking_branch!(Branch)
+# bookkeeper_tracking_branch!(Branch; init = true)
 
 """
-    Internal: bookkeeper_tracking_branch!(branch::Branch)
+    Internal: bookkeeper_tracking_branch!(branch::Branch; init::Bool = false)
 
-Branch bookkeeping. This function is called by `bookkeeper_tracking_branch!(lat::Lattice)`.
-This processes tracking branches only. Lord branches are ignored.
+Branch bookkeeping. This function is called by `bookkeeper!`.
+This processes tracking branches only.
+
+If `init` is set `true`, maximal bookkeeping will be done. 
+Setting `true` meant to be used when the lattice is instantiated.
 """ bookkeeper_tracking_branch!(branch::Branch)
 
-function bookkeeper_tracking_branch!(branch::Branch)
-  if branch.pdict[:type] == LordBranch; return; end
+function bookkeeper_tracking_branch!(branch::Branch; init::Bool = false)
+  if branch.pdict[:type] == LordBranch; error("Confused bookkeeping! Please report this!"); end
 
-  ix_min = branch.pdict[:ix_ele_min_changed]
-  if ix_min > length(branch.ele); return; end
+  if init
+    ix_min = 1
+    ix_max = length(branch.ele)
+    changed = ChangedLedger(true, true, true, true)
+  else
+    ix_min = branch.pdict[:ix_ele_min_changed]
+    if ix_min > length(branch.ele); return; end
+    ix_max = branch.pdict[:ix_ele_max_changed]
+    changed = ChangedLedger()
+  end
+
   ix_min == 1 ? previous_ele = NULL_ELE : previous_ele = branch.ele[ix_min-1]
-  ix_max = branch.pdict[:ix_ele_max_changed]
-  changed = ChangedLedger()
 
   for ele in branch.ele[ix_min:end]
     # If UnionEle or the first super slave then process super lord(s).
@@ -122,7 +135,7 @@ These low level routines (there are several with this signature) are called via 
 ## Arguments
 
 - `ele`           -- Element to do bookkeeping on.
-- `previous_ele`  -- Element in the branch before `ele`. Will be `NULL_ELE` if this is the first branch element.
+- `previous_ele`  -- Element in the branch before `ele`. Will be `NULL_ELE` if `ele` is first element in branch.
 """ bookkeeper_ele!(ele::Ele)
 
 function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
@@ -237,7 +250,7 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
       end
     end
 
-    if group == AlignmentGroup && (group_changed ||changed.this_ele_length)
+    if group == BodyShiftGroup && (group_changed ||changed.this_ele_length)
       if haskey(lord.pdict, :BendGroup)
         bgl = lord.pdict[:BendGroup]
         bgs = slave.pdict[:BendGroup]
@@ -252,8 +265,11 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
         ct = rot(ct, bend_quaternion(0.5*bgs.angle, bg.ref_tilt))
         # translate from beginning of slave to center of slave chord.
         ct.r = ct.r + [0.0, 0.0, 0.5*bgs.l_chord]
-        # Apply total transformation of AlignmentGroup.
-        slave.AlignmentGroup = coord_transform(lord.pdict[:AlignmentGroup], ct)
+        # Apply total transformation of BodyShiftGroup.
+        bs = lord.pdict[:BodyShiftGroup]
+        lord_shift = OrientationGroup(bs.offset, Quaternion(bs.x_rot, bs.y_rot, bs.z_rot))
+        slave_shift = coord_transform(lord_shift, ct)
+        slave.BodyShiftGroup = BodyShiftGroup(slave_shift.r, rot_angles(slave_shift.q)...)
       end
     end
   end
@@ -465,12 +481,19 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
 
   # Not a slave
   else
-    sym1 = param_conflict_check(ele, :L, :L_chord)
+    conflict1 = param_conflict_check(ele, :L, :L_chord)
+    param_conflict_check(ele, :g, :bend_field_ref)
     param_conflict_check(ele, :e1, :e1_rect)
     param_conflict_check(ele, :e2, :e2_rect)
 
-    if haskey(cdict, :angle) && haskey(cdict, :g) && length(sym1) == 1
-      error("Conflict: $(sym1[1]), g, and angle cannot simultaneously be specified for a Bend element $(ele.name)"); end
+    if haskey(cdict, :bend_field_ref)
+      # Use previous_ele for ref parameters since BendGroup is first group to be bookkeeped
+      bg.g = bg.bend_field_ref * C_LIGHT * charge(previous_ele.species_ref_downstream) / previous_ele.pc_ref_downstream
+    end
+
+    if haskey(cdict, :angle) && haskey(cdict, :g) && length(conflict1) == 1
+      error("Conflict: $(conflict1[1]), g, and angle cannot simultaneously be specified for a Bend element $(ele.name)")
+    end
 
     if  haskey(cdict, :angle) && haskey(cdict, :g)
       L = bg.g * bg.angle
@@ -488,7 +511,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
       bg.angle = L * bg.g
     end
 
-    bg.bend_field_ref = bg.g * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
+    bg.bend_field_ref = bg.g * previous_ele.pc_ref_downstream / (C_LIGHT * charge(previous_ele.species_ref_downstream))
 
     if haskey(cdict, :L_chord)
       bg.angle = 2 * asin(bg.L_chord * bg.g / 2)
@@ -703,6 +726,8 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{OrientationGroup},
 
   if has_changed(ele, OrientationGroup) || changed.this_ele_length; changed.floor_position = true; end
   if !changed.floor_position; return; end
+
+  if is_null(previous_ele); return; end   # Happens with beginning element
 
   ele.OrientationGroup = propagate_ele_geometry(previous_ele)
   clear_changed!(ele, OrientationGroup)
@@ -969,3 +994,32 @@ function pop_bookkeeping_state!(lat::Lattice)
   pop!(lat.private[:bookkeeping_state])
 end
 
+#---------------------------------------------------------------------------------------------------
+# set_branch_min_max_changed!
+
+"""
+    function set_branch_min_max_changed!(branch::Branch, ix_ele::Number)
+    function set_branch_min_max_changed!(branch::Branch, ix_ele_min::Number, ix_ele_max::Number)
+
+Sets `branch.ix_ele_min_changed` and `branch.ix_ele_max_changed` to record the indexes at which
+element parameters have changed. This is used by `bookkeeper!` to minimize computation time.
+
+The arguments `ix_ele`, `ix_ele_min`, and `ix_ele_max` are all element indexes where there
+has been a change in parameters.
+
+Note: Elements whose index has shifted but whose parameters have not changed, do not need to be
+marked as changed.
+
+""" set_branch_min_max_changed!
+
+function set_branch_min_max_changed!(branch::Branch, ix_ele::Number)
+  branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ix_ele)
+  branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ix_ele)
+  if !isnothing(branch.lat); branch.lat.parameters_have_changed = true; end
+end
+
+function set_branch_min_max_changed!(branch::Branch, ix_ele_min::Number, ix_ele_max::Number)
+  branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ix_ele_min)
+  branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ix_ele_max)
+  if !isnothing(branch.lat); branch.lat.parameters_have_changed = true; end
+end

@@ -88,21 +88,21 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :amp_function       => ParamInfo(ACKickerGroup,  Function,       "Amplitude function."),
 
-  :offset             => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] offset of element or, for a patch, exit coordinates.", "m"),
-  :x_rot              => ParamInfo(AlignmentGroup, Number,         "X-axis rotation of element or, for a patch, exit coordinates.", "rad"),
-  :y_rot              => ParamInfo(AlignmentGroup, Number,         "Y-axis rotation of element or, for a patch, exit coordinates.", "rad"),
-  :z_rot              => ParamInfo(AlignmentGroup, Number,         "Z-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :offset             => ParamInfo(BodyShiftGroup, Vector{Number}, "[x, y, z] offset of element or, for a patch, exit coordinates.", "m"),
+  :x_rot              => ParamInfo(BodyShiftGroup, Number,         "X-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :y_rot              => ParamInfo(BodyShiftGroup, Number,         "Y-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :z_rot              => ParamInfo(BodyShiftGroup, Number,         "Z-axis rotation of element or, for a patch, exit coordinates.", "rad"),
 
-  :q_align            => ParamInfo(AlignmentGroup, Quaternion,     "Quaternion orientation.", "", OutputGroup),
-  :q_align_tot        => ParamInfo(AlignmentGroup, Quaternion,     "Quaternion orientation including Girder orientation.", "", OutputGroup),
-  :offset_tot         => ParamInfo(AlignmentGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m", OutputGroup),
-  :x_rot_tot          => ParamInfo(AlignmentGroup, Number,         "X-axis element rotation including Girder orientation.", "rad", OutputGroup),
-  :y_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad", OutputGroup),
-  :z_rot_tot          => ParamInfo(AlignmentGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad", OutputGroup),
+  :q_shift            => ParamInfo(BodyShiftGroup, Quaternion,     "Quaternion orientation.", "", OutputGroup),
+  :q_shift_tot        => ParamInfo(BodyShiftGroup, Quaternion,     "Quaternion orientation including Girder orientation.", "", OutputGroup),
+  :offset_tot         => ParamInfo(BodyShiftGroup, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m", OutputGroup),
+  :x_rot_tot          => ParamInfo(BodyShiftGroup, Number,         "X-axis element rotation including Girder orientation.", "rad", OutputGroup),
+  :y_rot_tot          => ParamInfo(BodyShiftGroup, Number,         "Y-axis element rotation including Girder orientation.", "rad", OutputGroup),
+  :z_rot_tot          => ParamInfo(BodyShiftGroup, Number,         "Z-axis element rotation including Girder orientation.", "rad", OutputGroup),
 
   :aperture_shape     => ParamInfo(ApertureGroup,  ApertureShape,  "Aperture shape. Default is ELLIPTICAL."),
   :aperture_at        => ParamInfo(ApertureGroup,  BodyLoc.T,      "Aperture location. Default is BodyLoc.ENTRANCE_END."),
-  :aperture_shifts_with_alignment
+  :aperture_shifts_with_body
                       => ParamInfo(ApertureGroup,  Bool,           "Do element alignment shifts move the aperture?"),
   :x_limit            => ParamInfo(ApertureGroup,  Vector{Number}, "Min/Max horizontal aperture limits.", "m"),
   :y_limit            => ParamInfo(ApertureGroup,  Vector{Number}, "Min/Max vertical aperture limits.", "m"),
@@ -598,14 +598,14 @@ end
 
 Table of what element groups are associated with what element types.
 Order is important. Bookkeeping routines rely on: 
- - `LengthGroup` being first (`LengthGroup` bookkeeping may be done a second time if `BendGroup` modifies `L`).
+ - `LengthGroup` being first (except for a `Bend` where BendGroup is `first`).
  - `BendGroup` after `ReferenceGroup` and `MasterGroup` (in case the reference energy is changing).
  - `BMultipoleGroup` and `EMultipoleGroup` after `MasterGroup` (in case the reference energy is changing).
  - `RFCommonGroup` comes last (triggers autoscale/autophase and `ReferenceGroup` correction).
 """ PARAM_GROUPS_LIST
 
 base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, 
-         DownstreamReferenceGroup, OrientationGroup, TrackingGroup, AlignmentGroup, ApertureGroup]
+         DownstreamReferenceGroup, OrientationGroup, TrackingGroup, BodyShiftGroup, ApertureGroup]
 multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
 general_group_list = [base_group_list..., multipole_group_list...]
 
@@ -613,17 +613,17 @@ PARAM_GROUPS_LIST = Dict(
     ACKicker            => [general_group_list..., ACKickerGroup],
     BeamBeam            => [base_group_list..., BeamBeamGroup],
     BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
-    Bend                => [general_group_list..., BendGroup],
+    Bend                => [BendGroup, general_group_list...],
     Collimator          => [base_group_list...],
     Converter           => [base_group_list...],
     CrabCavity          => [base_group_list...],
     Drift               => [base_group_list...],
     EGun                => [general_group_list...],
-    Fiducial            => [DescriptionGroup, OrientationGroup, AlignmentGroup, OriginEleGroup],
-    FloorShift          => [DescriptionGroup, OrientationGroup, AlignmentGroup, OriginEleGroup],
+    Fiducial            => [DescriptionGroup, OrientationGroup, BodyShiftGroup, OriginEleGroup],
+    FloorShift          => [DescriptionGroup, OrientationGroup, BodyShiftGroup, OriginEleGroup],
     Foil                => [base_group_list...],
     Fork                => [base_group_list..., ForkGroup],
-    Girder              => [LengthGroup, DescriptionGroup, OrientationGroup, AlignmentGroup, OriginEleGroup, GirderGroup],
+    Girder              => [LengthGroup, DescriptionGroup, OrientationGroup, BodyShiftGroup, OriginEleGroup, GirderGroup],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
     LCavity             => [base_group_list..., MasterGroup, RFAutoGroup, RFGroup],
@@ -651,7 +651,7 @@ end
 
 ELE_PARAM_GROUP_INFO = Dict(
   ACKickerGroup         => EleParameterGroupInfo("ACKicker element parameters.", false),
-  AlignmentGroup        => EleParameterGroupInfo("Element position/orientation shift.", false),
+  BodyShiftGroup        => EleParameterGroupInfo("Element position/orientation shift.", false),
   ApertureGroup         => EleParameterGroupInfo("Vacuum chamber aperture.", false),
   BeamBeamGroup         => EleParameterGroupInfo("BeamBeam element parameters.", false),
   BendGroup             => EleParameterGroupInfo("Bend element parameters.", true),
