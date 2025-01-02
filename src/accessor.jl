@@ -470,7 +470,7 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     ag = ele.pdict[:AlignmentGroup]
     orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = OrientationGroup(ele.offset, ele.q_align)
-    return floor_transform(orient_ele, orient_girder).r
+    return coord_transform(orient_ele, orient_girder).r
 
   elseif sym == :x_rot_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
@@ -478,7 +478,7 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     ag = ele.pdict[:AlignmentGroup]
     orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = OrientationGroup(ele.offset, ele.q_align)
-    return rot_angles(floor_transform(orient_ele, orient_girder).q)[1]
+    return rot_angles(coord_transform(orient_ele, orient_girder).q)[1]
 
   elseif sym == :y_rot_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
@@ -486,7 +486,7 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     ag = ele.pdict[:AlignmentGroup]
     orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = OrientationGroup(ele.offset, ele.q_align)
-    return rot_angles(floor_transform(orient_ele, orient_girder).q)[2]
+    return rot_angles(coord_transform(orient_ele, orient_girder).q)[2]
 
   elseif sym == :z_rot_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
@@ -494,7 +494,7 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     ag = ele.pdict[:AlignmentGroup]
     orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = OrientationGroup(ele.offset, ele.q_align)
-    return rot_angles(floor_transform(orient_ele, orient_girder).q)[3]
+    return rot_angles(coord_transform(orient_ele, orient_girder).q)[3]
 
   elseif sym == :q_align_tot
     if :AlignmentGroup ∉ keys(ele.pdict); return NaN; end
@@ -502,7 +502,7 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     ag = ele.pdict[:AlignmentGroup]
     orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_align_tot)
     orient_ele = OrientationGroup(ele.offset, ele.q_align)
-    return floor_transform(orient_ele, orient_girder).q
+    return coord_transform(orient_ele, orient_girder).q
   end
 
   error("Parameter $sym is not in the output group $output_group.")
