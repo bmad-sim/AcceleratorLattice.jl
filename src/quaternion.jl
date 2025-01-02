@@ -1,18 +1,4 @@
 #---------------------------------------------------------------------------------------------------
-# AxisAngle
-
-"""
-    struct AxisAngle
-
-The `axis` vector is not necessarily normalized.
-""" AxisAngle
-
-struct AxisAngle
-  angle::Number
-  axis::Vector{Number}
-end
-
-#---------------------------------------------------------------------------------------------------
 # rotX, rotY, rotZ
 
 """
@@ -32,16 +18,20 @@ rotZ(angle::Number) = Quaternion(cos(angle/2), [0, 0, sin(angle/2)])
 
 """
     Quaternion(aa::AxisAngle) 
-    Quaternion(m::Matrix{T}) 
-    Quaternion(x_rot::Real, y_rot::Real, z_rot::Real)
-    Quaternion(qv::Vector)  # 4-vector
+    Quaternion(m::Matrix{T})
+    Quaternion(x_rot::Number, y_rot::Number, z_rot::Number)
+    Quaternion(axis::Vector, angle::Number)
+    Quaternion() -> Unit Quaternion
 
-Quaternion constructors. 
+`Quaternion` constructors. 
+- `Quaternion` from axis rotations is computed by `rotY(y_rot) * rotX(x_rot) * rotZ(z_rot)`
+- The `axis` vector does not have to be normalized.
+
 """ Quaternion
 
-Quaternion(qv::Vector) = Quaternion(qv[1], qv[2:end])
+Quaternion() = Quaternion(1.0, 0.0, 0.0, 0.0)
 
-Quaternion(x_rot::Real, y_rot::Real, z_rot::Real) = rotY(y_rot) * rotX(x_rot) * rotZ(z_rot)
+Quaternion(x_rot::Number, y_rot::Number, z_rot::Number) = rotY(y_rot) * rotX(x_rot) * rotZ(z_rot)
 
 function Quaternion(aa::AxisAngle) 
   if aa.angle == 0; return UNIT_QUAT; end
@@ -71,20 +61,42 @@ function Quaternion(m::Matrix{T}) where T <: Number
   end
 end
 
+function Quaternion(axis::Vector, angle::Number)
+  axis = axis / norm(axis)
+  return Quaternion(cos(0.5*angle), axis*sin(0.5*angle))
+end
+
 #---------------------------------------------------------------------------------------------------
 
 const UNIT_QUAT = Quaternion(1.0, [0.0, 0.0, 0.0])
 
 #---------------------------------------------------------------------------------------------------
+# rot!
+
+"""
+    rot!(v::Vector{T}, q::Quaternion) where {T} -> Vector{T}
+
+Rotation of a 3-vector `v` by a quaternion `q`.
+""" rot!(v::Vector{T}, q::Quaternion) where {T}
+
+function rot!(v::Vector{T}, q::Quaternion) where {T}
+  vv = q * v / q
+  v[1] = vv.q1
+  v[2] = vv.q2
+  v[3] = vv.q3
+  return v
+end
+
+#---------------------------------------------------------------------------------------------------
 # rot
 
 """
-    rot(q::Quaternion, v::Vector{T}) where {T} -> Vector{T}
+    rot(v::Vector{T}, q::Quaternion) where {T} -> Vector{T}
 
 Rotation of a 3-vector `v` by a quaternion `q`.
-""" rot
+""" rot(v::Vector{T}, q::Quaternion) where {T}
 
-function rot(q::Quaternion, v::Vector{T}) where {T}
+function rot(v::Vector{T}, q::Quaternion) where {T}
   vv = q * v / q
   return [vv.q1, vv.q2, vv.q3]
 end

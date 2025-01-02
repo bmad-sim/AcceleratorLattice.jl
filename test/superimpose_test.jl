@@ -38,7 +38,6 @@ b2 = lat.branch[2]
   @test [e.name for e in b1.ele] == 
                ["beginning",  "zm1",  "zm2",  "m1",  "zm3",  "d1!1",  "zs2", "d1!2",  "lc1!s1",
                 "zm4",  "lc1!s2",  "d1!1",  "zs2!s1",  "m2",  "zs2!s2",  "d1!2",  "d3",  "end_ele"]
-
   @test [e.name for e in b2.ele] == ["lc1", "zs2"]
   @test b1.ele[9].super_lords  == [b2.ele[1]]
   @test b1.ele[11].super_lords  == [b2.ele[1]]
@@ -47,7 +46,32 @@ b2 = lat.branch[2]
   @test b2.ele[1].slaves == [b1.ele[9], b1.ele[11]]
   @test b2.ele[2].slaves == [b1.ele[13], b1.ele[15]]
   @test length.([sup_m1, sup_sm1, sup_zs2, sup_zm4, sup_m2, sup_zm2, sup_zm3]) == [1, 1, 2, 1, 1, 1, 1]
-  #@test 
+  @test [e.slave_status for e in b1.ele] ==
+        [Slave.NOT, Slave.NOT, Slave.NOT, Slave.NOT, Slave.NOT, Slave.NOT,
+         Slave.NOT, Slave.NOT, Slave.SUPER, Slave.NOT, Slave.SUPER, Slave.NOT, 
+         Slave.SUPER, Slave.NOT, Slave.SUPER, Slave.NOT, Slave.NOT, Slave.NOT]
+  @test [e.lord_status for e in b1.ele] ==
+        [Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT,
+         Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT, 
+         Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT, Lord.NOT]
+  @test [e.slave_status for e in b2.ele] == [Slave.NOT, Slave.NOT]
+  @test [e.lord_status for e in b2.ele] == [Lord.SUPER, Lord.SUPER]
+
+  @test isapprox([b1[9].extra_dtime_ref, b1[11].extra_dtime_ref, b2[1].extra_dtime_ref], 
+              [7.0e-9, 3.0e-9, 10.0e-9], rtol = 1e-14)
+  @test isapprox([b1[9].time_ref, b1[11].time_ref, b2[1].time_ref], 
+          [3.3399931243559422e-9, 1.2676210973138516e-8, 3.3399931243559422e-9], rtol = 1e-14)
+  @test isapprox([b1[9].time_ref_downstream, b1[11].time_ref_downstream, b2[1].time_ref_downstream], 
+          [ 1.2676210973138516e-8, 1.6677084590208777e-8, 1.6677084590208777e-8], rtol = 1e-14)
+  @test isapprox([b1[9].dE_ref, b1[11].dE_ref, b2[1].dE_ref], [1.4e7, 6.0e6, 2.0e7], rtol = 1e-14)
+  @test isapprox([b1[9].E_tot_ref, b1[11].E_tot_ref, b2[1].E_tot_ref], 
+          [1.0013047484537676e7, 2.4013047484537676e7, 1.0013047484537676e7], rtol = 1e-14)
+  @test isapprox([b1[9].E_tot_ref_downstream, b1[11].E_tot_ref_downstream, b2[1].E_tot_ref_downstream],
+          [2.4013047484537676e7, 3.001304748453768e7, 3.0013047484537676e7], rtol = 1e-14)
+  @test isapprox([b1[9].voltage, b1[11].voltage, b2[1].voltage], [7.0e7, 3.0e7, 10.0e7], rtol = 1e-14)
+  @test isapprox([b1[9].gradient, b1[11].gradient, b2[1].gradient], [1.0e8, 1.0e8, 1.0e8], rtol = 1e-14)
+
+  ##@test 
 end
 
 #---------------------------------------------------------------------------------------------------

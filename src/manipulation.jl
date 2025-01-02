@@ -266,8 +266,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   # representing the original drift in `branch.drift_masters` so that the names of drift slices can 
   # be properly formed using a `!N` suffix where N is an integer.
   if typeof(slave1) == Drift
-    slave2 = copy(slave1)
-    insert!(branch.ele, slave1.ix_ele+1, slave2)  # Just after slave1
+    slave2 = insert!(branch, slave1.ix_ele+1, slave1)  # Just after slave1
 
     if haskey(slave1.pdict, :drift_master) 
       master = slave1.pdict[:drift_master]
@@ -295,8 +294,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
 
   # Split case 2: Element to be split is a super_slave. In this case no new lord is generated.
   if haskey(slave1.pdict, :super_lords)
-    slave2 = copy(slave1)
-    insert!(branch.ele, slave1.ix_ele+1, slave2)  # Just after slave1
+    slave2 = insert!(branch, slave1.ix_ele+1, slave1)  # Just after slave1
     slave1.L = s_split - slave1.s
     slave2.L = slave1.s_downstream - s_split
     slave1.pdict[:changed][AllGroup] = true
@@ -323,16 +321,14 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   # Important for multipass control that original slave1 is put in the super lord branch
   # and the copies are in the tracking branch.
 
-  lord = slave1
+  lord = copy(slave1)
 
-  slave1 = copy(slave1)
   pop!(slave1.pdict, :multipass_lord, nothing)
   slave1.pdict[:super_lords] = Vector{Ele}([lord])
   slave1.slave_status = Slave.SUPER
 
   branch.ele[slave1.ix_ele] = slave1
-  slave2 = copy(slave1)
-  insert!(branch.ele, slave1.ix_ele+1, slave2)
+  slave2 = insert!(branch, slave1.ix_ele+1, slave1)
   slave1.L = s_split - lord.s 
   slave2.L = lord.s_downstream - s_split
   slave1.pdict[:changed][AllGroup] = true

@@ -28,13 +28,13 @@ function propagate_ele_geometry(::Type{ZERO_LENGTH}, fstart::OrientationGroup, e
 end
 
 function propagate_ele_geometry(::Type{STRAIGHT}, fstart::OrientationGroup, ele::Ele)
-  r_floor = fstart.r + rot(fstart.q, [0.0, 0.0, ele.L])
+  r_floor = fstart.r + rot([0.0, 0.0, ele.L], fstart.q)
   return OrientationGroup(r_floor, fstart.q)
 end
 
 function propagate_ele_geometry(::Type{CIRCULAR}, fstart::OrientationGroup, ele::Ele)
-  df = floor_transform(ele.BendGroup, ele.L)
-  return floor_transform(fstart, df)
+  df = coord_transform(ele.L, ele.BendGroup.angle, ele.BendGroup.tilt_ref)
+  return coord_transform(fstart, df)
 end
 
 function propagate_ele_geometry(::Type{PATCH_GEOMETRY}, fstart::OrientationGroup, ele::Ele)
@@ -46,54 +46,94 @@ function propagate_ele_geometry(::Type{CRYSTAL_GEOMETRY}, fstart::OrientationGro
 end
 
 #---------------------------------------------------------------------------------------------------
-# floor_transform
+# coord_transform
 
 """
-    floor_transform(bend::BendGroup, L::Number) -> OrientationGroup
+    coord_transform(ds::Number, g::Number, tilt_ref::Number = 0) -> OrientationGroup
 
-Returns the transformation of the coordinates from the beginning of a bend to the end of the bend.
+Returns the coordinate transformation from one point on the arc with radius `1/g` of a Bend to another
+point that is an arc distance `ds` from the first point.
 
 The transformation is
-  r_end = r_start + rot(q_start, dr)
+  r_end = r_start + rot(dr, q_start)
   q_end = q_start * dq
-""" floor_transform(bend::BendGroup, L::Number)
+""" coord_transform(ds::Number, g::Number, tilt_ref::Number)
 
-function floor_transform(bend::BendGroup, L)
-  qa = rotY(bend.angle)
-  r_vec = [-L * sinc(bend.angle/(2*pi)) * sin(bend.angle), 0.0, L * sinc(bend.angle/pi)]
+function coord_transform(ds::Number, g::Number, tilt_ref::Number)
+  if g == 0
+    return OrientationGroup([0.0, 0.0, ds], Quaternion())
 
-  if bend.tilt_ref == 0
-    return OrientationGroup(r_vec, qa)
   else
-    qt = rotZ(-bend.tilt_ref)
-    return OrientationGroup(rot(qt, r_vec), qt * qa * inv(qt))
+    angle = ds/g
+    r_vec = [-ds * sinc(angle/(2*pi)) * sin(angle), 0.0, ds * sinc(angle/(2*pi))]
+
+    qa = rotY(-angle)
+    if tilt_ref == 0
+      return OrientationGroup(r_vec, qa)
+    else
+      qt = rotZ(-tilt_ref)
+      return OrientationGroup(rot(r_vec, qt), qt * qa * inv(qt))
+    end
   end
 end
 
 #---------------------------------------------------------------------------------------------------
-# floor_transform
+# coord_transform
 
 """
-    floor_transform(floor0::OrientationGroup, dfloor::OrientationGroup) -> OrientationGroup
+    coord_transform(coord0::OrientationGroup, dcoord::OrientationGroup) -> OrientationGroup
 
-Returns coordinate transformation of `dfloor` applied to `floor0`.
-""" floor_transform(floor0::OrientationGroup, dfloor::OrientationGroup)
+Returns coordinate transformation of `dcoord` applied to `coord0`.
+""" coord_transform(coord0::OrientationGroup, dcoord::OrientationGroup)
 
-function floor_transform(floor0::OrientationGroup, dfloor::OrientationGroup)
-  r_floor = floor0.r + rot(floor0.q, dfloor.r)
-  q_floor = floor0.q * dfloor.q
-  return OrientationGroup(r_floor, q_floor)
+function coord_transform(coord0::OrientationGroup, dcoord::OrientationGroup)
+  r_coord = coord0.r + rot(dcoord.r, coord0.q)
+  q_coord = coord0.q * dcoord.q
+  return OrientationGroup(r_coord, q_coord)
+end
+
+#---------------------------------------------------------------------------------------------------
+# bend_quaternion
+
+"""
+    bend_quaternion(angle::Number, tilt_ref::Number) -> Quaternion
+
+Quaternion representing the coordinate rotation for a bend through an angle `angle` with
+a `tilt_ref` reference tilt.
+""" bend_quaternion
+
+return bend_quaternion(angle::Number, tilt_ref::Number)
+  if tilt_ref == 0
+    return rotY(-angle)
+  else
+    qt = rotZ(-tilt_ref)
+    return qt * rotY(-angle) * inv(qt)
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# rot!
+
+"""
+    rot!(coord::OrientationGroup, q::Quaternion) -> OrientationGroup
+
+Rotates coordinate position `coord` by `q`.
+""" 
+function rot!(coord::OrientationGroup, q::Quaternion)
+  coord.r = rot(coord.r, q)
+  coord.q = q * coord.q
+  return coord
 end
 
 #---------------------------------------------------------------------------------------------------
 # rot
 
 """
-    rot(floor0::OrientationGroup, q::Quaternion) -> OrientationGroup
+    rot(coord::OrientationGroup, q::Quaternion) -> OrientationGroup
 
-Rotates by `q` the floor position `floor0`.
+Rotates coordinate position `coord` by `q`.
 """ 
-function rot(floor0::OrientationGroup, q::Quaternion)
-  return OrientationGroup(r = rot(q, floor0.r), q = q * floor0.q)
+function rot(coord::OrientationGroup, q::Quaternion)
+  return OrientationGroup(r = rot(coord0.r, q), q = q * coord0.q)
 end
 
