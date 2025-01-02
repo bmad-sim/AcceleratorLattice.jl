@@ -262,6 +262,7 @@ function new_tracking_branch!(lat::Lattice, bline::BeamLine)
     add_beamline_ele_to_branch!(branch, BeamLineItem(bline.pdict[:end_ele]))
   else
     @ele end_ele = Marker()
+    end_ele.pdict[:name] = "end$(length(lat.branch))"
     add_beamline_ele_to_branch!(branch, BeamLineItem(end_ele))
   end
 
@@ -333,7 +334,7 @@ function Lattice(root_lines::Vector{BeamLine}; name::AbstractString = "lat")
   new_lord_branch!(lat, "girder", GirderBranch)
 
   init_multipass_bookkeeper!(lat)
-  bookkeeper!(lat)
+  bookkeeper!(lat, init = true)
   lat_sanity_check(lat)
 
   lat.auditing_enabled = true

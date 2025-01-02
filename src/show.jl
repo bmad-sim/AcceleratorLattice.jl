@@ -25,7 +25,7 @@ but not a key. This restriction is not fundamental and could be remove with a li
 """ show_column2
 
 show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol}}(
-  AlignmentGroup => Dict{Symbol,Symbol}(
+  BodyShiftGroup => Dict{Symbol,Symbol}(
     :offset           => :offset_tot,
     :x_rot            => :x_rot_tot,
     :y_rot            => :y_rot_tot,
@@ -34,7 +34,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
 
   ApertureGroup => Dict{Symbol,Symbol}(
     :x_limit          => :y_limit,
-    :aperture_shape   => :aperture_shifts_with_alignment,
+    :aperture_shape   => :aperture_shifts_with_body,
 
   ),
 

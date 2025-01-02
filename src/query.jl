@@ -102,7 +102,7 @@ end
     is_null(ele::Ele)
     is_null(branch::Branch
 
-Test if argument is either of the NULL_ELE or NULL_BRANCH constants.
+Test if argument is either of the `NULL_ELE` or `NULL_BRANCH` constants.
 """ is_null
 
 is_null(ele::Ele) = return (ele.name == "NULL_ELE")

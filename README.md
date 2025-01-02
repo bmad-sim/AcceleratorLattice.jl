@@ -49,7 +49,7 @@ An individual element looks like:
 Ele: "qf" (b1>>2)   Quadrupole
   branch             Branch 1: "b1" 
   ix_ele             2 
-  AlignmentGroup:
+  BodyShiftGroup:
     offset               [0.0, 0.0, 0.0] m            offset_tot           [0.0, 0.0, 0.0] m
     x_rot                0 rad                        x_rot_tot            0 rad
     y_rot                0 rad                        y_rot_tot            0 rad

@@ -23,10 +23,11 @@ end
     Base.copy(branch::Branch)
 
 Shallow copy constructer for a lattice branch. 
+Note: copy will point to the same lattice as the input branch.
 """ Base.copy(branch::Branch)
 
 function Base.copy(branch::Branch)
-  branch_copy = Branch(branch.name, copy(branch.ele), copy(branch.pdict))
+  branch_copy = Branch(branch.name, branch.lat, copy(branch.ele), copy(branch.pdict))
   for ix in 1:length(branch.ele)
     branch_copy.ele[ix] = copy(branch.ele[ix])
     branch_copy.ele[ix].branch => branch_copy
@@ -198,6 +199,40 @@ function Base.push!(branch::Branch, ele::Ele; adjust_orientation = true)
   return ele
 end
 
+#---------------------------------------------------------------------------------------------------
+# create_unique_ele_names!
+
+"""
+    create_unique_ele_names!(lat::Lattice; suffix::AbstractString = "!#")
+
+Modifies a lattice so that all elements have a unique name.
+
+For elements whose names are not unique in lattice `lat`, 
+the `suffix` arg is appended to the element name
+and an integer is substituted for  the "#" character in the suffix arg starting from `1`
+for the first instance, etc. 
+If no "#" character exists, a "#" character is appended to the suffix arg.
+
+## Example
+```
+  create_unique_ele_names!(lat, suffix = "_#x") 
+```
+In this example, elements that originally have names like `"abc"` would, after the function call,
+have names `"abc_1x"`, `"abc_2x"`, etc.
+"""
+function create_unique_ele_names!(lat::Lattice; suffix::AbstractString = "!#")
+  if !occursin("#", suffix); suffix = suffix * "#"; end
+  eled = lat_ele_dict(lat)
+
+  for (name, evec) in eled
+    if length(evec) == 1; continue; end
+    for (ix, ele) in enumerate(evec)
+      ele.name = ele.name * replace(suffix, "#" => string(ix))
+    end
+  end
+
+  return
+end
 
 #---------------------------------------------------------------------------------------------------
 # split!(branch, s_split)
@@ -334,7 +369,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   slave1.pdict[:changed][AllGroup] = true
   slave2.pdict[:changed][AllGroup] = true
  
-  sbranch = branch.lat.branch["super"]
+  sbranch = branch.lat[SuperBranch]
   push!(sbranch.ele, lord)
   lord.pdict[:slaves] = Vector{Ele}([slave1, slave2])
   lord.lord_status = Lord.SUPER
@@ -347,101 +382,3 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   return slave2, true
 end
 
-#---------------------------------------------------------------------------------------------------
-# set_drift_slice_names
-
-"""
-"""
-
-function set_drift_slice_names(drift::Drift)
-  # Drift slice case
-
-  if haskey(drift.pdict, :drift_master)
-    set_drift_slice_names(drift.pdict[:drift_master])
-    return
-  end
-
-  # Drift master case
-
-  if !haskey(drift.pdict, :slices); return; end
-
-  n = 0
-  for slice in drift.pdict[:slices]
-    # A slice may have been replaced by an element via superposition so need to check that a
-    # slice still represents a valid element.
-    if !haskey(slice.pdict, :branch); continue; end
-    branch = slice.branch
-    if length(branch.ele) < slice.ix_ele; continue; end
-    if !(branch.ele[slice.ix_ele] === slice); continue; end
-    n += 1
-    slice.name = drift.name * "!$n"
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# set_super_slave_names!
-
-"""
-    Internal: set_super_slave_names!(lord::Ele) -> nothing
-
-`lord` is a super lord and all of the slaves of this lord will have their name set.
-"""
-
-function set_super_slave_names!(lord::Ele)
-  if lord.lord_status != Lord.SUPER; error("Argument is not a super lord: $(ele_name(lord))"); end
-
-  name_dict = Dict{String,Int}()
-  for slave in lord.slaves
-    if length(slave.super_lords) == 1
-      slave.name = lord.name
-    else
-      slave.name = ""
-      for this_lord in slave.super_lords
-        slave.name = slave.name * "!" * this_lord.name
-      end
-      slave.name = slave.name[2:end]
-    end
-
-    name_dict[slave.name] = get(name_dict, slave.name, 0) + 1
-  end
-
-  index_dict = Dict{String,Int}()
-  for slave in lord.slaves
-    if name_dict[slave.name] == 1
-      slave.name = slave.name * "!s"
-    else
-      index_dict[slave.name] = get(index_dict, slave.name, 0) + 1
-      slave.name = slave.name * "!s" * string(index_dict[slave.name])
-    end
-  end
-end
-
-#---------------------------------------------------------------------------------------------------
-# set_branch_min_max_changed!
-
-"""
-    function set_branch_min_max_changed!(branch::Branch, ix_ele::Number)
-    function set_branch_min_max_changed!(branch::Branch, ix_ele_min::Number, ix_ele_max::Number)
-
-Sets `branch.ix_ele_min_changed` and `branch.ix_ele_max_changed` to record the indexes at which
-element parameters have changed. This is used by `bookkeeper!` to minimize computation time.
-
-The arguments `ix_ele`, `ix_ele_min`, and `ix_ele_max` are all element indexes where there
-has been a change in parameters.
-
-Note: Elements whose index has shifted but whose parameters have not changed, do not need to be
-marked as changed.
-
-""" set_branch_min_max_changed!
-
-function set_branch_min_max_changed!(branch::Branch, ix_ele::Number)
-  branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ix_ele)
-  branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ix_ele)
-  if !isnothing(branch.lat); branch.lat.parameters_have_changed = true; end
-end
-
-function set_branch_min_max_changed!(branch::Branch, ix_ele_min::Number, ix_ele_max::Number)
-  branch.ix_ele_min_changed = min(branch.ix_ele_min_changed, ix_ele_min)
-  branch.ix_ele_max_changed = max(branch.ix_ele_max_changed, ix_ele_max)
-  if !isnothing(branch.lat); branch.lat.parameters_have_changed = true; end
-end

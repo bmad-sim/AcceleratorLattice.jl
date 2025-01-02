@@ -224,7 +224,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
 
       # Here if a super lord element needs to be constructed.
       lord_list = [] 
-      sbranch = branch.lat.branch["super"]
+      sbranch = lat[SuperBranch]
 
       lord1 = push!(sbranch, super_ele)
       lord1.lord_status = Lord.SUPER
@@ -293,3 +293,73 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
 
   return super_list
 end
+
+#---------------------------------------------------------------------------------------------------
+# set_super_slave_names!
+
+"""
+    Internal: set_super_slave_names!(lord::Ele) -> nothing
+
+`lord` is a super lord and all of the slaves of this lord will have their name set.
+"""
+
+function set_super_slave_names!(lord::Ele)
+  if lord.lord_status != Lord.SUPER; error("Argument is not a super lord: $(ele_name(lord))"); end
+
+  name_dict = Dict{String,Int}()
+  for slave in lord.slaves
+    if length(slave.super_lords) == 1
+      slave.name = lord.name
+    else
+      slave.name = ""
+      for this_lord in slave.super_lords
+        slave.name = slave.name * "!" * this_lord.name
+      end
+      slave.name = slave.name[2:end]
+    end
+
+    name_dict[slave.name] = get(name_dict, slave.name, 0) + 1
+  end
+
+  index_dict = Dict{String,Int}()
+  for slave in lord.slaves
+    if name_dict[slave.name] == 1
+      slave.name = slave.name * "!s"
+    else
+      index_dict[slave.name] = get(index_dict, slave.name, 0) + 1
+      slave.name = slave.name * "!s" * string(index_dict[slave.name])
+    end
+  end
+end
+
+#---------------------------------------------------------------------------------------------------
+# set_drift_slice_names
+
+"""
+"""
+
+function set_drift_slice_names(drift::Drift)
+  # Drift slice case
+
+  if haskey(drift.pdict, :drift_master)
+    set_drift_slice_names(drift.pdict[:drift_master])
+    return
+  end
+
+  # Drift master case
+
+  if !haskey(drift.pdict, :slices); return; end
+
+  n = 0
+  for slice in drift.pdict[:slices]
+    # A slice may have been replaced by an element via superposition so need to check that a
+    # slice still represents a valid element.
+    if !haskey(slice.pdict, :branch); continue; end
+    branch = slice.branch
+    if length(branch.ele) < slice.ix_ele; continue; end
+    if !(branch.ele[slice.ix_ele] === slice); continue; end
+    n += 1
+    slice.name = drift.name * "!$n"
+  end
+end
+
