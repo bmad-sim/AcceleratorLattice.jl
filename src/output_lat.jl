@@ -13,6 +13,6 @@ end
 function Base.write(io::IO, ele::Ele)
 end
 
-function Base.write(io::IO, group::EleParameterGroup)
+function Base.write(io::IO, group::EleParameterParams)
 end
 

@@ -69,12 +69,12 @@ export split!, construct_ele_type, ele_at_s, toggle_integrated!
 export eles_search, eles_substitute_lords!, eles_sort!
 export next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
 export branch, matches_branch, create_ele_vars, eval_str, Vertex1, LatticeGlobal
-export EleParameterGroup, BodyShiftGroup, OrientationGroup, BMultipole, BMultipoleGroup, BeamBeamGroup
-export EMultipole, EMultipoleGroup, BendGroup, ApertureGroup, DescriptionGroup, RFGroup, SolenoidGroup
-export TrackingGroup, LengthGroup, ReferenceGroup, DownstreamReferenceGroup, ForkGroup
-export MasterGroup, LordSlaveStatusGroup, ACKickerGroup
-export GirderGroup, PatchGroup, RFAutoGroup, OutputGroup, full_parameter_name
-export TwissGroup, Twiss1, Wall2D, Vertex1, InitSpinGroup, InitParticleGroup, show_changed
+export EleParameterParams, BodyShiftParams, OrientationParams, BMultipole, BMultipoleParams, BeamBeamParams
+export EMultipole, EMultipoleParams, BendParams, ApertureParams, DescriptionParams, RFParams, SolenoidParams
+export TrackingParams, LengthParams, ReferenceParams, DownstreamReferenceParams, ForkParams
+export MasterParams, LordSlaveStatusParams, ACKickerParams
+export GirderParams, PatchParams, RFAutoParams, OutputParams, full_parameter_name
+export TwissParams, Twiss1, Wall2D, Vertex1, InitSpinParams, InitParticleParams, show_changed
 export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
 export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
 export ele_param_struct_field_to_user_sym, multipole!, index, integer, rot_angles, Quaternion
@@ -88,6 +88,6 @@ export rotX, rotY, rotZ, rot, rot!, bend_quaternion, lat_ele_dict
 export norm
 
 # From SimUtils
-export cos_one
+export one_cos, modulo2, un_sinc, cosc
 
 end # module

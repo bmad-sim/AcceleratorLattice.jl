@@ -49,27 +49,27 @@ An individual element looks like:
 Ele: "qf" (b1>>2)   Quadrupole
   branch             Branch 1: "b1" 
   ix_ele             2 
-  BodyShiftGroup:
+  BodyShiftParams:
     offset               [0.0, 0.0, 0.0] m            offset_tot           [0.0, 0.0, 0.0] m
     x_rot                0 rad                        x_rot_tot            0 rad
     y_rot                0 rad                        y_rot_tot            0 rad
     tilt                 0 rad                        tilt_tot             0 rad
-  ApertureGroup:
+  ApertureParams:
     x_limit                      [NaN, NaN] m         y_limit              [NaN, NaN] m
     aperture_at                  BodyLoc.ENTRANCE_END 
     aperture_type        ApertureShape.ELLIPTICAL 
     misalignment_moves_aperture  true 
-  BMultipoleGroup:
+  BMultipoleParams:
     Order Integrated              Tilt (rad)
         1      false                     0.0                    0.34  Kn1                     0.0  Ks1 (1/m^2)
                                                -0.011341179236737171  Bn1                    -0.0  Bs1 (T/m^1)
-  EMultipoleGroup: No electric multipoles
-  OrientationGroup:
+  EMultipoleParams: No electric multipoles
+  OrientationParams:
     r (r_floor)          [0.0, 0.0, 0.0] m
     q (q_floor)          1.0 + 0.0⋅i + 0.0⋅j + 0.0⋅k 
     theta (theta_floor)  0.0 rad
     phi (phi_floor)      0.0 rad                      psi (psi_floor)      0.0 rad
-  LengthGroup:
+  LengthParams:
     L                    0.6 m                        orientation          1 
     s                    0.0 m                        s_downstream         0.6 m
 ... etc...

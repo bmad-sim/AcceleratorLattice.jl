@@ -155,7 +155,7 @@ function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
   cdict = ele.pdict[:changed]
 
   for param in copy(keys(cdict))
-    if typeof(param) != Symbol    # Something like param = `ReferenceGroup`
+    if typeof(param) != Symbol    # Something like param = `ReferenceParams`
       group = param
     else
       pinfo = ele_param_info(param, throw_error = false)
@@ -168,7 +168,7 @@ function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
     end
   end
 
-  if AllGroup in keys(cdict); pop!(cdict, AllGroup); end
+  if AllParams in keys(cdict); pop!(cdict, AllParams); end
   return
 end
 
@@ -205,20 +205,20 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
 
   # Transfer info from lord to slave
   for group in PARAM_GROUPS_LIST[typeof(lord)]
-    if group == LengthGroup; continue; end     # Do not modify length of slave
-    if group == DownstreamReferenceGroup; continue; end
-    if group == OrientationGroup; continue; end
-    if group == LordSlaveStatusGroup; continue; end
+    if group == LengthParams; continue; end     # Do not modify length of slave
+    if group == DownstreamReferenceParams; continue; end
+    if group == OrientationParams; continue; end
+    if group == LordSlaveStatusParams; continue; end
 
     group_changed = has_changed(lord, group)
-    if group_changed && group != AlginmentGroup
+    if group_changed && group != AlginmentParams
       slave.pdict[Symbol(group)] = copy(lord.pdict[Symbol(group)])
       slave.pdict[:changed][group] = "changed"
     end
 
     # Note: BodyLoc.CENTER cannot be handled. 
     # Possible solution: Add aperture_offset parameter to group.
-    if group == ApertureGroup && group_changed && length(lord.slaves) > 1
+    if group == ApertureParams && group_changed && length(lord.slaves) > 1
       lord.orientation == 1 ? ixs = ix_slave : ixs = length(lord.slaves) + 1 - ix_slave
       if slave.aperture_at == BodyLoc.ENTRANCE_END
         if ixs > 1; slave.aperture_at = BodyLoc.NOWHERE; end
@@ -235,28 +235,28 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
       end
     end
 
-    if group == EMultipoleGroup && (group_changed ||changed.this_ele_length)
-      for (ix, elord) in enumerate(lord.pdict[:EMultipoleGroup].pole)
+    if group == EMultipoleParams && (group_changed ||changed.this_ele_length)
+      for (ix, elord) in enumerate(lord.pdict[:EMultipoleParams].pole)
         if !elord.Eintegrated; continue; end
-        eslave = deepcopy(slave.pdict[:EMultipoleGroup].pole[ix])
+        eslave = deepcopy(slave.pdict[:EMultipoleParams].pole[ix])
         eslave.En = elord.En * L_rel
         eslave.Es = elord.Es * L_rel
       end
     end
 
-    if group == TrackingGroup && (group_changed ||changed.this_ele_length)
+    if group == TrackingParams && (group_changed ||changed.this_ele_length)
       if lord.num_steps > 0
         slave.num_steps = nint(lord.num_steps * L_rel)
       end
     end
 
-    if group == BodyShiftGroup && (group_changed ||changed.this_ele_length)
-      if haskey(lord.pdict, :BendGroup)
-        bgl = lord.pdict[:BendGroup]
-        bgs = slave.pdict[:BendGroup]
+    if group == BodyShiftParams && (group_changed ||changed.this_ele_length)
+      if haskey(lord.pdict, :BendParams)
+        bgl = lord.pdict[:BendParams]
+        bgs = slave.pdict[:BendParams]
         # Need transformation from lord alignment point to slave alignment point
         # Translate from lord alignment point to beginning of lord point
-        ct = OrientationGroup(r = [0.0, 0.0, -0.5*bgl.l_chord])
+        ct = OrientationParams(r = [0.0, 0.0, -0.5*bgl.l_chord])
         # Rotate from z parallel to lord chord to z tangent to bend curve.
         ct = rot(ct, bend_quaternion(-0.5*bgl.angle, bg.ref_tilt))
         # Transform from beginning of lord to beginning of slave
@@ -265,11 +265,11 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
         ct = rot(ct, bend_quaternion(0.5*bgs.angle, bg.ref_tilt))
         # translate from beginning of slave to center of slave chord.
         ct.r = ct.r + [0.0, 0.0, 0.5*bgs.l_chord]
-        # Apply total transformation of BodyShiftGroup.
-        bs = lord.pdict[:BodyShiftGroup]
-        lord_shift = OrientationGroup(bs.offset, Quaternion(bs.x_rot, bs.y_rot, bs.z_rot))
+        # Apply total transformation of BodyShiftParams.
+        bs = lord.pdict[:BodyShiftParams]
+        lord_shift = OrientationParams(bs.offset, Quaternion(bs.x_rot, bs.y_rot, bs.z_rot))
         slave_shift = coord_transform(lord_shift, ct)
-        slave.BodyShiftGroup = BodyShiftGroup(slave_shift.r, rot_angles(slave_shift.q)...)
+        slave.BodyShiftParams = BodyShiftParams(slave_shift.r, rot_angles(slave_shift.q)...)
       end
     end
   end
@@ -306,9 +306,9 @@ function bookkeeper_multipass_slave!(slave::Ele, changed::ChangedLedger, previou
     if isnothing(pinfo); continue; end
     group = pinfo.parent_group
     if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end  # Ignore custom stuff
-    if group == LengthGroup; continue; end     # Do not modify length of slave
-    if group == ReferenceGroup; continue; end  # Slave ReferenceGroup independent of lord
-    if group == DownstreamReferenceGroup; continue; end
+    if group == LengthParams; continue; end     # Do not modify length of slave
+    if group == ReferenceParams; continue; end  # Slave ReferenceParams independent of lord
+    if group == DownstreamReferenceParams; continue; end
 
     slave.pdict[Symbol(group)] = deepcopy(lord.pdict[Symbol(group)])
     slave.pdict[:changed][group] = "changed"
@@ -387,34 +387,34 @@ end
 # Essentially no bookkeeping is needed for groups not covered by a specific method.
 
 function elegroup_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
-                                      previous_ele::Ele) where T <: EleParameterGroup
+                                      previous_ele::Ele) where T <: EleParameterParams
   clear_changed!(ele, group)
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, ...)
-# BMultipoleGroup bookkeeping.
+# elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, ...)
+# BMultipoleParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::ChangedLedger, previous_ele::Ele)
-  bmg = ele.BMultipoleGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, changed::ChangedLedger, previous_ele::Ele)
+  bmg = ele.BMultipoleParams
   cdict = ele.changed
-  if !has_changed(ele, BMultipoleGroup) && !changed.this_ele_length && !changed.ref_group; return; end
+  if !has_changed(ele, BMultipoleParams) && !changed.this_ele_length && !changed.ref_group; return; end
 
   ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
   if ele.slave_status == Slave.SUPER
     lord = ele.super_lords[1]
     L_rel = ele.L / lord.L
-    for (ix, lpole) in enumerate(lord.pdict[:BMultipoleGroup].pole)
-      epole = deepcopy(ele.pdict[:BMultipoleGroup].pole[ix])
+    for (ix, lpole) in enumerate(lord.pdict[:BMultipoleParams].pole)
+      epole = deepcopy(ele.pdict[:BMultipoleParams].pole[ix])
       if lpole.integrated
         epole.Kn = lpole.Kn * L_rel
         epole.Bn = lpole.Bn * L_rel
         epole.Ks = lpole.Ks * L_rel
         epole.Bs = lpole.Bs * L_rel
       else
-        ele.pdict[:BMultipoleGroup].pole[ix] = deepcopy(lpole)
+        ele.pdict[:BMultipoleParams].pole[ix] = deepcopy(lpole)
       end
     end
 
@@ -423,7 +423,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
     for param in keys(cdict)
       if typeof(param) == DataType; continue; end
       (mtype, order, group) = multipole_type(param)
-      if isnothing(group) || group != BMultipoleGroup || mtype == "tilt"; continue; end
+      if isnothing(group) || group != BMultipoleParams || mtype == "tilt"; continue; end
       mul = multipole!(bmg, order)
 
       if     mtype[1:2] == "Kn"; mul.Bn = mul.Kn * ff
@@ -449,26 +449,26 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleGroup}, changed::C
     end
   end
 
-  clear_changed!(ele, BMultipoleGroup)
+  clear_changed!(ele, BMultipoleParams)
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, ...)
-# BendGroup bookkeeping.
+# elegroup_bookkeeper!(ele::Ele, group::Type{BendParams}, ...)
+# BendParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::ChangedLedger, previous_ele::Ele)
-  bg = ele.BendGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::ChangedLedger, previous_ele::Ele)
+  bg = ele.BendParams
   cdict = ele.changed
 
-  if !has_changed(ele, BendGroup) && !changed.this_ele_length && !changed.ref_group; return; end
+  if !has_changed(ele, BendParams) && !changed.this_ele_length && !changed.ref_group; return; end
 
   if ele.slave_status == Slave.SUPER
     lord = ele.super_lords[1]
     L_rel = ele.L / lord.L
     ix_slave = slave_index(ele)
-    ele.BendGroup = copy(lord.BendGroup)
-    bg = ele.BendGroup
+    ele.BendParams = copy(lord.BendParams)
+    bg = ele.BendParams
     bg.angle = lord.angle * L_rel
     if ix_slave < length(lord.slaves)
       bg.e2 = 0
@@ -487,7 +487,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
     param_conflict_check(ele, :e2, :e2_rect)
 
     if haskey(cdict, :bend_field_ref)
-      # Use previous_ele for ref parameters since BendGroup is first group to be bookkeeped
+      # Use previous_ele for ref parameters since BendParams is first group to be bookkeeped
       bg.g = bg.bend_field_ref * C_LIGHT * charge(previous_ele.species_ref_downstream) / previous_ele.pc_ref_downstream
     end
 
@@ -523,7 +523,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
 
     if ele.L != L
       ele.L = L
-      elegroup_bookkeeper!(ele, LengthGroup, changed, previous_ele)
+      elegroup_bookkeeper!(ele, LengthParams, changed, previous_ele)
     end
 
     if haskey(cdict, :e1)
@@ -546,18 +546,18 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendGroup}, changed::Changed
       bg.e2 = bg.e2_rect - 0.5 * bg.angle
     end
 
-    clear_changed!(ele, BendGroup)
+    clear_changed!(ele, BendParams)
   end
 
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, ...)
-# Low level LengthGroup bookkeeping.
+# elegroup_bookkeeper!(ele::Ele, group::Type{LengthParams}, ...)
+# Low level LengthParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::ChangedLedger, previous_ele::Ele)
-  lg = ele.LengthGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{LengthParams}, changed::ChangedLedger, previous_ele::Ele)
+  lg = ele.LengthParams
   cdict = ele.changed
 
   if haskey(cdict, :L)
@@ -585,19 +585,19 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{LengthGroup}, changed::Chang
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{RFGroup}, ...)
+# elegroup_bookkeeper!(ele::Ele, group::Type{RFParams}, ...)
 
 """
-    elegroup_bookkeeper!(ele::Ele, group::Type{RFGroup}, changed::ChangedLedger, previous_ele::Ele)
+    elegroup_bookkeeper!(ele::Ele, group::Type{RFParams}, changed::ChangedLedger, previous_ele::Ele)
 
-`RFGroup` bookkeeping.
+`RFParams` bookkeeping.
 """
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{RFGroup}, changed::ChangedLedger, previous_ele::Ele)
-  rg = ele.RFGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{RFParams}, changed::ChangedLedger, previous_ele::Ele)
+  rg = ele.RFParams
   cdict = ele.changed
 
-  if !has_changed(ele, RFGroup) && !has_changed(ele, ReferenceGroup) && !changed.this_ele_length
+  if !has_changed(ele, RFParams) && !has_changed(ele, ReferenceParams) && !changed.this_ele_length
     return
   end
 
@@ -615,25 +615,25 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{RFGroup}, changed::ChangedLe
     rg.gradient = rg.voltage / ele.L
   end
 
-  clear_changed!(ele, RFGroup)
+  clear_changed!(ele, RFParams)
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, ...)
+# elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, ...)
 
 """
-    elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Ele)
+    elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
 
-`ReferenceGroup` bookkeeping. This also includes `DownstreamReferenceGroup` bookkeeping.
+`ReferenceParams` bookkeeping. This also includes `DownstreamReferenceParams` bookkeeping.
 """
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::ChangedLedger, previous_ele::Ele)
-  rg = ele.ReferenceGroup
-  drg = ele.DownstreamReferenceGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
+  rg = ele.ReferenceParams
+  drg = ele.DownstreamReferenceParams
   cdict = ele.changed
 
-  if has_changed(ele, ReferenceGroup); changed.ref_group = true; end
+  if has_changed(ele, ReferenceParams); changed.ref_group = true; end
 
   if ele.slave_status == Slave.SUPER
     lord = ele.super_lords[1]
@@ -670,7 +670,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
     drg.pc_ref_downstream = rg.pc_ref
     drg.E_tot_ref_downstream = rg.E_tot_ref
 
-    clear_changed!(ele, ReferenceGroup)
+    clear_changed!(ele, ReferenceParams)
     return
   end
 
@@ -701,48 +701,48 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceGroup}, changed::Ch
   if ele.slave_status == Slave.MULTIPASS
     lord = ele.pdict[:multipass_lord]
     if lord.pdict[:slaves][1] === ele 
-      lord.ReferenceGroup = rg
-      haskey(lord.pdict, :changed) ? lord.changed = Dict(ReferenceGroup => "changed") : 
-                                                           lord.changed[ReferenceGroup] = "changed" 
+      lord.ReferenceParams = rg
+      haskey(lord.pdict, :changed) ? lord.changed = Dict(ReferenceParams => "changed") : 
+                                                           lord.changed[ReferenceParams] = "changed" 
     end
   end
 
   # End stuff
 
-  clear_changed!(ele, ReferenceGroup)
+  clear_changed!(ele, ReferenceParams)
   changed.ref_group = (old_drg != drg)
 
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{OrientationGroup}, ...)
-# OrientationGroup bookkeeper
+# elegroup_bookkeeper!(ele::Ele, group::Type{OrientationParams}, ...)
+# OrientationParams bookkeeper
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{OrientationGroup}, 
+function elegroup_bookkeeper!(ele::Ele, group::Type{OrientationParams}, 
                                               changed::ChangedLedger, previous_ele::Ele)
-  fpg = ele.OrientationGroup
+  fpg = ele.OrientationParams
   cdict = ele.changed
 
-  if has_changed(ele, OrientationGroup) || changed.this_ele_length; changed.floor_position = true; end
+  if has_changed(ele, OrientationParams) || changed.this_ele_length; changed.floor_position = true; end
   if !changed.floor_position; return; end
 
   if is_null(previous_ele); return; end   # Happens with beginning element
 
-  ele.OrientationGroup = propagate_ele_geometry(previous_ele)
-  clear_changed!(ele, OrientationGroup)
+  ele.OrientationParams = propagate_ele_geometry(previous_ele)
+  clear_changed!(ele, OrientationParams)
 
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, ...)
-# SolenoidGroup bookkeeping.
+# elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, ...)
+# SolenoidParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, changed::ChangedLedger, previous_ele::Ele)
-  sg = ele.SolenoidGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, changed::ChangedLedger, previous_ele::Ele)
+  sg = ele.SolenoidParams
   cdict = ele.changed
-  if !has_changed(ele, SolenoidGroup) && !changed.ref_group; return; end
+  if !has_changed(ele, SolenoidParams) && !changed.ref_group; return; end
 
   ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
@@ -756,16 +756,16 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidGroup}, changed::Cha
     sg.Bsol = sg.Ksol * ff
   end
 
-  clear_changed!(ele, SolenoidGroup)
+  clear_changed!(ele, SolenoidParams)
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, ...)
-# Low level LengthGroup bookkeeping.
+# elegroup_bookkeeper!(ele::Ele, group::Type{TrackingParams}, ...)
+# Low level LengthParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{TrackingGroup}, changed::ChangedLedger, previous_ele::Ele)
-  tg = ele.TrackingGroup
+function elegroup_bookkeeper!(ele::Ele, group::Type{TrackingParams}, changed::ChangedLedger, previous_ele::Ele)
+  tg = ele.TrackingParams
   cdict = ele.changed
 
   if haskey(cdict, :num_steps)
@@ -785,16 +785,16 @@ end
 # has_changed
 
 """
-    has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup -> Bool
+    has_changed(ele::Ele, group::Type{T}) where T <: EleParameterParams -> Bool
 
 Has any parameter in `group` changed since the last bookkeeping?
 """
 
-function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterParams
   if ele.slave_status == Slave.SUPER
     lord = ele.super_lords[1]         # UnionEle slave handled elsewhere.
     for param in keys(lord.changed)
-      if param == AllGroup; return true; end
+      if param == AllParams; return true; end
       if param == group; return true; end
       info = ele_param_info(param, lord, throw_error = false)
       if isnothing(info); continue; end
@@ -803,7 +803,7 @@ function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterGroup
   end
 
   for param in keys(ele.changed)
-    if param == AllGroup; return true; end
+    if param == AllParams; return true; end
     if param == group; return true; end
     info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info); continue; end
@@ -817,7 +817,7 @@ end
 # clear_changed!
 
 """
-    clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParameterGroup
+    clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParameterParams
     clear_changed!(ele::Ele)
 
 Clear record of any parameter in `ele` as having been changed that is associated with `group`.
@@ -828,7 +828,7 @@ information until bookkeeping has finished for all slaves. The appropriate lord/
 bookkeeping code will handle this.
 """ clear_changed!
 
-function clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParameterGroup
+function clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParameterParams
   if !clear_lord && (ele.lord_status == Lord.SUPER || 
                      ele.lord_status == Lord.MULTIPASS); return; end
 
@@ -857,7 +857,7 @@ Reinstate values for parameters associated with `group`.
 This is used to try to back out of changes that cause an error.
 """
 
-function reinstate_changed!(ele::Ele, group::Type{T}) where T <: EleParameterGroup
+function reinstate_changed!(ele::Ele, group::Type{T}) where T <: EleParameterParams
   for param in keys(ele.changed)
     info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info) || info.parent_group != group; continue; end
@@ -911,7 +911,7 @@ function init_multipass_bookkeeper!(lat::Lattice)
       ele.name = ele.name * "!mp" * string(ix)
       ele.pdict[:multipass_lord] = lord
       ele.slave_status = Slave.MULTIPASS
-      if haskey(ele.pdict, :MasterGroup); ele.field_master = true; end
+      if haskey(ele.pdict, :MasterParams); ele.field_master = true; end
       push!(lord.pdict[:slaves], ele)
     end
   end

@@ -326,7 +326,7 @@ same branch.
   do not affect matching to the elements at the ends of the range. That is, the elements
   at the range ends do not have to be of type `ele_type`.
 
-Group expressions may be combined using the operators `","` (union), `"~"` (negation) or `"&"` (intersection):
+Params expressions may be combined using the operators `","` (union), `"~"` (negation) or `"&"` (intersection):
 If there are more than two block expressions involved, evaluation is left to right. For example:
 ```
   "<block1>, <block2>"              # Union of <block1> and <block2>.

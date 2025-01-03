@@ -86,14 +86,14 @@ function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation 
 
   if adjust_orientation && branch.type == TrackingBranch && length(branch.ele) > 1
     if ix_ele == 1
-      ele.pdict[:LengthGroup].orientation = branch.ele[2].orientation
+      ele.pdict[:LengthParams].orientation = branch.ele[2].orientation
     else
-      ele.pdict[:LengthGroup].orientation = branch.ele[ele.ix_ele-1].orientation
+      ele.pdict[:LengthParams].orientation = branch.ele[ele.ix_ele-1].orientation
     end
   end
 
   set_branch_min_max_changed!(branch, ix_ele)
-  ele.pdict[:changed][AllGroup] = true
+  ele.pdict[:changed][AllParams] = true
   if typeof(ele) == Fork; fork_bookkeeper(ele); end
   if !isnothing(branch.lat) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   return ele
@@ -137,14 +137,14 @@ function set!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation = true)
 
   if adjust_orientation && branch.type == TrackingBranch && length(branch.ele) > 1
     if ix_ele == 1
-      ele.pdict[:LengthGroup].orientation = branch.ele[2].orientation
+      ele.pdict[:LengthParams].orientation = branch.ele[2].orientation
     else
-      ele.pdict[:LengthGroup].orientation = branch.ele[ele.ix_ele-1].orientation
+      ele.pdict[:LengthParams].orientation = branch.ele[ele.ix_ele-1].orientation
     end
   end
 
   set_branch_min_max_changed!(branch, ix_ele)
-  ele.pdict[:changed][AllGroup] = true
+  ele.pdict[:changed][AllParams] = true
   if !isnothing(branch.lat) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   return ele
 end
@@ -165,7 +165,7 @@ function Base.pop!(branch::Branch, ix_ele::Int)
   index_and_s_bookkeeper!(branch, ix_ele)
 
   set_branch_min_max_changed!(branch, ix_ele)
-  branch.ele[ix_ele].pdict[:changed][AllGroup] = "changed"
+  branch.ele[ix_ele].pdict[:changed][AllParams] = "changed"
   if !isnothing(branch.lat) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   return nothing
 end
@@ -193,7 +193,7 @@ function Base.push!(branch::Branch, ele::Ele; adjust_orientation = true)
   index_and_s_bookkeeper!(branch, ix_ele)
 
   if adjust_orientation && branch.type == TrackingBranch && ix_ele > 1
-    ele.pdict[:LengthGroup].orientation = branch.ele[ele.ix_ele-1].orientation
+    ele.pdict[:LengthParams].orientation = branch.ele[ele.ix_ele-1].orientation
   end
 
   return ele
@@ -332,8 +332,8 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
     slave2 = insert!(branch, slave1.ix_ele+1, slave1)  # Just after slave1
     slave1.L = s_split - slave1.s
     slave2.L = slave1.s_downstream - s_split
-    slave1.pdict[:changed][AllGroup] = true
-    slave2.pdict[:changed][AllGroup] = true
+    slave1.pdict[:changed][AllParams] = true
+    slave2.pdict[:changed][AllParams] = true
 
     # Now update the slave lists for the super lords to include the new slave.
     # Notice that the lord list of the slaves does not have to be modified.
@@ -366,14 +366,14 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   slave2 = insert!(branch, slave1.ix_ele+1, slave1)
   slave1.L = s_split - lord.s 
   slave2.L = lord.s_downstream - s_split
-  slave1.pdict[:changed][AllGroup] = true
-  slave2.pdict[:changed][AllGroup] = true
+  slave1.pdict[:changed][AllParams] = true
+  slave2.pdict[:changed][AllParams] = true
  
   sbranch = branch.lat[SuperBranch]
   push!(sbranch.ele, lord)
   lord.pdict[:slaves] = Vector{Ele}([slave1, slave2])
   lord.lord_status = Lord.SUPER
-  lord.pdict[:changed][AllGroup] = true
+  lord.pdict[:changed][AllParams] = true
 
   index_and_s_bookkeeper!(branch)
   index_and_s_bookkeeper!(sbranch)

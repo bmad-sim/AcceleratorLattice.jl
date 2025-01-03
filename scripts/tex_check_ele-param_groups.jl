@@ -13,7 +13,7 @@
 # The comment character in the first line of the block will result in this script ignoring the block
 # when this script makes a list from the file of what fields a parameter group has.
 #
-# Note: Due to the complexity of BMultipoleGroup and EMultipoleGroup, these groups are ignored
+# Note: Due to the complexity of BMultipoleParams and EMultipoleParams, these groups are ignored
 # by this script.
 #-
 
@@ -47,7 +47,7 @@ while true
   if !startswith(line, "\\section{"); line = strip(readline(epgfile)); end
   if eof(epgfile); break; end
   if !startswith(line, "\\section{"); continue; end
-  if !endswith(line, "Group}"); continue; end
+  if !endswith(line, "Params}"); continue; end
 
   group = split(line[10:end], '}')[1]
   if group ∉ keys(group_list); error("`$(group)` not in table of groups at top of $fname file."); end
@@ -59,7 +59,7 @@ while true
   pop!(group_list, group)
 
   # Find field definitions. First find beginning of list.
-  if group == "BMultipoleGroup"|| group == "EMultipoleGroup"; continue; end
+  if group == "BMultipoleParams"|| group == "EMultipoleParams"; continue; end
 
   fields_in_file = []
   in_example = false
@@ -88,6 +88,6 @@ while true
 end
 
 if length(group_list) != 0
-  println("Groups in table of groups at top of $fname that do not have a corresponding section:")
+  println("Paramss in table of groups at top of $fname that do not have a corresponding section:")
   println(group_list)
 end

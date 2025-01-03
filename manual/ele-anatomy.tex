@@ -59,19 +59,19 @@ Example:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{Element Parameter Groups}
+\section{Element Parameter Paramss}
 \label{s:ele.groups}
 
 Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
-structs which inherit from the abstract type \vn{EleParameterGroup}. 
+structs which inherit from the abstract type \vn{EleParameterParams}. 
 Element parameter documentation is in Chapter~\sref{c:ele.groups}. In the REPL,
 To see a list of parameter groups, use the \vn{suptypes} function:
 \begin{example}
-  julia> subtypes(EleParameterGroup)
+  julia> subtypes(EleParameterParams)
   28-element Vector{Any}:
-   BodyShiftGroup
-   ApertureGroup
-   BMultipoleGroup
+   BodyShiftParams
+   ApertureParams
+   BMultipoleParams
    ...
 \end{example}
 Chapter~\sref{c:ele.types} documents the parameters groups that are associated with any particular element type.
@@ -83,17 +83,17 @@ In the REPL, the associated parameter groups can be viewed using Julia's help fu
 
     Associated parameter groups
     ===========================
-      •  BodyShiftGroup -> Element position/orientation shift.
-      •  ApertureGroup -> Vacuum chamber aperture.
-      •  BMultipoleGroup -> Magnetic multipoles.
-      •  EMultipoleGroup -> Electric multipoles.
-      •  OrientationGroup -> Floor position and orientation.
-      •  LengthGroup -> Length and s-position parameters.
-      •  LordSlaveGroup -> Element lord and slave status.
-      •  MasterGroup -> Contains field_master parameter.
-      •  ReferenceGroup -> Reference energy and species.
-      •  DescriptionGroup -> String labels for element.
-      •  TrackingGroup -> Default tracking settings.
+      •  BodyShiftParams -> Element position/orientation shift.
+      •  ApertureParams -> Vacuum chamber aperture.
+      •  BMultipoleParams -> Magnetic multipoles.
+      •  EMultipoleParams -> Electric multipoles.
+      •  OrientationParams -> Floor position and orientation.
+      •  LengthParams -> Length and s-position parameters.
+      •  LordSlaveParams -> Element lord and slave status.
+      •  MasterParams -> Contains field_master parameter.
+      •  ReferenceParams -> Reference energy and species.
+      •  DescriptionParams -> String labels for element.
+      •  TrackingParams -> Default tracking settings.
 \end{example}
 Alternatively, 
 
@@ -101,26 +101,26 @@ Alternatively,
 \section{Element Parameters}
 \label{s:ele.params}
 
-For example, the \vn{LengthGroup} holds the length and s-positions of the element and is defined by:
+For example, the \vn{LengthParams} holds the length and s-positions of the element and is defined by:
 \begin{example}
-  @kwdef struct LengthGroup <: EleParameterGroup
+  @kwdef struct LengthParams <: EleParameterParams
     L::Number = 0.0               # Length of element
     s::Number = 0.0               # Starting s-position
     s_downstream::Number = 0.0    # Ending s-position
     orientation::Int = 1          # Longitudinal orientation
   end
 \end{example}
-The \vn{@kwdef} macro automatically defines a keyword-based constructor for \vn{LengthGroup}.
+The \vn{@kwdef} macro automatically defines a keyword-based constructor for \vn{LengthParams}.
 See the Julia manual for more information on \vn{@kwdef}. 
-To see a list of all element parameter groups use the \vn{subtypes(EleParamterGroup)} command.
+To see a list of all element parameter groups use the \vn{subtypes(EleParamterParams)} command.
 To see the components of a given group use the \vn{fieldnames} function. For information on
 a given element parameter use the \vn{info(::Symbol)} function where the argument is the
 symbol corresponding to the component. For example, the information on
-the \vn{s_downstream} parameter which is a field of the \vn{LengthGroup} is:
+the \vn{s_downstream} parameter which is a field of the \vn{LengthParams} is:
 \begin{example}
   julia> info(:s_downstream)
     User name:       s_downstream
-    Stored in:       LengthGroup.s_downstream
+    Stored in:       LengthParams.s_downstream
     Parameter type:  Number
     Units:           m
     Description:     Longitudinal s-position at the downstream end.
@@ -135,7 +135,7 @@ group are the same. However, there are exceptions. For example:
 \begin{example}
   julia> info(:theta)
     User name:       theta_floor
-    Stored in:       OrientationGroup.theta
+    Stored in:       OrientationParams.theta
     Parameter type:  Number
     Units:           rad
     Description:     Element floor theta angle orientation
@@ -145,9 +145,9 @@ In this example, the user name is \vn{theta_floor} so that this parameter can be
   @ele bg = BeginningEle(theta_floor = 0.3)    # Set at element definition time.
   bg.theta_floor = 2.7                         # Or set after definition.
 \end{example}
-But the component in the \vn{OrientationGroup} is \vn{theta} so
+But the component in the \vn{OrientationParams} is \vn{theta} so
 \begin{example}
-  bg.OrientationGroup.theta = 2.7   # Equivalent to the set above.
+  bg.OrientationParams.theta = 2.7   # Equivalent to the set above.
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
@@ -157,13 +157,13 @@ But the component in the \vn{OrientationGroup} is \vn{theta} so
 All lattice element types have a single field of type \vn{Dict\{Symbol,Any\}} named \vn{pdict}.
 The values of \vn{pdict} will, with a few exceptions, be an
 element parameter group. The corresponding key for a parameter group in \vn{pdict} is the symbol associated 
-with the type. For example, a \vn{LengthGroup} struct would be stored in \vn{pdict[:LengthGroup]}.
+with the type. For example, a \vn{LengthParams} struct would be stored in \vn{pdict[:LengthParams]}.
 
 To (partially) hide the complexity of parameter groups, the dot selection operator is overloaded for elements.
 This is achieved by overloading the \vn{Base.setproperty} and \vn{Base.getproperty} functions, 
 which get called when the dot selection operator is used.
-For example, if \vn{q} is an element instance, \vn{q.s} will get mapped to \vn{q.pdict[:LengthGroup].s}.
-Additionally, \vn{q.LengthGroup} is mapped to \vn{q.pdict[:LengthGroup]}.
+For example, if \vn{q} is an element instance, \vn{q.s} will get mapped to \vn{q.pdict[:LengthParams].s}.
+Additionally, \vn{q.LengthParams} is mapped to \vn{q.pdict[:LengthParams]}.
 
 Besides simplifying the syntax, overloading the dot selection operator has a second purpose which
 is to allow the \accellat bookkeeping routines to properly do dependent parameter bookkeeping (\sref{param.depend}).

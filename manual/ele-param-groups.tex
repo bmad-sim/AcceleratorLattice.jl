@@ -1,4 +1,4 @@
-\chapter{Element Parameter Groups}
+\chapter{Element Parameter Paramss}
 \label{c:ele.groups}
 
 Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
@@ -10,20 +10,20 @@ The parmeter groups are:
 \centering
 {\tt
 \begin{tabular}{llll} \toprule
- {\it Group}          & {\it Section}             & {\it Group}          & {\it Section}            \\ 
+ {\it Params}          & {\it Section}             & {\it Params}          & {\it Section}            \\ 
  \midrule
- ACKickerGroup        & \sref{s:ackicker.g}       & LengthGroup          & \sref{s:length.g}        \\    
- BodyShiftGroup       & \sref{s:alignment.g}      & LordSlaveStatusGroup & \sref{s:lord.slave.g}    \\
- ApertureGroup        & \sref{s:aperture.g}       & MasterGroup          & \sref{s:master.g}        \\
- BMultipoleGroup      & \sref{s:bmultipole.g}     & OrientationGroup     & \sref{s:orientation.g}   \\ 
- BeamBeamGroup        & \sref{s:beam.beam.g}      & OriginEleGroup       & \sref{s:origin.ele.g}    \\
- BendGroup            & \sref{s:bend.g}           & PatchGroup           & \sref{s:patch.g}         \\
- DescriptionGroup     & \sref{s:descrip.g}        & RFGroup              & \sref{s:rf.g}            \\
- DownstreamReferenceGroup & \sref{s:dreference.g} & RFAutoGroup          & \sref{s:rfauto.g}        \\
- EMultipoleGroup      & \sref{s:emultipole.g}     & ReferenceGroup       & \sref{s:reference.g}     \\
- ForkGroup            & \sref{s:fork.g}           & SolenoidGroup        & \sref{s:solenoid.g}      \\
- GirderGroup          & \sref{s:girder.g}         & TrackingGroup        & \sref{s:tracking.g}      \\
- InitParticleGroup    & \sref{s:init.particle.g}  & TwissGroup           & \sref{s:twiss.g}         \\
+ ACKickerParams        & \sref{s:ackicker.g}       & LengthParams          & \sref{s:length.g}        \\    
+ BodyShiftParams       & \sref{s:alignment.g}      & LordSlaveStatusParams & \sref{s:lord.slave.g}    \\
+ ApertureParams        & \sref{s:aperture.g}       & MasterParams          & \sref{s:master.g}        \\
+ BMultipoleParams      & \sref{s:bmultipole.g}     & OrientationParams     & \sref{s:orientation.g}   \\ 
+ BeamBeamParams        & \sref{s:beam.beam.g}      & OriginEleParams       & \sref{s:origin.ele.g}    \\
+ BendParams            & \sref{s:bend.g}           & PatchParams           & \sref{s:patch.g}         \\
+ DescriptionParams     & \sref{s:descrip.g}        & RFParams              & \sref{s:rf.g}            \\
+ DownstreamReferenceParams & \sref{s:dreference.g} & RFAutoParams          & \sref{s:rfauto.g}        \\
+ EMultipoleParams      & \sref{s:emultipole.g}     & ReferenceParams       & \sref{s:reference.g}     \\
+ ForkParams            & \sref{s:fork.g}           & SolenoidParams        & \sref{s:solenoid.g}      \\
+ GirderParams          & \sref{s:girder.g}         & TrackingParams        & \sref{s:tracking.g}      \\
+ InitParticleParams    & \sref{s:init.particle.g}  & TwissParams           & \sref{s:twiss.g}         \\
   \bottomrule
 \end{tabular}
 } 
@@ -31,21 +31,21 @@ The parmeter groups are:
 \label{t:ele.param.g}
 \end{table}
 
-Element parameter groups inherit from the abstract type \vn{EleParameterGroup} which
-in turn inherits from \vn{BaseEleParameterGroup}. Some
+Element parameter groups inherit from the abstract type \vn{EleParameterParams} which
+in turn inherits from \vn{BaseEleParameterParams}. Some
 parameter groups have sub-group components. 
-These sub-groups also inherit from \vn{BaseEleParameterGroup}:
+These sub-groups also inherit from \vn{BaseEleParameterParams}:
 \begin{example}
-  abstract type BaseEleParameterGroup end
-  abstract type EleParameterGroup <: BaseEleParameterGroup end
-  abstract type EleParameterSubGroup <: BaseEleParameterGroup end
+  abstract type BaseEleParameterParams end
+  abstract type EleParameterParams <: BaseEleParameterParams end
+  abstract type EleParameterSubParams <: BaseEleParameterParams end
 \end{example}
 
-To see which element types contain a given group, use the \vn{info(::EleParameterGroup)}
+To see which element types contain a given group, use the \vn{info(::EleParameterParams)}
 method. Example:
 \begin{example}
-  julia> info(BodyShiftGroup)
-  ApertureGroup: Vacuum chamber aperture.
+  julia> info(BodyShiftParams)
+  ApertureParams: Vacuum chamber aperture.
   ...
   Found in:
     ACKicker
@@ -60,7 +60,7 @@ to get information on the multipole component \vn{Ks2L} do:
 \begin{example}
   julia> info(:Ks2L)
     User name:       Ks2L
-    Stored in:       BMultipoleGroup.Ks
+    Stored in:       BMultipoleParams.Ks
     Parameter type:  Number
     Units:           1/m^2
     Description:     Skew, length-integrated, momentum-normalized, 
@@ -91,10 +91,10 @@ element structure but are calculated as needed. These ``\vn{output}'' cannot be 
 See \sref{s:ele.access} for details.
 
 %---------------------------------------------------------------------------------------------------
-\section{ACKickerGroup}
+\section{ACKickerParams}
 \label{s:ackicker.g}
 
-The \vn{ACKickerGroup} holds parameters associated with \vn{ACKicker} elements.
+The \vn{ACKickerParams} holds parameters associated with \vn{ACKicker} elements.
 
 The parameters of this group are:
 \begin{example}
@@ -104,13 +104,13 @@ The parameters of this group are:
 \newpage
 
 %---------------------------------------------------------------------------------------------------
-\section{BodyShiftGroup}
+\section{BodyShiftParams}
 \label{s:alignment.g}
 
 \begin{figure}[bt]
 \centering \includegraphics{alignment-ref.pdf} 
 \caption[Element alignment.]  
-{BodyShiftGroup parameters The reference point is the origin
+{BodyShiftParams parameters The reference point is the origin
 about which the element alignment is calculated. 
 A) For straight elements, the reference point is in the center of the element. 
 For \vn{Bend} elements, the reference point is at the midpoint of the chord connecting
@@ -127,7 +127,7 @@ the $x$-axis.
 }  \label{f:alignment}
 \end{figure}
 
-The \vn{BodyShiftGroup} gives the alignment (position and angular orientation) of the physical element 
+The \vn{BodyShiftParams} gives the alignment (position and angular orientation) of the physical element 
 relative to the nominal position defined by the branch coordinates (\sref{s:orient}).
 Alignment is specified with respect to the ``alignment reference point'' of an element as shown
 in Fig~\ref{s:alignment}. The \vn{Bend} reference point is chosen to be the center of the chord
@@ -136,7 +136,7 @@ This reference point was chosen over using the midpoint on the reference orbit a
 common simulation problem is to simulate a bend with a \vn{z_rot} keeping the entrance and exit
 endpoints fixed.
 
-The parameters of the \vn{BodyShiftGroup} are:
+The parameters of the \vn{BodyShiftParams} are:
 \begin{example}
   offset::Vector - $[x, y, z]$ offset.
   x_rot::Number  - Rotation around the x-axis.
@@ -170,7 +170,7 @@ The \vn{q_shift} output parameter gives the quaternion representation of
 quaternion representation of \vn{x_rot_tot}, \vn{y_rot_tot} and \vn{z_rot_tot}.
 
 %---------------------------------------------------------------------------------------------------
-\section{ApertureGroup}
+\section{ApertureParams}
 \label{s:aperture.g}
 
 \begin{figure}[bt]
@@ -182,7 +182,7 @@ by a set of vertices.
 }  \label{f:apertures}
 \end{figure}
 
-The \vn{ApertureGroup} stores information about apertures an element may have. 
+The \vn{ApertureParams} stores information about apertures an element may have. 
 The parameters of this group are:
 \begin{example}
   x_limit::Vector\{Number\}     - Min/Max x-aperture limits. (m)
@@ -271,7 +271,7 @@ with the aperture, and a \vn{ParticleState} (\sref{s:particlestate}) value is re
 The \vn{VERTEX} setting for \vn{aperture_shape} is for defining an aperture using a 
 set of vertex points as illustrated in \fig{f:apetures}B. Between vertex points, the aperture
 can can follow a straight line or the arc of an ellipse. The vertex points are specified by
-setting the \vn{section} parameter of \vn{ApertureGroup}. Example:
+setting the \vn{section} parameter of \vn{ApertureParams}. Example:
 \begin{example}
   wall = Wall2D([Vertex1([1.0, 4.0]), Vertex1([-1.0, 4.0, 6.0]), 
                  Vertex1([-5.0, 1.0]), Vertex1([-5.0, -1.0]), 
@@ -279,10 +279,10 @@ setting the \vn{section} parameter of \vn{ApertureGroup}. Example:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{BMultipoleGroup}
+\section{BMultipoleParams}
 \label{s:bmultipole.g}
 
-The \vn{BMultipoleGroup} group stores magnetic multipole strengths. Also see \vn{EMultipoleGroup}.
+The \vn{BMultipoleParams} group stores magnetic multipole strengths. Also see \vn{EMultipoleParams}.
 The parameters of this group are:
 \begin{example}
   vec::Vector{BMultipole1}
@@ -368,7 +368,7 @@ of the \vn{field_master} parmeter (\sref{s:master.g}) will determine whether nor
 unnormalized quantities will stay constant if the reference energy is varied.
 
 %---------------------------------------------------------------------------------------------------
-\section{BeamBeamGroup}
+\section{BeamBeamParams}
 \label{s:beam.beam.g}
 
 The parameters of this group are:
@@ -387,12 +387,12 @@ The parameters of this group are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{BendGroup}
+\section{BendParams}
 \label{s:bend.g}
 
-The \vn{BendGroup} stores the parameters that characterize the shape of a \vn{Bend} element
-\sref{s:bend}. The only relavent shape parameter that is not in the \vn{BendGroup} is the
-length \vn{L} which is in the \vn{LengthGroup}.
+The \vn{BendParams} stores the parameters that characterize the shape of a \vn{Bend} element
+\sref{s:bend}. The only relavent shape parameter that is not in the \vn{BendParams} is the
+length \vn{L} which is in the \vn{LengthParams}.
 
 The parameters of this group are:
 \begin{example}
@@ -586,7 +586,7 @@ represents a field of opposite sign as the field due a positive \vn{hkick}.
 The attributes \vn{h1} and \vn{h2} are the curvature of the entrance and exit pole faces.
   %
   \item[L, L_arc, L_chord, L_sagitta (output param)]  \Newline
-The \vn{L} parameter, which is in the \vn{LengthGroup} and not the \vn{BendGroup}, 
+The \vn{L} parameter, which is in the \vn{LengthParams} and not the \vn{BendParams}, 
 is the arc length of the reference trajectory through the bend.
 
 \vn{L_chord} is the chord length from entrance point to exit point.
@@ -633,7 +633,7 @@ counterclockwise rotation of the exit face. This is true irregardless of the sig
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{DescriptionGroup}
+\section{DescriptionParams}
 \label{s:descrip.g}
 
 The components of this group are element descriptive strings:
@@ -656,7 +656,7 @@ will return a vector of all elements whose \vn{type} string has the substring ``
 in it.
 
 %---------------------------------------------------------------------------------------------------
-\section{DownstreamReferenceGroup}
+\section{DownstreamReferenceParams}
 \label{s:dreference.g}
 
 The components of this group are:
@@ -673,29 +673,29 @@ Associated output parameters are:
 \end{example}
 
 This group holds the reference energy and species at the downstream end of an element.
-Also see the \vn{ReferenceGroup} (\sref{s:reference.g}) documentation. 
-This group and \vn{ReferenceGroup} group are always paired. 
+Also see the \vn{ReferenceParams} (\sref{s:reference.g}) documentation. 
+This group and \vn{ReferenceParams} group are always paired. 
 That is, these two are always both present or both not present in any given element.
 
-For most elements, the values of the parameters in \vn{DownstreamReferenceGroup} will
-be the same as the values in the corresponding \vn{ReferenceGroup} parameters.
-That is, the value of \vn{species_ref_downstream} in \vn{DownstreamReferenceGroup} will be the same
-as the value of \vn{species_ref} in \vn{ReferenceGroup}, the value of \vn{pc_ref_downstream} 
+For most elements, the values of the parameters in \vn{DownstreamReferenceParams} will
+be the same as the values in the corresponding \vn{ReferenceParams} parameters.
+That is, the value of \vn{species_ref_downstream} in \vn{DownstreamReferenceParams} will be the same
+as the value of \vn{species_ref} in \vn{ReferenceParams}, the value of \vn{pc_ref_downstream} 
 will be the same as \vn{pc_ref}, etc. Elements where the reference energy (here "energy" refers
 to either pc_ref, E_tot_ref, β, or γ) differs between upstream and downstream
 include \vn{LCavity} and \vn{Patch} elements.
 Elements where the reference energy and species differ between upstream and downstream include
 \vn{Foil} and \vn{Converter} elements.
 
-Parameters of the \vn{DownstreamReferenceGroup} are not user settable and are 
-calculated by the \accellat bookkeeping routines. See the \vn{ReferenceGroup} documentation
+Parameters of the \vn{DownstreamReferenceParams} are not user settable and are 
+calculated by the \accellat bookkeeping routines. See the \vn{ReferenceParams} documentation
 for how these parameters are calculated.
 
 %---------------------------------------------------------------------------------------------------
-\section{EMultipoleGroup}
+\section{EMultipoleParams}
 \label{s:emultipole.g}
 
-The \vn{EMultipoleGroup} group stores electric multipole strengths. Also see \vn{BMultipoleGroup}.
+The \vn{EMultipoleParams} group stores electric multipole strengths. Also see \vn{BMultipoleParams}.
 The parameters of this group are:
 \begin{example}
   vec::Vector{EMultipole1}
@@ -772,7 +772,7 @@ Similarly, the setting of the \vn{field_master} parmeter (\sref{s:master.g}) wil
 whether normalized or unnormalized quantities will stay constant if the reference energy is varied.
 
 %---------------------------------------------------------------------------------------------------
-\section{ForkGroup}
+\section{ForkParams}
 \label{s:fork.g}
 
 The components of this group are:
@@ -787,7 +787,7 @@ another branch.
 
 
 %---------------------------------------------------------------------------------------------------
-\section{GirderGroup}
+\section{GirderParams}
 \label{s:girder.g}
 
 The components of this group are:
@@ -797,7 +797,7 @@ The components of this group are:
 
 
 %---------------------------------------------------------------------------------------------------
-\section{InitParticleGroup}
+\section{InitParticleParams}
 \label{s:init.particle.g}
 
 The components of this group are:
@@ -806,7 +806,7 @@ The components of this group are:
   spin::Vector{Number}      - Spin 3-vector. \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{LengthGroup}
+\section{LengthParams}
 \label{s:length.g}
 
 The components of this group are:
@@ -818,7 +818,7 @@ The components of this group are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{LordSlaveStatusGroup}
+\section{LordSlaveStatusParams}
 \label{s:lord.slave.g}
 \label{s:lord.enum}
 \label{s:slave.enum}
@@ -859,7 +859,7 @@ This group is used in lattice element lord/slave bookkeeping (\sref{c:lord.slave
 section for more details.
 
 %---------------------------------------------------------------------------------------------------
-\section{MasterGroup}
+\section{MasterParams}
 \label{s:master.g}
 
 The components of this group are:
@@ -869,10 +869,10 @@ The components of this group are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{OrientationGroup}
+\section{OrientationParams}
 \label{s:orientation.g}
 
-The \vn{OrientationGroup} stores the nominal (calculated without alignment shifts) 
+The \vn{OrientationParams} stores the nominal (calculated without alignment shifts) 
 position and angular orientation in the floor coordinates of the upstream end of the element.
 system. The components of this group are:
 \begin{example}
@@ -884,7 +884,7 @@ system. The components of this group are:
 
 
 %---------------------------------------------------------------------------------------------------
-\section{OriginEleGroup}
+\section{OriginEleParams}
 \label{s:origin.ele.g}
 
 The components of this group are:
@@ -893,16 +893,16 @@ The components of this group are:
   origin_ele_ref_pt::Loc.T  - Origin reference point. Default is Loc.CENTER. 
 \end{example}
 
-The \vn{OriginEleGroup} is used with \vn{Fiducial}, \vn{FloorShift}, and \vn{Girder} elements.
-The \vn{OriginEleGroup} is used to set the coordinate reference frame from which 
-the orientation set by the \vn{BodyShiftGroup} is measured. To specify that the floor coordinates are
+The \vn{OriginEleParams} is used with \vn{Fiducial}, \vn{FloorShift}, and \vn{Girder} elements.
+The \vn{OriginEleParams} is used to set the coordinate reference frame from which 
+the orientation set by the \vn{BodyShiftParams} is measured. To specify that the floor coordinates are
 to be used, set the \vn{origin_ele} to \vn{NULL_ELE}. Typically this is the same as using the
 beginning element of the first branch of a lattice as long as the first element does not have
 any orientation shifts.
 
 
 %---------------------------------------------------------------------------------------------------
-\section{PatchGroup}
+\section{PatchParams}
 \label{s:patch.g}
 
 \begin{figure}[tb]
@@ -1094,7 +1094,7 @@ region of a patch follows special rules. See section~\sref{s:wall.vacuum} for mo
 
 
 %---------------------------------------------------------------------------------------------------
-\section{RFGroup}
+\section{RFParams}
 \label{s:rf.g}
 
 The components of this group are:
@@ -1115,7 +1115,7 @@ the setting of \vn{field_master} (\sref{s:master.g}). If \vn{field_master} is \v
 \vn{gradient} is kept constant and vice versa.
 
 %---------------------------------------------------------------------------------------------------
-\section{RFAutoGroup}
+\section{RFAutoParams}
 \label{s:rfauto.g}
 
 The components of this group are:
@@ -1127,7 +1127,7 @@ The components of this group are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{ReferenceGroup}
+\section{ReferenceParams}
 \label{s:reference.g}
 
 The components of this group are:
@@ -1149,10 +1149,10 @@ Associated output parameters are:
 
 This group holds the reference energy, species, and time parameters at the upstream 
 end of a lattice element.
-Also see the \vn{DownstreamReferenceGroup} group documentation (\sref{s:dreference.g}).
-The \vn{DownstreamReferenceGroup} group holds the reference energy and species
+Also see the \vn{DownstreamReferenceParams} group documentation (\sref{s:dreference.g}).
+The \vn{DownstreamReferenceParams} group holds the reference energy and species
 at the downstream end of the element. 
-This group and \vn{DownstreamReferenceGroup} group are always paired. 
+This group and \vn{DownstreamReferenceParams} group are always paired. 
 That is, these two are always both present or both not present in any given element.
 
 For a \vn{Beginning} element, parameters of this group are user settable except for the 
@@ -1160,10 +1160,10 @@ For a \vn{Beginning} element, parameters of this group are user settable except 
 \vn{extra_dtime_ref}, the parameters of this
 group are calculated by the \accellat bookkeeping routines and are not user settable. 
 
-For most elements, the values of the parameters in \vn{DownstreamReferenceGroup} will
-be the same as the values in the corresponding \vn{ReferenceGroup} parameters.
-That is, the value of \vn{species_ref_downstream} in \vn{DownstreamReferenceGroup} will be the same
-as the value of \vn{species_ref} in \vn{ReferenceGroup}, the value of \vn{pc_ref_downstream} 
+For most elements, the values of the parameters in \vn{DownstreamReferenceParams} will
+be the same as the values in the corresponding \vn{ReferenceParams} parameters.
+That is, the value of \vn{species_ref_downstream} in \vn{DownstreamReferenceParams} will be the same
+as the value of \vn{species_ref} in \vn{ReferenceParams}, the value of \vn{pc_ref_downstream} 
 will be the same as \vn{pc_ref}, etc. Elements where the reference energy (here "energy" refers
 to either pc_ref, E_tot_ref, β, or γ) differs between upstream and downstream are elements with
 a non-zero \vn{dvoltage_ref} and include \vn{LCavity} and \vn{Patch} elements.
@@ -1179,7 +1179,7 @@ where \vn{|Q_ref|} is the magnitude of the charge of the reference particle in u
 fundamental charge. Once \vn{E_tot_ref_downstream} has been calculated, the downstream values
 of pc, β, and γ are calculated using the standard formulas. Notice that \vn{dvoltage_ref} is 
 completely independent from the actual voltage seen by a particle which is set by the \vn{voltage}
-parameter of the \vn{RFGroup}.
+parameter of the \vn{RFParams}.
 
 The downstream reference time \vn{time_ref_downstream} is calculated via
 \begin{example}
@@ -1207,7 +1207,7 @@ must be calculated by the User.
 
 
 %---------------------------------------------------------------------------------------------------
-\section{SolenoidGroup}
+\section{SolenoidParams}
 \label{s:solenoid.g}
 
 The components of this group are:
@@ -1217,7 +1217,7 @@ The components of this group are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{TrackingGroup}
+\section{TrackingParams}
 \label{s:tracking.g}
 
 The components of this group are:
@@ -1227,7 +1227,7 @@ The components of this group are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{TwissGroup}
+\section{TwissParams}
 \label{s:twiss.g}
 
 In development
