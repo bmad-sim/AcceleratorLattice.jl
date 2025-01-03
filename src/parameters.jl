@@ -250,7 +250,7 @@ If the "user name" is different from the group field name, the user name is used
 For example, for a `OrientationParams`, `r_floor` will be in the name list instead of `r`.
 """ associated_names
 
-function associated_names(group::Type{T}) where T <: EleParameterParams
+function associated_names(group::Type{T}) where T <: EleParams
   names = [field for field in fieldnames(group)]
   for (key, pinfo) in ELE_PARAM_INFO_DICT
     if pinfo.parent_group != group; continue; end
@@ -268,7 +268,7 @@ DEPENDENT_ELE_PARAMETERS::Vector{Symbol} =
 #---------------------------------------------------------------------------------------------------
 # has_parent_group
 
-function has_parent_group(pinfo::ParamInfo, group::Type{T}) where T <: BaseEleParameterParams
+function has_parent_group(pinfo::ParamInfo, group::Type{T}) where T <: BaseEleParams
   if typeof(pinfo.parent_group) <: Vector
     return group in pinfo.parent_group
   else
@@ -614,17 +614,6 @@ PARAM_GROUPS_LIST = Dict(
     BeamBeam            => [base_group_list..., BeamBeamParams],
     BeginningEle        => [base_group_list..., TwissParams, InitParticleParams],
     Bend                => [BendParams, general_group_list...],
-
-base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, 
-         DownstreamReferenceGroup, OrientationGroup, TrackingGroup, BodyShiftGroup, ApertureGroup]
-multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
-general_group_list = [base_group_list..., multipole_group_list...]
-
-PARAM_GROUPS_LIST = Dict(  
-    ACKicker            => [general_group_list..., ACKickerGroup],
-    BeamBeam            => [base_group_list..., BeamBeamGroup],
-    BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
-    Bend                => [BendGroup, general_group_list...],
     Collimator          => [base_group_list...],
     Converter           => [base_group_list...],
     CrabCavity          => [base_group_list...],
@@ -661,32 +650,32 @@ end
 
 
 ELE_PARAM_GROUP_INFO = Dict(
-  ACKickerParams         => EleParameterParamsInfo("ACKicker element parameters.", false),
-  BodyShiftParams        => EleParameterParamsInfo("Element position/orientation shift.", false),
-  ApertureParams         => EleParameterParamsInfo("Vacuum chamber aperture.", false),
-  BeamBeamParams         => EleParameterParamsInfo("BeamBeam element parameters.", false),
-  BendParams             => EleParameterParamsInfo("Bend element parameters.", true),
-  BMultipoleParams       => EleParameterParamsInfo("Magnetic multipoles.", true),
-  BMultipole            => EleParameterParamsInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleParams`", false),
-  DescriptionParams      => EleParameterParamsInfo("Informational strings.", false),
-  DownstreamReferenceParams => EleParameterParamsInfo("Downstream element end reference energy and species.", false),
-  EMultipoleParams       => EleParameterParamsInfo("Electric multipoles.", false),
-  EMultipole            => EleParameterParamsInfo("Electric multipole of given order. Substructure contained in `EMultipoleParams`.", false),
-  ForkParams             => EleParameterParamsInfo("Fork element parameters", false),
-  GirderParams           => EleParameterParamsInfo("Girder parameters.", false),
-  InitParticleParams     => EleParameterParamsInfo("Initial particle position and spin.", false),
-  TwissParams            => EleParameterParamsInfo("Initial Twiss and coupling parameters.", false),
-  LengthParams           => EleParameterParamsInfo("Length and s-position parameters.", true),
-  LordSlaveStatusParams  => EleParameterParamsInfo("Element lord and slave status.", false),
-  MasterParams           => EleParameterParamsInfo("Contains field_master parameter.", false),
-  OrientationParams      => EleParameterParamsInfo("Global floor position and orientation.", true),
-  OriginEleParams        => EleParameterParamsInfo("Defines coordinate origin for Girder, FloorShift and Fiducial elements.", false),
-  PatchParams            => EleParameterParamsInfo("Patch parameters.", false),
-  ReferenceParams        => EleParameterParamsInfo("Reference energy and species.", true),
-  RFParams               => EleParameterParamsInfo("`RFCavity` and `LCavity` RF parameters.", true),
-  RFAutoParams           => EleParameterParamsInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
-  SolenoidParams         => EleParameterParamsInfo("`Solenoid` parameters.", false),
-  TrackingParams         => EleParameterParamsInfo("Default tracking settings.", false),
+  ACKickerParams         => EleParamsInfo("ACKicker element parameters.", false),
+  BodyShiftParams        => EleParamsInfo("Element position/orientation shift.", false),
+  ApertureParams         => EleParamsInfo("Vacuum chamber aperture.", false),
+  BeamBeamParams         => EleParamsInfo("BeamBeam element parameters.", false),
+  BendParams             => EleParamsInfo("Bend element parameters.", true),
+  BMultipoleParams       => EleParamsInfo("Magnetic multipoles.", true),
+  BMultipole            => EleParamsInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleParams`", false),
+  DescriptionParams      => EleParamsInfo("Informational strings.", false),
+  DownstreamReferenceParams => EleParamsInfo("Downstream element end reference energy and species.", false),
+  EMultipoleParams       => EleParamsInfo("Electric multipoles.", false),
+  EMultipole            => EleParamsInfo("Electric multipole of given order. Substructure contained in `EMultipoleParams`.", false),
+  ForkParams             => EleParamsInfo("Fork element parameters", false),
+  GirderParams           => EleParamsInfo("Girder parameters.", false),
+  InitParticleParams     => EleParamsInfo("Initial particle position and spin.", false),
+  TwissParams            => EleParamsInfo("Initial Twiss and coupling parameters.", false),
+  LengthParams           => EleParamsInfo("Length and s-position parameters.", true),
+  LordSlaveStatusParams  => EleParamsInfo("Element lord and slave status.", false),
+  MasterParams           => EleParamsInfo("Contains field_master parameter.", false),
+  OrientationParams      => EleParamsInfo("Global floor position and orientation.", true),
+  OriginEleParams        => EleParamsInfo("Defines coordinate origin for Girder, FloorShift and Fiducial elements.", false),
+  PatchParams            => EleParamsInfo("Patch parameters.", false),
+  ReferenceParams        => EleParamsInfo("Reference energy and species.", true),
+  RFParams               => EleParamsInfo("`RFCavity` and `LCavity` RF parameters.", true),
+  RFAutoParams           => EleParamsInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),
+  SolenoidParams         => EleParamsInfo("`Solenoid` parameters.", false),
+  TrackingParams         => EleParamsInfo("Default tracking settings.", false),
 )
 
 #---------------------------------------------------------------------------------------------------
@@ -772,12 +761,12 @@ BRANCH_PARAM::Dict{Symbol,ParamInfo} = Dict{Symbol,ParamInfo}(
 )
 
 #---------------------------------------------------------------------------------------------------
-# Bases.copy(x::T) where {T <: EleParameterParams} 
+# Bases.copy(x::T) where {T <: EleParams} 
 
 """
 Copy for a normal element parameter group is equivalent to a deep copy.
 The only reason not to have copy != deepcopy is when the group has a lot of data. Think field table.
 """
 
-Base.copy(x::T) where {T <: EleParameterParams} = T([deepcopy(getfield(x, k)) for k ∈ fieldnames(T)]...)
+Base.copy(x::T) where {T <: EleParams} = T([deepcopy(getfield(x, k)) for k ∈ fieldnames(T)]...)
 

@@ -65,19 +65,19 @@ function Base.iterate(x::Region, ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Base.iterate(::EleParameterParams), Base.length(::EleParameterParams)
+# Base.iterate(::EleParams), Base.length(::EleParams)
 
 """
-    Base.length(::EleParameterParams)
-    Base.iterate(::EleParameterParams)
+    Base.length(::EleParams)
+    Base.iterate(::EleParams)
 
-Define `length` and `iterate` for `EleParameterParams` structs so can use `collect` with these structs.
-""" Base.iterate(::EleParameterParams), Base.length(::EleParameterParams)
+Define `length` and `iterate` for `EleParams` structs so can use `collect` with these structs.
+""" Base.iterate(::EleParams), Base.length(::EleParams)
 
 
-Base.length(x::Type{T}) where T <: EleParameterParams = 1
-Base.iterate(x::Type{T}) where T <: EleParameterParams = (x, x)
-Base.iterate(x::Type{T}, y) where T <: EleParameterParams = nothing
+Base.length(x::Type{T}) where T <: EleParams = 1
+Base.iterate(x::Type{T}) where T <: EleParams = (x, x)
+Base.iterate(x::Type{T}, y) where T <: EleParams = nothing
 
 #---------------------------------------------------------------------------------------------------
 # collect(::Branch)

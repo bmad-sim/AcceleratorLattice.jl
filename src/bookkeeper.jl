@@ -387,7 +387,7 @@ end
 # Essentially no bookkeeping is needed for groups not covered by a specific method.
 
 function elegroup_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
-                                      previous_ele::Ele) where T <: EleParameterParams
+                                      previous_ele::Ele) where T <: EleParams
   clear_changed!(ele, group)
   return
 end
@@ -785,12 +785,12 @@ end
 # has_changed
 
 """
-    has_changed(ele::Ele, group::Type{T}) where T <: EleParameterParams -> Bool
+    has_changed(ele::Ele, group::Type{T}) where T <: EleParams -> Bool
 
 Has any parameter in `group` changed since the last bookkeeping?
 """
 
-function has_changed(ele::Ele, group::Type{T}) where T <: EleParameterParams
+function has_changed(ele::Ele, group::Type{T}) where T <: EleParams
   if ele.slave_status == Slave.SUPER
     lord = ele.super_lords[1]         # UnionEle slave handled elsewhere.
     for param in keys(lord.changed)
@@ -817,7 +817,7 @@ end
 # clear_changed!
 
 """
-    clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParameterParams
+    clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParams
     clear_changed!(ele::Ele)
 
 Clear record of any parameter in `ele` as having been changed that is associated with `group`.
@@ -828,7 +828,7 @@ information until bookkeeping has finished for all slaves. The appropriate lord/
 bookkeeping code will handle this.
 """ clear_changed!
 
-function clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParameterParams
+function clear_changed!(ele::Ele, group::Type{T}; clear_lord::Bool = false) where T <: EleParams
   if !clear_lord && (ele.lord_status == Lord.SUPER || 
                      ele.lord_status == Lord.MULTIPASS); return; end
 
@@ -857,7 +857,7 @@ Reinstate values for parameters associated with `group`.
 This is used to try to back out of changes that cause an error.
 """
 
-function reinstate_changed!(ele::Ele, group::Type{T}) where T <: EleParameterParams
+function reinstate_changed!(ele::Ele, group::Type{T}) where T <: EleParams
   for param in keys(ele.changed)
     info = ele_param_info(param, ele, throw_error = false)
     if isnothing(info) || info.parent_group != group; continue; end

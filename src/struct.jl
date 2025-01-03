@@ -249,12 +249,12 @@ mutable struct BeamLine <: BeamLineItem
 end
 
 #---------------------------------------------------------------------------------------------------
-# EleParameterParamsInfo
+# EleParamsInfo
 
 """
-    Internal: struct EleParameterParamsInfo
+    Internal: struct EleParamsInfo
 
-Struct holding information on a single `EleParameterParams` group.
+Struct holding information on a single `EleParams` group.
 Used in constructing the `ELE_PARAM_GROUP_INFO` Dict.
 
 ## Contains
@@ -262,33 +262,33 @@ Used in constructing the `ELE_PARAM_GROUP_INFO` Dict.
 • `bookkeeping_needed::Bool  - If true, this indicates there exists a bookkeeping function for the \\
   parameter group that needs to be called if a parameter of the group is changed. \\
 """
-struct EleParameterParamsInfo
+struct EleParamsInfo
   description::String
   bookkeeping_needed::Bool
 end
 
 #---------------------------------------------------------------------------------------------------
-# EleParameterParams
+# EleParams
 
 """
-    abstract type BaseEleParameterParams
-    abstract type EleParameterParams <: BaseEleParameterParams
-    abstract type EleParameterSubParams <: BaseEleParameterParams
+    abstract type BaseEleParams
+    abstract type EleParams <: BaseEleParams
+    abstract type EleParameterSubParams <: BaseEleParams
 
-`EleParameterParams` is the base type for all element parameter groups.
+`EleParams` is the base type for all element parameter groups.
 `EleParameterSubParams` is the base type for structs that are used as components of an element
 parameter group.
 
-To see in which element types contain a given parameter group, use the `info(::EleParameterParams)`
+To see in which element types contain a given parameter group, use the `info(::EleParams)`
 method. To see what parameter groups are contained in a Example:
 ```
     info(BodyShiftParams)      # List element types that contain BodyShiftParams
 ```
-""" BaseEleParameterParams, EleParameterParams, EleParameterSubParams
+""" BaseEleParams, EleParams, EleParameterSubParams
 
-abstract type BaseEleParameterParams end
-abstract type EleParameterParams <: BaseEleParameterParams end
-abstract type EleParameterSubParams <: BaseEleParameterParams end
+abstract type BaseEleParams end
+abstract type EleParams <: BaseEleParams end
+abstract type EleParameterSubParams <: BaseEleParams end
 
 #---------------------------------------------------------------------------------------------------
 # BMultipole subgroup
@@ -450,7 +450,7 @@ Wall2D(v::Vector{Vertex1}) = Wall2D(v, [0.0, 0.0])
 # ACKickerParams
 
 """
-    mutable struct ACKickerParams <: EleParameterParams
+    mutable struct ACKickerParams <: EleParams
 
 ACKicker parameters.
 
@@ -462,7 +462,7 @@ ACKicker parameters.
 
 """ ACKickerParams
 
-@kwdef mutable struct ACKickerParams <: EleParameterParams
+@kwdef mutable struct ACKickerParams <: EleParams
   amp_function::Union{Function, Nothing} = nothing
 end
 
@@ -470,7 +470,7 @@ end
 # ApertureParams
 
 """
-    mutable struct ApertureParams <: EleParameterParams
+    mutable struct ApertureParams <: EleParams
 
 Vacuum chamber aperture struct.
 
@@ -484,7 +484,7 @@ Vacuum chamber aperture struct.
 • `custom_aperture::Dict`               - Custom aperture information. \\
 """ ApertureParams
 
-@kwdef mutable struct ApertureParams <: EleParameterParams
+@kwdef mutable struct ApertureParams <: EleParams
   x_limit::Vector = [-Inf, Inf]
   y_limit::Vector = [-Inf, Inf]
   aperture_shape::typeof(ApertureShape) = ELLIPTICAL
@@ -500,7 +500,7 @@ end
 #### This is incomplete ####
 
 """
-    mutable struct BeamBeamParams <: EleParameterParams
+    mutable struct BeamBeamParams <: EleParams
 
 ## Fields
 • `n_slice::Number`          - Number of slices the Strong beam is divided into. \\
@@ -516,7 +516,7 @@ end
 • `bbi_constant::Number`     - BBI constant. Set by Bmad. See manual. \\
 """ BeamBeamParams
 
-@kwdef mutable struct BeamBeamParams <: EleParameterParams
+@kwdef mutable struct BeamBeamParams <: EleParams
   n_slice::Number = 1
   n_particle::Number = 0
   species::Species = Species()
@@ -534,7 +534,7 @@ end
 # BendParams
 
 """
-    mutable struct BendParams <: EleParameterParams
+    mutable struct BendParams <: EleParams
 
 ## Fields
 • `bend_type::BendType.T`     - Is e or e_rect fixed? 
@@ -567,7 +567,7 @@ Whether `bend_field_ref` or `g` is held constant when the reference energy is va
 determined by the `field_master` setting in the MasterParams struct.
 """ BendParams
 
-@kwdef mutable struct BendParams <: EleParameterParams
+@kwdef mutable struct BendParams <: EleParams
   bend_type::BendType.T = BendType.SECTOR 
   angle::Number = 0.0
   g::Number = 0.0           
@@ -587,7 +587,7 @@ end
 # BMultipoleParams
 
 """
-    mutable struct BMultipoleParams <: EleParameterParams
+    mutable struct BMultipoleParams <: EleParams
 
 Vector of magnetic multipoles.
 
@@ -595,7 +595,7 @@ Vector of magnetic multipoles.
 • `pole::Vector{BMultipole}` - Vector of multipoles. \\
 
 """
-@kwdef mutable struct BMultipoleParams <: EleParameterParams
+@kwdef mutable struct BMultipoleParams <: EleParams
   pole::Vector{BMultipole} = Vector{BMultipole}(undef,0)         # Vector of multipoles.
 end
 
@@ -603,7 +603,7 @@ end
 # BodyShiftParams
 
 """
-    mutable struct BodyShiftGroup <: EleParameterGroup
+    mutable struct BodyShiftParams <: EleParams
 
 Defines the position and orientation of an element. 
 
@@ -615,63 +615,26 @@ the supporting girder if it exists or with respect to the machine coordinates.
 
 ## Fields
 • `offset::Vector`         - [x, y, z] offsets not including any Girder. \\
-• `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts.  \\
+• `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts. \\
 • `y_rot::Number`          - Rotation around the y-axis not including any Girder alignment shifts. \\
 • `z_rot::Number`          - Rotation around the z-axis not including any Girder alignment shifts. \\
 
-# Associated Output Parameters
+## Associated Output Parameters
+
 The `tot` parameters are defined only for elements that can be supported by a `Girder`.
 These parameters are the body coordinates with respect to machine coordinates. 
 These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
 non-tot fields if there is no `Girder`.
+
 • `q_shift::Quaternion`      - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
 • `q_shift_tot:: Quaternion` - `Quaternion` representation of orienttion with Girder shifts.
 • `offset_tot::Vector`       - `[x, y, z]` offsets including Girder alignment shifts. \\
 • `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
 • `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
 • `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
-
-@kwdef mutable struct BodyShiftGroup <: EleParameterGroup
-  offset::Vector = [0.0, 0.0, 0.0] 
-  x_rot::Number = 0
-  y_rot::Number = 0
-  z_rot::Number = 0
-end
-
-#---------------------------------------------------------------------------------------------------
-# DescriptionGroup
-
 """
-    mutable struct BodyShiftParams <: EleParameterParams
 
-Defines the position and orientation of an element. 
-
-- For `Patch` elements this is the orientation of the exit face with respect to the entrance face.
-- For `FloorShift` and `Fiducial` elements this is the orientation of the element with respect
-  to the reference element.
-- For other elements this is the orientation of element body alignment point with respect to 
-the supporting girder if it exists or with respect to the machine coordinates.
-
-## Fields
-• `offset::Vector`         - [x, y, z] offsets not including any Girder. \\
-• `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts.  \\
-• `y_rot::Number`          - Rotation around the y-axis not including any Girder alignment shifts. \\
-• `z_rot::Number`          - Rotation around the z-axis not including any Girder alignment shifts. \\
-
-# Associated Output Parameters
-The `tot` parameters are defined only for elements that can be supported by a `Girder`.
-These parameters are the body coordinates with respect to machine coordinates. 
-These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
-non-tot fields if there is no `Girder`.
-• `q_shift::Quaternion`      - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
-• `q_shift_tot:: Quaternion` - `Quaternion` representation of orienttion with Girder shifts.
-• `offset_tot::Vector`       - `[x, y, z]` offsets including Girder alignment shifts. \\
-• `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
-• `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
-• `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
-""" BodyShiftParams
-
-@kwdef mutable struct BodyShiftParams <: EleParameterParams
+@kwdef mutable struct BodyShiftParams <: EleParams
   offset::Vector = [0.0, 0.0, 0.0] 
   x_rot::Number = 0
   y_rot::Number = 0
@@ -682,7 +645,7 @@ end
 # DescriptionParams
 
 """
-    mutable struct DescriptionParams <: EleParameterParams
+    mutable struct DescriptionParams <: EleParams
 
 Strings that can be set and used with element searches.
 These strings have no affect on tracking.
@@ -694,7 +657,7 @@ These strings have no affect on tracking.
 • `class::String` \\
 """ DescriptionParams
 
-@kwdef mutable struct DescriptionParams <: EleParameterParams
+@kwdef mutable struct DescriptionParams <: EleParams
   type::String = ""
   ID::String = ""
   class::String = ""
@@ -704,7 +667,7 @@ end
 # DownstreamReferenceParams
 
 """
-    mutable struct DownstreamReferenceParams <: EleParameterParams
+    mutable struct DownstreamReferenceParams <: EleParams
 
 Downstream end of element reference energy and species. This group is useful for
 elements where the reference energy or species is not constant.
@@ -722,7 +685,7 @@ a `DownstreamReferenceParams`.
 • `β_ref_downstream::Number`         - Reference `v/c` upstream end. \\
 • `γ_ref_downstream::Number`         - Reference gamma factor downstream end. \\
 """
-@kwdef mutable struct DownstreamReferenceParams <: EleParameterParams
+@kwdef mutable struct DownstreamReferenceParams <: EleParams
   species_ref_downstream::Species = Species()
   pc_ref_downstream::Number = NaN
   E_tot_ref_downstream::Number = NaN
@@ -732,14 +695,14 @@ end
 # EMultipoleParams
 
 """
-    mutable struct EMultipoleParams <: EleParameterParams
+    mutable struct EMultipoleParams <: EleParams
 
 Vector of Electric multipoles.
 
 ## Field
 • `pole::Vector{EMultipole}`  - Vector of multipoles. \\
 """
-@kwdef mutable struct EMultipoleParams <: EleParameterParams
+@kwdef mutable struct EMultipoleParams <: EleParams
   pole::Vector{EMultipole} = Vector{EMultipole}([])         # Vector of multipoles. 
 end
 
@@ -747,7 +710,7 @@ end
 # ForkParams
 
 """
-    mutable struct ForkParams <: EleParameterParams
+    mutable struct ForkParams <: EleParams
 
 Fork element parameters.
 
@@ -757,7 +720,7 @@ Fork element parameters.
 • `direction::Int`                    - Longitudinal Direction of injected beam. \\
 """ ForkParams
 
-@kwdef mutable struct ForkParams <: EleParameterParams
+@kwdef mutable struct ForkParams <: EleParams
   to_line::Union{BeamLine,Nothing} = nothing
   to_ele::Union = ""
   direction::Int = +1
@@ -767,7 +730,7 @@ end
 # GirderParams
 
 """
-    mutable struct GirderParams <: EleParameterParams
+    mutable struct GirderParams <: EleParams
 
 Girder parameters.
 
@@ -775,7 +738,7 @@ Girder parameters.
 • `supported:::Vector{Ele}`        - Elements supported by girder. \\
 """ GirderParams
 
-@kwdef mutable struct GirderParams <: EleParameterParams
+@kwdef mutable struct GirderParams <: EleParams
   supported::Vector{Ele} = Ele[]
 end
 
@@ -783,7 +746,7 @@ end
 # InitParticleParams
 
 """
-    mutable struct InitParticleParams <: EleParameterParams
+    mutable struct InitParticleParams <: EleParams
 
 Initial particle position.
 
@@ -791,7 +754,7 @@ Initial particle position.
 • `orbit::Vector{Number}`     - Phase space 6-vector. \\
 • `spin::Vector{Number}`      - Spin 3-vector. \\
 """
-@kwdef mutable struct InitParticleParams <: EleParameterParams
+@kwdef mutable struct InitParticleParams <: EleParams
   orbit::Vector{Number} = Vector{Number}([0,0,0,0,0,0])     # Phase space vector
   spin::Vector{Number} = Vector{Number}([0,0,0])            # Spin vector
 end
@@ -800,7 +763,7 @@ end
 # LengthParams
 
 """
-    mutable struct LengthParams <: EleParameterParams
+    mutable struct LengthParams <: EleParams
 
 Element length and s-positions.
 
@@ -812,7 +775,7 @@ Element length and s-positions.
 • `orientation::Int`        - Longitudinal orientation. +1 or -1. \\
 """ LengthParams
 
-@kwdef mutable struct LengthParams <: EleParameterParams
+@kwdef mutable struct LengthParams <: EleParams
   L::Number = 0.0               # Length of element
   s::Number = 0.0               # Starting s-position
   s_downstream::Number = 0.0    # Ending s-position
@@ -823,7 +786,7 @@ end
 # LordSlaveStatusParams
 
 """
-    mutable struct LordSlaveStatusParams <: EleParameterParams
+    mutable struct LordSlaveStatusParams <: EleParams
 
 Lord and slave status of an element.
 
@@ -832,7 +795,7 @@ Lord and slave status of an element.
 • `slave_status::Slave.T`   - Slave status. \\
 """
 
-@kwdef mutable struct LordSlaveStatusParams <: EleParameterParams
+@kwdef mutable struct LordSlaveStatusParams <: EleParams
   lord_status::Lord.T = Lord.NOT
   slave_status::Slave.T = Slave.NOT
 end
@@ -841,7 +804,7 @@ end
 # MasterParams
 
 """
-    mutable struct MasterParams <: EleParameterParams
+    mutable struct MasterParams <: EleParams
 
 ## Fields
 • `is_on::Bool`         - Turns on or off the fields in an element. When off, the element looks like a drift. \\
@@ -850,7 +813,7 @@ In this case, if `field_master` = true, magnetic multipoles and Bend unnormalize
 and normalized field strengths willbe varied. And vice versa when `field_master` is `false`. \\
 """ MasterParams
 
-@kwdef mutable struct MasterParams <: EleParameterParams
+@kwdef mutable struct MasterParams <: EleParams
   is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
 end
@@ -859,7 +822,7 @@ end
 # OrientationParams
 
 """
-    mutable struct OrientationParams <: EleParameterParams
+    mutable struct OrientationParams <: EleParams
 
 Position and angular orientation.
 In a lattice element, this group gives the orientation at the entrance end of the element
@@ -870,7 +833,7 @@ ignoring alignment shifts.
 • `q::Quaternion{Number}`  - Quaternion orientation. \\
 """ OrientationParams
 
-@kwdef mutable struct OrientationParams <: EleParameterParams
+@kwdef mutable struct OrientationParams <: EleParams
   r::Vector = [0.0, 0.0, 0.0]
   q::Quaternion{Number} = Quaternion(1.0, 0.0, 0.0, 0.0)
 end
@@ -879,7 +842,7 @@ end
 # OriginEleParams
 
 """
-    mutable struct OriginEleParams <: EleParameterParams
+    mutable struct OriginEleParams <: EleParams
 
 Used with `Fiducial`, `FloorShift`, and `Girder` elements.
 The `OriginEleParams` is used to set the coordinate reference frame from which 
@@ -890,7 +853,7 @@ the orientation set by the `BodyShiftParams` is measured.
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
 """ OriginEleParams
 
-@kwdef mutable struct OriginEleParams <: EleParameterParams
+@kwdef mutable struct OriginEleParams <: EleParams
   origin_ele::Ele = NULL_ELE
   origin_ele_ref_pt::Loc.T = Loc.CENTER
 end
@@ -899,7 +862,7 @@ end
 # PatchParams
 
 """
-    mutable struct PatchParams <: EleParameterParams
+    mutable struct PatchParams <: EleParams
 
 `Patch` element parameters.
 
@@ -913,7 +876,7 @@ end
 • `ref_coords::BodyLoc.T`     - Reference coordinate system used inside the patch. Default is `BodyLoc.EXIT_END`. \\
 """ PatchParams
 
-@kwdef mutable struct PatchParams <: EleParameterParams
+@kwdef mutable struct PatchParams <: EleParams
   t_offset::Number = 0.0                      # Time offset
   E_tot_offset::Number = NaN
   E_tot_exit::Number = NaN                    # Reference energy at exit end
@@ -927,7 +890,7 @@ end
 # ReferenceParams
 
 """
-    mutable struct ReferenceParams <: EleParameterParams
+    mutable struct ReferenceParams <: EleParams
 
 Reference energy, time, species, etc at upstream end of an element.
 See also `DownstreamReferenceParams 
@@ -945,7 +908,7 @@ See also `DownstreamReferenceParams
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
 • `γ_ref::Number`                 - Reference gamma factor upstream end. \\
 """
-@kwdef mutable struct ReferenceParams <: EleParameterParams
+@kwdef mutable struct ReferenceParams <: EleParams
   species_ref::Species = Species()
   pc_ref::Number = NaN
   E_tot_ref::Number = NaN
@@ -959,7 +922,7 @@ end
 # RFParams
 
 """
-    mutable struct RFParams <: EleParameterParams
+    mutable struct RFParams <: EleParams
 
 RF voltage parameters. Also see `RFAutoParams`.
 
@@ -975,7 +938,7 @@ RF voltage parameters. Also see `RFAutoParams`.
 • `n_cell::Int`             - Number of cavity cells. Default is `1`. \\
 """ RFParams
 
-@kwdef mutable struct RFParams <: EleParameterParams
+@kwdef mutable struct RFParams <: EleParams
   frequency::Number = 0.0
   harmon::Number = 0.0
   voltage::Number = 0.0
@@ -990,7 +953,7 @@ end
 # RFAutoParams
 
 """
-    mutable struct RFAutoParams <: EleParameterParams
+    mutable struct RFAutoParams <: EleParams
 
 RF autoscale parameters. Also see `RFParams`.
 
@@ -1002,7 +965,7 @@ RF autoscale parameters. Also see `RFParams`.
 • `auto_phase::Number`          - Auto RF phase value. \\
 """ RFAutoParams
 
-@kwdef mutable struct RFAutoParams <: EleParameterParams
+@kwdef mutable struct RFAutoParams <: EleParams
   do_auto_amp::Bool = true    
   do_auto_phase::Bool = true
   auto_amp::Number = 1.0    
@@ -1013,7 +976,7 @@ end
 # SolenoidParams
 
 """
-  mutable struct SolenoidParams <: EleParameterParams
+  mutable struct SolenoidParams <: EleParams
 
 Solenoid parameters.
 
@@ -1023,7 +986,7 @@ Solenoid parameters.
 • `Bsol::Number`        - Solenoid field. \\
 """ SolenoidParams
 
-@kwdef mutable struct SolenoidParams <: EleParameterParams
+@kwdef mutable struct SolenoidParams <: EleParams
   Ksol::Number = 0.0              
   Bsol::Number = 0.0
 end
@@ -1032,7 +995,7 @@ end
 # TrackingParams
 
 """
-    mutable struct TrackingParams <: EleParameterParams
+    mutable struct TrackingParams <: EleParams
 
 Sets the nominal values for tracking prameters.
 
@@ -1042,7 +1005,7 @@ Sets the nominal values for tracking prameters.
 
 """ TrackingParams
 
-@kwdef mutable struct TrackingParams <: EleParameterParams
+@kwdef mutable struct TrackingParams <: EleParams
   num_steps::Int   = -1
   ds_step::Number = NaN
 end
@@ -1053,13 +1016,13 @@ end
 # TwissParams
 
 """
-    mutable struct TwissParams <: EleParameterParams
+    mutable struct TwissParams <: EleParams
 
 Lattice element parameter group storing Twiss, dispersion and coupling parameters
 for an element.
 """ TwissParams
 
-@kwdef mutable struct TwissParams <: EleParameterParams
+@kwdef mutable struct TwissParams <: EleParams
   a::Twiss1 = Twiss1()                # a-mode
   b::Twiss1 = Twiss1()                # b-mode
   x::Dispersion1 = Dispersion1()      # x-axis
