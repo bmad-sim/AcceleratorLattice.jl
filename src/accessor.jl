@@ -68,7 +68,7 @@ Overloads the dot struct component selection operator.
 ## Notes
 
 Exceptions: Something like `ele.Kn2L` is handled specially since storage for this parameter may
-not exist (parameter is stored in `ele.pdict[:BMultipoleGroup].pole(N).Kn` where `N` is some integer).
+not exist (parameter is stored in `ele.pdict[:BMultipoleParams].pole(N).Kn` where `N` is some integer).
 
 Also see: `get_elegroup_param`
 """ Base.getproperty(ele::Ele, sym::Symbol)
@@ -305,8 +305,8 @@ end
 # get_elegroup_param
 
 """
-    Internal: get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
-    Internal: get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
+    Internal: get_elegroup_param(ele::Ele, group::EleParameterParams, pinfo::ParamInfo)
+    Internal: get_elegroup_param(ele::Ele, group::Union{BMultipoleParams, EMultipoleParams}, pinfo::ParamInfo)
 
 Internal function used by Base.getproperty.
 
@@ -314,7 +314,7 @@ This function will return dependent values.
 EG: integrated multipole value even if stored value is not integrated.
 """ get_elegroup_param
 
-function get_elegroup_param(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo)
+function get_elegroup_param(ele::Ele, group::EleParameterParams, pinfo::ParamInfo)
   if pinfo.parent_group == pinfo.paramkind               # Example see: ParamInfo(:twiss)
     return group
   else
@@ -324,7 +324,7 @@ end
 
 #-
 
-function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGroup}, pinfo::ParamInfo)
+function get_elegroup_param(ele::Ele, group::Union{BMultipoleParams, EMultipoleParams}, pinfo::ParamInfo)
   (mtype, order, group_type) = multipole_type(pinfo.user_sym)
   if group_type == Nothing; error("Internal error. Unknown multipole group type. Please report."); end
 
@@ -341,7 +341,7 @@ function get_elegroup_param(ele::Ele, group::Union{BMultipoleGroup, EMultipoleGr
   val =  getfield(mul, pinfo.struct_sym)
   if mtype == "tilt" || mtype == "Etilt" || mtype == "integrated" || mtype == "Eintegrated"; return val; end
 
-  group_type == BMultipoleGroup ? integrated = mul.integrated : integrated = mul.Eintegrated
+  group_type == BMultipoleParams ? integrated = mul.integrated : integrated = mul.Eintegrated
   if mtype[end] == 'L' && !integrated
     return val * ele.L
   elseif mtype[end] != 'L' && integrated
@@ -357,11 +357,11 @@ end
 # set_elegroup_param!
 
 """
-    Internal: set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo, value)
+    Internal: set_elegroup_param!(ele::Ele, group::EleParameterParams, pinfo::ParamInfo, value)
 
 """ set_elegroup_param
 
-function set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInfo, value)
+function set_elegroup_param!(ele::Ele, group::EleParameterParams, pinfo::ParamInfo, value)
   if !isnothing(pinfo.sub_struct)    # Example see: ParamInfo(:a_beta)  
     return setfield!(pinfo.sub_struct(group), pinfo.struct_sym, value)
   else
@@ -369,7 +369,7 @@ function set_elegroup_param!(ele::Ele, group::EleParameterGroup, pinfo::ParamInf
   end
 end
 
-function set_elegroup_param!(ele::Ele, group::BMultipoleGroup, pinfo::ParamInfo, value)
+function set_elegroup_param!(ele::Ele, group::BMultipoleParams, pinfo::ParamInfo, value)
   (mtype, order, group_type) = multipole_type(pinfo.user_sym)
   mul = multipole!(group, order, insert = true)
   if mtype == "tilt" || mtype == "integrated"; return setfield!(mul, pinfo.struct_sym, value); end
@@ -385,7 +385,7 @@ function set_elegroup_param!(ele::Ele, group::BMultipoleGroup, pinfo::ParamInfo,
   return setfield!(mul, pinfo.struct_sym, value)
 end
 
-function set_elegroup_param!(ele::Ele, group::EMultipoleGroup, pinfo::ParamInfo, value)
+function set_elegroup_param!(ele::Ele, group::EMultipoleParams, pinfo::ParamInfo, value)
   (mtype, order, group_type) = multipole_type(pinfo.user_sym)
   mul = multipole!(group, order, insert = true)
   if mtype == "Etilt" || mtype == "Eintegrated"; return setfield!(mul, pinfo.struct_sym, value); end
@@ -421,14 +421,14 @@ end
 # base_field(group, pinfo)
 
 """
-    base_field(group::EleParameterGroup, pinfo::ParamInfo) -> BaseEleParameterGroup
+    base_field(group::EleParameterParams, pinfo::ParamInfo) -> BaseEleParameterParams
 
 Return group containing parameter described by `pinfo`. For most parameters this will be the `group`
-itself. However, for example, for the parameter `eta_a`, `group` will be a `TwissGroup` instance
+itself. However, for example, for the parameter `eta_a`, `group` will be a `TwissParams` instance
 and returned is the sub group `group.a`.
-""" base_field(group::EleParameterGroup, pinfo::ParamInfo) 
+""" base_field(group::EleParameterParams, pinfo::ParamInfo) 
 
-function base_field(group::EleParameterGroup, pinfo::ParamInfo)
+function base_field(group::EleParameterParams, pinfo::ParamInfo)
   if isnothing(pinfo.sub_struct) 
     return group           
   else                 # Example see: ParamInfo(:a_beta)
@@ -446,81 +446,81 @@ end
 
 function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T <: BaseOutput
   if sym == :rho
-    if :BendGroup ∉ keys(ele.pdict); return NaN; end
+    if :BendParams ∉ keys(ele.pdict); return NaN; end
     ele.g == 0 ? (return NaN) : return 1/ele.g
 
   elseif sym == :L_sagitta
-    if :BendGroup ∉ keys(ele.pdict); return NaN; end
-    ele.g == 0 ? (return 0.0) : return -cos_one(ele.angle/2) / ele.g
+    if :BendParams ∉ keys(ele.pdict); return NaN; end
+    ele.g == 0 ? (return 0.0) : return one_cos(ele.angle/2) / ele.g
 
   elseif sym == :bend_field
-    if :BendGroup ∉ keys(ele.pdict); return NaN; end
+    if :BendParams ∉ keys(ele.pdict); return NaN; end
     norm_bend_field = ele.g + cos(ele.tilt0) * ele.Kn0 + sin(ele.tilt0) * ele.Ks0
     return norm_bend_field * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
   elseif sym == :norm_bend_field
-    if :BendGroup ∉ keys(ele.pdict); return NaN; end
+    if :BendParams ∉ keys(ele.pdict); return NaN; end
     return ele.g + cos(ele.tilt0) * ele.Kn0 + sin(ele.tilt0) * ele.Ks0
 
   elseif sym == :β_ref
-    if :ReferenceGroup ∉ keys(ele.pdict); return NaN; end
+    if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.pc_ref / ele.E_tot_ref
 
   elseif sym == :γ_ref
-    if :ReferenceGroup ∉ keys(ele.pdict); return NaN; end
+    if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.E_tot_ref / massof(ele.species_ref)
 
   elseif sym == :β_ref_downstream
-    if :DownstreamReferenceGroup ∉ keys(ele.pdict); return NaN; end
+    if :DownstreamReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.pc_ref_downstream / ele.E_tot_ref_downstream
 
   elseif sym == :γ_ref_downstream
-    if :DownstreamReferenceGroup ∉ keys(ele.pdict); return NaN; end
+    if :DownstreamReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
 
   elseif sym == :q_shift
-    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
-    ag = ele.pdict[:BodyShiftGroup]
+    if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
+    ag = ele.pdict[:BodyShiftParams]
     return Quaternion(ag.x_rot, ag.y_rot, ag.z_rot)
 
   elseif sym == :offset_tot
-    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.offset; end
-    ag = ele.pdict[:BodyShiftGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
+    ag = ele.pdict[:BodyShiftParams]
+    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationParams(ele.offset, ele.q_shift)
     return coord_transform(orient_ele, orient_girder).r
 
   elseif sym == :x_rot_tot
-    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.x_rot; end
-    ag = ele.pdict[:BodyShiftGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
+    ag = ele.pdict[:BodyShiftParams]
+    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationParams(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[1]
 
   elseif sym == :y_rot_tot
-    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.y_rot; end
-    ag = ele.pdict[:BodyShiftGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
+    ag = ele.pdict[:BodyShiftParams]
+    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationParams(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[2]
 
   elseif sym == :z_rot_tot
-    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.z_rot; end
-    ag = ele.pdict[:BodyShiftGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
+    ag = ele.pdict[:BodyShiftParams]
+    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationParams(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[3]
 
   elseif sym == :q_shift_tot
-    if :BodyShiftGroup ∉ keys(ele.pdict); return NaN; end
+    if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.q_shift; end
-    ag = ele.pdict[:BodyShiftGroup]
-    orient_girder = OrientationGroup(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationGroup(ele.offset, ele.q_shift)
+    ag = ele.pdict[:BodyShiftParams]
+    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = OrientationParams(ele.offset, ele.q_shift)
     return coord_transform(orient_ele, orient_girder).q
   end
 

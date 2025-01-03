@@ -82,7 +82,7 @@ Element constructor Example:
 Result: The variable `q1` is a `Quadrupole` with the argument values put the the appropriate place.
 
 Note: All element parameter groups associated with the element type will be constructed. Thus, in the
-above example,`q1` above will have `q1.LengthGroup` (equivalent to `q1.pdict[:LengthGroup]`) created.
+above example,`q1` above will have `q1.LengthParams` (equivalent to `q1.pdict[:LengthParams]`) created.
 """
 macro ele(expr)
   expr.head == :(=) || error("Missing equals sign '=' after element name. " * 
@@ -249,12 +249,12 @@ mutable struct BeamLine <: BeamLineItem
 end
 
 #---------------------------------------------------------------------------------------------------
-# EleParameterGroupInfo
+# EleParameterParamsInfo
 
 """
-    Internal: struct EleParameterGroupInfo
+    Internal: struct EleParameterParamsInfo
 
-Struct holding information on a single `EleParameterGroup` group.
+Struct holding information on a single `EleParameterParams` group.
 Used in constructing the `ELE_PARAM_GROUP_INFO` Dict.
 
 ## Contains
@@ -262,42 +262,42 @@ Used in constructing the `ELE_PARAM_GROUP_INFO` Dict.
 • `bookkeeping_needed::Bool  - If true, this indicates there exists a bookkeeping function for the \\
   parameter group that needs to be called if a parameter of the group is changed. \\
 """
-struct EleParameterGroupInfo
+struct EleParameterParamsInfo
   description::String
   bookkeeping_needed::Bool
 end
 
 #---------------------------------------------------------------------------------------------------
-# EleParameterGroup
+# EleParameterParams
 
 """
-    abstract type BaseEleParameterGroup
-    abstract type EleParameterGroup <: BaseEleParameterGroup
-    abstract type EleParameterSubGroup <: BaseEleParameterGroup
+    abstract type BaseEleParameterParams
+    abstract type EleParameterParams <: BaseEleParameterParams
+    abstract type EleParameterSubParams <: BaseEleParameterParams
 
-`EleParameterGroup` is the base type for all element parameter groups.
-`EleParameterSubGroup` is the base type for structs that are used as components of an element
+`EleParameterParams` is the base type for all element parameter groups.
+`EleParameterSubParams` is the base type for structs that are used as components of an element
 parameter group.
 
-To see in which element types contain a given parameter group, use the `info(::EleParameterGroup)`
+To see in which element types contain a given parameter group, use the `info(::EleParameterParams)`
 method. To see what parameter groups are contained in a Example:
 ```
-    info(BodyShiftGroup)      # List element types that contain BodyShiftGroup
+    info(BodyShiftParams)      # List element types that contain BodyShiftParams
 ```
-""" BaseEleParameterGroup, EleParameterGroup, EleParameterSubGroup
+""" BaseEleParameterParams, EleParameterParams, EleParameterSubParams
 
-abstract type BaseEleParameterGroup end
-abstract type EleParameterGroup <: BaseEleParameterGroup end
-abstract type EleParameterSubGroup <: BaseEleParameterGroup end
+abstract type BaseEleParameterParams end
+abstract type EleParameterParams <: BaseEleParameterParams end
+abstract type EleParameterSubParams <: BaseEleParameterParams end
 
 #---------------------------------------------------------------------------------------------------
 # BMultipole subgroup
 
 """
-    mutable struct BMultipole <: EleParameterSubGroup
+    mutable struct BMultipole <: EleParameterSubParams
 
 Single magnetic multipole of a given order.
-Used by `BMultipoleGroup`.
+Used by `BMultipoleParams`.
 
 ## Fields
 
@@ -310,7 +310,7 @@ Used by `BMultipoleGroup`.
 • `integrated::Union{Bool,Nothing}` - Integrated or not? \\
   Also determines what stays constant with length changes. \\
 """
-@kwdef mutable struct BMultipole <: EleParameterSubGroup  # A single multipole
+@kwdef mutable struct BMultipole <: EleParameterSubParams  # A single multipole
   Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
   Ks::Number = 0.0                 # EG: "Ks2", "Ks2L"
   Bn::Number = 0.0
@@ -328,7 +328,7 @@ Dispersion parameters for a single axis.
 
 """ Dispersion1
 
-@kwdef mutable struct Dispersion1 <: EleParameterSubGroup
+@kwdef mutable struct Dispersion1 <: EleParameterSubParams
   eta::Number = NaN           # Position dispersion.
   etap::Number = NaN          # Momentum dispersion.
   deta_ds::Number = NaN       # Dispersion derivative.
@@ -338,10 +338,10 @@ end
 # EMultipole subgroup
 
 """
-    mutable struct EMultipole <: EleParameterSubGroup
+    mutable struct EMultipole <: EleParameterSubParams
 
 Single electric multipole of a given order.
-Used by `EMultipoleGroup`.
+Used by `EMultipoleParams`.
 
 ## Fields
 
@@ -353,7 +353,7 @@ Used by `EMultipoleGroup`.
   Also determines what stays constant with length changes. \\
 """ EMultipole
 
-@kwdef mutable struct EMultipole <: EleParameterSubGroup
+@kwdef mutable struct EMultipole <: EleParameterSubParams
   En::Number = 0.0                    # EG: "En2", "En2L"
   Es::Number = 0.0                    # EG: "Es2", "Es2L"
   Etilt::Number = 0.0
@@ -365,12 +365,12 @@ end
 # Twiss subgroup.
 
 """
-    mutable struct Twiss <: EleParameterSubGroup
+    mutable struct Twiss <: EleParameterSubParams
 
 Twiss parameters for used for BeamBeam element to describe the strong beam.
 """ Twiss
 
-@kwdef mutable struct Twiss <: EleParameterSubGroup
+@kwdef mutable struct Twiss <: EleParameterSubParams
   beta_a::Number = NaN
   alpha_a::Number = NaN
   beta_b::Number = NaN
@@ -381,13 +381,13 @@ end
 # Twiss1 subgroup
 
 """
-    mutable struct Twiss1 <: EleParameterSubGroup
+    mutable struct Twiss1 <: EleParameterSubParams
 
 Twiss parameters for a single mode.
 
 """ Twiss1
 
-@kwdef mutable struct Twiss1 <: EleParameterSubGroup
+@kwdef mutable struct Twiss1 <: EleParameterSubParams
   beta::Number = NaN          # Beta Twiss
   alpha::Number = NaN         # Alpha Twiss
   gamma::Number = NaN         # Gamma Twiss
@@ -401,7 +401,7 @@ end
 # Vertex1 subgroup
 
 """
-  struct Vertex1 <: EleParameterSubGroup
+  struct Vertex1 <: EleParameterSubParams
 
 Single vertex. An array of vertices can be used to construct an aperture.
 If `radius_x`, and `radius_y` )and possibly `tilt`) are set, this specifies the shape of the elliptical arc
@@ -415,7 +415,7 @@ If not set, the chamber wall from the vertex to the next vertex is a straight li
 • `tilt::Number`          - Tilt of ellipse. \\
 """ Vertex1
 
-@kwdef mutable struct Vertex1 <: EleParameterSubGroup
+@kwdef mutable struct Vertex1 <: EleParameterSubParams
   r0::Vector{Number} = [NaN, NaN]
   radius_x::Number = NaN
   radius_y::Number = NaN
@@ -429,7 +429,7 @@ Vertex1(r0::Vector{Number}, rx::Number = NaN, ry::Number = NaN) =
 # Wall2D subgroup
 
 """
-    mutable struct Wall2D <: EleParameterSubGroup
+    mutable struct Wall2D <: EleParameterSubParams
 
 Vacuum chamber wall cross-section.
 
@@ -438,7 +438,7 @@ Vacuum chamber wall cross-section.
 • `r0::Vector{Number}`      - Origin point. \\
 """ Wall2D
 
-@kwdef mutable struct Wall2D <: EleParameterSubGroup
+@kwdef mutable struct Wall2D <: EleParameterSubParams
   vertex::Vector{Vertex1} = Vector{Vertex1}()
   r0::Vector{Number} = [0.0, 0.0]
 end
@@ -447,10 +447,10 @@ Wall2D(v::Vector{Vertex1}) = Wall2D(v, [0.0, 0.0])
 
 #---------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
-# ACKickerGroup
+# ACKickerParams
 
 """
-    mutable struct ACKickerGroup <: EleParameterGroup
+    mutable struct ACKickerParams <: EleParameterParams
 
 ACKicker parameters.
 
@@ -460,17 +460,17 @@ ACKicker parameters.
   amp_function(time::Number) -> amplitude::Number
 ```
 
-""" ACKickerGroup
+""" ACKickerParams
 
-@kwdef mutable struct ACKickerGroup <: EleParameterGroup
+@kwdef mutable struct ACKickerParams <: EleParameterParams
   amp_function::Union{Function, Nothing} = nothing
 end
 
 #---------------------------------------------------------------------------------------------------
-# ApertureGroup
+# ApertureParams
 
 """
-    mutable struct ApertureGroup <: EleParameterGroup
+    mutable struct ApertureParams <: EleParameterParams
 
 Vacuum chamber aperture struct.
 
@@ -482,9 +482,9 @@ Vacuum chamber aperture struct.
 • `aperture_at::BodyLoc.T`              - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
 • `aperture_shifts_with_body:Bool` - Do element alignments shifts move the aperture? Default is `false`. \\
 • `custom_aperture::Dict`               - Custom aperture information. \\
-""" ApertureGroup
+""" ApertureParams
 
-@kwdef mutable struct ApertureGroup <: EleParameterGroup
+@kwdef mutable struct ApertureParams <: EleParameterParams
   x_limit::Vector = [-Inf, Inf]
   y_limit::Vector = [-Inf, Inf]
   aperture_shape::typeof(ApertureShape) = ELLIPTICAL
@@ -495,12 +495,12 @@ Vacuum chamber aperture struct.
 end
 
 #---------------------------------------------------------------------------------------------------
-# BeamBeamGroup
+# BeamBeamParams
 
 #### This is incomplete ####
 
 """
-    mutable struct BeamBeamGroup <: EleParameterGroup
+    mutable struct BeamBeamParams <: EleParameterParams
 
 ## Fields
 • `n_slice::Number`          - Number of slices the Strong beam is divided into. \\
@@ -514,9 +514,9 @@ end
 • `sig_y::Number`            - Strong beam vertical sigma at IP. \\
 • `sig_z::Number`            - Strong beam longitudinal sigma. \\
 • `bbi_constant::Number`     - BBI constant. Set by Bmad. See manual. \\
-""" BeamBeamGroup
+""" BeamBeamParams
 
-@kwdef mutable struct BeamBeamGroup <: EleParameterGroup
+@kwdef mutable struct BeamBeamParams <: EleParameterParams
   n_slice::Number = 1
   n_particle::Number = 0
   species::Species = Species()
@@ -531,10 +531,10 @@ end
 end
 
 #---------------------------------------------------------------------------------------------------
-# BendGroup
+# BendParams
 
 """
-    mutable struct BendGroup <: EleParameterGroup
+    mutable struct BendParams <: EleParameterParams
 
 ## Fields
 • `bend_type::BendType.T`     - Is e or e_rect fixed? 
@@ -564,10 +564,10 @@ rectangular like (`BendType.RECTANGULAR`) bends. The `bend_type` switch is only 
 bend angle or length is varied. See the documentation for details.
 
 Whether `bend_field_ref` or `g` is held constant when the reference energy is varied is
-determined by the `field_master` setting in the MasterGroup struct.
-""" BendGroup
+determined by the `field_master` setting in the MasterParams struct.
+""" BendParams
 
-@kwdef mutable struct BendGroup <: EleParameterGroup
+@kwdef mutable struct BendParams <: EleParameterParams
   bend_type::BendType.T = BendType.SECTOR 
   angle::Number = 0.0
   g::Number = 0.0           
@@ -584,10 +584,10 @@ determined by the `field_master` setting in the MasterGroup struct.
 end
 
 #---------------------------------------------------------------------------------------------------
-# BMultipoleGroup
+# BMultipoleParams
 
 """
-    mutable struct BMultipoleGroup <: EleParameterGroup
+    mutable struct BMultipoleParams <: EleParameterParams
 
 Vector of magnetic multipoles.
 
@@ -595,12 +595,12 @@ Vector of magnetic multipoles.
 • `pole::Vector{BMultipole}` - Vector of multipoles. \\
 
 """
-@kwdef mutable struct BMultipoleGroup <: EleParameterGroup
+@kwdef mutable struct BMultipoleParams <: EleParameterParams
   pole::Vector{BMultipole} = Vector{BMultipole}(undef,0)         # Vector of multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
-# BodyShiftGroup
+# BodyShiftParams
 
 """
     mutable struct BodyShiftGroup <: EleParameterGroup
@@ -630,7 +630,6 @@ non-tot fields if there is no `Girder`.
 • `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
 • `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
 • `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
-""" BodyShiftGroup
 
 @kwdef mutable struct BodyShiftGroup <: EleParameterGroup
   offset::Vector = [0.0, 0.0, 0.0] 
@@ -643,7 +642,47 @@ end
 # DescriptionGroup
 
 """
-    mutable struct DescriptionGroup <: EleParameterGroup
+    mutable struct BodyShiftParams <: EleParameterParams
+
+Defines the position and orientation of an element. 
+
+- For `Patch` elements this is the orientation of the exit face with respect to the entrance face.
+- For `FloorShift` and `Fiducial` elements this is the orientation of the element with respect
+  to the reference element.
+- For other elements this is the orientation of element body alignment point with respect to 
+the supporting girder if it exists or with respect to the machine coordinates.
+
+## Fields
+• `offset::Vector`         - [x, y, z] offsets not including any Girder. \\
+• `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts.  \\
+• `y_rot::Number`          - Rotation around the y-axis not including any Girder alignment shifts. \\
+• `z_rot::Number`          - Rotation around the z-axis not including any Girder alignment shifts. \\
+
+# Associated Output Parameters
+The `tot` parameters are defined only for elements that can be supported by a `Girder`.
+These parameters are the body coordinates with respect to machine coordinates. 
+These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
+non-tot fields if there is no `Girder`.
+• `q_shift::Quaternion`      - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
+• `q_shift_tot:: Quaternion` - `Quaternion` representation of orienttion with Girder shifts.
+• `offset_tot::Vector`       - `[x, y, z]` offsets including Girder alignment shifts. \\
+• `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
+• `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
+• `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
+""" BodyShiftParams
+
+@kwdef mutable struct BodyShiftParams <: EleParameterParams
+  offset::Vector = [0.0, 0.0, 0.0] 
+  x_rot::Number = 0
+  y_rot::Number = 0
+  z_rot::Number = 0
+end
+
+#---------------------------------------------------------------------------------------------------
+# DescriptionParams
+
+"""
+    mutable struct DescriptionParams <: EleParameterParams
 
 Strings that can be set and used with element searches.
 These strings have no affect on tracking.
@@ -653,26 +692,26 @@ These strings have no affect on tracking.
 • `type::String` \\
 • `ID::String` \\
 • `class::String` \\
-""" DescriptionGroup
+""" DescriptionParams
 
-@kwdef mutable struct DescriptionGroup <: EleParameterGroup
+@kwdef mutable struct DescriptionParams <: EleParameterParams
   type::String = ""
   ID::String = ""
   class::String = ""
 end
 
 #---------------------------------------------------------------------------------------------------
-# DownstreamReferenceGroup
+# DownstreamReferenceParams
 
 """
-    mutable struct DownstreamReferenceGroup <: EleParameterGroup
+    mutable struct DownstreamReferenceParams <: EleParameterParams
 
 Downstream end of element reference energy and species. This group is useful for
 elements where the reference energy or species is not constant.
 Elements where this is true include `LCavity`, `Foil`, and `Converter`.
 
-To simplify the lattice bookkeeping, all elements that have a `ReferenceGroup` also have
-a `DownstreamReferenceGroup`. 
+To simplify the lattice bookkeeping, all elements that have a `ReferenceParams` also have
+a `DownstreamReferenceParams`. 
 
 ## Fields
 • `species_ref_downstream::Species`  - Reference species exit end. \\
@@ -683,32 +722,32 @@ a `DownstreamReferenceGroup`.
 • `β_ref_downstream::Number`         - Reference `v/c` upstream end. \\
 • `γ_ref_downstream::Number`         - Reference gamma factor downstream end. \\
 """
-@kwdef mutable struct DownstreamReferenceGroup <: EleParameterGroup
+@kwdef mutable struct DownstreamReferenceParams <: EleParameterParams
   species_ref_downstream::Species = Species()
   pc_ref_downstream::Number = NaN
   E_tot_ref_downstream::Number = NaN
 end
 
 #---------------------------------------------------------------------------------------------------
-# EMultipoleGroup
+# EMultipoleParams
 
 """
-    mutable struct EMultipoleGroup <: EleParameterGroup
+    mutable struct EMultipoleParams <: EleParameterParams
 
 Vector of Electric multipoles.
 
 ## Field
 • `pole::Vector{EMultipole}`  - Vector of multipoles. \\
 """
-@kwdef mutable struct EMultipoleGroup <: EleParameterGroup
+@kwdef mutable struct EMultipoleParams <: EleParameterParams
   pole::Vector{EMultipole} = Vector{EMultipole}([])         # Vector of multipoles. 
 end
 
 #---------------------------------------------------------------------------------------------------
-# ForkGroup
+# ForkParams
 
 """
-    mutable struct ForkGroup <: EleParameterGroup
+    mutable struct ForkParams <: EleParameterParams
 
 Fork element parameters.
 
@@ -716,35 +755,35 @@ Fork element parameters.
 • `to_line::Union{BeamLine,Nothing}`  - Beam line to fork to. \\
 • `to_ele`                            - On input: Element ID or element itself. \\
 • `direction::Int`                    - Longitudinal Direction of injected beam. \\
-""" ForkGroup
+""" ForkParams
 
-@kwdef mutable struct ForkGroup <: EleParameterGroup
+@kwdef mutable struct ForkParams <: EleParameterParams
   to_line::Union{BeamLine,Nothing} = nothing
   to_ele::Union = ""
   direction::Int = +1
 end
 
 #---------------------------------------------------------------------------------------------------
-# GirderGroup
+# GirderParams
 
 """
-    mutable struct GirderGroup <: EleParameterGroup
+    mutable struct GirderParams <: EleParameterParams
 
 Girder parameters.
 
 ## Fields
 • `supported:::Vector{Ele}`        - Elements supported by girder. \\
-""" GirderGroup
+""" GirderParams
 
-@kwdef mutable struct GirderGroup <: EleParameterGroup
+@kwdef mutable struct GirderParams <: EleParameterParams
   supported::Vector{Ele} = Ele[]
 end
 
 #---------------------------------------------------------------------------------------------------
-# InitParticleGroup
+# InitParticleParams
 
 """
-    mutable struct InitParticleGroup <: EleParameterGroup
+    mutable struct InitParticleParams <: EleParameterParams
 
 Initial particle position.
 
@@ -752,16 +791,16 @@ Initial particle position.
 • `orbit::Vector{Number}`     - Phase space 6-vector. \\
 • `spin::Vector{Number}`      - Spin 3-vector. \\
 """
-@kwdef mutable struct InitParticleGroup <: EleParameterGroup
+@kwdef mutable struct InitParticleParams <: EleParameterParams
   orbit::Vector{Number} = Vector{Number}([0,0,0,0,0,0])     # Phase space vector
   spin::Vector{Number} = Vector{Number}([0,0,0])            # Spin vector
 end
 
 #---------------------------------------------------------------------------------------------------
-# LengthGroup
+# LengthParams
 
 """
-    mutable struct LengthGroup <: EleParameterGroup
+    mutable struct LengthParams <: EleParameterParams
 
 Element length and s-positions.
 
@@ -771,9 +810,9 @@ Element length and s-positions.
 • `s::Number`               - Starting s-position. \\
 • `s_downstream::Number`    - Ending s-position. \\
 • `orientation::Int`        - Longitudinal orientation. +1 or -1. \\
-""" LengthGroup
+""" LengthParams
 
-@kwdef mutable struct LengthGroup <: EleParameterGroup
+@kwdef mutable struct LengthParams <: EleParameterParams
   L::Number = 0.0               # Length of element
   s::Number = 0.0               # Starting s-position
   s_downstream::Number = 0.0    # Ending s-position
@@ -781,10 +820,10 @@ Element length and s-positions.
 end
 
 #---------------------------------------------------------------------------------------------------
-# LordSlaveStatusGroup
+# LordSlaveStatusParams
 
 """
-    mutable struct LordSlaveStatusGroup <: EleParameterGroup
+    mutable struct LordSlaveStatusParams <: EleParameterParams
 
 Lord and slave status of an element.
 
@@ -793,34 +832,34 @@ Lord and slave status of an element.
 • `slave_status::Slave.T`   - Slave status. \\
 """
 
-@kwdef mutable struct LordSlaveStatusGroup <: EleParameterGroup
+@kwdef mutable struct LordSlaveStatusParams <: EleParameterParams
   lord_status::Lord.T = Lord.NOT
   slave_status::Slave.T = Slave.NOT
 end
 
 #---------------------------------------------------------------------------------------------------
-# MasterGroup
+# MasterParams
 
 """
-    mutable struct MasterGroup <: EleParameterGroup
+    mutable struct MasterParams <: EleParameterParams
 
 ## Fields
 • `is_on::Bool`         - Turns on or off the fields in an element. When off, the element looks like a drift. \\
 • `field_master::Bool`  - The setting of this matters when there is a change in reference energy. \\
 In this case, if `field_master` = true, magnetic multipoles and Bend unnormalized fields will be held constant
 and normalized field strengths willbe varied. And vice versa when `field_master` is `false`. \\
-""" MasterGroup
+""" MasterParams
 
-@kwdef mutable struct MasterGroup <: EleParameterGroup
+@kwdef mutable struct MasterParams <: EleParameterParams
   is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
 end
 
 #---------------------------------------------------------------------------------------------------
-# OrientationGroup
+# OrientationParams
 
 """
-    mutable struct OrientationGroup <: EleParameterGroup
+    mutable struct OrientationParams <: EleParameterParams
 
 Position and angular orientation.
 In a lattice element, this group gives the orientation at the entrance end of the element
@@ -829,38 +868,38 @@ ignoring alignment shifts.
 # Fields
 • `r::Vector`              - `[x,y,z]` position. \\
 • `q::Quaternion{Number}`  - Quaternion orientation. \\
-""" OrientationGroup
+""" OrientationParams
 
-@kwdef mutable struct OrientationGroup <: EleParameterGroup
+@kwdef mutable struct OrientationParams <: EleParameterParams
   r::Vector = [0.0, 0.0, 0.0]
   q::Quaternion{Number} = Quaternion(1.0, 0.0, 0.0, 0.0)
 end
 
 #---------------------------------------------------------------------------------------------------
-# OriginEleGroup
+# OriginEleParams
 
 """
-    mutable struct OriginEleGroup <: EleParameterGroup
+    mutable struct OriginEleParams <: EleParameterParams
 
 Used with `Fiducial`, `FloorShift`, and `Girder` elements.
-The `OriginEleGroup` is used to set the coordinate reference frame from which 
-the orientation set by the `BodyShiftGroup` is measured. 
+The `OriginEleParams` is used to set the coordinate reference frame from which 
+the orientation set by the `BodyShiftParams` is measured. 
 
 ## Fields
 • `origin_ele::Ele`           - Origin reference element. Default is NULL_ELE. \\
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
-""" OriginEleGroup
+""" OriginEleParams
 
-@kwdef mutable struct OriginEleGroup <: EleParameterGroup
+@kwdef mutable struct OriginEleParams <: EleParameterParams
   origin_ele::Ele = NULL_ELE
   origin_ele_ref_pt::Loc.T = Loc.CENTER
 end
 
 #---------------------------------------------------------------------------------------------------
-# PatchGroup
+# PatchParams
 
 """
-    mutable struct PatchGroup <: EleParameterGroup
+    mutable struct PatchParams <: EleParameterParams
 
 `Patch` element parameters.
 
@@ -872,9 +911,9 @@ end
 • `flexible::Bool`            - Flexible patch? Default is `false`. \\
 • `L_user::Number`            - User set Length? Default is `NaN` (length calculated by bookkeeping code). \\
 • `ref_coords::BodyLoc.T`     - Reference coordinate system used inside the patch. Default is `BodyLoc.EXIT_END`. \\
-""" PatchGroup
+""" PatchParams
 
-@kwdef mutable struct PatchGroup <: EleParameterGroup
+@kwdef mutable struct PatchParams <: EleParameterParams
   t_offset::Number = 0.0                      # Time offset
   E_tot_offset::Number = NaN
   E_tot_exit::Number = NaN                    # Reference energy at exit end
@@ -885,13 +924,13 @@ end
 end
 
 #---------------------------------------------------------------------------------------------------
-# ReferenceGroup
+# ReferenceParams
 
 """
-    mutable struct ReferenceGroup <: EleParameterGroup
+    mutable struct ReferenceParams <: EleParameterParams
 
 Reference energy, time, species, etc at upstream end of an element.
-See also `DownstreamReferenceGroup 
+See also `DownstreamReferenceParams 
 
 ## Fields
 • `species_ref::Species`          - Reference species entering end. \\
@@ -900,13 +939,13 @@ See also `DownstreamReferenceGroup
 • `time_ref::Number`              - Reference time upstream end. \\
 • `time_ref_downstream::Number`   - Reference time downstream end. \\
 • `extra_dtime_ref::Number`       - User set additional time change. \\
-• `dE_ref`::Number            - Sets the change in the reference energy. \\
+• `dE_ref`::Number                - Sets the change in the reference energy. \\
 
 ## Associated output parameters are
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
 • `γ_ref::Number`                 - Reference gamma factor upstream end. \\
 """
-@kwdef mutable struct ReferenceGroup <: EleParameterGroup
+@kwdef mutable struct ReferenceParams <: EleParameterParams
   species_ref::Species = Species()
   pc_ref::Number = NaN
   E_tot_ref::Number = NaN
@@ -917,12 +956,12 @@ See also `DownstreamReferenceGroup
 end
 
 #---------------------------------------------------------------------------------------------------
-# RFGroup
+# RFParams
 
 """
-    mutable struct RFGroup <: EleParameterGroup
+    mutable struct RFParams <: EleParameterParams
 
-RF voltage parameters. Also see `RFAutoGroup`.
+RF voltage parameters. Also see `RFAutoParams`.
 
 ## Fields
 
@@ -934,9 +973,9 @@ RF voltage parameters. Also see `RFAutoGroup`.
 • `multipass_phase::Number` - RF Phase added to multipass elements. \\
 • `cavity_type::Cavity.T`   - Cavity type. Default is `Cavity.STANDING_WAVE`. \\
 • `n_cell::Int`             - Number of cavity cells. Default is `1`. \\
-""" RFGroup
+""" RFParams
 
-@kwdef mutable struct RFGroup <: EleParameterGroup
+@kwdef mutable struct RFParams <: EleParameterParams
   frequency::Number = 0.0
   harmon::Number = 0.0
   voltage::Number = 0.0
@@ -948,12 +987,12 @@ RF voltage parameters. Also see `RFAutoGroup`.
 end
 
 #---------------------------------------------------------------------------------------------------
-# RFAutoGroup
+# RFAutoParams
 
 """
-    mutable struct RFAutoGroup <: EleParameterGroup
+    mutable struct RFAutoParams <: EleParameterParams
 
-RF autoscale parameters. Also see `RFGroup`.
+RF autoscale parameters. Also see `RFParams`.
 
 ## Fields
 
@@ -961,9 +1000,9 @@ RF autoscale parameters. Also see `RFGroup`.
 • `do_auto_phase::Bool`         - Will autoscaling set `auto_phase`? Default is `true`. \\
 • `auto_amp::Number`            - Auto RF field amplitude scale value. \\
 • `auto_phase::Number`          - Auto RF phase value. \\
-""" RFAutoGroup
+""" RFAutoParams
 
-@kwdef mutable struct RFAutoGroup <: EleParameterGroup
+@kwdef mutable struct RFAutoParams <: EleParameterParams
   do_auto_amp::Bool = true    
   do_auto_phase::Bool = true
   auto_amp::Number = 1.0    
@@ -971,10 +1010,10 @@ RF autoscale parameters. Also see `RFGroup`.
 end
 
 #---------------------------------------------------------------------------------------------------
-# SolenoidGroup
+# SolenoidParams
 
 """
-  mutable struct SolenoidGroup <: EleParameterGroup
+  mutable struct SolenoidParams <: EleParameterParams
 
 Solenoid parameters.
 
@@ -982,18 +1021,18 @@ Solenoid parameters.
 
 • `Ksol::Number`        - Normalized solenoid strength. \\      
 • `Bsol::Number`        - Solenoid field. \\
-""" SolenoidGroup
+""" SolenoidParams
 
-@kwdef mutable struct SolenoidGroup <: EleParameterGroup
+@kwdef mutable struct SolenoidParams <: EleParameterParams
   Ksol::Number = 0.0              
   Bsol::Number = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
-# TrackingGroup
+# TrackingParams
 
 """
-    mutable struct TrackingGroup <: EleParameterGroup
+    mutable struct TrackingParams <: EleParameterParams
 
 Sets the nominal values for tracking prameters.
 
@@ -1001,9 +1040,9 @@ Sets the nominal values for tracking prameters.
 • `num_steps::Int`    - Number of steps. \\
 • `ds_step::Number`   - Step length. \\
 
-""" TrackingGroup
+""" TrackingParams
 
-@kwdef mutable struct TrackingGroup <: EleParameterGroup
+@kwdef mutable struct TrackingParams <: EleParameterParams
   num_steps::Int   = -1
   ds_step::Number = NaN
 end
@@ -1011,16 +1050,16 @@ end
 
 
 #---------------------------------------------------------------------------------------------------
-# TwissGroup
+# TwissParams
 
 """
-    mutable struct TwissGroup <: EleParameterGroup
+    mutable struct TwissParams <: EleParameterParams
 
 Lattice element parameter group storing Twiss, dispersion and coupling parameters
 for an element.
-""" TwissGroup
+""" TwissParams
 
-@kwdef mutable struct TwissGroup <: EleParameterGroup
+@kwdef mutable struct TwissParams <: EleParameterParams
   a::Twiss1 = Twiss1()                # a-mode
   b::Twiss1 = Twiss1()                # b-mode
   x::Dispersion1 = Dispersion1()      # x-axis
@@ -1034,7 +1073,7 @@ end
     abstract type BaseOutput
 
 Abstract type from which output group structs inherit.
-AcceleratorLattice defines `OutputGroup <: BaseOutput` which is used for output parameters
+AcceleratorLattice defines `OutputParams <: BaseOutput` which is used for output parameters
 defined by AcceleratorLattice. Custom output parameters may be defined by defining a new 
 output group struct and a new `output_parameter` function method.
 
@@ -1042,28 +1081,28 @@ output group struct and a new `output_parameter` function method.
 abstract type BaseOutput end
 
 #---------------------------------------------------------------------------------------------------
-# OutputGroup
+# OutputParams
 
 """
-    struct OutputGroup <: BaseOutput
+    struct OutputParams <: BaseOutput
 
 Holy trait struct that is used to designate output element parameters.
-""" OutputGroup
+""" OutputParams
 
-struct OutputGroup <: BaseOutput
+struct OutputParams <: BaseOutput
 end
 
 #---------------------------------------------------------------------------------------------------
-# AllGroup
+# AllParams
 
 """
-    struct AllGroup 
+    struct AllParams 
 
 Struct used for element parameter bookkeeping whose presence represents that parameters 
 in all parameter groups may have changed.
-""" AllGroup
+""" AllParams
 
-struct AllGroup; end
+struct AllParams; end
 
 #---------------------------------------------------------------------------------------------------
 # AbstractLattice 
@@ -1190,17 +1229,18 @@ end
     Internal: mutable struct ChangedLedger
 
 When bookkeeping a branch, element-by-element, starting from the beginning of the branch,
-the ledger keeps track of what has changed so that the change can propagate to the 
-following elements. 
+the ledger keeps track of "properties" that have changed since the last bookkeeping so that a 
+change in a property of one element can propagate to the following elements. 
 
 Ledger parameters, when toggled to true, will never be reset for the remainder of the branch bookkeeping.
-The exception is the `this_ele_length` parameter which is reset for each element.
+The exception is the `this_ele_length` parameter which is reset after bookkeeping is done for
+an element.
 
 # Fields
-• `this_ele_length::Bool` \\
-• `s_position::Bool` \\
-• `ref_group::Bool` \\
-• `floor_position::Bool` \\
+• `this_ele_length::Bool`  - The length of the current element has changed. \\
+• `s_position::Bool`       - The longitudinal element position has changed. \\
+• `ref_group::Bool`        - Reference property (species, energy, or time) has changed. \\
+• `floor_position::Bool`   - The branch coordinate system has changed with respect to the floor coordinates. \\
 
 """ ChangedLedger
 

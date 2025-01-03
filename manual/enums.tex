@@ -23,7 +23,7 @@ used often enough so that the constants \vn{OPEN} and \vn{CLOSED} are defined.
 The group name followed by a \vn{.T} suffix denotes the enum type.
 For example:
 \begin{example}
-  struct ApertureGroup <: EleParameterGroup
+  struct ApertureParams <: EleParameterParams
     aperture_type::ApertureShape.T = ApertureShape.ELLIPTICAL
     aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
     ...
@@ -42,7 +42,7 @@ The enum groups are:
 \centering
 {\tt
 \begin{tabular}{llll} \toprule
-  {\it Group}       & {\it Section}             & {\it Group}         & {\it Section}       \\ \midrule
+  {\it Params}       & {\it Section}             & {\it Params}         & {\it Section}       \\ \midrule
   BendType          & \sref{s:bendtype}         & Slave               & \sref{s:slave.enum} \\
   BodyLoc           & \sref{s:bodyloc}          & Loc                 & \sref{s:loc}        \\
   BranchGeometry    & \sref{s:branchgeometry}   & Select              & \sref{s:select}     \\
@@ -56,7 +56,7 @@ The enum groups are:
 \label{t:enum}
 \end{table}
 %---------------------------------------------------------------------------------------------------
-\subsection{BendType Enum Group}
+\subsection{BendType Enum Params}
 \label{s:bendtype}
 \vspace*{-2ex}
 
@@ -69,13 +69,13 @@ Type of Bend element. Possible values: \\
 \end{tabular} 
 \hfill \break \vskip -1.2ex
 
-\vn{BendType} is used with the \vn{bend_type} parameter of the \vn{BendGroup} parameter group
+\vn{BendType} is used with the \vn{bend_type} parameter of the \vn{BendParams} parameter group
 (\sref{s:bend.g}). The \vn{bend_type} parameter gives the ``logical'' shape of the bend.
 The setting of \vn{bend_type} is only relavent when the bend curvature is varied.
 See \sref{s:bend.g} for more details.
 
 %---------------------------------------------------------------------------------------------------
-\subsection{BodyLoc Enum Group}
+\subsection{BodyLoc Enum Params}
 \label{s:bodyloc}
 \vspace*{-2ex}
 
@@ -97,7 +97,7 @@ Possible values:\\
 For example, specifying where apertures are placed.
 
 %---------------------------------------------------------------------------------------------------
-\subsection{BranchGeometry Enum Group}
+\subsection{BranchGeometry Enum Params}
 \label{s:branchgeometry}
 \vspace*{-2ex}
 
@@ -132,7 +132,7 @@ coordinate sense, it is up to the lattice designer to ensure that a branch is tr
 closed if that is desired.
 
 %---------------------------------------------------------------------------------------------------
-\subsection{Cavity Enum Group}
+\subsection{Cavity Enum Params}
 \label{s:cavity}
 \vspace*{-2ex}
 
@@ -147,7 +147,7 @@ Possible values:\\
 \hfill \break \vskip -1.2ex
 
 %---------------------------------------------------------------------------------------------------
-\subsection{ParticleState Enum Group}
+\subsection{ParticleState Enum Params}
 \label{s:particlestate}
 
 State of a particle.
@@ -176,7 +176,7 @@ like dark current electrons which can go back and forth longitudinally, a time b
 is needed.
 
 %---------------------------------------------------------------------------------------------------
-\subsection{Loc Enum Group}
+\subsection{Loc Enum Params}
 \label{s:loc}
 \vspace*{-2ex}
 
@@ -194,7 +194,7 @@ Possible values: \\
 
 
 %---------------------------------------------------------------------------------------------------
-\subsection{Select Enum Group}
+\subsection{Select Enum Params}
 \label{s:select}
 \vspace*{-2ex}
 
@@ -210,7 +210,7 @@ Possible values:\\
 
 
 %---------------------------------------------------------------------------------------------------
-\subsection{ExactMultipoles Enum Group}
+\subsection{ExactMultipoles Enum Params}
 \label{s:exactmultipoles}
 \vspace*{-2ex}
 
@@ -227,7 +227,7 @@ Possible values:\\
 
 
 %---------------------------------------------------------------------------------------------------
-\subsection{FiducialPt Enum Group}
+\subsection{FiducialPt Enum Params}
 \label{s:fiducialpt}
 \vspace*{-2ex}
 
@@ -264,7 +264,7 @@ Example: To extend the \vn{EleGeometry} trait group to include the value \vn{HEL
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\subsection{ApertureShape Holy Trait Group}
+\subsection{ApertureShape Holy Trait Params}
 \label{s:apertureshape}
 \vspace*{-2ex}
 
@@ -279,7 +279,7 @@ The shape of an aperture.\\
 \hfill \break \vskip -1.2ex
 
 %---------------------------------------------------------------------------------------------------
-\subsection{EleGeometry Holy Trait Group}
+\subsection{EleGeometry Holy Trait Params}
 \label{s:elegeometry}
 \vspace*{-2ex}
 

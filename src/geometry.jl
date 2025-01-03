@@ -2,9 +2,9 @@
 # propagate_ele_geometry
 
 """
-    propagate_ele_geometry(geometry::Type{<:EleGeometry}, floor_start::OrientationGroup, 
-                                                                     ele::Ele) -> OrientationGroup
-    propagate_ele_geometry(ele::Ele) -> OrientationGroup
+    propagate_ele_geometry(geometry::Type{<:EleGeometry}, floor_start::OrientationParams, 
+                                                                     ele::Ele) -> OrientationParams
+    propagate_ele_geometry(ele::Ele) -> OrientationParams
 
   Returns the floor position at the end of the element given the floor position at the beginning.
   Normally this routine is called with `floor_start` equal to ele.param[:floor_position].
@@ -17,32 +17,32 @@ That is, the coordinates are the `machine` coordinates and not the `body` coordi
 """ propagate_ele_geometry
 
 function propagate_ele_geometry(ele::Ele)
-  return propagate_ele_geometry(ele_geometry(ele), ele.OrientationGroup, ele)
+  return propagate_ele_geometry(ele_geometry(ele), ele.OrientationParams, ele)
 end
 
-function propagate_ele_geometry(fstart::OrientationGroup, ele::Ele)
+function propagate_ele_geometry(fstart::OrientationParams, ele::Ele)
   return propagate_ele_geometry(ele_geometry(ele), fstart, ele)
 end
 
-function propagate_ele_geometry(::Type{ZERO_LENGTH}, fstart::OrientationGroup, ele::Ele)
+function propagate_ele_geometry(::Type{ZERO_LENGTH}, fstart::OrientationParams, ele::Ele)
   return fstart
 end
 
-function propagate_ele_geometry(::Type{STRAIGHT}, fstart::OrientationGroup, ele::Ele)
+function propagate_ele_geometry(::Type{STRAIGHT}, fstart::OrientationParams, ele::Ele)
   r_floor = fstart.r + rot([0.0, 0.0, ele.L], fstart.q)
-  return OrientationGroup(r_floor, fstart.q)
+  return OrientationParams(r_floor, fstart.q)
 end
 
-function propagate_ele_geometry(::Type{CIRCULAR}, fstart::OrientationGroup, ele::Ele)
-  df = coord_transform(ele.L, ele.BendGroup.g, ele.BendGroup.tilt_ref)
+function propagate_ele_geometry(::Type{CIRCULAR}, fstart::OrientationParams, ele::Ele)
+  df = coord_transform(ele.L, ele.BendParams.g, ele.BendParams.tilt_ref)
   return coord_transform(fstart, df)
 end
 
-function propagate_ele_geometry(::Type{PATCH_GEOMETRY}, fstart::OrientationGroup, ele::Ele)
+function propagate_ele_geometry(::Type{PATCH_GEOMETRY}, fstart::OrientationParams, ele::Ele)
   error("Not yet implemented!")
 end
 
-function propagate_ele_geometry(::Type{CRYSTAL_GEOMETRY}, fstart::OrientationGroup, ele::Ele)
+function propagate_ele_geometry(::Type{CRYSTAL_GEOMETRY}, fstart::OrientationParams, ele::Ele)
   error("Not yet implemented!")
 end
 
@@ -50,7 +50,7 @@ end
 # coord_transform
 
 """
-    coord_transform(ds::Number, g::Number, tilt_ref::Number = 0) -> OrientationGroup
+    coord_transform(ds::Number, g::Number, tilt_ref::Number = 0) -> OrientationParams
 
 Returns the coordinate transformation from one point on the arc with radius `1/g` of a Bend to another
 point that is an arc distance `ds` from the first point.
@@ -62,18 +62,18 @@ The transformation is
 
 function coord_transform(ds::Number, g::Number, tilt_ref::Number = 0.0)
   if g == 0
-    return OrientationGroup([0.0, 0.0, ds], Quaternion())
+    return OrientationParams([0.0, 0.0, ds], Quaternion())
 
   else
     angle = ds/g
-    r_vec = [-ds * sinc(angle/(2*pi)) * sin(angle), 0.0, ds * sinc(angle/(2*pi))]
+    r_vec = [-ds * un_sinc(0.5*angle) * sin(angle), 0.0, ds * un_sinc(0.5*angle)]
 
     qa = rotY(-angle)
     if tilt_ref == 0
-      return OrientationGroup(r_vec, qa)
+      return OrientationParams(r_vec, qa)
     else
       qt = rotZ(-tilt_ref)
-      return OrientationGroup(rot(r_vec, qt), qt * qa * inv(qt))
+      return OrientationParams(rot(r_vec, qt), qt * qa * inv(qt))
     end
   end
 end
@@ -82,15 +82,15 @@ end
 # coord_transform
 
 """
-    coord_transform(coord0::OrientationGroup, dcoord::OrientationGroup) -> OrientationGroup
+    coord_transform(coord0::OrientationParams, dcoord::OrientationParams) -> OrientationParams
 
 Returns coordinate transformation of `dcoord` applied to `coord0`.
-""" coord_transform(coord0::OrientationGroup, dcoord::OrientationGroup)
+""" coord_transform(coord0::OrientationParams, dcoord::OrientationParams)
 
-function coord_transform(coord0::OrientationGroup, dcoord::OrientationGroup)
+function coord_transform(coord0::OrientationParams, dcoord::OrientationParams)
   r_coord = coord0.r + rot(dcoord.r, coord0.q)
   q_coord = coord0.q * dcoord.q
-  return OrientationGroup(r_coord, q_coord)
+  return OrientationParams(r_coord, q_coord)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -116,11 +116,11 @@ end
 # rot!
 
 """
-    rot!(coord::OrientationGroup, q::Quaternion) -> OrientationGroup
+    rot!(coord::OrientationParams, q::Quaternion) -> OrientationParams
 
 Rotates coordinate position `coord` by `q`.
 """ 
-function rot!(coord::OrientationGroup, q::Quaternion)
+function rot!(coord::OrientationParams, q::Quaternion)
   coord.r = rot(coord.r, q)
   coord.q = q * coord.q
   return coord
@@ -130,11 +130,11 @@ end
 # rot
 
 """
-    rot(coord::OrientationGroup, q::Quaternion) -> OrientationGroup
+    rot(coord::OrientationParams, q::Quaternion) -> OrientationParams
 
 Rotates coordinate position `coord` by `q`.
 """ 
-function rot(coord::OrientationGroup, q::Quaternion)
-  return OrientationGroup(r = rot(coord0.r, q), q = q * coord0.q)
+function rot(coord::OrientationParams, q::Quaternion)
+  return OrientationParams(r = rot(coord0.r, q), q = q * coord0.q)
 end
 

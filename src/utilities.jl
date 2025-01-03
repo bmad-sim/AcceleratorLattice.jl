@@ -23,7 +23,7 @@ function lat_sanity_check(lat::Lattice)
       if branch !== ele.branch; error("SanityCheck: Ele $(ele_name(ele)) has ele.branch not pointing to parient branch."); end
 
       if branch.type == TrackingBranch
-        if !haskey(ele.pdict, :LengthGroup) error("Sanity check: Ele $(ele_name(ele)) does not have a LengthGroup group."); end
+        if !haskey(ele.pdict, :LengthParams) error("Sanity check: Ele $(ele_name(ele)) does not have a LengthParams group."); end
       end
     end
   end
@@ -34,13 +34,13 @@ end
 # Base.isless
 
 """
-    Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterGroup, T2 <: EleParameterGroup} -> Bool
+    Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterParams, T2 <: EleParameterParams} -> Bool
     Base.isless(x::Type{T}, y::Type{U}) where {T <: Ele, U <: Ele} = isless(string(x), string(y)) -> Bool
 
 Used to sort output alphabetically by name.
 """ Base.isless
 
-function Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterGroup, T2 <: EleParameterGroup}
+function Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterParams, T2 <: EleParameterParams}
   return Symbol(a) < Symbol(b)
 end
 

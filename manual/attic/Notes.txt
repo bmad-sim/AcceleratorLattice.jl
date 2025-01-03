@@ -1,13 +1,13 @@
-* Some element parameter groups may or may not be present. EG: AmpVsTimeGroup for ACKicker. 
+* Some element parameter groups may or may not be present. EG: AmpVsTimeParams for ACKicker. 
 
-* EG AmpVsTimeGroup: There are no "shortcuts" like ele.L -> ele.LengthGroup.L. Can set via:
-  at = ele.AmpVsTimeGroup    # Does this work if AmpVsTimeGroup is not present? If so need function for this.
+* EG AmpVsTimeParams: There are no "shortcuts" like ele.L -> ele.LengthParams.L. Can set via:
+  at = ele.AmpVsTimeParams    # Does this work if AmpVsTimeParams is not present? If so need function for this.
   at.interpolation = ...
 or
-  at = AmpVsTimeGroup(t_offset = ...)
+  at = AmpVsTimeParams(t_offset = ...)
   at.interpolation = ...
   ...
-  ele.AmpVsTimeGroup = at
+  ele.AmpVsTimeParams = at
 
 * BeamBeam element can have a reference to a Solenoid element 
 
@@ -52,7 +52,7 @@ The reason for doing a shallow copy, instead of a deep copy, is to save on memor
 * "Lattice" bookkeeping triggered by user (or optimizer).
 * Drifts are temporarily put in branch.ele_saved for superposition.
 
-* MultipassLord elements do not have orientation, s, nor s_downstream parameters but does have a LengthGroup
+* MultipassLord elements do not have orientation, s, nor s_downstream parameters but does have a LengthParams
 
 * Lattice bookkeeping can be bypassed by setting the element group parameter directly.
 
@@ -71,7 +71,7 @@ Note: Could also have defined parameters to be Union{Float64,Missing} but this p
 
 * Implementation note: Bookkeeping is element-by-element rather then parameter group by parameter group since 
 the parameter groups are not necessarily independent. For example, the reference time will depend upon
-the OrientationGroup if the lattice contains a flexible patch. 
+the OrientationParams if the lattice contains a flexible patch. 
 
 * Using Strings for the keys of ele.pdict[] would have worked instead of Symbols. Using Symbols gives
 a slightly cleaner look to the code.
@@ -87,7 +87,7 @@ values is redefined).
 
 * Coding tip: Element group structures are not mutable by design to maximize tracking speed. This is a bit inconvenient when a structure needs to be modified. One way to handle this is using the @set macro. Another way is to convert a structure instance to a Dict, change the Dict, and then convert back (note: this is possible since the @kwdef macro was used to define the element group structures). Example: ...
 
-* Some element groups are optional and may not be present in a given element. For example, LengthGroup is required and BMultipoleGroup and EMultipoleGroup are optional.
+* Some element groups are optional and may not be present in a given element. For example, LengthParams is required and BMultipoleParams and EMultipoleParams are optional.
 
 * Online documentation: For element groups use REPL "?" and type in the name.
 

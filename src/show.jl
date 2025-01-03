@@ -2,43 +2,43 @@
 # show_column2
 
 """
-    show_column2 = Dict{Type{T} where T <: EleParameterGroup, Dict{Symbol,Symbol}}
+    show_column2 = Dict{Type{T} where T <: EleParameterParams, Dict{Symbol,Symbol}}
 
 Dict used by the `show(::ele)` command which contains the information as to what to put in the
 second column when displaying the elements of an element parameter group using the two column format.
 
 Example `show_column2` key/value pair:
 ```julia
-  OrientationGroup => Dict{Symbol,Symbol}(
+  OrientationParams => Dict{Symbol,Symbol}(
     :r                => :q,
     :phi              => :psi,
   )
 ```
-In this example, when printing the `OrientationGroup`, in the line showing the `.r` component,
+In this example, when printing the `OrientationParams`, in the line showing the `.r` component,
 the `.r` component will be in the first column and the `.q` component will be in the
 second column.
 
 When defining custom parameter groups, key/value pairs can be added to `show_column2` as needed.
 
-NOTE! For any show_column2[Group] dict, Output parameters may be a value (will appear in column 2)
+NOTE! For any show_column2[Params] dict, Output parameters may be a value (will appear in column 2)
 but not a key. This restriction is not fundamental and could be remove with a little programming.
 """ show_column2
 
-show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol}}(
-  BodyShiftGroup => Dict{Symbol,Symbol}(
+show_column2 = Dict{Type{T} where T <: BaseEleParameterParams, Dict{Symbol,Symbol}}(
+  BodyShiftParams => Dict{Symbol,Symbol}(
     :offset           => :offset_tot,
     :x_rot            => :x_rot_tot,
     :y_rot            => :y_rot_tot,
     :z_rot            => :z_rot_tot,
   ),
 
-  ApertureGroup => Dict{Symbol,Symbol}(
+  ApertureParams => Dict{Symbol,Symbol}(
     :x_limit          => :y_limit,
     :aperture_shape   => :aperture_shifts_with_body,
 
   ),
 
-  BendGroup => Dict{Symbol,Symbol}(
+  BendParams => Dict{Symbol,Symbol}(
     :bend_type        => :exact_multipoles,
     :g                => :norm_bend_field,
     :angle            => :rho,
@@ -53,70 +53,70 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :eta              => :etap,
   ),
 
-  OrientationGroup => Dict{Symbol,Symbol}(
+  OrientationParams => Dict{Symbol,Symbol}(
     :r                => :q,
   ),
 
-  GirderGroup => Dict{Symbol,Symbol}(
+  GirderParams => Dict{Symbol,Symbol}(
     :origin_ele       => :origin_ele_ref_pt,
     :dr               => :dq,
   ),
 
-  LengthGroup => Dict{Symbol,Symbol}(
+  LengthParams => Dict{Symbol,Symbol}(
     :L                => :orientation,
     :s                => :s_downstream,
   ),
 
-  LordSlaveStatusGroup => Dict{Symbol,Symbol}(
+  LordSlaveStatusParams => Dict{Symbol,Symbol}(
     :lord_status      => :slave_status,
   ),
 
-  MasterGroup => Dict{Symbol,Symbol}(
+  MasterParams => Dict{Symbol,Symbol}(
     :is_on            => :field_master
   ),
 
-  PatchGroup => Dict{Symbol,Symbol}(
+  PatchParams => Dict{Symbol,Symbol}(
     :E_tot_offset     => :t_offset,
     :E_tot_downstream => :pc_downstream,
     :flexible         => :L_user,
   ),
 
-  DescriptionGroup => Dict{Symbol,Symbol}(
+  DescriptionParams => Dict{Symbol,Symbol}(
     :type             => :ID,
   ),
 
-  DownstreamReferenceGroup => Dict{Symbol,Symbol}(
+  DownstreamReferenceParams => Dict{Symbol,Symbol}(
     :pc_ref_downstream  => :E_tot_ref_downstream,
     :β_ref_downstream   => :γ_ref_downstream,
   ),
 
-  InitParticleGroup => Dict{Symbol,Symbol}(
+  InitParticleParams => Dict{Symbol,Symbol}(
   ),
 
-  ReferenceGroup => Dict{Symbol,Symbol}(
+  ReferenceParams => Dict{Symbol,Symbol}(
     :species_ref      => :extra_dtime_ref,
     :pc_ref           => :E_tot_ref,
     :time_ref         => :time_ref_downstream,
     :β_ref            => :γ_ref,
   ),
 
-  RFGroup => Dict{Symbol,Symbol}(
+  RFParams => Dict{Symbol,Symbol}(
     :voltage          => :gradient,
     :phase            => :multipass_phase,
     :frequency        => :harmon,
     :n_cell           => :cavity_type,
   ),
 
-  RFAutoGroup => Dict{Symbol,Symbol}(
+  RFAutoParams => Dict{Symbol,Symbol}(
     :do_auto_amp      => :do_auto_phase,
     :auto_amp         => :auto_phase,
   ),
 
-  SolenoidGroup => Dict{Symbol,Symbol}(
+  SolenoidParams => Dict{Symbol,Symbol}(
     :Ksol             => :Bsol,
   ),
 
-  TrackingGroup => Dict{Symbol,Symbol}(
+  TrackingParams => Dict{Symbol,Symbol}(
     :num_steps        => :ds_step,
   ),
 
@@ -126,7 +126,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParameterGroup, Dict{Symbol,Symbol
     :eta              => :etap,
   ),
 
-  TwissGroup => Dict{Symbol,Symbol}(
+  TwissParams => Dict{Symbol,Symbol}(
     :beta_a           => :beta_b,
     :alpha_a          => :alpha_b,
     :gamma_a          => :gamma_b,
@@ -286,7 +286,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     for key in sort(collect(keys(pdict)))
       if key in IGNORE_ELE_PDICT_KEY; continue; end
       val = pdict[key]
-      if typeof(val) <: EleParameterGroup || key == :changed; continue; end
+      if typeof(val) <: EleParameterParams || key == :changed; continue; end
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
       param_name = rpad(string(key), nn2)
@@ -301,12 +301,12 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     # Print element parameter groups (does not include changed)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
-      if !(typeof(group) <: EleParameterGroup); continue; end
-      # Do not show if the group parameter values are the same as the ReferenceGroup
-      if key == :DownstreamReferenceGroup
-        rg = pdict[:ReferenceGroup]
+      if !(typeof(group) <: EleParameterParams); continue; end
+      # Do not show if the group parameter values are the same as the ReferenceParams
+      if key == :DownstreamReferenceParams
+        rg = pdict[:ReferenceParams]
         if group.species_ref_downstream == rg.species_ref && group.pc_ref_downstream == rg.pc_ref
-          println(io, "  DownstreamReferenceGroup: Same energy and species values as ReferenceGroup")
+          println(io, "  DownstreamReferenceParams: Same energy and species values as ReferenceParams")
           continue
         end
       end
@@ -341,12 +341,12 @@ Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
 # show_elegroup
 
 """
-    Internal: show_elegroup(io::IO, group::EleParameterGroup, ele::Ele, docstring::Bool; indent = 0)
+    Internal: show_elegroup(io::IO, group::EleParameterParams, ele::Ele, docstring::Bool; indent = 0)
 
 Prints lattice element group info. Used by `show_ele`.
 """ show_elegroup
 
-function show_elegroup(io::IO, group::EleParameterGroup, ele::Ele, docstring::Bool; indent = 0)
+function show_elegroup(io::IO, group::EleParameterParams, ele::Ele, docstring::Bool; indent = 0)
   if docstring
     show_elegroup_with_doc(io, group, ele, indent = indent)
   else
@@ -356,15 +356,15 @@ end
 
 #---------
 
-function show_elegroup(io::IO, group::BMultipoleGroup, ele::Ele, docstring::Bool; indent = 0)
+function show_elegroup(io::IO, group::BMultipoleParams, ele::Ele, docstring::Bool; indent = 0)
   off_str = " "^indent
 
   if length(group.pole) == 0
-    println(io, "$(off_str)BMultipoleGroup: No magnetic multipoles")
+    println(io, "$(off_str)BMultipoleParams: No magnetic multipoles")
     return
   end
 
-  println(io, "$(off_str)BMultipoleGroup:")
+  println(io, "$(off_str)BMultipoleParams:")
   tilt = "tilt (rad)"
   println(io, "$(off_str)  Order integrated $(lpad(tilt,23))")
   for v in group.pole
@@ -381,15 +381,15 @@ end
 
 #---------
 
-function show_elegroup(io::IO, group::EMultipoleGroup, ele::Ele, docstring::Bool; indent = 0)
+function show_elegroup(io::IO, group::EMultipoleParams, ele::Ele, docstring::Bool; indent = 0)
   off_str = " "^indent
 
   if length(group.pole) == 0
-    println(io, "$(off_str)EMultipoleGroup: No electric multipoles")
+    println(io, "$(off_str)EMultipoleParams: No electric multipoles")
     return
   end
 
-  println(io, "$(off_str)EMultipoleGroup:")
+  println(io, "$(off_str)EMultipoleParams:")
   println(io, "$(off_str)  Order Eintegrated{lpad(\"Etilt (rad)\",23)}")
   for v in group.pole
     !isnothing(v.Eintegrated) && v.Eintegrated ? ol = "$(v.order)L" : ol = "$(v.order) "
@@ -402,12 +402,12 @@ end
 # show_elegroup_with_doc
 
 """
-    show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterGroup
+    show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterParams
 
 Single column printing of an element group with a docstring printed for each parameter.
 """ show_elegroup_with_doc
 
-function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterGroup
+function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterParams
   gtype = typeof(group)
   nn = max(18, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
@@ -423,12 +423,12 @@ end
 # show_elegroup_wo_doc
 
 """
-    show_elegroup_wo_doc(io::IO, group::BaseEleParameterGroup, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
+    show_elegroup_wo_doc(io::IO, group::BaseEleParameterParams, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
 
 Two column printing of an element group without any docstring.
 """ show_elegroup_wo_doc
 
-function show_elegroup_wo_doc(io::IO, group::BaseEleParameterGroup, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
+function show_elegroup_wo_doc(io::IO, group::BaseEleParameterParams, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
   # If output field for column 1 or column 2 is wider than this, print the fields on two lines.
   col_width_cut = 55
 
@@ -481,7 +481,7 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParameterGroup, ele::Ele; in
       end
 
     else
-      if field_sym in fieldnames(gtype) && typeof(getfield(group, field_sym)) <: EleParameterSubGroup; continue; end
+      if field_sym in fieldnames(gtype) && typeof(getfield(group, field_sym)) <: EleParameterSubParams; continue; end
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(ele, field_sym)
       println(io, " "^indent * f"  {field_name} {vstr} {units(field_sym)}")
@@ -494,14 +494,14 @@ end
 # full_parameter_name
 
 """
-    full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterGroup
+    full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterParams
 
-For fields where the user name is different (EG: `r_floor` and `r` in a OrientationGroup), 
+For fields where the user name is different (EG: `r_floor` and `r` in a OrientationParams), 
 return the string `struct_name (user_name)` (EG: `r (r_floor)`). Also add `(output)` to 
 names of output parameters.
 """ full_parameter_name
 
-function full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterGroup
+function full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterParams
   pinfo = ele_param_info(field, throw_error = false)
   if !isnothing(pinfo)
     if !isnothing(pinfo.output_group); return "$field (output)"; end
@@ -587,7 +587,7 @@ function Base.show(io::IO, branch::Branch)
       if branch.type == MultipassBranch
         end_str = f"{ele.L:11.6f}"
         if haskey(ele.pdict, :slaves); end_str = end_str * " "^28 * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
-      elseif haskey(ele.pdict, :LengthGroup)
+      elseif haskey(ele.pdict, :LengthParams)
         s_str = ele_param_value_str(ele, :s, default = "    "*"-"^7, format = "12.6f")
         s_down_str = ele_param_value_str(ele, :s_downstream, default = "    "*"-"^7, format = "12.6f")
         end_str = f"{ele.L:12.6f}{s_str} ->{s_down_str}"
@@ -686,7 +686,7 @@ end
     info(str::AbstractString) -> nothing    # Info on element parameter string. EG: "angle", "Kn1", etc.
     info(ele_type::Type{T}) where T <: Ele  # Info on a given element type.
     info(ele::Ele)                          # Info on typeof(ele) element type.
-    info(group::Type{T}) where T <: EleParameterGroup  # Info on element parameter group.
+    info(group::Type{T}) where T <: EleParameterParams  # Info on element parameter group.
 
 Prints information about:
   + The element parameter represented by `sym` or `str`.
@@ -696,7 +696,7 @@ Prints information about:
 ## Examples
     info(:L)          # Prints information on parameter `L`.
     info("L")         # Same as above.
-    info(LengthGroup) # `LengthGroup` info.
+    info(LengthParams) # `LengthParams` info.
 """ info
 
 function info(sym::Symbol)
@@ -752,7 +752,7 @@ end
 
 #----
 
-function info(group::Type{T}) where T <: EleParameterGroup
+function info(group::Type{T}) where T <: EleParameterParams
   if group in keys(ELE_PARAM_GROUP_INFO)
     println("$(group): $(ELE_PARAM_GROUP_INFO[group].description)")
   else
