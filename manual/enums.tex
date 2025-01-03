@@ -23,7 +23,7 @@ used often enough so that the constants \vn{OPEN} and \vn{CLOSED} are defined.
 The group name followed by a \vn{.T} suffix denotes the enum type.
 For example:
 \begin{example}
-  struct ApertureParams <: EleParameterParams
+  struct ApertureParams <: EleParams
     aperture_type::ApertureShape.T = ApertureShape.ELLIPTICAL
     aperture_at::BodyLoc.T = BodyLoc.ENTRANCE_END
     ...

@@ -305,7 +305,7 @@ end
 # get_elegroup_param
 
 """
-    Internal: get_elegroup_param(ele::Ele, group::EleParameterParams, pinfo::ParamInfo)
+    Internal: get_elegroup_param(ele::Ele, group::EleParams, pinfo::ParamInfo)
     Internal: get_elegroup_param(ele::Ele, group::Union{BMultipoleParams, EMultipoleParams}, pinfo::ParamInfo)
 
 Internal function used by Base.getproperty.
@@ -314,7 +314,7 @@ This function will return dependent values.
 EG: integrated multipole value even if stored value is not integrated.
 """ get_elegroup_param
 
-function get_elegroup_param(ele::Ele, group::EleParameterParams, pinfo::ParamInfo)
+function get_elegroup_param(ele::Ele, group::EleParams, pinfo::ParamInfo)
   if pinfo.parent_group == pinfo.paramkind               # Example see: ParamInfo(:twiss)
     return group
   else
@@ -357,11 +357,11 @@ end
 # set_elegroup_param!
 
 """
-    Internal: set_elegroup_param!(ele::Ele, group::EleParameterParams, pinfo::ParamInfo, value)
+    Internal: set_elegroup_param!(ele::Ele, group::EleParams, pinfo::ParamInfo, value)
 
 """ set_elegroup_param
 
-function set_elegroup_param!(ele::Ele, group::EleParameterParams, pinfo::ParamInfo, value)
+function set_elegroup_param!(ele::Ele, group::EleParams, pinfo::ParamInfo, value)
   if !isnothing(pinfo.sub_struct)    # Example see: ParamInfo(:a_beta)  
     return setfield!(pinfo.sub_struct(group), pinfo.struct_sym, value)
   else
@@ -421,14 +421,14 @@ end
 # base_field(group, pinfo)
 
 """
-    base_field(group::EleParameterParams, pinfo::ParamInfo) -> BaseEleParameterParams
+    base_field(group::EleParams, pinfo::ParamInfo) -> BaseEleParams
 
 Return group containing parameter described by `pinfo`. For most parameters this will be the `group`
 itself. However, for example, for the parameter `eta_a`, `group` will be a `TwissParams` instance
 and returned is the sub group `group.a`.
-""" base_field(group::EleParameterParams, pinfo::ParamInfo) 
+""" base_field(group::EleParams, pinfo::ParamInfo) 
 
-function base_field(group::EleParameterParams, pinfo::ParamInfo)
+function base_field(group::EleParams, pinfo::ParamInfo)
   if isnothing(pinfo.sub_struct) 
     return group           
   else                 # Example see: ParamInfo(:a_beta)

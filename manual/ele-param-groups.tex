@@ -31,17 +31,17 @@ The parmeter groups are:
 \label{t:ele.param.g}
 \end{table}
 
-Element parameter groups inherit from the abstract type \vn{EleParameterParams} which
-in turn inherits from \vn{BaseEleParameterParams}. Some
+Element parameter groups inherit from the abstract type \vn{EleParams} which
+in turn inherits from \vn{BaseEleParams}. Some
 parameter groups have sub-group components. 
-These sub-groups also inherit from \vn{BaseEleParameterParams}:
+These sub-groups also inherit from \vn{BaseEleParams}:
 \begin{example}
-  abstract type BaseEleParameterParams end
-  abstract type EleParameterParams <: BaseEleParameterParams end
-  abstract type EleParameterSubParams <: BaseEleParameterParams end
+  abstract type BaseEleParams end
+  abstract type EleParams <: BaseEleParams end
+  abstract type EleParameterSubParams <: BaseEleParams end
 \end{example}
 
-To see which element types contain a given group, use the \vn{info(::EleParameterParams)}
+To see which element types contain a given group, use the \vn{info(::EleParams)}
 method. Example:
 \begin{example}
   julia> info(BodyShiftParams)

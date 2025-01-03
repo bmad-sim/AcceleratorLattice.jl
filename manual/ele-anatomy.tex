@@ -63,11 +63,11 @@ Example:
 \label{s:ele.groups}
 
 Generally, element parameters are grouped into ``\vn{element} \vn{parameter} \vn{group}'' 
-structs which inherit from the abstract type \vn{EleParameterParams}. 
+structs which inherit from the abstract type \vn{EleParams}. 
 Element parameter documentation is in Chapter~\sref{c:ele.groups}. In the REPL,
 To see a list of parameter groups, use the \vn{suptypes} function:
 \begin{example}
-  julia> subtypes(EleParameterParams)
+  julia> subtypes(EleParams)
   28-element Vector{Any}:
    BodyShiftParams
    ApertureParams
@@ -103,7 +103,7 @@ Alternatively,
 
 For example, the \vn{LengthParams} holds the length and s-positions of the element and is defined by:
 \begin{example}
-  @kwdef struct LengthParams <: EleParameterParams
+  @kwdef struct LengthParams <: EleParams
     L::Number = 0.0               # Length of element
     s::Number = 0.0               # Starting s-position
     s_downstream::Number = 0.0    # Ending s-position

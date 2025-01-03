@@ -2,7 +2,7 @@
 # show_column2
 
 """
-    show_column2 = Dict{Type{T} where T <: EleParameterParams, Dict{Symbol,Symbol}}
+    show_column2 = Dict{Type{T} where T <: EleParams, Dict{Symbol,Symbol}}
 
 Dict used by the `show(::ele)` command which contains the information as to what to put in the
 second column when displaying the elements of an element parameter group using the two column format.
@@ -24,7 +24,7 @@ NOTE! For any show_column2[Params] dict, Output parameters may be a value (will 
 but not a key. This restriction is not fundamental and could be remove with a little programming.
 """ show_column2
 
-show_column2 = Dict{Type{T} where T <: BaseEleParameterParams, Dict{Symbol,Symbol}}(
+show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
   BodyShiftParams => Dict{Symbol,Symbol}(
     :offset           => :offset_tot,
     :x_rot            => :x_rot_tot,
@@ -286,7 +286,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     for key in sort(collect(keys(pdict)))
       if key in IGNORE_ELE_PDICT_KEY; continue; end
       val = pdict[key]
-      if typeof(val) <: EleParameterParams || key == :changed; continue; end
+      if typeof(val) <: EleParams || key == :changed; continue; end
       if key == :name; continue; end
       nn2 = max(nn, length(string(key)))
       param_name = rpad(string(key), nn2)
@@ -301,7 +301,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     # Print element parameter groups (does not include changed)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
-      if !(typeof(group) <: EleParameterParams); continue; end
+      if !(typeof(group) <: EleParams); continue; end
       # Do not show if the group parameter values are the same as the ReferenceParams
       if key == :DownstreamReferenceParams
         rg = pdict[:ReferenceParams]
@@ -341,12 +341,12 @@ Base.show(io::IO, ::MIME"text/plain", ele::Ele) = show_ele(io, ele, false)
 # show_elegroup
 
 """
-    Internal: show_elegroup(io::IO, group::EleParameterParams, ele::Ele, docstring::Bool; indent = 0)
+    Internal: show_elegroup(io::IO, group::EleParams, ele::Ele, docstring::Bool; indent = 0)
 
 Prints lattice element group info. Used by `show_ele`.
 """ show_elegroup
 
-function show_elegroup(io::IO, group::EleParameterParams, ele::Ele, docstring::Bool; indent = 0)
+function show_elegroup(io::IO, group::EleParams, ele::Ele, docstring::Bool; indent = 0)
   if docstring
     show_elegroup_with_doc(io, group, ele, indent = indent)
   else
@@ -402,12 +402,12 @@ end
 # show_elegroup_with_doc
 
 """
-    show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterParams
+    show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParams
 
 Single column printing of an element group with a docstring printed for each parameter.
 """ show_elegroup_with_doc
 
-function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParameterParams
+function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParams
   gtype = typeof(group)
   nn = max(18, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
@@ -423,12 +423,12 @@ end
 # show_elegroup_wo_doc
 
 """
-    show_elegroup_wo_doc(io::IO, group::BaseEleParameterParams, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
+    show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
 
 Two column printing of an element group without any docstring.
 """ show_elegroup_wo_doc
 
-function show_elegroup_wo_doc(io::IO, group::BaseEleParameterParams, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
+function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
   # If output field for column 1 or column 2 is wider than this, print the fields on two lines.
   col_width_cut = 55
 
@@ -494,14 +494,14 @@ end
 # full_parameter_name
 
 """
-    full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterParams
+    full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParams
 
 For fields where the user name is different (EG: `r_floor` and `r` in a OrientationParams), 
 return the string `struct_name (user_name)` (EG: `r (r_floor)`). Also add `(output)` to 
 names of output parameters.
 """ full_parameter_name
 
-function full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParameterParams
+function full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParams
   pinfo = ele_param_info(field, throw_error = false)
   if !isnothing(pinfo)
     if !isnothing(pinfo.output_group); return "$field (output)"; end
@@ -686,7 +686,7 @@ end
     info(str::AbstractString) -> nothing    # Info on element parameter string. EG: "angle", "Kn1", etc.
     info(ele_type::Type{T}) where T <: Ele  # Info on a given element type.
     info(ele::Ele)                          # Info on typeof(ele) element type.
-    info(group::Type{T}) where T <: EleParameterParams  # Info on element parameter group.
+    info(group::Type{T}) where T <: EleParams  # Info on element parameter group.
 
 Prints information about:
   + The element parameter represented by `sym` or `str`.
@@ -752,7 +752,7 @@ end
 
 #----
 
-function info(group::Type{T}) where T <: EleParameterParams
+function info(group::Type{T}) where T <: EleParams
   if group in keys(ELE_PARAM_GROUP_INFO)
     println("$(group): $(ELE_PARAM_GROUP_INFO[group].description)")
   else

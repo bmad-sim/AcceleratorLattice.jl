@@ -34,13 +34,13 @@ end
 # Base.isless
 
 """
-    Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterParams, T2 <: EleParameterParams} -> Bool
+    Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParams, T2 <: EleParams} -> Bool
     Base.isless(x::Type{T}, y::Type{U}) where {T <: Ele, U <: Ele} = isless(string(x), string(y)) -> Bool
 
 Used to sort output alphabetically by name.
 """ Base.isless
 
-function Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParameterParams, T2 <: EleParameterParams}
+function Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParams, T2 <: EleParams}
   return Symbol(a) < Symbol(b)
 end
 
