@@ -603,6 +603,45 @@ end
 # BodyShiftParams
 
 """
+    mutable struct BodyShiftGroup <: EleParameterGroup
+
+Defines the position and orientation of an element. 
+
+- For `Patch` elements this is the orientation of the exit face with respect to the entrance face.
+- For `FloorShift` and `Fiducial` elements this is the orientation of the element with respect
+  to the reference element.
+- For other elements this is the orientation of element body alignment point with respect to 
+the supporting girder if it exists or with respect to the machine coordinates.
+
+## Fields
+• `offset::Vector`         - [x, y, z] offsets not including any Girder. \\
+• `x_rot::Number`          - Rotation around the x-axis not including any Girder alignment shifts.  \\
+• `y_rot::Number`          - Rotation around the y-axis not including any Girder alignment shifts. \\
+• `z_rot::Number`          - Rotation around the z-axis not including any Girder alignment shifts. \\
+
+# Associated Output Parameters
+The `tot` parameters are defined only for elements that can be supported by a `Girder`.
+These parameters are the body coordinates with respect to machine coordinates. 
+These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
+non-tot fields if there is no `Girder`.
+• `q_shift::Quaternion`      - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
+• `q_shift_tot:: Quaternion` - `Quaternion` representation of orienttion with Girder shifts.
+• `offset_tot::Vector`       - `[x, y, z]` offsets including Girder alignment shifts. \\
+• `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
+• `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
+• `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
+
+@kwdef mutable struct BodyShiftGroup <: EleParameterGroup
+  offset::Vector = [0.0, 0.0, 0.0] 
+  x_rot::Number = 0
+  y_rot::Number = 0
+  z_rot::Number = 0
+end
+
+#---------------------------------------------------------------------------------------------------
+# DescriptionGroup
+
+"""
     mutable struct BodyShiftParams <: EleParameterParams
 
 Defines the position and orientation of an element. 

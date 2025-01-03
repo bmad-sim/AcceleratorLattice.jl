@@ -614,6 +614,17 @@ PARAM_GROUPS_LIST = Dict(
     BeamBeam            => [base_group_list..., BeamBeamParams],
     BeginningEle        => [base_group_list..., TwissParams, InitParticleParams],
     Bend                => [BendParams, general_group_list...],
+
+base_group_list = [LengthGroup, LordSlaveStatusGroup, DescriptionGroup, ReferenceGroup, 
+         DownstreamReferenceGroup, OrientationGroup, TrackingGroup, BodyShiftGroup, ApertureGroup]
+multipole_group_list = [MasterGroup, BMultipoleGroup, EMultipoleGroup]
+general_group_list = [base_group_list..., multipole_group_list...]
+
+PARAM_GROUPS_LIST = Dict(  
+    ACKicker            => [general_group_list..., ACKickerGroup],
+    BeamBeam            => [base_group_list..., BeamBeamGroup],
+    BeginningEle        => [base_group_list..., TwissGroup, InitParticleGroup],
+    Bend                => [BendGroup, general_group_list...],
     Collimator          => [base_group_list...],
     Converter           => [base_group_list...],
     CrabCavity          => [base_group_list...],
