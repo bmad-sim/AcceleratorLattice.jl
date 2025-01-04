@@ -399,7 +399,7 @@ end
 function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, changed::ChangedLedger, previous_ele::Ele)
   bmg = ele.BMultipoleParams
   cdict = ele.changed
-  if !has_changed(ele, BMultipoleParams) && !changed.this_ele_length && !changed.ref_group; return; end
+  if !has_changed(ele, BMultipoleParams) && !changed.this_ele_length && !changed.reference; return; end
 
   ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
@@ -434,7 +434,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, changed::
     end
 
     # Update multipoles if the reference energy has changed.
-    if changed.ref_group
+    if changed.reference
       if ele.field_master
         for mul in bmg.pole
           mul.Kn = mul.Bn / ff
@@ -461,7 +461,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::Change
   bg = ele.BendParams
   cdict = ele.changed
 
-  if !has_changed(ele, BendParams) && !changed.this_ele_length && !changed.ref_group; return; end
+  if !has_changed(ele, BendParams) && !changed.this_ele_length && !changed.reference; return; end
 
   if ele.slave_status == Slave.SUPER
     lord = ele.super_lords[1]
@@ -633,7 +633,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::C
   drg = ele.DownstreamReferenceParams
   cdict = ele.changed
 
-  if has_changed(ele, ReferenceParams); changed.ref_group = true; end
+  if has_changed(ele, ReferenceParams); changed.reference = true; end
 
   if ele.slave_status == Slave.SUPER
     lord = ele.super_lords[1]
@@ -645,7 +645,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::C
   #
 
   if is_null(previous_ele)   # implies BeginningEle
-    if !changed.ref_group; return; end
+    if !changed.reference; return; end
     if rg.species_ref == Species(); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
     drg.species_ref_downstream = rg.species_ref
 
@@ -676,7 +676,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::C
 
   # Propagate from previous ele
 
-  if !changed.this_ele_length && !changed.ref_group; return; end
+  if !changed.this_ele_length && !changed.reference; return; end
 
   old_drg = copy(drg)
 
@@ -710,7 +710,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::C
   # End stuff
 
   clear_changed!(ele, ReferenceParams)
-  changed.ref_group = (old_drg != drg)
+  changed.reference = (old_drg != drg)
 
   return
 end
@@ -742,7 +742,7 @@ end
 function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, changed::ChangedLedger, previous_ele::Ele)
   sg = ele.SolenoidParams
   cdict = ele.changed
-  if !has_changed(ele, SolenoidParams) && !changed.ref_group; return; end
+  if !has_changed(ele, SolenoidParams) && !changed.reference; return; end
 
   ff = ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
