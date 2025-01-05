@@ -424,7 +424,7 @@ end
     base_field(group::EleParams, pinfo::ParamInfo) -> BaseEleParams
 
 Return group containing parameter described by `pinfo`. For most parameters this will be the `group`
-itself. However, for example, for the parameter `eta_a`, `group` will be a `TwissParams` instance
+itself. However, for example, for the parameter `eta_a`, `group` will be a `BeginningParams` instance
 and returned is the sub group `group.a`.
 """ base_field(group::EleParams, pinfo::ParamInfo) 
 

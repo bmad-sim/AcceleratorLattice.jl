@@ -110,6 +110,24 @@ ELE_PARAM_INFO_DICT = Dict(
   :wall               => ParamInfo(ApertureParams,  Wall2D,         "Wall defined by array of aperture vertices."),
   :custom_aperture    => ParamInfo(ApertureParams,  Dict,           "Custom aperture info."),
 
+  :beta_a             => ParamInfo(BeginningParams,  Number,            "A-mode beta Twiss parameter.", "m", nothing, :beta, :a),
+  :alpha_a            => ParamInfo(BeginningParams,  Number,            "A-mode alpha Twiss parameter.", "", nothing, :alpha, :a),
+  :gamma_a            => ParamInfo(BeginningParams,  Number,            "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :a),
+  :phi_a              => ParamInfo(BeginningParams,  Number,            "A-mode betatron phase.", "rad", nothing, :phi, :a),
+
+  :beta_b             => ParamInfo(BeginningParams,  Number,            "B-mode beta Twiss parameter.", "m", nothing, :beta, :b),
+  :alpha_b            => ParamInfo(BeginningParams,  Number,            "B-mode alpha Twiss parameter.", "", nothing, :alpha, :b),
+  :gamma_b            => ParamInfo(BeginningParams,  Number,            "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :b),
+  :phi_b              => ParamInfo(BeginningParams,  Number,            "B-mode betatron phase.", "rad", nothing, :phi, :b),
+
+  :eta_x              => ParamInfo(BeginningParams,  Number,            "X-mode position dispersion.", "m", nothing, :eta, :x),
+  :etap_x             => ParamInfo(BeginningParams,  Number,            "X-mode momentum dispersion.", "", nothing, :etap, :x),
+  :deta_ds_x          => ParamInfo(BeginningParams,  Number,            "X-mode dispersion derivative.", "", nothing, :deta_ds, :x),
+
+  :eta_y              => ParamInfo(BeginningParams,  Number,            "Y-mode position dispersion.", "m", nothing, :eta, :y),
+  :etap_y             => ParamInfo(BeginningParams,  Number,            "Y-mode momentum dispersion.", "", nothing, :etap, :y),
+  :deta_ds_y          => ParamInfo(BeginningParams,  Number,            "Y-mode dispersion derivative.", "", nothing, :deta_ds, :y),
+
   :angle              => ParamInfo(BendParams,      Number,         "Reference bend angle", "rad"),
   :bend_field_ref     => ParamInfo(BendParams,      Number,         "Reference bend field corresponding to g bending strength", "T"),
   :g                  => ParamInfo(BendParams,      Number,         "Reference bend strength (1/rho)", "1/m"),
@@ -213,24 +231,6 @@ ELE_PARAM_INFO_DICT = Dict(
   :eta                => ParamInfo(Twiss1,      Number,            "Position dispersion.", "m"),
   :etap               => ParamInfo(Twiss1,      Number,            "Momentum dispersion.", ""),
   :deta_ds            => ParamInfo(Twiss1,      Number,            "Dispersion derivative.", ""),
-
-  :beta_a             => ParamInfo(TwissParams,  Number,            "A-mode beta Twiss parameter.", "m", nothing, :beta, :a),
-  :alpha_a            => ParamInfo(TwissParams,  Number,            "A-mode alpha Twiss parameter.", "", nothing, :alpha, :a),
-  :gamma_a            => ParamInfo(TwissParams,  Number,            "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :a),
-  :phi_a              => ParamInfo(TwissParams,  Number,            "A-mode betatron phase.", "rad", nothing, :phi, :a),
-
-  :beta_b             => ParamInfo(TwissParams,  Number,            "B-mode beta Twiss parameter.", "m", nothing, :beta, :b),
-  :alpha_b            => ParamInfo(TwissParams,  Number,            "B-mode alpha Twiss parameter.", "", nothing, :alpha, :b),
-  :gamma_b            => ParamInfo(TwissParams,  Number,            "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :b),
-  :phi_b              => ParamInfo(TwissParams,  Number,            "B-mode betatron phase.", "rad", nothing, :phi, :b),
-
-  :eta_x              => ParamInfo(TwissParams,  Number,            "X-mode position dispersion.", "m", nothing, :eta, :x),
-  :etap_x             => ParamInfo(TwissParams,  Number,            "X-mode momentum dispersion.", "", nothing, :etap, :x),
-  :deta_ds_x          => ParamInfo(TwissParams,  Number,            "X-mode dispersion derivative.", "", nothing, :deta_ds, :x),
-
-  :eta_y              => ParamInfo(TwissParams,  Number,            "Y-mode position dispersion.", "m", nothing, :eta, :y),
-  :etap_y             => ParamInfo(TwissParams,  Number,            "Y-mode momentum dispersion.", "", nothing, :etap, :y),
-  :deta_ds_y          => ParamInfo(TwissParams,  Number,            "Y-mode dispersion derivative.", "", nothing, :deta_ds, :y),
 )
 
 for (key, info) in ELE_PARAM_INFO_DICT
@@ -292,9 +292,9 @@ This mapping only covers stuff in `ELE_PARAM_INFO_DICT` so this mapping does not
 Example: `ele_param_struct_field_to_user_sym[:beta] => [:beta_b, :beta, :beta_a, :beta_c]`
 
 The mappings from user name to field for this example are: \\
-• `beta_a` - maps to `a.beta` in a TwissParams \\
-• `beta_b` - maps to `b.beta` in a TwissParams \\
-• `beta_c` - maps to `c.beta` in a TwissParams \\
+• `beta_a` - maps to `a.beta` in a BeginningParams \\
+• `beta_b` - maps to `b.beta` in a BeginningParams \\
+• `beta_c` - maps to `c.beta` in a BeginningParams \\
 • `beta`   - maps to `beta` in a Twiss1Params \\
 """ ele_param_struct_field_to_user_sym
 
@@ -613,7 +613,7 @@ general_group_list = [base_group_list..., multipole_group_list...]
 PARAM_GROUPS_LIST = Dict(  
     ACKicker            => [general_group_list..., ACKickerParams],
     BeamBeam            => [base_group_list..., BeamBeamParams],
-    BeginningEle        => [base_group_list..., TwissParams, InitParticleParams],
+    BeginningEle        => [base_group_list..., BeginningParams, InitParticleParams],
     Bend                => [BendParams, general_group_list...],
     Collimator          => [base_group_list...],
     Converter           => [base_group_list...],
@@ -665,7 +665,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   ForkParams             => EleParamsInfo("Fork element parameters", false),
   GirderParams           => EleParamsInfo("Girder parameters.", false),
   InitParticleParams     => EleParamsInfo("Initial particle position and spin.", false),
-  TwissParams            => EleParamsInfo("Initial Twiss and coupling parameters.", false),
+  BeginningParams            => EleParamsInfo("Initial Twiss and coupling parameters.", false),
   LengthParams           => EleParamsInfo("Length and s-position parameters.", true),
   LordSlaveStatusParams  => EleParamsInfo("Element lord and slave status.", false),
   MasterParams           => EleParamsInfo("Contains field_master parameter.", false),
