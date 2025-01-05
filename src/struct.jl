@@ -81,7 +81,7 @@ Element constructor Example:
     @ele q1 = Quadrupole(L = 0.2, Ks1 = 0.67, ...)
 Result: The variable `q1` is a `Quadrupole` with the argument values put the the appropriate place.
 
-Note: All element parameter groups associated with the element type will be constructed. Thus, in the
+Note: All element parameter structs associated with the element type will be constructed. Thus, in the
 above example,`q1` above will have `q1.LengthParams` (equivalent to `q1.pdict[:LengthParams]`) created.
 """
 macro ele(expr)
@@ -137,9 +137,9 @@ function (::Type{T})(; kwargs...) where T <: Ele
   pdict = ele.pdict
   pdict[:changed] = Dict{Union{Symbol,DataType},Any}()
 
-  # Setup parameter groups.
-  for group in PARAM_GROUPS_LIST[typeof(ele)]
-    pdict[Symbol(group)] = group()
+  # Setup parameter structs.
+  for struct in PARAM_GROUPS_LIST[typeof(ele)]
+    pdict[Symbol(struct)] = struct()
   end
 
   # Put name in first in case there are errors and the ele name needs to be printed.
@@ -149,7 +149,7 @@ function (::Type{T})(; kwargs...) where T <: Ele
     pdict[:name] = "Not Set!"
   end
 
-  # Put parameters in parameter groups and changed area
+  # Put parameters in parameter structs and changed area
   for (sym, val) in kwargs
     if sym == :name; continue; end
     Base.setproperty!(ele, sym, val)
@@ -254,13 +254,13 @@ end
 """
     Internal: struct EleParamsInfo
 
-Struct holding information on a single `EleParams` group.
+Struct holding information on a single `EleParams` struct.
 Used in constructing the `ELE_PARAM_GROUP_INFO` Dict.
 
 ## Contains
 • `description::String`      - Descriptive string. \\
 • `bookkeeping_needed::Bool  - If true, this indicates there exists a bookkeeping function for the \\
-  parameter group that needs to be called if a parameter of the group is changed. \\
+  parameter struct that needs to be called if a parameter of the struct is changed. \\
 """
 struct EleParamsInfo
   description::String
@@ -275,12 +275,12 @@ end
     abstract type EleParams <: BaseEleParams
     abstract type EleParameterSubParams <: BaseEleParams
 
-`EleParams` is the base type for all element parameter groups.
+`EleParams` is the base type for all element parameter structs.
 `EleParameterSubParams` is the base type for structs that are used as components of an element
-parameter group.
+parameter struct.
 
-To see in which element types contain a given parameter group, use the `info(::EleParams)`
-method. To see what parameter groups are contained in a Example:
+To see in which element types contain a given parameter struct, use the `info(::EleParams)`
+method. To see what parameter structs are contained in a Example:
 ```
     info(BodyShiftParams)      # List element types that contain BodyShiftParams
 ```
@@ -669,7 +669,7 @@ end
 """
     mutable struct DownstreamReferenceParams <: EleParams
 
-Downstream end of element reference energy and species. This group is useful for
+Downstream end of element reference energy and species. This struct is useful for
 elements where the reference energy or species is not constant.
 Elements where this is true include `LCavity`, `Foil`, and `Converter`.
 
@@ -825,7 +825,7 @@ end
     mutable struct OrientationParams <: EleParams
 
 Position and angular orientation.
-In a lattice element, this group gives the orientation at the entrance end of the element
+In a lattice element, this struct gives the Floor coordinates at the entrance end of the element
 ignoring alignment shifts.
 
 # Fields
@@ -1018,7 +1018,7 @@ end
 """
     mutable struct TwissParams <: EleParams
 
-Lattice element parameter group storing Twiss, dispersion and coupling parameters
+Lattice element parameter struct storing Twiss, dispersion and coupling parameters
 for an element.
 """ TwissParams
 
@@ -1035,10 +1035,10 @@ end
 """
     abstract type BaseOutput
 
-Abstract type from which output group structs inherit.
+Abstract type from which output parameter structs inherit.
 AcceleratorLattice defines `OutputParams <: BaseOutput` which is used for output parameters
 defined by AcceleratorLattice. Custom output parameters may be defined by defining a new 
-output group struct and a new `output_parameter` function method.
+output parameter struct and a new `output_parameter` function method.
 
 """
 abstract type BaseOutput end
@@ -1062,7 +1062,7 @@ end
     struct AllParams 
 
 Struct used for element parameter bookkeeping whose presence represents that parameters 
-in all parameter groups may have changed.
+in all parameter structs may have changed.
 """ AllParams
 
 struct AllParams; end
@@ -1202,7 +1202,7 @@ an element.
 # Fields
 • `this_ele_length::Bool`  - The length of the current element has changed. \\
 • `s_position::Bool`       - The longitudinal element position has changed. \\
-• `ref_group::Bool`        - Reference property (species, energy, or time) has changed. \\
+• `reference::Bool`        - Reference property (species, energy, or time) has changed. \\
 • `floor_position::Bool`   - The branch coordinate system has changed with respect to the floor coordinates. \\
 
 """ ChangedLedger
@@ -1210,6 +1210,6 @@ an element.
 @kwdef mutable struct ChangedLedger
   this_ele_length::Bool = false
   s_position::Bool = false
-  ref_group::Bool = false
+  refreference::Bool = false
   floor_position::Bool = false
 end

@@ -13,21 +13,87 @@ Does some self consistency checks on a lattice and throws an error if there is a
 
 function lat_sanity_check(lat::Lattice)
   for (ib, branch) in enumerate(lat.branch)
-    if ib != branch.ix_branch; error("SanityCheck: Branch with branch index: $ib has branch.ix_branch set to $(branch.ix_branch)"); end
-    if lat !== branch.lat; error("SanityCheck: Branch $ib has branch.lat not pointing to parient lat."); end
+    if ib != branch.ix_branch
+      error("SanityCheck: Branch with branch index: $ib has branch.ix_branch set to $(branch.ix_branch)")
+    end
+
+    if !(lat === branch.lat)
+      error("SanityCheck: Branch $ib has branch.lat not pointing to parient lat.")
+    end
 
     for (ie, ele) in enumerate(branch.ele)
+      pdict = ele.pdict
+
+
       if ie != ele.ix_ele; error("SanityCheck: Ele $(ele.name) in branch $ib with"*
                                       " element index: $ie has ele.ix_ele set to $(ele.ix_ele)"); end
 
-      if branch !== ele.branch; error("SanityCheck: Ele $(ele_name(ele)) has ele.branch not pointing to parient branch."); end
-
-      if branch.type == TrackingBranch
-        if !haskey(ele.pdict, :LengthParams) error("Sanity check: Ele $(ele_name(ele)) does not have a LengthParams group."); end
+      if !(branch === ele.branch)
+        error("SanityCheck: Ele $(ele_name(ele)) has ele.branch not pointing to parient branch.")
       end
+
+      if branch.type == TrackingBranch && !haskey(pdict, :LengthParams)
+        error("Sanity check: Ele $(ele_name(ele)) does not have a LengthParams group.")
+      end
+      
+      if haskey(pdict, :girder)
+        lat_sanity_check(lat, ele, pdict[:girder], "girder")
+      end
+      
+      if haskey(pdict, :multipass_lord)
+        lat_sanity_check(lat, ele, pdict[:multipass_lord], "multipass lord")
+      end
+
+      if haskey(pdict, :ForkParams)
+        lat_sanity_check(lat, ele, pdict[:ForkParams].to_ele, "a forked-to element")
+      end
+
+      if haskey(pdict, :OriginEleParams)
+        lat_sanity_check(lat, ele, pdict[:OriginEleParams].origin_ele, "the element's origin element")
+      end
+
+      if haskey(pdict, :super_lords)
+        for lord in pdict[:super_lords]
+          lat_sanity_check(lat, ele, lord, "super lord")
+        end
+      end
+
+      if haskey(pdict, :slaves)
+        for slave in pdict[:slaves]
+          lat_sanity_check(lat, ele, slave, "slave")
+        end
+      end
+
+      if haskey(pdict, :from_forks)
+        for fork in pdict[:from_forks]
+          lat_sanity_check(lat, ele, fork, "a fork that is forking to this element")
+        end
+      end
+
+      if haskey(pdict, :GirderParams)
+        for slave in pdict[:GirderParams].supported
+          lat_sanity_check(lat, ele, slave, "supported element")
+        end
+      end
+      
     end
   end
+end
 
+#-------------------
+# Internal lat_sanity_check method
+
+"""
+    Internal: 
+
+""" lat_sanity_check
+
+function lat_sanity_check(lat::Lattice, base_ele::Ele, pointed_ele::Ele, err_string::String)
+  pele = lat.branch[pele.branch.ix_branch].ele[pele.ix_ele]
+  if !(pointed_ele === pele)
+    error("Element $(ele_name(ele)) has a $err_string pointer to $(ele_name(pele)) but this\n" *
+          " pointed to element is in a different lattice!!!")
+  end
 end
 
 #---------------------------------------------------------------------------------------------------
