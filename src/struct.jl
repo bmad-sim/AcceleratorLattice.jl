@@ -1010,23 +1010,22 @@ Sets the nominal values for tracking prameters.
   ds_step::Number = NaN
 end
 
-
-
 #---------------------------------------------------------------------------------------------------
-# TwissParams
+# BeginningParams
 
 """
-    mutable struct TwissParams <: EleParams
+    mutable struct BeginningParams <: EleParams
 
 Lattice element parameter struct storing Twiss, dispersion and coupling parameters
 for an element.
-""" TwissParams
+""" BeginningParams
 
-@kwdef mutable struct TwissParams <: EleParams
+@kwdef mutable struct BeginningParams <: EleParams
   a::Twiss1 = Twiss1()                # a-mode
   b::Twiss1 = Twiss1()                # b-mode
   x::Dispersion1 = Dispersion1()      # x-axis
   y::Dispersion1 = Dispersion1()      # y-axis
+  inherit_s_from_fork::Bool = false
 end
 
 #---------------------------------------------------------------------------------------------------

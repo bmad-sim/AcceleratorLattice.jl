@@ -74,7 +74,7 @@ export EMultipole, EMultipoleParams, BendParams, ApertureParams, DescriptionPara
 export TrackingParams, LengthParams, ReferenceParams, DownstreamReferenceParams, ForkParams
 export MasterParams, LordSlaveStatusParams, ACKickerParams
 export GirderParams, PatchParams, RFAutoParams, OutputParams, full_parameter_name
-export TwissParams, Twiss1, Wall2D, Vertex1, InitSpinParams, InitParticleParams, show_changed
+export BeginningParams, Twiss1, Wall2D, Vertex1, InitSpinParams, InitParticleParams, show_changed
 export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
 export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
 export ele_param_struct_field_to_user_sym, multipole!, index, integer, rot_angles, Quaternion

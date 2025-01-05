@@ -126,7 +126,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
     :eta              => :etap,
   ),
 
-  TwissParams => Dict{Symbol,Symbol}(
+  BeginningParams => Dict{Symbol,Symbol}(
     :beta_a           => :beta_b,
     :alpha_a          => :alpha_b,
     :gamma_a          => :gamma_b,
