@@ -288,7 +288,10 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
 
   for lat in lat_list
     pop_bookkeeping_state!(lat)
-    if lat.autobookkeeping; bookkeeper!(lat); end
+    if lat.autobookkeeping
+      bookkeeper!(lat)
+      lat_sanity_check(lat)
+    end
   end
 
   return super_list

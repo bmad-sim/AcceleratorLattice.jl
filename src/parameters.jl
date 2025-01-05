@@ -85,6 +85,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :super_lords        => ParamInfo(Nothing,        Vector{Ele},    "Array of element's super lords. Will not be present if no lords exist."),
   :slaves             => ParamInfo(Nothing,        Vector{Ele},    "Array of slaves of element. Will not be present if no slaves exist."),
   :girder             => ParamInfo(Nothing,        Ele,            "Supporting Girder element. Will not be present if no supporting girder."),
+  :from_forks         => ParamInfo(Nothing         Vector{Ele},    "List of fork elements that fork to this element."),
 
   :amp_function       => ParamInfo(ACKickerParams,  Function,       "Amplitude function."),
 
