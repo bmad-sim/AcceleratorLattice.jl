@@ -7,8 +7,11 @@
 
 """
     lat_sanity_check(lat::Lattice)
+    Internal: lat_sanity_check(lat::Lattice, base_ele::Ele, pointed_ele::Ele, err_string::String)
 
 Does some self consistency checks on a lattice and throws an error if there is a problem.
+
+The internal version of `lat_sanity_check` is called by the public version and is not usable otherwise.
 """ lat_sanity_check
 
 function lat_sanity_check(lat::Lattice)
@@ -83,13 +86,8 @@ end
 #-------------------
 # Internal lat_sanity_check method
 
-"""
-    Internal: 
-
-""" lat_sanity_check
-
 function lat_sanity_check(lat::Lattice, base_ele::Ele, pointed_ele::Ele, err_string::String)
-  pele = lat.branch[pele.branch.ix_branch].ele[pele.ix_ele]
+  pele = lat.branch[pointed_ele.branch.ix_branch].ele[pointed_ele.ix_ele]
   if !(pointed_ele === pele)
     error("Element $(ele_name(ele)) has a $err_string pointer to $(ele_name(pele)) but this\n" *
           " pointed to element is in a different lattice!!!")
