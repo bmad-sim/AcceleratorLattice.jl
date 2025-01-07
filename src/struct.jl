@@ -138,8 +138,8 @@ function (::Type{T})(; kwargs...) where T <: Ele
   pdict[:changed] = Dict{Union{Symbol,DataType},Any}()
 
   # Setup parameter structs.
-  for struct in PARAM_GROUPS_LIST[typeof(ele)]
-    pdict[Symbol(struct)] = struct()
+  for param_struct in PARAM_GROUPS_LIST[typeof(ele)]
+    pdict[Symbol(param_struct)] = param_struct()
   end
 
   # Put name in first in case there are errors and the ele name needs to be printed.
@@ -1209,6 +1209,6 @@ an element.
 @kwdef mutable struct ChangedLedger
   this_ele_length::Bool = false
   s_position::Bool = false
-  refreference::Bool = false
+  reference::Bool = false
   floor_position::Bool = false
 end

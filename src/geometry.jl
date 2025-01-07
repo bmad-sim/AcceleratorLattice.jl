@@ -66,7 +66,7 @@ function coord_transform(ds::Number, g::Number, tilt_ref::Number = 0.0)
 
   else
     angle = ds/g
-    r_vec = ds * [-angle * un_cosc, 0.0, un_sinc(angle)]
+    r_vec = ds * [-angle * un_cosc(angle), 0.0, un_sinc(angle)]
 
     qa = rotY(-angle)
     if tilt_ref == 0

@@ -85,7 +85,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :super_lords        => ParamInfo(Nothing,        Vector{Ele},    "Array of element's super lords. Will not be present if no lords exist."),
   :slaves             => ParamInfo(Nothing,        Vector{Ele},    "Array of slaves of element. Will not be present if no slaves exist."),
   :girder             => ParamInfo(Nothing,        Ele,            "Supporting Girder element. Will not be present if no supporting girder."),
-  :from_forks         => ParamInfo(Nothing         Vector{Ele},    "List of fork elements that fork to this element."),
+  :from_forks         => ParamInfo(Nothing,        Vector{Ele},    "List of fork elements that fork to this element."),
 
   :amp_function       => ParamInfo(ACKickerParams,  Function,       "Amplitude function."),
 
@@ -597,7 +597,7 @@ end
 """
     Dict PARAM_GROUPS_LIST
 
-Table of what element groups are associated with what element types.
+Table of what element parameter groups are associated with what element types.
 Order is important. Bookkeeping routines rely on: 
  - `LengthParams` being first (except for a `Bend` where BendParams is `first`).
  - `BendParams` after `ReferenceParams` and `MasterParams` (in case the reference energy is changing).
@@ -609,6 +609,11 @@ base_group_list = [LengthParams, LordSlaveStatusParams, DescriptionParams, Refer
          DownstreamReferenceParams, OrientationParams, TrackingParams, BodyShiftParams, ApertureParams]
 multipole_group_list = [MasterParams, BMultipoleParams, EMultipoleParams]
 general_group_list = [base_group_list..., multipole_group_list...]
+
+# full list of params.
+#[BendParams, general_group_list..., ACKickerParams, BeamBeamParams, 
+#TwissParams, InitParticleParams, OriginEleParams, ForkParams, GirderParams, RFAutoParams, 
+#RFParams, PatchParams, SolenoidParams]
 
 PARAM_GROUPS_LIST = Dict(  
     ACKicker            => [general_group_list..., ACKickerParams],

@@ -18,11 +18,17 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Accessors = "0.1"
+AtomicAndPhysicalConstants = "0.5"
 EnumX = "1"
-OrderedCollections = "1"
+InteractiveUtils = "1.10"
+LinearAlgebra = "1.10"
+OrderedCollections = "1.6"
 PyFormattedStrings = "0.1"
+Random = "1.10"
 ReferenceFrameRotations = "3"
-julia = "1.10.6"
+SimUtils = "0.4"
+Test = "1.10"
+julia = "1.9"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
