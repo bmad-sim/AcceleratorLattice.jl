@@ -703,6 +703,34 @@ Vector of Electric multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
+# FloorParams
+
+"""
+    mutable struct FloorParams <: EleParams
+
+Position and angular orientation.
+In a lattice element, this struct gives the Floor coordinates at the upstream end of the element
+ignoring alignment shifts.
+
+## Fields
+• `r::Vector`              - `[x,y,z]` position. User symbol: `r_floor`. \\
+• `q::Quaternion{Number}`  - Quaternion orientation. User symbol: `q_floor`. \\
+
+## Associated output parameters:
+• `x_rot_floor::Number`   - X-axis rotation associated with quaternion `q`. \\
+• `y_rot_floor::Number`   - Y-axis rotation associated with quaternion `q`. \\
+• `z_rot_floor::Number`   - Z-axis rotation associated with quaternion `q`. \\
+
+Note: To get the three rotations as a vector use `rot_angles(Ele.q_floor)` where `Ele` is
+the lattice element.
+""" FloorParams
+
+@kwdef mutable struct FloorParams <: EleParams
+  r::Vector = [0.0, 0.0, 0.0]
+  q::Quaternion{Number} = Quaternion(1.0, 0.0, 0.0, 0.0)
+end
+
+#---------------------------------------------------------------------------------------------------
 # ForkParams
 
 """
@@ -812,26 +840,6 @@ and normalized field strengths willbe varied. And vice versa when `field_master`
 @kwdef mutable struct MasterParams <: EleParams
   is_on::Bool = true
   field_master::Bool = false         # Does field or normalized field stay constant with energy changes?
-end
-
-#---------------------------------------------------------------------------------------------------
-# FloorParams
-
-"""
-    mutable struct FloorParams <: EleParams
-
-Position and angular orientation.
-In a lattice element, this struct gives the Floor coordinates at the upstream end of the element
-ignoring alignment shifts.
-
-# Fields
-• `r::Vector`              - `[x,y,z]` position. User symbol: `r_floor`. \\
-• `q::Quaternion{Number}`  - Quaternion orientation. User symbol: `q_floor`. \\
-""" FloorParams
-
-@kwdef mutable struct FloorParams <: EleParams
-  r::Vector = [0.0, 0.0, 0.0]
-  q::Quaternion{Number} = Quaternion(1.0, 0.0, 0.0, 0.0)
 end
 
 #---------------------------------------------------------------------------------------------------
