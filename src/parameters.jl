@@ -89,17 +89,17 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :amp_function       => ParamInfo(ACKickerParams,  Function,       "Amplitude function."),
 
-  :offset             => ParamInfo(BodyShiftParams, Vector{Number}, "[x, y, z] offset of element or, for a patch, exit coordinates.", "m"),
-  :x_rot              => ParamInfo(BodyShiftParams, Number,         "X-axis rotation of element or, for a patch, exit coordinates.", "rad"),
-  :y_rot              => ParamInfo(BodyShiftParams, Number,         "Y-axis rotation of element or, for a patch, exit coordinates.", "rad"),
-  :z_rot              => ParamInfo(BodyShiftParams, Number,         "Z-axis rotation of element or, for a patch, exit coordinates.", "rad"),
+  :offset_body        => ParamInfo(BodyShiftParams, Vector{Number}, "[x, y, z] body offset of element.", "m", nothing, :offset),
+  :x_rot_body         => ParamInfo(BodyShiftParams, Number,         "X-axis body rotation of element.", "rad", nothing, :x_rot),
+  :y_rot_body         => ParamInfo(BodyShiftParams, Number,         "Y-axis body rotation of element.", "rad", nothing, :y_rot),
+  :z_rot_body         => ParamInfo(BodyShiftParams, Number,         "Z-axis body rotation of element.", "rad", nothing, :z_rot),
 
-  :q_shift            => ParamInfo(BodyShiftParams, Quaternion,     "Quaternion orientation.", "", OutputParams),
-  :q_shift_tot        => ParamInfo(BodyShiftParams, Quaternion,     "Quaternion orientation including Girder orientation.", "", OutputParams),
+  :q_body             => ParamInfo(BodyShiftParams, Quaternion,     "Quaternion orientation of body.", "", OutputParams),
+  :q_tot              => ParamInfo(BodyShiftParams, Quaternion,     "Quaternion orientation including Girder orientation.", "", OutputParams),
   :offset_tot         => ParamInfo(BodyShiftParams, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m", OutputParams),
-  :x_rot_tot          => ParamInfo(BodyShiftParams, Number,         "X-axis element rotation including Girder orientation.", "rad", OutputParams),
-  :y_rot_tot          => ParamInfo(BodyShiftParams, Number,         "Y-axis element rotation including Girder orientation.", "rad", OutputParams),
-  :z_rot_tot          => ParamInfo(BodyShiftParams, Number,         "Z-axis element rotation including Girder orientation.", "rad", OutputParams),
+  :x_rot_tot          => ParamInfo(BodyShiftParams, Number,         "X-axis body rotation including Girder orientation.", "rad", OutputParams),
+  :y_rot_tot          => ParamInfo(BodyShiftParams, Number,         "Y-axis body rotation including Girder orientation.", "rad", OutputParams),
+  :z_rot_tot          => ParamInfo(BodyShiftParams, Number,         "Z-axis body rotation including Girder orientation.", "rad", OutputParams),
 
   :aperture_shape     => ParamInfo(ApertureParams,  ApertureShape,  "Aperture shape. Default is ELLIPTICAL."),
   :aperture_at        => ParamInfo(ApertureParams,  BodyLoc.T,      "Aperture location. Default is BodyLoc.ENTRANCE_END."),
@@ -110,23 +110,23 @@ ELE_PARAM_INFO_DICT = Dict(
   :wall               => ParamInfo(ApertureParams,  Wall2D,         "Wall defined by array of aperture vertices."),
   :custom_aperture    => ParamInfo(ApertureParams,  Dict,           "Custom aperture info."),
 
-  :beta_a             => ParamInfo(BeginningParams,  Number,            "A-mode beta Twiss parameter.", "m", nothing, :beta, :a),
-  :alpha_a            => ParamInfo(BeginningParams,  Number,            "A-mode alpha Twiss parameter.", "", nothing, :alpha, :a),
-  :gamma_a            => ParamInfo(BeginningParams,  Number,            "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :a),
-  :phi_a              => ParamInfo(BeginningParams,  Number,            "A-mode betatron phase.", "rad", nothing, :phi, :a),
+  :beta_a             => ParamInfo(BeginningParams,  Number,        "A-mode beta Twiss parameter.", "m", nothing, :beta, :a),
+  :alpha_a            => ParamInfo(BeginningParams,  Number,        "A-mode alpha Twiss parameter.", "", nothing, :alpha, :a),
+  :gamma_a            => ParamInfo(BeginningParams,  Number,        "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :a),
+  :phi_a              => ParamInfo(BeginningParams,  Number,        "A-mode betatron phase.", "rad", nothing, :phi, :a),
 
-  :beta_b             => ParamInfo(BeginningParams,  Number,            "B-mode beta Twiss parameter.", "m", nothing, :beta, :b),
-  :alpha_b            => ParamInfo(BeginningParams,  Number,            "B-mode alpha Twiss parameter.", "", nothing, :alpha, :b),
-  :gamma_b            => ParamInfo(BeginningParams,  Number,            "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :b),
-  :phi_b              => ParamInfo(BeginningParams,  Number,            "B-mode betatron phase.", "rad", nothing, :phi, :b),
+  :beta_b             => ParamInfo(BeginningParams,  Number,        "B-mode beta Twiss parameter.", "m", nothing, :beta, :b),
+  :alpha_b            => ParamInfo(BeginningParams,  Number,        "B-mode alpha Twiss parameter.", "", nothing, :alpha, :b),
+  :gamma_b            => ParamInfo(BeginningParams,  Number,        "B-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :b),
+  :phi_b              => ParamInfo(BeginningParams,  Number,        "B-mode betatron phase.", "rad", nothing, :phi, :b),
 
-  :eta_x              => ParamInfo(BeginningParams,  Number,            "X-mode position dispersion.", "m", nothing, :eta, :x),
-  :etap_x             => ParamInfo(BeginningParams,  Number,            "X-mode momentum dispersion.", "", nothing, :etap, :x),
-  :deta_ds_x          => ParamInfo(BeginningParams,  Number,            "X-mode dispersion derivative.", "", nothing, :deta_ds, :x),
+  :eta_x              => ParamInfo(BeginningParams,  Number,        "X-mode position dispersion.", "m", nothing, :eta, :x),
+  :etap_x             => ParamInfo(BeginningParams,  Number,        "X-mode momentum dispersion.", "", nothing, :etap, :x),
+  :deta_ds_x          => ParamInfo(BeginningParams,  Number,        "X-mode dispersion derivative.", "", nothing, :deta_ds, :x),
 
-  :eta_y              => ParamInfo(BeginningParams,  Number,            "Y-mode position dispersion.", "m", nothing, :eta, :y),
-  :etap_y             => ParamInfo(BeginningParams,  Number,            "Y-mode momentum dispersion.", "", nothing, :etap, :y),
-  :deta_ds_y          => ParamInfo(BeginningParams,  Number,            "Y-mode dispersion derivative.", "", nothing, :deta_ds, :y),
+  :eta_y              => ParamInfo(BeginningParams,  Number,        "Y-mode position dispersion.", "m", nothing, :eta, :y),
+  :etap_y             => ParamInfo(BeginningParams,  Number,        "Y-mode momentum dispersion.", "", nothing, :etap, :y),
+  :deta_ds_y          => ParamInfo(BeginningParams,  Number,        "Y-mode dispersion derivative.", "", nothing, :deta_ds, :y),
 
   :angle              => ParamInfo(BendParams,      Number,         "Reference bend angle", "rad"),
   :bend_field_ref     => ParamInfo(BendParams,      Number,         "Reference bend field corresponding to g bending strength", "T"),
@@ -171,8 +171,8 @@ ELE_PARAM_INFO_DICT = Dict(
   :is_on              => ParamInfo(MasterParams,    Bool,           "Element fields on/off."),
   :field_master       => ParamInfo(MasterParams,    Bool,           "True: fields are fixed and normalized values change when varying ref energy."),
 
-  :r_floor            => ParamInfo(OrientationParams, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
-  :q_floor            => ParamInfo(OrientationParams, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
+  :r_floor            => ParamInfo(FloorParams, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
+  :q_floor            => ParamInfo(FloorParams, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
 
   :origin_ele         => ParamInfo(OriginEleParams,     Ele,        "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(OriginEleParams,     Loc.T,      "Reference location on reference element. Default is Loc.CENTER."),
@@ -183,6 +183,11 @@ ELE_PARAM_INFO_DICT = Dict(
   :L_user             => ParamInfo(PatchParams,     Number,         "User set length.", "m"),
   :flexible           => ParamInfo(PatchParams,     Bool,           "Flexible patch?"),
   :ref_coords         => ParamInfo(PatchParams,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
+
+  :offset_position    => ParamInfo(BodyShiftParams, Vector{Number}, "[x, y, z] offset.", "m", nothing, :offset),
+  :x_rot_position     => ParamInfo(BodyShiftParams, Number,         "X-axis rotation.", "rad", nothing, :x_rot),
+  :y_rot_position     => ParamInfo(BodyShiftParams, Number,         "Y-axis rotation.", "rad", nothing, :y_rot),
+  :z_rot_position     => ParamInfo(BodyShiftParams, Number,         "Z-axis rotation.", "rad", nothing, :z_rot),
 
   :species_ref            => ParamInfo(ReferenceParams, Species,    "Reference species."),
   :pc_ref                 => ParamInfo(ReferenceParams, Number,     "Reference momentum * c.", "eV"),
@@ -248,7 +253,7 @@ List of names (symbols) of parameters associated with element parameter group st
 Associated parameters are the fields of the struct plus any associated output parameters.
 
 If the "user name" is different from the group field name, the user name is used.
-For example, for a `OrientationParams`, `r_floor` will be in the name list instead of `r`.
+For example, for a `FloorParams`, `r_floor` will be in the name list instead of `r`.
 """ associated_names
 
 function associated_names(group::Type{T}) where T <: EleParams
@@ -605,8 +610,9 @@ Order is important. Bookkeeping routines rely on:
  - `RFCommonParams` comes last (triggers autoscale/autophase and `ReferenceParams` correction).
 """ PARAM_GROUPS_LIST
 
-base_group_list = [LengthParams, LordSlaveStatusParams, DescriptionParams, ReferenceParams, 
-         DownstreamReferenceParams, OrientationParams, TrackingParams, BodyShiftParams, ApertureParams]
+fundamental_group_list = [LengthParams, DescriptionParams, ReferenceParams, 
+         DownstreamReferenceParams, FloorParams, TrackingParams, ApertureParams]
+base_group_list = [fundamental_group_list..., LordSlaveStatusParams, BodyShiftParams]
 multipole_group_list = [MasterParams, BMultipoleParams, EMultipoleParams]
 general_group_list = [base_group_list..., multipole_group_list...]
 
@@ -625,11 +631,11 @@ PARAM_GROUPS_LIST = Dict(
     CrabCavity          => [base_group_list...],
     Drift               => [base_group_list...],
     EGun                => [general_group_list...],
-    Fiducial            => [DescriptionParams, OrientationParams, BodyShiftParams, OriginEleParams],
-    FloorShift          => [DescriptionParams, OrientationParams, BodyShiftParams, OriginEleParams],
+    Fiducial            => [fundamental_group_list..., PositionParams, OriginEleParams],
+    FloorShift          => [fundamental_group_list..., PositionParams, OriginEleParams],
     Foil                => [base_group_list...],
     Fork                => [base_group_list..., ForkParams],
-    Girder              => [LengthParams, DescriptionParams, OrientationParams, BodyShiftParams, OriginEleParams, GirderParams],
+    Girder              => [LengthParams, DescriptionParams, FloorParams, BodyShiftParams, OriginEleParams, GirderParams],
     Instrument          => [base_group_list...],
     Kicker              => [general_group_list...],
     LCavity             => [base_group_list..., MasterParams, RFAutoParams, RFParams],
@@ -638,7 +644,7 @@ PARAM_GROUPS_LIST = Dict(
     Multipole           => [general_group_list...],
     NullEle             => [],
     Octupole            => [general_group_list...],
-    Patch               => [base_group_list..., PatchParams],
+    Patch               => [fundamental_group_list..., PositionParams, PatchParams],
     Quadrupole          => [general_group_list...],
     RFCavity            => [base_group_list..., MasterParams, RFAutoParams, RFParams],
     Sextupole           => [general_group_list...],
@@ -657,26 +663,27 @@ end
 
 ELE_PARAM_GROUP_INFO = Dict(
   ACKickerParams         => EleParamsInfo("ACKicker element parameters.", false),
-  BodyShiftParams        => EleParamsInfo("Element position/orientation shift.", false),
   ApertureParams         => EleParamsInfo("Vacuum chamber aperture.", false),
   BeamBeamParams         => EleParamsInfo("BeamBeam element parameters.", false),
+  BeginningParams        => EleParamsInfo("Initial Twiss and coupling parameters.", false),
   BendParams             => EleParamsInfo("Bend element parameters.", true),
   BMultipoleParams       => EleParamsInfo("Magnetic multipoles.", true),
-  BMultipole            => EleParamsInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleParams`", false),
+  BMultipole             => EleParamsInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleParams`", false),
+  BodyShiftParams        => EleParamsInfo("Element position/orientation shift.", false),
   DescriptionParams      => EleParamsInfo("Informational strings.", false),
   DownstreamReferenceParams => EleParamsInfo("Downstream element end reference energy and species.", false),
   EMultipoleParams       => EleParamsInfo("Electric multipoles.", false),
-  EMultipole            => EleParamsInfo("Electric multipole of given order. Substructure contained in `EMultipoleParams`.", false),
+  EMultipole             => EleParamsInfo("Electric multipole of given order. Substructure contained in `EMultipoleParams`.", false),
+  FloorParams            => EleParamsInfo("Global floor position and orientation.", true),
   ForkParams             => EleParamsInfo("Fork element parameters", false),
   GirderParams           => EleParamsInfo("Girder parameters.", false),
   InitParticleParams     => EleParamsInfo("Initial particle position and spin.", false),
-  BeginningParams            => EleParamsInfo("Initial Twiss and coupling parameters.", false),
   LengthParams           => EleParamsInfo("Length and s-position parameters.", true),
   LordSlaveStatusParams  => EleParamsInfo("Element lord and slave status.", false),
   MasterParams           => EleParamsInfo("Contains field_master parameter.", false),
-  OrientationParams      => EleParamsInfo("Global floor position and orientation.", true),
   OriginEleParams        => EleParamsInfo("Defines coordinate origin for Girder, FloorShift and Fiducial elements.", false),
   PatchParams            => EleParamsInfo("Patch parameters.", false),
+  PositionParams         => EleParamsInfo("Position of element (exit end for a Patch) parameters.", false),
   ReferenceParams        => EleParamsInfo("Reference energy and species.", true),
   RFParams               => EleParamsInfo("`RFCavity` and `LCavity` RF parameters.", true),
   RFAutoParams           => EleParamsInfo("Contains `auto_amp`, and `auto_phase` related parameters.", false),

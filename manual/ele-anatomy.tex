@@ -87,7 +87,7 @@ In the REPL, the associated parameter groups can be viewed using Julia's help fu
       •  ApertureParams -> Vacuum chamber aperture.
       •  BMultipoleParams -> Magnetic multipoles.
       •  EMultipoleParams -> Electric multipoles.
-      •  OrientationParams -> Floor position and orientation.
+      •  FloorParams -> Floor position and orientation.
       •  LengthParams -> Length and s-position parameters.
       •  LordSlaveParams -> Element lord and slave status.
       •  MasterParams -> Contains field_master parameter.
@@ -135,7 +135,7 @@ group are the same. However, there are exceptions. For example:
 \begin{example}
   julia> info(:theta)
     User name:       theta_floor
-    Stored in:       OrientationParams.theta
+    Stored in:       FloorParams.theta
     Parameter type:  Number
     Units:           rad
     Description:     Element floor theta angle orientation
@@ -145,9 +145,9 @@ In this example, the user name is \vn{theta_floor} so that this parameter can be
   @ele bg = BeginningEle(theta_floor = 0.3)    # Set at element definition time.
   bg.theta_floor = 2.7                         # Or set after definition.
 \end{example}
-But the component in the \vn{OrientationParams} is \vn{theta} so
+But the component in the \vn{FloorParams} is \vn{theta} so
 \begin{example}
-  bg.OrientationParams.theta = 2.7   # Equivalent to the set above.
+  bg.FloorParams.theta = 2.7   # Equivalent to the set above.
 \end{example}
 
 %---------------------------------------------------------------------------------------------------

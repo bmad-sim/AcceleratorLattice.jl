@@ -487,40 +487,40 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.offset; end
     ag = ele.pdict[:BodyShiftParams]
-    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationParams(ele.offset, ele.q_shift)
+    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = FloorParams(ele.offset, ele.q_shift)
     return coord_transform(orient_ele, orient_girder).r
 
   elseif sym == :x_rot_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.x_rot; end
     ag = ele.pdict[:BodyShiftParams]
-    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationParams(ele.offset, ele.q_shift)
+    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = FloorParams(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[1]
 
   elseif sym == :y_rot_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.y_rot; end
     ag = ele.pdict[:BodyShiftParams]
-    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationParams(ele.offset, ele.q_shift)
+    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = FloorParams(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[2]
 
   elseif sym == :z_rot_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.z_rot; end
     ag = ele.pdict[:BodyShiftParams]
-    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationParams(ele.offset, ele.q_shift)
+    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = FloorParams(ele.offset, ele.q_shift)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[3]
 
   elseif sym == :q_shift_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     if isnothing(girder(ele)); return ele.q_shift; end
     ag = ele.pdict[:BodyShiftParams]
-    orient_girder = OrientationParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = OrientationParams(ele.offset, ele.q_shift)
+    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
+    orient_ele = FloorParams(ele.offset, ele.q_shift)
     return coord_transform(orient_ele, orient_girder).q
   end
 

@@ -15,7 +15,7 @@ The parmeter groups are:
  ACKickerParams        & \sref{s:ackicker.g}       & LengthParams          & \sref{s:length.g}        \\    
  BodyShiftParams       & \sref{s:alignment.g}      & LordSlaveStatusParams & \sref{s:lord.slave.g}    \\
  ApertureParams        & \sref{s:aperture.g}       & MasterParams          & \sref{s:master.g}        \\
- BMultipoleParams      & \sref{s:bmultipole.g}     & OrientationParams     & \sref{s:orientation.g}   \\ 
+ BMultipoleParams      & \sref{s:bmultipole.g}     & FloorParams     & \sref{s:orientation.g}   \\ 
  BeamBeamParams        & \sref{s:beam.beam.g}      & OriginEleParams       & \sref{s:origin.ele.g}    \\
  BendParams            & \sref{s:bend.g}           & PatchParams           & \sref{s:patch.g}         \\
  DescriptionParams     & \sref{s:descrip.g}        & RFParams              & \sref{s:rf.g}            \\
@@ -869,10 +869,10 @@ The components of this group are:
 \end{example}
 
 %---------------------------------------------------------------------------------------------------
-\section{OrientationParams}
+\section{FloorParams}
 \label{s:orientation.g}
 
-The \vn{OrientationParams} stores the nominal (calculated without alignment shifts) 
+The \vn{FloorParams} stores the nominal (calculated without alignment shifts) 
 position and angular orientation in the floor coordinates of the upstream end of the element.
 system. The components of this group are:
 \begin{example}

@@ -207,7 +207,7 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
   for group in PARAM_GROUPS_LIST[typeof(lord)]
     if group == LengthParams; continue; end     # Do not modify length of slave
     if group == DownstreamReferenceParams; continue; end
-    if group == OrientationParams; continue; end
+    if group == FloorParams; continue; end
     if group == LordSlaveStatusParams; continue; end
 
     group_changed = has_changed(lord, group)
@@ -256,7 +256,7 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
         bgs = slave.pdict[:BendParams]
         # Need transformation from lord alignment point to slave alignment point
         # Translate from lord alignment point to beginning of lord point
-        ct = OrientationParams(r = [0.0, 0.0, -0.5*bgl.l_chord])
+        ct = FloorParams(r = [0.0, 0.0, -0.5*bgl.l_chord])
         # Rotate from z parallel to lord chord to z tangent to bend curve.
         ct = rot(ct, bend_quaternion(-0.5*bgl.angle, bg.ref_tilt))
         # Transform from beginning of lord to beginning of slave
@@ -267,7 +267,7 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
         ct.r = ct.r + [0.0, 0.0, 0.5*bgs.l_chord]
         # Apply total transformation of BodyShiftParams.
         bs = lord.pdict[:BodyShiftParams]
-        lord_shift = OrientationParams(bs.offset, Quaternion(bs.x_rot, bs.y_rot, bs.z_rot))
+        lord_shift = FloorParams(bs.offset, Quaternion(bs.x_rot, bs.y_rot, bs.z_rot))
         slave_shift = coord_transform(lord_shift, ct)
         slave.BodyShiftParams = BodyShiftParams(slave_shift.r, rot_angles(slave_shift.q)...)
       end
@@ -716,21 +716,21 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::C
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{OrientationParams}, ...)
-# OrientationParams bookkeeper
+# elegroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, ...)
+# FloorParams bookkeeper
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{OrientationParams}, 
+function elegroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, 
                                               changed::ChangedLedger, previous_ele::Ele)
-  fpg = ele.OrientationParams
+  fpg = ele.FloorParams
   cdict = ele.changed
 
-  if has_changed(ele, OrientationParams) || changed.this_ele_length; changed.floor_position = true; end
+  if has_changed(ele, FloorParams) || changed.this_ele_length; changed.floor_position = true; end
   if !changed.floor_position; return; end
 
   if is_null(previous_ele); return; end   # Happens with beginning element
 
-  ele.OrientationParams = propagate_ele_geometry(previous_ele)
-  clear_changed!(ele, OrientationParams)
+  ele.FloorParams = propagate_ele_geometry(previous_ele)
+  clear_changed!(ele, FloorParams)
 
   return
 end
