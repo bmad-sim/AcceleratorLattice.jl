@@ -72,13 +72,13 @@ export TrackingParams, LengthParams, ReferenceParams, DownstreamReferenceParams,
 export MasterParams, LordSlaveStatusParams, ACKickerParams
 export GirderParams, PatchParams, RFAutoParams, OutputParams, full_parameter_name
 export BeginningParams, Twiss1, Wall2D, Vertex1, InitSpinParams, InitParticleParams, show_changed
-export info, ctrl, var, create_external_ele, ele_param_info, units, ele_param_group_syms
+export info, ele_param_info, param_units, ele_param_group_syms
 export show_group, switch_list_dict, lat_sanity_check, NULL_ELE, NULL_BRANCH, is_null
 export ele_param_struct_field_to_user_sym, multipole!, index, integer, rot_angles, Quaternion
 export machine_location, body_location, EleRegion, holy_traits, output_parameter
 export BranchType, LordBranch, TrackingBranch, MultipassBranch, SuperBranch, transform
 export str_split, str_match, str_unquote, str_quote, str_to_int, associated_names
-export ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST, OPEN, CLOSED
+export DO_NOT_SHOW_PARAMS_LIST, ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST, OPEN, CLOSED
 export rotX, rotY, rotZ, rot, rot!, bend_quaternion, lat_ele_dict
 
 # From LinearAlgebra

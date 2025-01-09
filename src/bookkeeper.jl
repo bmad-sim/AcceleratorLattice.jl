@@ -375,8 +375,8 @@ function param_conflict_check(ele::Ele, syms...)
   for sym in syms
     if haskey(ele.changed, sym); push!(sym_in, sym); end
   end
-  if length(sym_in) > 1; error(f"Conflict: {s[1]} and {s[2]} cannot both " * 
-                                    f"be specified for a {typeof(ele)} element: {ele.name}"); end
+  if length(sym_in) > 1; error("Conflict: $(s[1]) and $(s[2]) cannot both " * 
+                                    "be specified for a $(typeof(ele)) element: $(ele.name)"); end
   return sym_in
 
   return
@@ -499,12 +499,12 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::Change
       L = bg.g * bg.angle
     elseif haskey(cdict, :angle) && haskey(cdict, :L_chord)
       if bg.L_chord == 0 && bg.angle != 0; 
-                          error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+                          error("Bend cannot have finite angle and zero length: $(ele_name(ele))"); end
       bg.angle == 0 ? bg.g = 0.0 : bg.g = 2.0 * sin(bg.angle/2) / bg.L_chord
       L = bg.angle * bg.g
     elseif haskey(cdict, :angle)
       L = ele.L
-      if L == 0 && bg.angle != 0; error(f"Bend cannot have finite angle and zero length: {ele_name(ele)}"); end
+      if L == 0 && bg.angle != 0; error("Bend cannot have finite angle and zero length: $(ele_name(ele))"); end
         bg.angle == 0 ? bg.g = 0 : bg.g = bg.angle / L
     else
       L = ele.L
@@ -646,13 +646,13 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::C
 
   if is_null(previous_ele)   # implies BeginningEle
     if !changed.reference; return; end
-    if rg.species_ref == Species(); error(f"Species not set for first element in branch: {ele_name(ele)}"); end
+    if rg.species_ref == Species(); error("Species not set for first element in branch: $(ele_name(ele))"); end
     drg.species_ref_downstream = rg.species_ref
 
     rg.time_ref_downstream = rg.time_ref + rg.extra_dtime_ref
 
     if count([haskey(cdict, :pc_ref), haskey(cdict, :E_tot_ref), haskey(cdict, :β_ref), haskey(cdict, :γ_ref)]) > 1
-      error(f"Beginning element has more than one of pc_ref, E_tot_ref, β_ref, and γ_ref set in {ele_name(ele)}")
+      error("Beginning element has more than one of pc_ref, E_tot_ref, β_ref, and γ_ref set in $(ele_name(ele))")
     elseif haskey(cdict, :E_tot_ref)
       rg.pc_ref = calc_pc(rg.species_ref, E_tot = rg.E_tot_ref)
     elseif haskey(cdict, :pc_ref)

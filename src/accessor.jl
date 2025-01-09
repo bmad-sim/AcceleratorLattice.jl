@@ -86,7 +86,7 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   if !isnothing(pinfo.output_group); return output_parameter(sym, ele, pinfo.output_group); end
 
   symparent = Symbol(pinfo.parent_group)
-  if !haskey(pdict, symparent); error(f"Cannot find {sym} in element {ele_name(ele)}"); end
+  if !haskey(pdict, symparent); error("Cannot find $sym in element $(ele_name(ele))"); end
 
   return get_elegroup_param(ele, pdict[symparent], pinfo)
 end
@@ -345,8 +345,8 @@ function get_elegroup_param(ele::Ele, group::Union{BMultipoleParams, EMultipoleP
   if mtype[end] == 'L' && !integrated
     return val * ele.L
   elseif mtype[end] != 'L' && integrated
-    if ele.L == 0; error(f"Cannot compute non-integrated multipole value {pinfo.user_sym} for" *
-                         f" integrated multipole of element with zero length: {ele_name(ele)}"); end
+    if ele.L == 0; error("Cannot compute non-integrated multipole value $(pinfo.user_sym) for" *
+                         " integrated multipole of element with zero length: $(ele_name(ele))"); end
     return val / ele.L
   else
     return val
@@ -478,49 +478,47 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     if :DownstreamReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
 
-  elseif sym == :q_shift
+  elseif sym == :q_body
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
     ag = ele.pdict[:BodyShiftParams]
     return Quaternion(ag.x_rot, ag.y_rot, ag.z_rot)
 
-  elseif sym == :offset_tot
+  elseif sym == :offset_body_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
-    if isnothing(girder(ele)); return ele.offset; end
+    if isnothing(girder(ele)); return ele.offset_body; end
     ag = ele.pdict[:BodyShiftParams]
-    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = FloorParams(ele.offset, ele.q_shift)
+    orient_girder = FloorParams(girder(ele).offset_body_tot, girder(ele).q_shift_body_tot)
+    orient_ele = FloorParams(ele.offset_body, ele.q_body)
     return coord_transform(orient_ele, orient_girder).r
 
-  elseif sym == :x_rot_tot
+  elseif sym == :x_rot_body_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
-    if isnothing(girder(ele)); return ele.x_rot; end
+    if isnothing(girder(ele)); return ele.x_rot_body; end
     ag = ele.pdict[:BodyShiftParams]
-    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = FloorParams(ele.offset, ele.q_shift)
+    orient_girder = FloorParams(girder(ele).offset_body_tot, girder(ele).q_body_tot)
+    orient_ele = FloorParams(ele.offset_body, ele.q_body)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[1]
 
-  elseif sym == :y_rot_tot
+  elseif sym == :y_rot_body_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
-    if isnothing(girder(ele)); return ele.y_rot; end
+    if isnothing(girder(ele)); return ele.y_rot_body; end
     ag = ele.pdict[:BodyShiftParams]
-    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = FloorParams(ele.offset, ele.q_shift)
+    orient_girder = FloorParams(girder(ele).offset_body_tot, girder(ele).q_body_tot)
+    orient_ele = FloorParams(ele.offset_body, ele.q_body)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[2]
 
-  elseif sym == :z_rot_tot
+  elseif sym == :z_rot_body_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
-    if isnothing(girder(ele)); return ele.z_rot; end
-    ag = ele.pdict[:BodyShiftParams]
-    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = FloorParams(ele.offset, ele.q_shift)
+    if isnothing(girder(ele)); return ele.z_rot_body; end
+    orient_girder = FloorParams(girder(ele).offset_body_tot, girder(ele).q_body_tot)
+    orient_ele = FloorParams(ele.offset_body, ele.q_body)
     return rot_angles(coord_transform(orient_ele, orient_girder).q)[3]
 
-  elseif sym == :q_shift_tot
+  elseif sym == :q_body_tot
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
-    if isnothing(girder(ele)); return ele.q_shift; end
-    ag = ele.pdict[:BodyShiftParams]
-    orient_girder = FloorParams(girder(ele).offset_tot, girder(ele).q_shift_tot)
-    orient_ele = FloorParams(ele.offset, ele.q_shift)
+    if isnothing(girder(ele)); return ele.q_body; end
+    orient_girder = FloorParams(girder(ele).offset_body_tot, girder(ele).q_body_tot)
+    orient_ele = FloorParams(ele.offset_body, ele.q_body)
     return coord_transform(orient_ele, orient_girder).q
   end
 
