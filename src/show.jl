@@ -153,7 +153,8 @@ List of parameters not to show when displaying the parameters of an element, bra
 These parameters are redundant and are not shown to save space.
 """ DO_NOT_SHOW_PARAMS_LIST
 
-DO_NOT_SHOW_PARAMS_LIST = Vector{Symbol}([:q_body, :q_body_tot, :drift_master])
+DO_NOT_SHOW_PARAMS_LIST = Vector{Symbol}([:q_body, :q_body_tot, 
+                :x_rot_floor, :y_rot_floor, :z_rot_floor, :drift_master])
 
 #---------------------------------------------------------------------------------------------------
 # ele_name
@@ -199,7 +200,6 @@ If `ele` has ele.name = "q02w", ele[:ix_ele] = 7 and the element lives in branch
  "@N" (!#)      "q02w" (fodo>>7)  
  &#             `7` if there is only one branch in the lattice.
  %#             `7` if fodo is branch 1.
-
 """ ele_name
 
 function ele_name(ele::Ele, template::AbstractString = "")
@@ -804,7 +804,8 @@ end
 
 for etype in subtypes(Ele)
   # Need to make ele_docstring global so the eval_str below will work (using $ele_docstring did not work).
-  global ele_docstring = """
+  global ele_docstring = 
+"""
       mutable struct $(strip_AL(etype)) <: Ele
 
 Type of lattice element. $(ELE_TYPE_INFO[etype])
@@ -821,11 +822,13 @@ end
 
 
 function Base.show(io::IO, er::Region)
-  print(f"""
+  print(
+"""
 Region:
- start_ele: {ele_name(er.start_ele)}
- end_ele:   {ele_name(er.end_ele)}
- include_regionend: {er.include_regionend}""")
+ start_ele: $(ele_name(er.start_ele))
+ end_ele:   $(ele_name(er.end_ele))
+ include_regionend: $(er.include_regionend)
+""")
 end
 
 Base.show(io::IO, ::MIME"text/plain", er::Region) = Base.show(io::IO, er::Region)

@@ -173,6 +173,9 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :r_floor            => ParamInfo(FloorParams, Vector{Number}, "3-vector of element floor position.", "m", nothing, :r),
   :q_floor            => ParamInfo(FloorParams, Quaternion,     "Element quaternion orientation.", "", nothing, :q),
+  :x_rot_floor        => ParamInfo(FloorParams, Number,         "X-axis floor rotation of element.", "rad", OutputParams),
+  :y_rot_floor        => ParamInfo(FloorParams, Number,         "Y-axis floor rotation of element.", "rad", OutputParams),
+  :z_rot_floor        => ParamInfo(FloorParams, Number,         "Z-axis floor rotation of element.", "rad", OutputParams),
 
   :origin_ele         => ParamInfo(OriginEleParams,     Ele,        "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(OriginEleParams,     Loc.T,      "Reference location on reference element. Default is Loc.CENTER."),

@@ -83,7 +83,7 @@ function Base.getproperty(ele::Ele, sym::Symbol)
   
   # Look for `sym` as part of an ele group
   pinfo = ele_param_info(sym)
-  if !isnothing(pinfo.output_group); return output_parameter(sym, ele, pinfo.output_group); end
+  if !isnothing(pinfo.output_group); return output_parameter_value(sym, ele, pinfo.output_group); end
 
   symparent = Symbol(pinfo.parent_group)
   if !haskey(pdict, symparent); error("Cannot find $sym in element $(ele_name(ele))"); end
@@ -437,14 +437,18 @@ function base_field(group::EleParams, pinfo::ParamInfo)
 end
 
 #---------------------------------------------------------------------------------------------------
-# output_parameter
+# output_parameter_value
 
 """
-  output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T <: BaseOutput
+  Internal: output_parameter_value(sym::Symbol, ele::Ele, out_type::Type{OutputParams}) 
 
-""" output_parameter
+Return value of the element output parameter represented by `sym`.
 
-function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T <: BaseOutput
+`out_type` is a Holy-trait to allow Users to define custom output parameters and 
+a custom `output_parameter_value` method to handle the custom output parameters.
+""" output_parameter_value
+
+function output_parameter_value(sym::Symbol, ele::Ele, out_type::Type{OutputParams}) 
   if sym == :rho
     if :BendParams ∉ keys(ele.pdict); return NaN; end
     ele.g == 0 ? (return NaN) : return 1/ele.g
@@ -520,7 +524,23 @@ function output_parameter(sym::Symbol, ele::Ele, output_group::Type{T}) where T 
     orient_girder = FloorParams(girder(ele).offset_body_tot, girder(ele).q_body_tot)
     orient_ele = FloorParams(ele.offset_body, ele.q_body)
     return coord_transform(orient_ele, orient_girder).q
+
+  elseif sym == :x_rot_floor
+    return rot_angles(ele.q_floor)[1]
+
+  elseif sym == :y_rot_floor
+    return rot_angles(ele.q_floor)[2]
+
+  elseif sym == :z_rot_floor
+    return rot_angles(ele.q_floor)[3]
   end
 
-  error("Parameter $sym is not in the output group $output_group.")
+  error("Evaluating .$(string(sym)) not yet coded! Please report this!")
+end
+
+#-------------------------
+
+function output_parameter_value(sym::Symbol, ele::Ele, output_group::Type{T}) where T <: BaseOutput
+  error("output_parameter_value method for custom type $T not yet implemented!" *
+        "Please report this to whomever is implementing this type!")
 end
