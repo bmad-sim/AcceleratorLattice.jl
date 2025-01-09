@@ -16,16 +16,13 @@ using ReferenceFrameRotations
 using EnumX
 using Random
 using OrderedCollections
-using SimUtils
-using AtomicAndPhysicalConstants
+using Reexport
+@reexport using SimUtils
+@reexport using AtomicAndPhysicalConstants
 
 # AtomicAndPhysicalConstants
 
 @APCdef;
-
-for name in names(AtomicAndPhysicalConstants)
-  eval(Meta.parse("export $name"))
-end
 
 function charge(species::Species)
   if species == Species(); error("Species not set!"); end
@@ -69,7 +66,7 @@ export split!, construct_ele_type, ele_at_s, toggle_integrated!
 export eles_search, eles_substitute_lords!, eles_sort!
 export next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
 export branch, matches_branch, create_ele_vars, eval_str, Vertex1, LatticeGlobal
-export EleParams, BodyShiftParams, OrientationParams, BMultipole, BMultipoleParams, BeamBeamParams
+export EleParams, PositionParams, BodyShiftParams, FloorParams, BMultipole, BMultipoleParams, BeamBeamParams
 export EMultipole, EMultipoleParams, BendParams, ApertureParams, DescriptionParams, RFParams, SolenoidParams
 export TrackingParams, LengthParams, ReferenceParams, DownstreamReferenceParams, ForkParams
 export MasterParams, LordSlaveStatusParams, ACKickerParams

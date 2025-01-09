@@ -9,12 +9,12 @@ second column when displaying the elements of an element parameter group using t
 
 Example `show_column2` key/value pair:
 ```julia
-  OrientationParams => Dict{Symbol,Symbol}(
+  FloorParams => Dict{Symbol,Symbol}(
     :r                => :q,
     :phi              => :psi,
   )
 ```
-In this example, when printing the `OrientationParams`, in the line showing the `.r` component,
+In this example, when printing the `FloorParams`, in the line showing the `.r` component,
 the `.r` component will be in the first column and the `.q` component will be in the
 second column.
 
@@ -38,6 +38,16 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
 
   ),
 
+  BeginningParams => Dict{Symbol,Symbol}(
+    :beta_a           => :beta_b,
+    :alpha_a          => :alpha_b,
+    :gamma_a          => :gamma_b,
+    :phi_a            => :phi_b,
+    :eta_x            => :eta_y,
+    :etap_x           => :etap_y,
+    :deta_ds_x        => :deta_ds_y,
+  ),
+
   BendParams => Dict{Symbol,Symbol}(
     :bend_type        => :exact_multipoles,
     :g                => :norm_bend_field,
@@ -49,17 +59,25 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
     :L_chord          => :L_sagitta,
   ),
 
+  DescriptionParams => Dict{Symbol,Symbol}(
+    :type             => :ID,
+  ),
+
   Dispersion1 => Dict{Symbol,Symbol}(
     :eta              => :etap,
   ),
 
-  OrientationParams => Dict{Symbol,Symbol}(
-    :r                => :q,
+  DownstreamReferenceParams => Dict{Symbol,Symbol}(
+    :pc_ref_downstream  => :E_tot_ref_downstream,
+    :β_ref_downstream   => :γ_ref_downstream,
   ),
 
   GirderParams => Dict{Symbol,Symbol}(
     :origin_ele       => :origin_ele_ref_pt,
     :dr               => :dq,
+  ),
+
+  InitParticleParams => Dict{Symbol,Symbol}(
   ),
 
   LengthParams => Dict{Symbol,Symbol}(
@@ -75,22 +93,21 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
     :is_on            => :field_master
   ),
 
+  FloorParams => Dict{Symbol,Symbol}(
+    :r                => :q,
+  ),
+
   PatchParams => Dict{Symbol,Symbol}(
     :E_tot_offset     => :t_offset,
     :E_tot_downstream => :pc_downstream,
     :flexible         => :L_user,
   ),
 
-  DescriptionParams => Dict{Symbol,Symbol}(
-    :type             => :ID,
-  ),
-
-  DownstreamReferenceParams => Dict{Symbol,Symbol}(
-    :pc_ref_downstream  => :E_tot_ref_downstream,
-    :β_ref_downstream   => :γ_ref_downstream,
-  ),
-
-  InitParticleParams => Dict{Symbol,Symbol}(
+  PositionParams => Dict{Symbol,Symbol}(
+    :offset           => :offset_tot,
+    :x_rot            => :x_rot_tot,
+    :y_rot            => :y_rot_tot,
+    :z_rot            => :z_rot_tot,
   ),
 
   ReferenceParams => Dict{Symbol,Symbol}(
@@ -125,17 +142,6 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
     :gamma            => :phi,
     :eta              => :etap,
   ),
-
-  BeginningParams => Dict{Symbol,Symbol}(
-    :beta_a           => :beta_b,
-    :alpha_a          => :alpha_b,
-    :gamma_a          => :gamma_b,
-    :phi_a            => :phi_b,
-    :eta_x            => :eta_y,
-    :etap_x           => :etap_y,
-    :deta_ds_x        => :deta_ds_y,
-  ),
-
 )
 
 #---------------------------------------------------------------------------------------------------
@@ -390,7 +396,7 @@ function show_elegroup(io::IO, group::EMultipoleParams, ele::Ele, docstring::Boo
   end
 
   println(io, "$(off_str)EMultipoleParams:")
-  println(io, "$(off_str)  Order Eintegrated{lpad(\"Etilt (rad)\",23)}")
+  println(io, "$(off_str)  Order Eintegrated $(lpad("Etilt (rad)",22))")
   for v in group.pole
     !isnothing(v.Eintegrated) && v.Eintegrated ? ol = "$(v.order)L" : ol = "$(v.order) "
     ue = units(Symbol("En$(ol)"))
@@ -496,7 +502,7 @@ end
 """
     full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParams
 
-For fields where the user name is different (EG: `r_floor` and `r` in a OrientationParams), 
+For fields where the user name is different (EG: `r_floor` and `r` in a FloorParams), 
 return the string `struct_name (user_name)` (EG: `r (r_floor)`). Also add `(output)` to 
 names of output parameters.
 """ full_parameter_name

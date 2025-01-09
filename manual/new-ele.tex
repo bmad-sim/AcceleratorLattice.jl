@@ -31,9 +31,9 @@ correct geometry for the new type of element. Example:
 * If the element has a new type of geometry, extend the \vn{propagate_ele_geometry()} function
 to handle the new type of geometry. Example:
 \begin{example}
-  function propagate_ele_geometry(::Type{CORKSCREW}, fstart::OrientationParams, ele::Ele)
+  function propagate_ele_geometry(::Type{CORKSCREW}, fstart::FloorParams, ele::Ele)
     ...
-    return floor_end  # OrientationParams at the downstream end of the element.
+    return floor_end  # FloorParams at the downstream end of the element.
   end
 \end{example}
 
