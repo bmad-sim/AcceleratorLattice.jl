@@ -133,7 +133,7 @@ Base.:*(n::Int, beamline::BeamLine) = BeamLine(beamline.id * "_m" * string(n),
                           [(n > 0 ? beamline : reflect(beamline)) for i in 1:abs(n)], beamline.pdict)
                           
 function Base.:*(n::Int, ele::Ele)
-  if n < 0; error(f"BoundsError: Negative multiplier does not make sense."); end
+  if n < 0; error("BoundsError: Negative multiplier does not make sense."); end
   BeamLine(ele.id * "_m" * string(n), [BeamLineEle(ele) for i in 1:n], false, +1)
 end
 
@@ -185,7 +185,7 @@ function add_beamline_item_to_branch!(branch::Branch, item::BeamLineItem, info::
   elseif item isa BeamLine 
     add_beamline_line_to_branch!(branch, item, info)
   else
-    error(f"ArgumentError: Beamline item not recognized: {item}")
+    error("ArgumentError: Beamline item not recognized: $(item)")
   end
   return nothing
 end
@@ -203,7 +203,7 @@ Used by the `Lattice` function.
 
 function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatticeConstructionInfo)
   info.n_loop += 1
-  if info.n_loop > 100; error(f"InfiniteLoop: Infinite loop of beam lines calling beam lines detected."); end
+  if info.n_loop > 100; error("InfiniteLoop: Infinite loop of beam lines calling beam lines detected."); end
 
   info = deepcopy(info)
   info.orientation_here = info.orientation_here * beamline.pdict[:orientation]

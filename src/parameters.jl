@@ -95,11 +95,11 @@ ELE_PARAM_INFO_DICT = Dict(
   :z_rot_body         => ParamInfo(BodyShiftParams, Number,         "Z-axis body rotation of element.", "rad", nothing, :z_rot),
 
   :q_body             => ParamInfo(BodyShiftParams, Quaternion,     "Quaternion orientation of body.", "", OutputParams),
-  :q_tot              => ParamInfo(BodyShiftParams, Quaternion,     "Quaternion orientation including Girder orientation.", "", OutputParams),
-  :offset_tot         => ParamInfo(BodyShiftParams, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m", OutputParams),
-  :x_rot_tot          => ParamInfo(BodyShiftParams, Number,         "X-axis body rotation including Girder orientation.", "rad", OutputParams),
-  :y_rot_tot          => ParamInfo(BodyShiftParams, Number,         "Y-axis body rotation including Girder orientation.", "rad", OutputParams),
-  :z_rot_tot          => ParamInfo(BodyShiftParams, Number,         "Z-axis body rotation including Girder orientation.", "rad", OutputParams),
+  :q_body_tot         => ParamInfo(BodyShiftParams, Quaternion,     "Quaternion orientation including Girder orientation.", "", OutputParams),
+  :offset_body_tot    => ParamInfo(BodyShiftParams, Vector{Number}, "[x, y, z] element offset including Girder orientation.", "m", OutputParams),
+  :x_rot_body_tot     => ParamInfo(BodyShiftParams, Number,         "X-axis body rotation including Girder orientation.", "rad", OutputParams),
+  :y_rot_body_tot     => ParamInfo(BodyShiftParams, Number,         "Y-axis body rotation including Girder orientation.", "rad", OutputParams),
+  :z_rot_body_tot     => ParamInfo(BodyShiftParams, Number,         "Z-axis body rotation including Girder orientation.", "rad", OutputParams),
 
   :aperture_shape     => ParamInfo(ApertureParams,  ApertureShape,  "Aperture shape. Default is ELLIPTICAL."),
   :aperture_at        => ParamInfo(ApertureParams,  BodyLoc.T,      "Aperture location. Default is BodyLoc.ENTRANCE_END."),
@@ -184,10 +184,10 @@ ELE_PARAM_INFO_DICT = Dict(
   :flexible           => ParamInfo(PatchParams,     Bool,           "Flexible patch?"),
   :ref_coords         => ParamInfo(PatchParams,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
-  :offset_position    => ParamInfo(BodyShiftParams, Vector{Number}, "[x, y, z] offset.", "m", nothing, :offset),
-  :x_rot_position     => ParamInfo(BodyShiftParams, Number,         "X-axis rotation.", "rad", nothing, :x_rot),
-  :y_rot_position     => ParamInfo(BodyShiftParams, Number,         "Y-axis rotation.", "rad", nothing, :y_rot),
-  :z_rot_position     => ParamInfo(BodyShiftParams, Number,         "Z-axis rotation.", "rad", nothing, :z_rot),
+  :offset_position    => ParamInfo(PositionParams, Vector{Number}, "[x, y, z] offset.", "m", nothing, :offset),
+  :x_rot_position     => ParamInfo(PositionParams, Number,         "X-axis rotation.", "rad", nothing, :x_rot),
+  :y_rot_position     => ParamInfo(PositionParams, Number,         "Y-axis rotation.", "rad", nothing, :y_rot),
+  :z_rot_position     => ParamInfo(PositionParams, Number,         "Z-axis rotation.", "rad", nothing, :z_rot),
 
   :species_ref            => ParamInfo(ReferenceParams, Species,    "Reference species."),
   :pc_ref                 => ParamInfo(ReferenceParams, Number,     "Reference momentum * c.", "eV"),
@@ -247,22 +247,27 @@ end
 # associated_names(group::Type{T}) 
 
 """
-    associated_names(group::Type{T}) -> Vector{Symbol}
+    associated_names(group::Type{T}; exclude_do_not_show::Bool = true) -> Vector{Symbol}
 
 List of names (symbols) of parameters associated with element parameter group struct `group`.
 Associated parameters are the fields of the struct plus any associated output parameters.
 
 If the "user name" is different from the group field name, the user name is used.
-For example, for a `FloorParams`, `r_floor` will be in the name list instead of `r`.
+For example, for a `FloorParams`, `:r_floor` will be in the name list instead of `:r`.
+
+If `exclude_do_not_show` is `true`, parameters in the `DO_NOT_SHOW_PARAMS_LIST` are excluded
+from the output list.
 """ associated_names
 
-function associated_names(group::Type{T}) where T <: EleParams
+function associated_names(group::Type{T}; exclude_do_not_show::Bool = true) where T <: EleParams
   names = [field for field in fieldnames(group)]
   for (key, pinfo) in ELE_PARAM_INFO_DICT
     if pinfo.parent_group != group; continue; end
     if pinfo.user_sym ∉ names; push!(names, pinfo.user_sym); end
     if pinfo.struct_sym != pinfo.user_sym; deleteat!(names, names .== pinfo.struct_sym); end
   end
+
+  if exclude_do_not_show; names = setdiff(names, DO_NOT_SHOW_PARAMS_LIST); end
   return names
 end
 
@@ -314,18 +319,18 @@ for (param, info) in ELE_PARAM_INFO_DICT
 end
 
 #---------------------------------------------------------------------------------------------------
-# units
+# param_units
 
 """
-    units(param::Union{Symbol,DataType}) -> units::String
-    units(param::Union{Symbol,DataType}, eletype::Type{T}) where T <: Ele -> units::String
+    param_units(param::Union{Symbol,DataType}) -> units::String
+    param_units(param::Union{Symbol,DataType}, eletype::Type{T}) where T <: Ele -> units::String
 
 Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
 `param` may be an element parameter group type (EG: `LengthParams`) in which
-case `units` returns a blank string.
-""" units
+case `param_units` returns a blank string.
+""" param_units
 
-function units(param::Union{Symbol,DataType})
+function param_units(param::Union{Symbol,DataType})
   if typeof(param) == DataType; return ""; end
 
   if param in keys(ele_param_struct_field_to_user_sym)
@@ -341,8 +346,8 @@ end
 
 #-
 
-function units(param::Union{Symbol,DataType}, eletype::Type{T}) where T <: Ele
-  return units(param)
+function param_units(param::Union{Symbol,DataType}, eletype::Type{T}) where T <: Ele
+  return param_units(param)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -506,7 +511,7 @@ function ele_param_info(who::Union{Symbol,DataType}; throw_error = true)
   end
 
   # A DataType means `who` is not an element parameter.
-  if throw_error; error(f"Unrecognized element parameter: {who}"); end
+  if throw_error; error("Unrecognized element parameter: $who"); end
   return nothing
 end
 
@@ -525,17 +530,17 @@ function ele_param_info(who::Union{Symbol,DataType}, ele::Ele; throw_error = tru
         end
       end
     
-      error(f"Symbol {who} not in element {ele_name(ele)} which is of type {typeof(ele)}")
+      error("Symbol $who not in element $(ele_name(ele)) which is of type $(typeof(ele))")
 
     else
       if param_info.parent_group in PARAM_GROUPS_LIST[typeof(ele)] || 
                                         param_info.parent_group == Nothing; return param_info; end
-      error(f"Symbol {who} not in element {ele_name(ele)} which is of type {typeof(ele)}")   
+      error("Symbol $who not in element $(ele_name(ele)) which is of type $(typeof(ele))")   
     end
   end
 
   # A DataType means `who` is not an element parameter.
-  if throw_error; error(f"Unrecognized element parameter: {who}"); end
+  if throw_error; error("Unrecognized element parameter: $who"); end
   return nothing
 end
 
@@ -565,7 +570,7 @@ function toggle_integrated!(ele::Ele, ftype::Type{MAGNETIC}, order::Int)
     mul.Bs = mul.Bs * L
   else
     if L == 0
-      error(f"Cannot convert from integrated multipole to non-integrated for element of zero length: {ele_name(ele)}")
+      error("Cannot convert from integrated multipole to non-integrated for element of zero length: $(ele_name(ele))")
     end
     mul.Kn = mul.Kn / L
     mul.Ks = mul.Ks / L
@@ -587,7 +592,7 @@ function toggle_integrated!(ele::Ele, ftype::Type{ELECTRIC}, order::Int)
     mul.Es = mul.Es * L
   else
     if L == 0
-      error(f"Cannot convert from integrated multipole to non-integrated for element of zero length: {ele_name(ele)}")
+      error("Cannot convert from integrated multipole to non-integrated for element of zero length: $(ele_name(ele))")
     end
     mul.En = mul.En / L
     mul.Es = mul.Es / L

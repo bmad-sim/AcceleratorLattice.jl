@@ -65,7 +65,7 @@ function ele_at_offset(reference::Union{Ele,Branch}, offset::Int, wrap::Bool)
     indx = mod(indx-1, n) + 1
     return branch.ele[indx]
   else
-    if indx < 1 || indx > n; error(f"BoundsError: " * 
+    if indx < 1 || indx > n; error("BoundsError: " * 
               "Element index: $indx out of range in branch $(branch.ix_branch): $(branch.name)"); end
     return branch.ele[indx]
   end
@@ -436,7 +436,7 @@ Returns `nothing` if no branch can be matched.
 """ lat_branch
 
 function lat_branch(lat::Lattice, ix::Int) 
-  if ix < 1 || ix > length(lat.branch); error(f"Branch index {ix} out of bounds."); end
+  if ix < 1 || ix > length(lat.branch); error("Branch index $ix out of bounds."); end
   return lat.branch[ix]
 end
 
@@ -444,14 +444,14 @@ function lat_branch(lat::Lattice, who::AbstractString)
   for branch in lat.branch
     if branch.name == who; return branch; end
   end
-  error(f"Cannot find branch with name {name} in lattice.")
+  error("Cannot find branch with name $name in lattice.")
 end
 
 function lat_branch(lat::Lattice, who::Type{T}) where T <: BranchType
   for branch in lat.branch
     if branch.pdict[:type] == who; return branch; end
   end
-  error(f"Cannot find branch with type {name} in lattice.")  
+  error("Cannot find branch with type $name in lattice.")  
 end
 
 function lat_branch(ele::Ele)

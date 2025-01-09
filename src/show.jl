@@ -26,16 +26,15 @@ but not a key. This restriction is not fundamental and could be remove with a li
 
 show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
   BodyShiftParams => Dict{Symbol,Symbol}(
-    :offset           => :offset_tot,
-    :x_rot            => :x_rot_tot,
-    :y_rot            => :y_rot_tot,
-    :z_rot            => :z_rot_tot,
+    :offset_body     => :offset_body_tot,
+    :x_rot_body      => :x_rot_body_tot,
+    :y_rot_body      => :y_rot_body_tot,
+    :z_rot_body      => :z_rot_body_tot,
   ),
 
   ApertureParams => Dict{Symbol,Symbol}(
     :x_limit          => :y_limit,
     :aperture_shape   => :aperture_shifts_with_body,
-
   ),
 
   BeginningParams => Dict{Symbol,Symbol}(
@@ -94,7 +93,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
   ),
 
   FloorParams => Dict{Symbol,Symbol}(
-    :r                => :q,
+    :r_floor          => :q_floor,
   ),
 
   PatchParams => Dict{Symbol,Symbol}(
@@ -143,6 +142,18 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
     :eta              => :etap,
   ),
 )
+
+#---------------------------------------------------------------------------------------------------
+# DO_NOT_SHOW_PARAMS_LIST
+
+"""
+    Vector{Symbol} DO_NOT_SHOW_PARAMS_LIST
+
+List of parameters not to show when displaying the parameters of an element, branch, or lattice.
+These parameters are redundant and are not shown to save space.
+""" DO_NOT_SHOW_PARAMS_LIST
+
+DO_NOT_SHOW_PARAMS_LIST = Vector{Symbol}([:q_body, :q_body_tot, :drift_master])
 
 #---------------------------------------------------------------------------------------------------
 # ele_name
@@ -253,24 +264,6 @@ ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch 
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
 ele_param_value_str(who; default::AbstractString = "???") = string(who)
 
-
-#---------------------------------------------------------------------------------------------------
-# IGNORE_ELE_PDICT_KEY
-
-"""
-   Array IGNORE_ELE_PDICT_KEY 
-
-List of `Ele.pdict` keys to ignore when outputting the contents of an element.
-Stuff to not output includes, for example, internal bookkeeping information.
-
-# To Ignore
-• `:drift_master`  - Used with drift elements that have been superimposed upon to enable mangling 
-of drift names.
-
-""" IGNORE_ELE_PDICT_KEY
-
-IGNORE_ELE_PDICT_KEY = [:drift_master]
-
 #---------------------------------------------------------------------------------------------------
 # show_ele
 
@@ -290,7 +283,7 @@ function show_ele(io::IO, ele::Ele, docstring = false)
   if length(pdict) > 0   # Need test since will bomb on zero length dict
     # Print non-group, non-changed parameters first like the element index, branch ID, etc.
     for key in sort(collect(keys(pdict)))
-      if key in IGNORE_ELE_PDICT_KEY; continue; end
+      if key in DO_NOT_SHOW_PARAMS_LIST; continue; end
       val = pdict[key]
       if typeof(val) <: EleParams || key == :changed; continue; end
       if key == :name; continue; end
@@ -298,9 +291,9 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       param_name = rpad(string(key), nn2)
       value_str = ele_param_value_str(pdict, key)
       if docstring
-        ele_print_line(io, f"  {param_name} {value_str} {units(key)}", description(key))
+        ele_print_line(io, f"  {param_name} {value_str} {param_units(key)}", description(key))
       else
-        println(io, f"  {param_name} {value_str} {units(key)}")
+        println(io, f"  {param_name} {value_str} {param_units(key)}")
       end
     end
 
@@ -328,9 +321,9 @@ function show_ele(io::IO, ele::Ele, docstring = false)
         param_name = rpad(repr(key), nn2)
         value_str = ele_param_value_str(changed, key)
         if docstring
-          ele_print_line(io, f"    {param_name} {value_str} {units(key, eletype)}", description(key, eletype))
+          ele_print_line(io, f"    {param_name} {value_str} {param_units(key, eletype)}", description(key, eletype))
         else
-          println(io, f"    {param_name} {value_str} {units(key, eletype)}")
+          println(io, f"    {param_name} {value_str} {param_units(key, eletype)}")
         end
       end
     end
@@ -376,7 +369,7 @@ function show_elegroup(io::IO, group::BMultipoleParams, ele::Ele, docstring::Boo
   for v in group.pole
     ol = "$(v.order)"
     if !isnothing(v.integrated) && v.integrated; ol = ol * "L"; end
-    uk = units(Symbol("Kn$(ol)"));  ub = units(Symbol("Bn$(ol)"))
+    uk = param_units(Symbol("Kn$(ol)"));  ub = param_units(Symbol("Bn$(ol)"))
     Kn = "Kn$ol"
     Bn = "Bn$ol"
     println(io, "$(off_str)$(lpad(v.order,7))$(lpad(v.integrated,11))$(lpad(v.tilt,24))" *
@@ -399,7 +392,7 @@ function show_elegroup(io::IO, group::EMultipoleParams, ele::Ele, docstring::Boo
   println(io, "$(off_str)  Order Eintegrated $(lpad("Etilt (rad)",22))")
   for v in group.pole
     !isnothing(v.Eintegrated) && v.Eintegrated ? ol = "$(v.order)L" : ol = "$(v.order) "
-    ue = units(Symbol("En$(ol)"))
+    ue = param_units(Symbol("En$(ol)"))
     println(io, "$(off_str)$(lpad(v.order,7))$(lpad(v.Eintegrated,11))$(lpad(v.Etilt,24))$(lpad(v.En,24)) En$(ol)$(lpad(v.Es,24)) Es$(ol) ($ue)")
   end
 end
@@ -418,10 +411,10 @@ function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T 
   nn = max(18, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
 
-  for field in associated_names(gtype)
+  for field in associated_names(gtype, exclude_do_not_show = true)
     param_name = rpad(full_parameter_name(field, gtype), nn)
     value_str = ele_param_value_str(ele, field)
-    ele_print_line(io, f"    {param_name} {value_str} {units(field)}", description(field))
+    ele_print_line(io, f"    {param_name} {value_str} {param_units(field)}", description(field))
   end
 end
 
@@ -451,7 +444,7 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0
   col2 = show_column2[gtype]
   n1 = 20
   n2 = 20
-  for name in associated_names(gtype)
+  for name in associated_names(gtype, exclude_do_not_show = true)
     if name in values(col2)
       n2 = max(n2, length(full_parameter_name(name, gtype)))
     else
@@ -465,32 +458,32 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0
     println(io, " "^indent * ".$group_show_name:")
   end
 
-  for field_sym in associated_names(gtype)
+  for field_sym in associated_names(gtype, exclude_do_not_show = true)
     if field_sym in values(col2); continue; end         # Second column fields handled with first column ones.
 
     if field_sym in keys(col2)
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(ele, field_sym)
-      str = f"  {field_name} {vstr} {units(field_sym)}"   # First column entry
+      str = "  $field_name $vstr $(param_units(field_sym))"   # First column entry
 
       field2_sym = col2[field_sym]
       # If field2_sym represents a output parameter then field2_sym will not be in fieldnames(group)
       field_name = rpad(full_parameter_name(field2_sym, gtype), n2)
       vstr = ele_param_value_str(ele, field2_sym)
-      str2 = f"  {field_name} {vstr} {units(field2_sym)}" # Second column entry.
+      str2 = "  $field_name $vstr $(param_units(field2_sym))" # Second column entry.
 
       if length(str) > col_width_cut || length(str2) > col_width_cut        # If length is too big print in two lines.
         println(io, " "^indent * str)
         println(io, " "^indent * str2)
       else                                            # Can print as a single line.
-        println(io, " "^indent * f"{rpad(str, col_width_cut)}{str2}")
+        println(io, " "^indent * "$(rpad(str, col_width_cut))$str2")
       end
 
     else
       if field_sym in fieldnames(gtype) && typeof(getfield(group, field_sym)) <: EleParameterSubParams; continue; end
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)
       vstr = ele_param_value_str(ele, field_sym)
-      println(io, " "^indent * f"  {field_name} {vstr} {units(field_sym)}")
+      println(io, " "^indent * "  $field_name $vstr $(param_units(field_sym))")
     end
 
   end  # for field_sym in fieldnames(gtype)
@@ -503,7 +496,7 @@ end
     full_parameter_name(field::Symbol, group::Type{T}) where T <: BaseEleParams
 
 For fields where the user name is different (EG: `r_floor` and `r` in a FloorParams), 
-return the string `struct_name (user_name)` (EG: `r (r_floor)`). Also add `(output)` to 
+return the string `struct_name (user_name)` (EG: `r (.r_floor)`). Also add `(output)` to 
 names of output parameters.
 """ full_parameter_name
 

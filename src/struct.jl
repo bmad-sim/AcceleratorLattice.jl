@@ -618,16 +618,16 @@ See the manual for details about how the three rotations are combined.
 
 ## Associated Output Parameters
 
-The `tot` parameters are the body coordinates with respect to the branch coordinates. 
+The `_body_tot` parameters are the body coordinates with respect to the branch coordinates. 
 These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
 non-tot fields if there is no `Girder`.
 
 • `q_body::Quaternion`       - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
-• `q_tot:: Quaternion`       - `Quaternion` representation of orienttion with Girder shifts. \\
-• `offset_tot::Vector`       - `[x, y, z]` offsets including Girder alignment shifts. \\
-• `x_rot_tot::Number`        - Rotation around the x-axis including Girder alignment shifts. \\
-• `y_rot_tot::Number`        - Rotation around the y-axis including Girder alignment shifts. \\
-• `z_rot_tot::Number`        - Rotation around the z-axis including Girder alignment shifts. \\
+• `q_body_tot:: Quaternion`  - `Quaternion` representation of orienttion with Girder shifts. \\
+• `offset_body_tot::Vector`  - `[x, y, z]` offsets including Girder alignment shifts. \\
+• `x_rot_body_tot::Number`   - Rotation around the x-axis including Girder alignment shifts. \\
+• `y_rot_body_tot::Number`   - Rotation around the y-axis including Girder alignment shifts. \\
+• `z_rot_body_tot::Number`   - Rotation around the z-axis including Girder alignment shifts. \\
 """
 
 @kwdef mutable struct BodyShiftParams <: EleParams
