@@ -143,7 +143,7 @@ function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
     if !haskey(ELE_PARAM_GROUP_INFO, group) || !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed; continue; end
 
     try
-      elegroup_bookkeeper!(ele, group, changed, previous_ele)
+      ele_paramgroup_bookkeeper!(ele, group, changed, previous_ele)
     catch this_err
       reinstate_changed!(ele, group)    # Try to undo the dammage.
       rethrow(this_err)
@@ -383,20 +383,20 @@ function param_conflict_check(ele::Ele, syms...)
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{T}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{T}, ...)
 # Essentially no bookkeeping is needed for groups not covered by a specific method.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{T}, changed::ChangedLedger, 
                                       previous_ele::Ele) where T <: EleParams
   clear_changed!(ele, group)
   return
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, ...)
 # BMultipoleParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, changed::ChangedLedger, previous_ele::Ele)
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, changed::ChangedLedger, previous_ele::Ele)
   bmg = ele.BMultipoleParams
   cdict = ele.changed
   if !has_changed(ele, BMultipoleParams) && !changed.this_ele_length && !changed.reference; return; end
@@ -454,10 +454,10 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BMultipoleParams}, changed::
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{BendParams}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BendParams}, ...)
 # BendParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::ChangedLedger, previous_ele::Ele)
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::ChangedLedger, previous_ele::Ele)
   bg = ele.BendParams
   cdict = ele.changed
 
@@ -523,7 +523,7 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::Change
 
     if ele.L != L
       ele.L = L
-      elegroup_bookkeeper!(ele, LengthParams, changed, previous_ele)
+      ele_paramgroup_bookkeeper!(ele, LengthParams, changed, previous_ele)
     end
 
     if haskey(cdict, :e1)
@@ -553,10 +553,10 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::Change
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{LengthParams}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{LengthParams}, ...)
 # Low level LengthParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{LengthParams}, changed::ChangedLedger, previous_ele::Ele)
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{LengthParams}, changed::ChangedLedger, previous_ele::Ele)
   lg = ele.LengthParams
   cdict = ele.changed
 
@@ -585,15 +585,15 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{LengthParams}, changed::Chan
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{RFParams}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{RFParams}, ...)
 
 """
-    elegroup_bookkeeper!(ele::Ele, group::Type{RFParams}, changed::ChangedLedger, previous_ele::Ele)
+    ele_paramgroup_bookkeeper!(ele::Ele, group::Type{RFParams}, changed::ChangedLedger, previous_ele::Ele)
 
 `RFParams` bookkeeping.
 """
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{RFParams}, changed::ChangedLedger, previous_ele::Ele)
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{RFParams}, changed::ChangedLedger, previous_ele::Ele)
   rg = ele.RFParams
   cdict = ele.changed
 
@@ -620,15 +620,15 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{RFParams}, changed::ChangedL
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, ...)
 
 """
-    elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
+    ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
 
 `ReferenceParams` bookkeeping. This also includes `DownstreamReferenceParams` bookkeeping.
 """
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
   rg = ele.ReferenceParams
   drg = ele.DownstreamReferenceParams
   cdict = ele.changed
@@ -716,10 +716,10 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::C
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, ...)
 # FloorParams bookkeeper
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, 
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, 
                                               changed::ChangedLedger, previous_ele::Ele)
   fpg = ele.FloorParams
   cdict = ele.changed
@@ -736,10 +736,29 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{FloorParams},
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams}, ...)
+# ForkParams bookkeeper
+
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams}, 
+                                              changed::ChangedLedger, previous_ele::Ele)
+
+  fg = ele.ForkParams
+
+
+
+  if to_ele.species_ref == Species("Null"); to_ele.species_ref = fork.species_ref; end
+  if to_ele.pc_ref == NaN && to_ele.E_tot_ref == NaN
+    to_ele.pc_ref = fork.pc_ref
+    to_ele.E_tot_ref = fork.pc_ref
+  end
+
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, ...)
 # SolenoidParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, changed::ChangedLedger, previous_ele::Ele)
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, changed::ChangedLedger, previous_ele::Ele)
   sg = ele.SolenoidParams
   cdict = ele.changed
   if !has_changed(ele, SolenoidParams) && !changed.reference; return; end
@@ -761,10 +780,10 @@ function elegroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, changed::Ch
 end
 
 #---------------------------------------------------------------------------------------------------
-# elegroup_bookkeeper!(ele::Ele, group::Type{TrackingParams}, ...)
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{TrackingParams}, ...)
 # Low level LengthParams bookkeeping.
 
-function elegroup_bookkeeper!(ele::Ele, group::Type{TrackingParams}, changed::ChangedLedger, previous_ele::Ele)
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{TrackingParams}, changed::ChangedLedger, previous_ele::Ele)
   tg = ele.TrackingParams
   cdict = ele.changed
 
@@ -939,22 +958,24 @@ function fork_bookkeeper(fork::Ele)
 
   # Fork to new branch
   else
+    lat = fork.branch.lat
     to_branch = new_tracking_branch!(lat, fork.to_line)
     if typeof(fork.to_ele) == Ele; error(
       "Since to_line is specified, to_ele must be something (String, Regex) that can be used with \n" *
       "the `find` function to locate the element in the new branch and cannot be an existing element."); end
-    to_ele = find(fork.to_ele)
-    if length(to_ele) == 0; error("to_ele ($(fork.to_ele)) not found in new branch for fork $(fork.name)."); end
-    if length(to_ele) > 1; error("Multiple elements matched to to_ele ($(fork.to_ele)) for fork $(fork.name)."); end
-    fork.to_ele = to_ele[1]
+
+    if fork.to_ele == ""
+      fork.to_ele = to_branch[1]
+    else
+      to_ele = eles(fork.to_ele)
+      if length(to_ele) == 0; error("to_ele ($(fork.to_ele)) not found in new branch for fork $(fork.name)."); end
+      if length(to_ele) > 1; error("Multiple elements matched to to_ele ($(fork.to_ele)) for fork $(fork.name)."); end
+      fork.to_ele = to_ele[1]
+    end
 
     to_ele = fork.to_ele
     if to_ele.ix_ele == 1
-      if to_ele.species_ref == Species("Null"); to_ele.species_ref = fork.species_ref; end
-      if to_ele.pc_ref == NaN && to_ele.E_tot_ref == NaN
-        to_ele.pc_ref = fork.pc_ref
-        to_ele.E_tot_ref = fork.pc_ref
-      end
+      to_ele.from_forks = [fork]
     end
   end
 

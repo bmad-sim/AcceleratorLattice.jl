@@ -32,11 +32,11 @@ function lat_sanity_check(lat::Lattice)
                                       " element index: $ie has ele.ix_ele set to $(ele.ix_ele)"); end
 
       if !(branch === ele.branch)
-        error("SanityCheck: Ele $(ele_name(ele)) has ele.branch not pointing to parient branch.")
+        error("Ele $(ele_name(ele)) has ele.branch not pointing to parient branch.")
       end
 
       if branch.type == TrackingBranch && !haskey(pdict, :LengthParams)
-        error("Sanity check: Ele $(ele_name(ele)) does not have a LengthParams group.")
+        error("Ele $(ele_name(ele)) does not have a LengthParams group.")
       end
       
       if haskey(pdict, :girder)
@@ -49,6 +49,7 @@ function lat_sanity_check(lat::Lattice)
 
       if haskey(pdict, :ForkParams)
         lat_sanity_check(lat, ele, pdict[:ForkParams].to_ele, "a forked-to element")
+        if ele.L != 0; error("A Fork element may not have a non-zero length: $(ele_name(ele))"); end
       end
 
       if haskey(pdict, :OriginEleParams)
@@ -78,7 +79,7 @@ function lat_sanity_check(lat::Lattice)
           lat_sanity_check(lat, ele, slave, "supported element")
         end
       end
-      
+
     end
   end
 end

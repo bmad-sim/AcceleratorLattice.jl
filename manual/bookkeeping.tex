@@ -5,6 +5,11 @@ Bookkeeping in \accellat mainly involves making sure that dependent parameters a
 This includes dependent parameters within a lattice element, propagating changes through the lattice,
 and lord/slave bookkeeping.
 
+Note: An element in a branch has a pointer to the branch (\vn{Ele.branch}) and the branch has
+a pointer to the lattice (\vn{Branch.lat}). So a lattice element ``knows'' about the lattice it
+is in. On the other hand, elements in beam lines don't have pointers to the beamline. This is 
+an important factor when setting up forks.
+
 %---------------------------------------------------------------------------------------------------
 \section{Lord/Slave Bookkeeping}
 \label{s:lord.slave.book}

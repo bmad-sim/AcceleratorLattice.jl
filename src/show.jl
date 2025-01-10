@@ -153,7 +153,7 @@ List of parameters not to show when displaying the parameters of an element, bra
 These parameters are redundant and are not shown to save space.
 """ DO_NOT_SHOW_PARAMS_LIST
 
-DO_NOT_SHOW_PARAMS_LIST = Vector{Symbol}([:q_body, :q_body_tot, 
+DO_NOT_SHOW_PARAMS_LIST = Vector{Symbol}([:q_body, :q_body_tot, :to_line,
                 :x_rot_floor, :y_rot_floor, :z_rot_floor, :drift_master])
 
 #---------------------------------------------------------------------------------------------------
@@ -590,12 +590,14 @@ function Base.show(io::IO, branch::Branch)
         s_str = ele_param_value_str(ele, :s, default = "    "*"-"^7, format = "12.6f")
         s_down_str = ele_param_value_str(ele, :s_downstream, default = "    "*"-"^7, format = "12.6f")
         end_str = f"{ele.L:12.6f}{s_str} ->{s_down_str}"
-        if haskey(ele.pdict, :multipass_lord); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :multipass_lord, default = \"\")}"; end
-        if haskey(ele.pdict, :super_lords);  end_str = end_str * f"  {ele_param_value_str(ele.pdict, :super_lords, default = \"\")}"; end
-        if haskey(ele.pdict, :slaves); end_str = end_str * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
-        if ele.orientation == -1; end_str = end_str * "  orientation = -1"; end
+        if haskey(ele.pdict, :multipass_lord); end_str *= "  $(ele_param_value_str(ele.pdict, :multipass_lord, default = ""))"; end
+        if haskey(ele.pdict, :super_lords);    end_str *= "  $(ele_param_value_str(ele.pdict, :super_lords, default = ""))"; end
+        if haskey(ele.pdict, :slaves);         end_str *= "  $(ele_param_value_str(ele.pdict, :slaves, default = ""))"; end
+        if haskey(ele.pdict, :ForkParams);     end_str *= "  Fork to: $(ele_param_value_str(ele.to_ele, default = "???"))"; end
+        if haskey(ele.pdict, :from_forks);     end_str *= "  From fork: $(ele_param_value_str(ele.from_forks, default = "???"))"; end
+        if ele.orientation == -1; end_str *= "  orientation = -1"; end
       end
-      println(io, f"  {ele.pdict[:ix_ele]:5i}  {rpad(str_quote(ele.name), n)} {rpad(typeof(ele), 16)}" * end_str)                    
+      println(io, "  $(lpad(ele.pdict[:ix_ele], 5))  $(rpad(str_quote(ele.name), n)) $(rpad(typeof(ele), 16))" * end_str)                    
     end
   end
   return nothing

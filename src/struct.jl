@@ -740,13 +740,13 @@ Fork element parameters.
 
 ## Fields
 • `to_line::Union{BeamLine,Nothing}`  - Beam line to fork to. \\
-• `to_ele`                            - On input: Element ID or element itself. \\
+• `to_ele::Union{String,Ele}`         - On input: Element ID or element itself. \\
 • `direction::Int`                    - Longitudinal Direction of injected beam. \\
 """ ForkParams
 
 @kwdef mutable struct ForkParams <: EleParams
   to_line::Union{BeamLine,Nothing} = nothing
-  to_ele::Union = ""
+  to_ele::Union{String,Ele} = ""
   direction::Int = +1
 end
 
@@ -1115,9 +1115,9 @@ Lattice branch structure.
 
 ## Fields
 • `name::String`                      - Name of the branch. \\
-• `lat::Union{AbstractLattice, Nothing}`  - Pointer to the lattice containing the branch. \\
 • `ele::Vector{Ele}`                  - Pointer to the array of lattice element contained in the branch. \\
 • `pdict::Dict{Symbol,Any}`           - Dict for holding other branch parameters. \\
+• `lat::Union{AbstractLattice, Nothing}`  - Pointer to the lattice containing the branch. \\
 
 Note: `AbstractLattice` is used here since `Lattice` is not yet defined and Julia does not allow forward 
 struct declarations.

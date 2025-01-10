@@ -17,7 +17,7 @@ using EnumX
 using Random
 using OrderedCollections
 using Reexport
-@reexport using SimUtils
+@reexport using AcceleratorSimUtils
 @reexport using AtomicAndPhysicalConstants
 
 # AtomicAndPhysicalConstants
@@ -83,8 +83,5 @@ export rotX, rotY, rotZ, rot, rot!, bend_quaternion, lat_ele_dict
 
 # From LinearAlgebra
 export norm
-
-# From SimUtils
-export one_cos, modulo2, un_sinc, cosc
 
 end # module
