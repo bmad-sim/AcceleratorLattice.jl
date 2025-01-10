@@ -14,6 +14,10 @@ using AcceleratorLattice, Test
     include("find_test.jl")
   end
 
+  @testset "fork_test" begin
+    include("find_test.jl")
+  end
+
   @testset "string_test" begin
     include("string_test.jl")
   end
