@@ -203,7 +203,7 @@ Used by the `Lattice` function.
 
 function add_beamline_line_to_branch!(branch::Branch, beamline::BeamLine, info::LatticeConstructionInfo)
   info.n_loop += 1
-  if info.n_loop > 100; error("InfiniteLoop: Infinite loop of beam lines calling beam lines detected."); end
+  info.n_loop > 100 && error("InfiniteLoop: Infinite loop of beam lines calling beam lines detected.")
 
   info = deepcopy(info)
   info.orientation_here = info.orientation_here * beamline.pdict[:orientation]

@@ -66,11 +66,6 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
     :eta              => :etap,
   ),
 
-  DownstreamReferenceParams => Dict{Symbol,Symbol}(
-    :pc_ref_downstream  => :E_tot_ref_downstream,
-    :β_ref_downstream   => :γ_ref_downstream,
-  ),
-
   GirderParams => Dict{Symbol,Symbol}(
     :origin_ele       => :origin_ele_ref_pt,
     :dr               => :dq,
@@ -97,8 +92,6 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
   ),
 
   PatchParams => Dict{Symbol,Symbol}(
-    :E_tot_offset     => :t_offset,
-    :E_tot_downstream => :pc_downstream,
     :flexible         => :L_user,
   ),
 
@@ -113,6 +106,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
     :species_ref      => :extra_dtime_ref,
     :pc_ref           => :E_tot_ref,
     :time_ref         => :time_ref_downstream,
+    :dE_ref           => :static_energy_ref,
     :β_ref            => :γ_ref,
   ),
 
@@ -301,14 +295,6 @@ function show_ele(io::IO, ele::Ele, docstring = false)
     for key in sort(collect(keys(pdict)))
       group = pdict[key]
       if !(typeof(group) <: EleParams); continue; end
-      # Do not show if the group parameter values are the same as the ReferenceParams
-      if key == :DownstreamReferenceParams
-        rg = pdict[:ReferenceParams]
-        if group.species_ref_downstream == rg.species_ref && group.pc_ref_downstream == rg.pc_ref
-          println(io, "  DownstreamReferenceParams: Same energy and species values as ReferenceParams")
-          continue
-        end
-      end
       show_elegroup(io, group, ele, docstring, indent = 2)
     end
 

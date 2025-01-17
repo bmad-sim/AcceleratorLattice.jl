@@ -157,21 +157,35 @@ end
 
 """
     slave_index(slave::Ele) -> Int
+    slave_index(slave::Ele, lord::Ele = NULL_ELE) -> Int
 
-For a super or multipass slave element, returns the index of the slave in the `lord.slaves[]`
-array. Exception: A `UnionEle` super slave has multiple lords. In this case, zero is returned.
+For a super or multipass slave element, returns the index of the slave in the `lord.slaves[]`.
+Throws an error for all other elements.
+
+Note: For a super or multipass slave element that is not a `UnionEle`, there is only one lord
+so in this case the lord does not have to be present in the argument list.
 """ slave_index
 
-function slave_index(slave::Ele) 
+function slave_index(slave::Ele, lord::Ele = NULL_ELE) 
   if slave.slave_status == Slave.SUPER
-    if typeof(slave) == UnionEle; return 0; end
+    if typeof(slave) == UnionEle && length(slave.super_lords) > 1
+      lord === NULL_ELE && error("Need to specify lord element for UnionEle slave $(ele_name(slave))")
+      for ix in 1:length(lord.slaves)
+        if lord.slaves[ix].ix_ele == slave.ix_ele; return ix; end
+      end
+    end
+
+    lord != NULL_ELE && !(lord === slave.super_lords[1]) && 
+              error("Element: $(ele_name(lord)) is not a super lord to $(ele_name(slave))")
     lord = slave.super_lords[1]
     for ix in 1:length(lord.slaves)
       if lord.slaves[ix].ix_ele == slave.ix_ele; return ix; end
     end
 
   elseif slave.slave_status == Slave.MULTIPASS
-    lord = slave.multipass_lord[1]
+    lord != NULL_ELE && lord && !(lord === slave.multipass_lord) && 
+            error("Element: $(ele_name(lord)) is not a multipass lord to $(ele_name(slave))")
+    lord = slave.multipass_lord
     for ix in 1:length(lord.slaves)
       if lord.slaves[ix].ix_ele == slave.ix_ele; return ix; end
     end

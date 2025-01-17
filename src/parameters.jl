@@ -147,13 +147,6 @@ ELE_PARAM_INFO_DICT = Dict(
   :norm_bend_field    => ParamInfo(BendParams,   Number,            "Actual bend strength in the plane of the bend", "1/m", OutputParams),
   :bend_field         => ParamInfo(BendParams,   Number,            "Actual bend field in the plane of the bend field", "T", OutputParams),
 
-  :species_ref_downstream => ParamInfo(DownstreamReferenceParams, Species, "Reference species at downstream end."),
-  :pc_ref_downstream      => ParamInfo(DownstreamReferenceParams, Number,  "Reference momentum * c at downstream end.", "eV"),
-  :E_tot_ref_downstream   => ParamInfo(DownstreamReferenceParams, Number,  "Reference total energy at downstream end.", "eV"),
-
-  :β_ref_downstream       => ParamInfo(DownstreamReferenceParams, Number,   "Reference velocity/c at downstream end.", "", OutputParams),
-  :γ_ref_downstream       => ParamInfo(DownstreamReferenceParams, Number,   "Reference relativistic gamma factor at downstream end.", "", OutputParams),
-
   :to_line            => ParamInfo(ForkParams,      Union{BeamLine, Nothing}, "Beamline forked to."),
   :to_ele             => ParamInfo(ForkParams,      Union{String,Ele},        "Lattice element forked to."),
   :direction          => ParamInfo(ForkParams,      Int,            "Direction (forwards or backwards) of injection."),
@@ -180,34 +173,31 @@ ELE_PARAM_INFO_DICT = Dict(
   :origin_ele         => ParamInfo(OriginEleParams,     Ele,        "Coordinate reference element."),
   :origin_ele_ref_pt  => ParamInfo(OriginEleParams,     Loc.T,      "Reference location on reference element. Default is Loc.CENTER."),
 
-  :E_tot_offset       => ParamInfo(PatchParams,     Number,         "Reference energy offset.", "eV"),
-  :E_tot_exit         => ParamInfo(PatchParams,     Number,         "Reference energy at exit end.", "eV"),
-  :pc_exit            => ParamInfo(PatchParams,     Number,         "Reference momentum at exit end.", "eV"),
   :L_user             => ParamInfo(PatchParams,     Number,         "User set length.", "m"),
   :flexible           => ParamInfo(PatchParams,     Bool,           "Flexible patch?"),
-  :ref_coords         => ParamInfo(PatchParams,     BodyLoc.T,      "Patch coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
+  :ref_coords         => ParamInfo(PatchParams,     BodyLoc.T,      "Interior ref coords with respect to BodyLoc.ENTRANCE_END or BodyLoc.EXIT_END?"),
 
-  :offset_position    => ParamInfo(PositionParams, Vector{Number}, "[x, y, z] offset.", "m", nothing, :offset),
-  :x_rot_position     => ParamInfo(PositionParams, Number,         "X-axis rotation.", "rad", nothing, :x_rot),
-  :y_rot_position     => ParamInfo(PositionParams, Number,         "Y-axis rotation.", "rad", nothing, :y_rot),
-  :z_rot_position     => ParamInfo(PositionParams, Number,         "Z-axis rotation.", "rad", nothing, :z_rot),
+  :offset_position    => ParamInfo(PositionParams, Vector{Number},  "[x, y, z] offset.", "m", nothing, :offset),
+  :x_rot_position     => ParamInfo(PositionParams, Number,          "X-axis rotation.", "rad", nothing, :x_rot),
+  :y_rot_position     => ParamInfo(PositionParams, Number,          "Y-axis rotation.", "rad", nothing, :y_rot),
+  :z_rot_position     => ParamInfo(PositionParams, Number,          "Z-axis rotation.", "rad", nothing, :z_rot),
 
-  :species_ref            => ParamInfo(ReferenceParams, Species,    "Reference species."),
-  :pc_ref                 => ParamInfo(ReferenceParams, Number,     "Reference momentum * c.", "eV"),
-  :E_tot_ref              => ParamInfo(ReferenceParams, Number,     "Reference total energy.", "eV"),
-  :time_ref               => ParamInfo(ReferenceParams, Number,     "Reference time.", "sec"),
-  :extra_dtime_ref        => ParamInfo(ReferenceParams, Number,     "Additional reference time change.", "sec"),
-  :time_ref_downstream    => ParamInfo(ReferenceParams, Number,     "Reference time at downstream end.", "sec"),
-  :dE_ref                 => ParamInfo(ReferenceParams, Number,     "Change in reference energy.", "volt"),
+  :species_ref          => ParamInfo(ReferenceParams, Species,      "Reference species."),
+  :pc_ref               => ParamInfo(ReferenceParams, Number,       "Reference momentum * c.", "eV"),
+  :E_tot_ref            => ParamInfo(ReferenceParams, Number,       "Reference total energy.", "eV"),
+  :time_ref             => ParamInfo(ReferenceParams, Number,       "Reference time.", "sec"),
+  :extra_dtime_ref      => ParamInfo(ReferenceParams, Number,       "Additional reference time change.", "sec"),
+  :dE_ref               => ParamInfo(ReferenceParams, Number,       "Change in reference energy.", "eV"),
+  :static_energy_ref    => ParamInfo(ReferenceParams, Bool,         "Is energy set by user (true) or inherited (false)?"),
+  :β_ref                => ParamInfo(ReferenceParams, Number,       "Reference velocity/c.", "", OutputParams),
+  :γ_ref                => ParamInfo(ReferenceParams, Number,       "Reference relativistic gamma factor.", "", OutputParams),
 
-  :β_ref                  => ParamInfo(ReferenceParams, Number,     "Reference velocity/c.", "", OutputParams),
-  :γ_ref                  => ParamInfo(ReferenceParams, Number,     "Reference relativistic gamma factor.", "", OutputParams),
+  :time_ref_downstream  => ParamInfo(ReferenceParams, Number,       "Reference time at downstream end.", "sec", OutputParams),
 
   :voltage            => ParamInfo(RFParams,       Number,          "RF voltage.", "volt"),
   :gradient           => ParamInfo(RFParams,       Number,          "RF gradient.", "volt/m"),
   :phase              => ParamInfo(RFParams,       Number,          "RF phase.", "rad"),
-  :multipass_phase    => ParamInfo(RFParams,       Number,    
-                                                   "RF phase added to element and not controlled by multipass lord.", "rad"),
+  :multipass_phase    => ParamInfo(RFParams,       Number,          "RF phase added to element and not controlled by multipass lord.", "rad"),
   :frequency          => ParamInfo(RFParams,       Number,          "RF frequency.", "Hz"),
   :harmon             => ParamInfo(RFParams,       Number,          "RF frequency harmonic number.", ""),
   :cavity_type        => ParamInfo(RFParams,       Cavity.T,        "Type of cavity."),
@@ -276,8 +266,7 @@ end
 
 #---------------------------------------------------------------------------------------------------
 
-DEPENDENT_ELE_PARAMETERS::Vector{Symbol} = 
-         [:species_ref_downstream, :pc_ref_downstream, :E_tot_ref_downstream, :time_ref_downstream,]
+DEPENDENT_ELE_PARAMETERS::Vector{Symbol} = [:time_ref_downstream,]
 
 #---------------------------------------------------------------------------------------------------
 # has_parent_group
@@ -618,9 +607,8 @@ Order is important. Bookkeeping routines rely on:
  - `RFCommonParams` comes last (triggers autoscale/autophase and `ReferenceParams` correction).
 """ PARAM_GROUPS_LIST
 
-fundamental_group_list = [LengthParams, DescriptionParams, ReferenceParams, 
-         DownstreamReferenceParams, FloorParams, TrackingParams, ApertureParams]
-base_group_list = [fundamental_group_list..., LordSlaveStatusParams, BodyShiftParams]
+fundamental_group_list = [LengthParams, DescriptionParams, FloorParams, TrackingParams, ApertureParams]
+base_group_list = [ReferenceParams, fundamental_group_list..., LordSlaveStatusParams, BodyShiftParams]
 multipole_group_list = [MasterParams, BMultipoleParams, EMultipoleParams]
 general_group_list = [base_group_list..., multipole_group_list...]
 
@@ -633,14 +621,15 @@ PARAM_GROUPS_LIST = Dict(
     ACKicker            => [general_group_list..., ACKickerParams],
     BeamBeam            => [base_group_list..., BeamBeamParams],
     BeginningEle        => [base_group_list..., BeginningParams, InitParticleParams],
-    Bend                => [BendParams, general_group_list...],
+    Bend                => [ReferenceParams, BendParams, fundamental_group_list..., 
+                                    LordSlaveStatusParams, BodyShiftParams, multipole_group_list...],
     Collimator          => [base_group_list...],
     Converter           => [base_group_list...],
     CrabCavity          => [base_group_list...],
     Drift               => [base_group_list...],
     EGun                => [general_group_list...],
-    Fiducial            => [fundamental_group_list..., PositionParams, OriginEleParams],
-    FloorShift          => [fundamental_group_list..., PositionParams, OriginEleParams],
+    Fiducial            => [ReferenceParams, fundamental_group_list..., PositionParams, OriginEleParams],
+    FloorShift          => [ReferenceParams, fundamental_group_list..., PositionParams, OriginEleParams],
     Foil                => [base_group_list...],
     Fork                => [base_group_list..., ForkParams],
     Girder              => [LengthParams, DescriptionParams, FloorParams, BodyShiftParams, OriginEleParams, GirderParams],
@@ -652,7 +641,7 @@ PARAM_GROUPS_LIST = Dict(
     Multipole           => [general_group_list...],
     NullEle             => [],
     Octupole            => [general_group_list...],
-    Patch               => [fundamental_group_list..., PositionParams, PatchParams],
+    Patch               => [ReferenceParams, fundamental_group_list..., PositionParams, PatchParams],
     Quadrupole          => [general_group_list...],
     RFCavity            => [base_group_list..., MasterParams, RFAutoParams, RFParams],
     Sextupole           => [general_group_list...],
@@ -679,7 +668,6 @@ ELE_PARAM_GROUP_INFO = Dict(
   BMultipole             => EleParamsInfo("Magnetic multipole of given order. Substructure contained in `BMultipoleParams`", false),
   BodyShiftParams        => EleParamsInfo("Element position/orientation shift.", false),
   DescriptionParams      => EleParamsInfo("Informational strings.", false),
-  DownstreamReferenceParams => EleParamsInfo("Downstream element end reference energy and species.", false),
   EMultipoleParams       => EleParamsInfo("Electric multipoles.", false),
   EMultipole             => EleParamsInfo("Electric multipole of given order. Substructure contained in `EMultipoleParams`.", false),
   FloorParams            => EleParamsInfo("Global floor position and orientation.", true),

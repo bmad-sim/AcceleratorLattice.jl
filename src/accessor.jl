@@ -466,6 +466,16 @@ function output_parameter_value(sym::Symbol, ele::Ele, out_type::Type{OutputPara
     if :BendParams ∉ keys(ele.pdict); return NaN; end
     return ele.g + cos(ele.tilt0) * ele.Kn0 + sin(ele.tilt0) * ele.Ks0
 
+  elseif sym == :time_ref_downstream
+    if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
+    if ele.dE_ref == 0
+      return ele.time_ref + ele.extra_dtime_ref + ele.L * ele.E_tot_ref / (C_LIGHT * ele.pc_ref)
+    else
+      E_end = ele.E_tot_ref + ele.dE_ref
+      return ele.time_ref + ele.extra_dtime_ref + ele.L * (ele.E_tot_ref + E_end) / 
+                              (C_LIGHT * (ele.pc_ref + calc_pc(ele.species_ref, E_tot = E_end)))
+    end
+
   elseif sym == :β_ref
     if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.pc_ref / ele.E_tot_ref
@@ -473,14 +483,6 @@ function output_parameter_value(sym::Symbol, ele::Ele, out_type::Type{OutputPara
   elseif sym == :γ_ref
     if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.E_tot_ref / massof(ele.species_ref)
-
-  elseif sym == :β_ref_downstream
-    if :DownstreamReferenceParams ∉ keys(ele.pdict); return NaN; end
-    return ele.pc_ref_downstream / ele.E_tot_ref_downstream
-
-  elseif sym == :γ_ref_downstream
-    if :DownstreamReferenceParams ∉ keys(ele.pdict); return NaN; end
-    return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
 
   elseif sym == :q_body
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end
