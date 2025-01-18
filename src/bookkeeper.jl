@@ -958,7 +958,7 @@ function fork_bookkeeper(fork::Ele)
     if fork.to_ele == ""
       fork.to_ele = to_branch[1]
     else
-      to_ele = eles(fork.to_ele)
+      to_ele = eles_search(lat, fork.to_ele)
       if length(to_ele) == 0; error("to_ele ($(fork.to_ele)) not found in new branch for fork $(fork.name)."); end
       if length(to_ele) > 1; error("Multiple elements matched to to_ele ($(fork.to_ele)) for fork $(fork.name)."); end
       fork.to_ele = to_ele[1]

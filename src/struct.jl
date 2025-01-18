@@ -901,6 +901,8 @@ Reference energy, time, species, etc at upstream end of an element.
   - from the previous element's value? Default is `false` (inherit from previous). \\
 
 ## Associated output parameters are
+• `pc_ref_downstream::Number`     - Reference `momentum*c` downstream end. \\
+• `E_tot_ref_downstream::Number`  - Reference total energy downstream end. \\
 • `time_ref_downstream::Number`   - Reference time downstream end. \\
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
 • `γ_ref::Number`                 - Reference gamma factor upstream end. \\

@@ -103,11 +103,13 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
   ),
 
   ReferenceParams => Dict{Symbol,Symbol}(
-    :species_ref      => :extra_dtime_ref,
-    :pc_ref           => :E_tot_ref,
-    :time_ref         => :time_ref_downstream,
-    :dE_ref           => :static_energy_ref,
-    :β_ref            => :γ_ref,
+    :species_ref        => :extra_dtime_ref,
+    :pc_ref             => :E_tot_ref,
+    :pc_ref_downstream  => :E_tot_ref_downstream,
+    :time_ref           => :time_ref_downstream,
+    :dE_ref             => :static_energy_ref,
+    :β_ref              => :γ_ref,
+    :β_ref_downstream   => :γ_ref_downstream,
   ),
 
   RFParams => Dict{Symbol,Symbol}(
@@ -147,8 +149,9 @@ List of parameters not to show when displaying the parameters of an element, bra
 These parameters are redundant and are not shown to save space.
 """ DO_NOT_SHOW_PARAMS_LIST
 
-DO_NOT_SHOW_PARAMS_LIST = Vector{Symbol}([:q_body, :q_body_tot, :to_line,
-                :x_rot_floor, :y_rot_floor, :z_rot_floor, :drift_master])
+DO_NOT_SHOW_PARAMS_LIST = Vector{Symbol}([:q_body, :q_body_tot, :to_line, :pc_ref_downstream,
+                :x_rot_floor, :y_rot_floor, :z_rot_floor, :drift_master, :E_tot_ref_downstream,
+                :β_ref_downstream, :γ_ref_downstream])
 
 #---------------------------------------------------------------------------------------------------
 # ele_name
@@ -387,17 +390,17 @@ end
 # show_elegroup_with_doc
 
 """
-    show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParams
+    show_elegroup_with_doc(io::IO, group::EleParams; ele::Ele, indent = 0)
 
 Single column printing of an element group with a docstring printed for each parameter.
 """ show_elegroup_with_doc
 
-function show_elegroup_with_doc(io::IO, group::T; ele::Ele, indent = 0) where T <: EleParams
+function show_elegroup_with_doc(io::IO, group::EleParams; ele::Ele, indent = 0)
   gtype = typeof(group)
   nn = max(18, maximum(length.(fieldnames(gtype))))
   println(io, f"  {gtype}:")
 
-  for field in associated_names(gtype, exclude_do_not_show = true)
+  for field in associated_names(group, show_names = true)
     param_name = rpad(full_parameter_name(field, gtype), nn)
     value_str = ele_param_value_str(ele, field)
     ele_print_line(io, f"    {param_name} {value_str} {param_units(field)}", description(field))
@@ -415,7 +418,7 @@ Two column printing of an element group without any docstring.
 
 function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0, group_show_name::Symbol = :NONE)
   # If output field for column 1 or column 2 is wider than this, print the fields on two lines.
-  col_width_cut = 55
+  col_width_cut = 60
 
   gtype = typeof(group)
   if gtype ∉ keys(show_column2)
@@ -430,7 +433,7 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0
   col2 = show_column2[gtype]
   n1 = 20
   n2 = 20
-  for name in associated_names(gtype, exclude_do_not_show = true)
+  for name in associated_names(group, show_names = true)
     if name in values(col2)
       n2 = max(n2, length(full_parameter_name(name, gtype)))
     else
@@ -444,8 +447,8 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0
     println(io, " "^indent * ".$group_show_name:")
   end
 
-  for field_sym in associated_names(gtype, exclude_do_not_show = true)
-    if field_sym in values(col2); continue; end         # Second column fields handled with first column ones.
+  for field_sym in associated_names(group, show_names = true)
+    if field_sym in values(col2); continue; end      # Second column field handled with first column field.
 
     if field_sym in keys(col2)
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)

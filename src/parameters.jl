@@ -191,6 +191,10 @@ ELE_PARAM_INFO_DICT = Dict(
   :static_energy_ref    => ParamInfo(ReferenceParams, Bool,         "Is energy set by user (true) or inherited (false)?"),
   :β_ref                => ParamInfo(ReferenceParams, Number,       "Reference velocity/c.", "", OutputParams),
   :γ_ref                => ParamInfo(ReferenceParams, Number,       "Reference relativistic gamma factor.", "", OutputParams),
+  :pc_ref_downstream    => ParamInfo(ReferenceParams, Number,       "Downstream reference momentum * c.", "eV", OutputParams),
+  :E_tot_ref_downstream => ParamInfo(ReferenceParams, Number,       "Downstream reference total energy.", "eV", OutputParams),
+  :β_ref_downstream     => ParamInfo(ReferenceParams, Number,       "Downstream reference velocity/c.", "", OutputParams),
+  :γ_ref_downstream     => ParamInfo(ReferenceParams, Number,       "Downstream relativistic gamma factor.", "", OutputParams),
 
   :time_ref_downstream  => ParamInfo(ReferenceParams, Number,       "Reference time at downstream end.", "sec", OutputParams),
 
@@ -237,10 +241,10 @@ for (key, info) in ELE_PARAM_INFO_DICT
 end
 
 #---------------------------------------------------------------------------------------------------
-# associated_names(group::Type{T}) 
+# associated_names(group::EleParams) 
 
 """
-    associated_names(group::Type{T}; exclude_do_not_show::Bool = true) -> Vector{Symbol}
+    associated_names(group::EleParams; show_names::Bool = false) -> Vector{Symbol}
 
 List of names (symbols) of parameters associated with element parameter group struct `group`.
 Associated parameters are the fields of the struct plus any associated output parameters.
@@ -248,19 +252,28 @@ Associated parameters are the fields of the struct plus any associated output pa
 If the "user name" is different from the group field name, the user name is used.
 For example, for a `FloorParams`, `:r_floor` will be in the name list instead of `:r`.
 
-If `exclude_do_not_show` is `true`, parameters in the `DO_NOT_SHOW_PARAMS_LIST` are excluded
-from the output list.
+If `show_names` is `true`, parameters in the `DO_NOT_SHOW_PARAMS_LIST` are excluded
+from the output list. Additionally, for a `ReferenceParams` group and dE_ref nonzero,
+the `pc_ref_downstream` and `E_tot_ref_downstream` are included.
 """ associated_names
 
-function associated_names(group::Type{T}; exclude_do_not_show::Bool = true) where T <: EleParams
-  names = [field for field in fieldnames(group)]
+function associated_names(group::EleParams; show_names::Bool = true)
+  group_type = typeof(group)
+  names = [field for field in fieldnames(group_type)]
+
   for (key, pinfo) in ELE_PARAM_INFO_DICT
-    if pinfo.parent_group != group; continue; end
+    if pinfo.parent_group != group_type; continue; end
     if pinfo.user_sym ∉ names; push!(names, pinfo.user_sym); end
     if pinfo.struct_sym != pinfo.user_sym; deleteat!(names, names .== pinfo.struct_sym); end
   end
 
-  if exclude_do_not_show; names = setdiff(names, DO_NOT_SHOW_PARAMS_LIST); end
+  if show_names
+    names = setdiff(names, DO_NOT_SHOW_PARAMS_LIST)
+    if group_type == ReferenceParams && group.dE_ref != 0
+      append!(names, [:pc_ref_downstream, :E_tot_ref_downstream, :β_ref_downstream, :γ_ref_downstream])
+    end
+  end
+
   return names
 end
 
