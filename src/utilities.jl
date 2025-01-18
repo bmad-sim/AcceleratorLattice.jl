@@ -133,7 +133,7 @@ function eles_sort!(vec_ele::Vector{T}; order::Order.T = Order.BY_S) where T <: 
   if length(vec_ele) == 0 || order == Order.NONE; return vec_ele; end
 
   lat = lattice(vec_ele[1])
-  bv = Vector(undef, length(lat.branch))  # Vector of element vectors one for each branch
+  bv = Vector{Vector{@NamedTuple{ele::T, s::Float64}}}(undef, length(lat.branch))  # Vector of element vectors one for each branch
 
   # sort eles in different branches
 
