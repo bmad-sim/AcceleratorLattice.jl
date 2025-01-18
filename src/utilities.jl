@@ -133,7 +133,8 @@ function eles_sort!(vec_ele::Vector{T}; order::Order.T = Order.BY_S) where T <: 
   if length(vec_ele) == 0 || order == Order.NONE; return vec_ele; end
 
   lat = lattice(vec_ele[1])
-  bv = Vector(undef, length(lat.branch))  # Vector of element vectors one for each branch
+  bve = Vector{Vector{Ele}}(undef, length(lat.branch))      # Vector of element vectors one for each branch
+  bvs = Vector{Vector{Float64}}(undef, length(lat.branch))  # Vector of element vectors one for each branch
 
   # sort eles in different branches
 
@@ -146,22 +147,27 @@ function eles_sort!(vec_ele::Vector{T}; order::Order.T = Order.BY_S) where T <: 
     end
 
     ix = sort_ele.branch.ix_branch
-    if !isassigned(bv, ix)
-      bv[ix] = Vector{@NamedTuple{ele::T, s::Float64}}([(ele, sort_ele.s)])
+    if !isassigned(bve, ix)
+      bve[ix] = Vector{Ele}([ele])
+      bvs[ix] = Vector{Float64}([sort_ele.s])
       continue
     end
 
-    this_b = bv[ix]
-    for ie in range(length(this_b), 0, step = -1)
-      if ie == 0 || (order == Order.BY_S && this_b[ie].s < sort_ele.s) || 
-                    (order == Order.BY_INDEX && this_b[ie].ele.ix_ele < sort_ele.ix_ele)
-        insert!(this_b, ie+1, (ele, sort_ele.s))
+    this_be = bve[ix]
+    this_bs = bvs[ix]
+    for ie in range(length(this_be), 0, step = -1)
+      if ie == 0 || (order == Order.BY_S && this_bs[ie] < sort_ele.s) || 
+                    (order == Order.BY_INDEX && this_be[ie].ix_ele < sort_ele.ix_ele)
+        insert!(this_be, ie+1, ele)
+        insert!(this_bs, ie+1, sort_ele.s)
         break
-      elseif order == Order.BY_S && this_b[ie].s == sort_ele.s
-        if this_b[ie].ele.ix_ele < sort_ele.ix_ele
-          insert!(this_b, ie+1, (ele, sort_ele.s))
+      elseif order == Order.BY_S && this_bs[ie] == sort_ele.s
+        if this_be[ie].ix_ele < sort_ele.ix_ele
+          insert!(this_be, ie+1, ele)
+          insert!(this_bs, ie+1, sort_ele.s)
         else
-          insert!(this_b, ie, (ele, sort_ele.s))
+          insert!(this_be, ie, ele)
+          insert!(this_bs, ie, sort_ele.s)
         end
         break
       end
@@ -171,11 +177,11 @@ function eles_sort!(vec_ele::Vector{T}; order::Order.T = Order.BY_S) where T <: 
   # Combine branches and return
 
   ie = 0
-  for ib in range(1, length(bv))
-    if !isassigned(bv, ib); continue; end
-    for ee in bv[ib]
+  for ib in range(1, length(bve))
+    if !isassigned(bve, ib); continue; end
+    for ix in 1:length(bve[ib])
       ie += 1
-      vec_ele[ie] = ee.ele
+      vec_ele[ie] = bve[ib][ix]
     end
   end
 

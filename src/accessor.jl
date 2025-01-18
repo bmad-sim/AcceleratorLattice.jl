@@ -211,7 +211,9 @@ end
 
 If `lat[name]` matches a branch name, return the branch. No wild cards permitted here.
 If `lat[name]` does not match a branch name, return list of matching lattice elements.
-In this case, the returned vector is equivalent to `eles_search(lat, name)`.
+
+if the match is unique, the matched element is returned. If not, an array of elements is returned.
+If an array is always wanted, use `eles_search(lat, name)`.
 
 For `lat[ix_branch]`, return `lat.branch[ix_branch]`.
 """ Base.getindex(lat::Lattice, name::AbstractString)
@@ -221,7 +223,13 @@ function Base.getindex(lat::Lattice, name::AbstractString)
     if br.name == name; return br; end
   end
 
-  return eles_search(lat, name)
+  elist =  eles_search(lat, name)
+  if length(elist) == 1 
+    return elist[1]
+  else
+    return elist
+  end
+
 end
 
 #------------
@@ -265,7 +273,7 @@ function Base.getindex(branch::Vector{Branch}, typ::Type{T} where T <: BranchTyp
 end
 
 #---------------------------------------------------------------------------------------------------
-# Base.getindex(branch::Branch, name::AbstractString)
+# Base.getindex(branch::Branch)
 
 """
   Base.getindex(branch::Branch, name::AbstractString) -> Ele[]
@@ -273,10 +281,18 @@ end
 
 `branch[name]` matches to all lattice elements in `branch.ele[]` array.
 `branch[ix_ele]` matches to `branch.ele[ix_ele]`.
+
+if the match is unique, the matched element is returned. If not, an array of elements is returned.
+If an array is always wanted, use `eles_search(branch, name)`.
 """ Base.getindex(branch::Branch, name::AbstractString), Base.getindex(branch::Branch, ix_ele::Int)
 
 function Base.getindex(branch::Branch, name::AbstractString)
-  return eles_search(branch, name)
+  ele_list = eles_search(branch, name)
+  if length(ele_list) == 1
+    return ele_list[1]
+  else
+    return ele_list
+  end
 end
 
 function Base.getindex(branch::Branch, ix_ele::Int)
@@ -466,6 +482,34 @@ function output_parameter_value(sym::Symbol, ele::Ele, out_type::Type{OutputPara
     if :BendParams ∉ keys(ele.pdict); return NaN; end
     return ele.g + cos(ele.tilt0) * ele.Kn0 + sin(ele.tilt0) * ele.Ks0
 
+  elseif sym == :E_tot_ref_downstream
+    if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
+    return ele.E_tot_ref + ele.dE_ref
+
+  elseif sym == :pc_ref_downstream
+    if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
+    pc, _ = calc_changed_energy(ele.species_ref, ele.pc_ref, ele.dE_ref)
+    return pc
+
+  elseif sym == :time_ref_downstream
+    if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
+    if ele.dE_ref == 0
+      return ele.time_ref + ele.extra_dtime_ref + ele.L * ele.E_tot_ref / (C_LIGHT * ele.pc_ref)
+    else
+      E_end = ele.E_tot_ref + ele.dE_ref
+      return ele.time_ref + ele.extra_dtime_ref + ele.L * (ele.E_tot_ref + E_end) / 
+                              (C_LIGHT * (ele.pc_ref + calc_pc(ele.species_ref, E_tot = E_end)))
+    end
+
+  elseif sym == :β_ref_downstream
+    if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
+    pc, E_tot = calc_changed_energy(ele.species_ref, ele.pc_ref, ele.dE_ref)
+    return pc / E_tot
+
+  elseif sym == :γ_ref_downstream
+    if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
+    return calc_γ(ele.species_ref, E_tot = ele.E_tot_ref + ele.dE_ref)
+
   elseif sym == :β_ref
     if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.pc_ref / ele.E_tot_ref
@@ -473,14 +517,6 @@ function output_parameter_value(sym::Symbol, ele::Ele, out_type::Type{OutputPara
   elseif sym == :γ_ref
     if :ReferenceParams ∉ keys(ele.pdict); return NaN; end
     return ele.E_tot_ref / massof(ele.species_ref)
-
-  elseif sym == :β_ref_downstream
-    if :DownstreamReferenceParams ∉ keys(ele.pdict); return NaN; end
-    return ele.pc_ref_downstream / ele.E_tot_ref_downstream
-
-  elseif sym == :γ_ref_downstream
-    if :DownstreamReferenceParams ∉ keys(ele.pdict); return NaN; end
-    return ele.E_tot_ref_downstream / massof(ele.species_ref_downstream)
 
   elseif sym == :q_body
     if :BodyShiftParams ∉ keys(ele.pdict); return NaN; end

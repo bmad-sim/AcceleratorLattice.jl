@@ -102,9 +102,9 @@ function bookkeeper_tracking_branch!(branch::Branch; init::Bool = false)
   ix_min == 1 ? previous_ele = NULL_ELE : previous_ele = branch.ele[ix_min-1]
 
   for ele in branch.ele[ix_min:end]
-    # If UnionEle or the first super slave then process super lord(s).
-    if typeof(ele) == UnionEle
-      bookkeeper_unionele!(ele, changed, previous_ele)
+    # A UnionEle may not be a super slave.
+    if typeof(ele) == UnionEle && ele.slave_status == Slave.SUPER
+      bookkeeper_unionele_superslave!(ele, changed, previous_ele)
     elseif ele.slave_status == Slave.SUPER
       bookkeeper_superslave!(ele, changed, previous_ele)
     elseif ele.slave_status == Slave.MULTIPASS
@@ -173,13 +173,21 @@ function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper_unionele!
+# bookkeeper_unionele_superslave!
 
-function bookkeeper_unionele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
-  for lord in ele.super_lords
-    bookkeeper_ele!(ele, changed, previous_ele) 
+"""
+    bookkeeper_unionele_superslave!(union_ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+
+Bookkeeping for a `UnionEle` that is also a super slave.
+"""
+
+function bookkeeper_unionele_superslave!(union_ele::Ele, changed::ChangedLedger, previous_ele::Ele)
+  # Only need to bookkeep lords where union_ele is the first slave 
+  for lord in union_ele.super_lords
+    if slave_index(union_ele, lord) == 1; bookkeeper_ele!(lord, changed, previous_ele); end
   end
 
+  bookkeeper_ele!(union_ele, changed, previous_ele);
   return
 end
 
@@ -206,7 +214,6 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
   # Transfer info from lord to slave
   for group in PARAM_GROUPS_LIST[typeof(lord)]
     if group == LengthParams; continue; end     # Do not modify length of slave
-    if group == DownstreamReferenceParams; continue; end
     if group == FloorParams; continue; end
     if group == LordSlaveStatusParams; continue; end
 
@@ -284,7 +291,7 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
 end
 
 #---------------------------------------------------------------------------------------------------
-# bookkeeper_multipass_slave!(ele, changed, previous_ele)
+# bookkeeper_multipass_slave!(slave, changed, previous_ele)
 
 """
     Internal: bookkeeper_multipass_slave!(slave::Ele, changed::ChangedLedger, previous_ele::Ele)
@@ -297,7 +304,12 @@ function bookkeeper_multipass_slave!(slave::Ele, changed::ChangedLedger, previou
   lord = slave.multipass_lord
   cdict = lord.changed
 
-  ## To Do: Bookkeep the lord. What is the reference energy?
+  # Bookkeep the lord but only if this is the first slave.
+  if slave_index(slave) == 1
+    ele_paramgroup_bookkeeper!(lord, ReferenceParams, changed, previous_ele)
+    haskey(lord.pdict, :BMultipoleParams) && ele_paramgroup_bookkeeper!(lord, BMultipoleParams, changed, previous_ele)
+    haskey(lord.pdict, :EMultipoleParams) && ele_paramgroup_bookkeeper!(lord, EMultipoleParams, changed, previous_ele)
+  end
 
   # Transfer info from lord to slave
   for param in copy(keys(lord.pdict[:changed]))
@@ -308,15 +320,13 @@ function bookkeeper_multipass_slave!(slave::Ele, changed::ChangedLedger, previou
     if group ∉ keys(ELE_PARAM_GROUP_INFO); continue; end  # Ignore custom stuff
     if group == LengthParams; continue; end     # Do not modify length of slave
     if group == ReferenceParams; continue; end  # Slave ReferenceParams independent of lord
-    if group == DownstreamReferenceParams; continue; end
 
     slave.pdict[Symbol(group)] = deepcopy(lord.pdict[Symbol(group)])
     slave.pdict[:changed][group] = "changed"
   end
 
   # Now bookkeep the slave
-  changed2 = ChangedLedger()
-  bookkeeper_ele!(slave, changed2, previous_ele)  # In case slave parameters have changed.
+  bookkeeper_ele!(slave, changed, previous_ele)  # In case slave parameters have changed.
 
   # If last slave of lord, clear lord.changed dict.
   if lord.slaves[end] == slave; lord.pdict[:changed] = Dict{Symbol,Any}(); end
@@ -487,8 +497,7 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::
     param_conflict_check(ele, :e2, :e2_rect)
 
     if haskey(cdict, :bend_field_ref)
-      # Use previous_ele for ref parameters since BendParams is first group to be bookkeeped
-      bg.g = bg.bend_field_ref * C_LIGHT * charge(previous_ele.species_ref_downstream) / previous_ele.pc_ref_downstream
+      bg.g = bg.bend_field_ref * C_LIGHT * charge(ele.species_ref) / ele.pc_ref
     end
 
     if haskey(cdict, :angle) && haskey(cdict, :g) && length(conflict1) == 1
@@ -511,7 +520,7 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::
       bg.angle = L * bg.g
     end
 
-    bg.bend_field_ref = bg.g * previous_ele.pc_ref_downstream / (C_LIGHT * charge(previous_ele.species_ref_downstream))
+    bg.bend_field_ref = bg.g * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
     if haskey(cdict, :L_chord)
       bg.angle = 2 * asin(bg.L_chord * bg.g / 2)
@@ -519,11 +528,6 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::
     else
       bg.angle = L * bg.g
       bg.g == 0 ? bg.L_chord = L : bg.L_chord = 2 * sin(bg.angle/2) / bg.g 
-    end
-
-    if ele.L != L
-      ele.L = L
-      ele_paramgroup_bookkeeper!(ele, LengthParams, changed, previous_ele)
     end
 
     if haskey(cdict, :e1)
@@ -550,6 +554,45 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::
   end
 
   return
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, ...)
+# FloorParams bookkeeper
+
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, 
+                                              changed::ChangedLedger, previous_ele::Ele)
+  fpg = ele.FloorParams
+  cdict = ele.changed
+
+  if has_changed(ele, FloorParams) || changed.this_ele_length; changed.floor_position = true; end
+  if !changed.floor_position; return; end
+
+  if is_null(previous_ele); return; end   # Happens with beginning element
+
+  ele.FloorParams = propagate_ele_geometry(previous_ele)
+  clear_changed!(ele, FloorParams)
+
+  return
+end
+
+#---------------------------------------------------------------------------------------------------
+# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams}, ...)
+# ForkParams bookkeeper
+
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams}, 
+                                              changed::ChangedLedger, previous_ele::Ele)
+
+  fg = ele.ForkParams
+
+
+
+  if to_ele.species_ref == Species("Null"); to_ele.species_ref = fork.species_ref; end
+  if to_ele.pc_ref == NaN && to_ele.E_tot_ref == NaN
+    to_ele.pc_ref = fork.pc_ref
+    to_ele.E_tot_ref = fork.pc_ref
+  end
+
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -625,12 +668,11 @@ end
 """
     ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
 
-`ReferenceParams` bookkeeping. This also includes `DownstreamReferenceParams` bookkeeping.
+`ReferenceParams` bookkeeping.
 """
 
 function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
   rg = ele.ReferenceParams
-  drg = ele.DownstreamReferenceParams
   cdict = ele.changed
 
   if has_changed(ele, ReferenceParams); changed.reference = true; end
@@ -647,9 +689,6 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, chan
   if is_null(previous_ele)   # implies BeginningEle
     if !changed.reference; return; end
     if rg.species_ref == Species(); error("Species not set for first element in branch: $(ele_name(ele))"); end
-    drg.species_ref_downstream = rg.species_ref
-
-    rg.time_ref_downstream = rg.time_ref + rg.extra_dtime_ref
 
     if count([haskey(cdict, :pc_ref), haskey(cdict, :E_tot_ref), haskey(cdict, :β_ref), haskey(cdict, :γ_ref)]) > 1
       error("Beginning element has more than one of pc_ref, E_tot_ref, β_ref, and γ_ref set in $(ele_name(ele))")
@@ -667,9 +706,6 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, chan
       error("Neither pc_ref E_tot_ref, β_ref, nor γ_ref set for: $(ele_name(ele))")
     end
 
-    drg.pc_ref_downstream = rg.pc_ref
-    drg.E_tot_ref_downstream = rg.E_tot_ref
-
     clear_changed!(ele, ReferenceParams)
     return
   end
@@ -678,80 +714,34 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, chan
 
   if !changed.this_ele_length && !changed.reference; return; end
 
-  old_drg = copy(drg)
+  rg_old = copy(rg)
+  rg.species_ref      = previous_ele.species_ref
 
-  rg.pc_ref           = previous_ele.pc_ref_downstream
-  rg.E_tot_ref        = previous_ele.E_tot_ref_downstream
-  rg.time_ref         = previous_ele.time_ref_downstream
-  rg.species_ref      = previous_ele.species_ref_downstream
-  drg.species_ref_downstream = rg.species_ref
-
-  if rg.dE_ref == 0
-    drg.pc_ref_downstream      = rg.pc_ref
-    drg.E_tot_ref_downstream   = rg.E_tot_ref
-    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L * rg.E_tot_ref / (C_LIGHT * rg.pc_ref)
-  else
-    drg.pc_ref_downstream, drg.E_tot_ref_downstream = calc_changed_energy(rg.species_ref, rg.pc_ref, rg.dE_ref)
-    rg.time_ref_downstream     = rg.time_ref + rg.extra_dtime_ref + ele.L *
-             (rg.E_tot_ref + drg.E_tot_ref_downstream) / (C_LIGHT * (rg.pc_ref + drg.pc_ref_downstream))
-  end
-
-  # Multipass lord bookkeeping if this is a slave
-
-  if ele.slave_status == Slave.MULTIPASS
-    lord = ele.pdict[:multipass_lord]
-    if lord.pdict[:slaves][1] === ele 
-      lord.ReferenceParams = rg
-      haskey(lord.pdict, :changed) ? lord.changed = Dict(ReferenceParams => "changed") : 
-                                                           lord.changed[ReferenceParams] = "changed" 
+  if ele.static_energy_ref
+    if isnan(rg.pc_ref) && isnan(rg.E_tot_ref); error("With static_energy_ref set true, either pc_ref or E_tot_ref must be set in $(ele_name(ele))"); end
+    if haskey(cdict, :E_tot_ref) || isnan(rg.pc_ref)
+      rg.pc_ref = calc_pc(rg.species_ref, E_tot = rg.E_tot_ref)
+    else
+      rg.E_tot_ref = calc_E_tot(rg.species_ref, pc = rg.pc_ref)
     end
+
+  elseif previous_ele.dE_ref == 0
+    rg.pc_ref      = previous_ele.pc_ref
+    rg.E_tot_ref   = previous_ele.E_tot_ref
+    rg.time_ref    = previous_ele.time_ref + previous_ele.extra_dtime_ref + previous_ele.L * previous_ele.E_tot_ref / (C_LIGHT * previous_ele.pc_ref)
+
+  else
+    rg.pc_ref, rg.E_tot_ref = calc_changed_energy(previous_ele.species_ref, previous_ele.pc_ref, previous_ele.dE_ref)
+    rg.time_ref = previous_ele.time_ref + previous_ele.extra_dtime_ref + previous_ele.L *
+                              (previous_ele.E_tot_ref + rg.E_tot_ref) / (C_LIGHT * (previous_ele.pc_ref + rg.pc_ref))
   end
 
   # End stuff
 
   clear_changed!(ele, ReferenceParams)
-  changed.reference = (old_drg != drg)
+  changed.reference = (rg_old != rg)
 
-  return
-end
-
-#---------------------------------------------------------------------------------------------------
-# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, ...)
-# FloorParams bookkeeper
-
-function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{FloorParams}, 
-                                              changed::ChangedLedger, previous_ele::Ele)
-  fpg = ele.FloorParams
-  cdict = ele.changed
-
-  if has_changed(ele, FloorParams) || changed.this_ele_length; changed.floor_position = true; end
-  if !changed.floor_position; return; end
-
-  if is_null(previous_ele); return; end   # Happens with beginning element
-
-  ele.FloorParams = propagate_ele_geometry(previous_ele)
-  clear_changed!(ele, FloorParams)
-
-  return
-end
-
-#---------------------------------------------------------------------------------------------------
-# ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams}, ...)
-# ForkParams bookkeeper
-
-function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams}, 
-                                              changed::ChangedLedger, previous_ele::Ele)
-
-  fg = ele.ForkParams
-
-
-
-  if to_ele.species_ref == Species("Null"); to_ele.species_ref = fork.species_ref; end
-  if to_ele.pc_ref == NaN && to_ele.E_tot_ref == NaN
-    to_ele.pc_ref = fork.pc_ref
-    to_ele.E_tot_ref = fork.pc_ref
-  end
-
+  return nothing
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -776,7 +766,7 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{SolenoidParams}, chang
   end
 
   clear_changed!(ele, SolenoidParams)
-  return
+  return nothing
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -930,6 +920,7 @@ function init_multipass_bookkeeper!(lat::Lattice)
       ele.name = ele.name * "!mp" * string(ix)
       ele.pdict[:multipass_lord] = lord
       ele.slave_status = Slave.MULTIPASS
+      ele.static_energy_ref = false
       if haskey(ele.pdict, :MasterParams); ele.field_master = true; end
       push!(lord.pdict[:slaves], ele)
     end
@@ -967,7 +958,7 @@ function fork_bookkeeper(fork::Ele)
     if fork.to_ele == ""
       fork.to_ele = to_branch[1]
     else
-      to_ele = eles(fork.to_ele)
+      to_ele = eles_search(lat, fork.to_ele)
       if length(to_ele) == 0; error("to_ele ($(fork.to_ele)) not found in new branch for fork $(fork.name)."); end
       if length(to_ele) > 1; error("Multiple elements matched to to_ele ($(fork.to_ele)) for fork $(fork.name)."); end
       fork.to_ele = to_ele[1]

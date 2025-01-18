@@ -53,7 +53,7 @@ end
   @test eles_search(lat, "ID=`z1`") == eles_search(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21")
   @test eles_search(lat, "ID=`z1` ~fodo>>9 ~fodo>>22") == eles_search(lat, "fodo>>7, fodo>>15, fodo>>21")
   @test eles_search(lat, "ID=`z1` & fodo>>9") == eles_search(lat, "fodo>>9")
-  @test bsuper["z2"] == eles_search(lat, "super>>1")
+  @test bsuper["z2"] === eles_search(lat, "super>>1")[1]
   @test eles_search(lat, "Quadrupole::* ~*!*") == 
                 eles_search(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21, fodo>>22, multipass>>1, multipass>>3")
   @test eles_search(lat, "2>>2:4  ~Quadrupole::*") == [lat.branch[2].ele[3]]

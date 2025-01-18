@@ -66,8 +66,6 @@ b2 = lat.branch[2]
   @test isapprox([b1[9].dE_ref, b1[11].dE_ref, b2[1].dE_ref], [1.4e7, 6.0e6, 2.0e7], rtol = 1e-14)
   @test isapprox([b1[9].E_tot_ref, b1[11].E_tot_ref, b2[1].E_tot_ref], 
           [1.0013047484537676e7, 2.4013047484537676e7, 1.0013047484537676e7], rtol = 1e-14)
-  @test isapprox([b1[9].E_tot_ref_downstream, b1[11].E_tot_ref_downstream, b2[1].E_tot_ref_downstream],
-          [2.4013047484537676e7, 3.001304748453768e7, 3.0013047484537676e7], rtol = 1e-14)
   @test isapprox([b1[9].voltage, b1[11].voltage, b2[1].voltage], [7.0e7, 3.0e7, 10.0e7], rtol = 1e-14)
   @test isapprox([b1[9].gradient, b1[11].gradient, b2[1].gradient], [1.0e8, 1.0e8, 1.0e8], rtol = 1e-14)
 

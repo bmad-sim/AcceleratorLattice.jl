@@ -13,7 +13,7 @@ The parmeter groups are:
  {\it Params}          & {\it Section}             & {\it Params}          & {\it Section}            \\ 
  \midrule
  ACKickerParams        & \sref{s:ackicker.g}       & LengthParams          & \sref{s:length.g}        \\    
- BodyShiftParams       & \sref{s:alignment.g}      & LordSlaveStatusParams & \sref{s:lord.slave.g}    \\
+ FloorParams           & \sref{s:floor.g}          & LordSlaveStatusParams & \sref{s:lord.slave.g}    \\
  ApertureParams        & \sref{s:aperture.g}       & MasterParams          & \sref{s:master.g}        \\
  BMultipoleParams      & \sref{s:bmultipole.g}     & FloorParams     & \sref{s:orientation.g}   \\ 
  BeamBeamParams        & \sref{s:beam.beam.g}      & OriginEleParams       & \sref{s:origin.ele.g}    \\
@@ -44,13 +44,15 @@ These sub-groups also inherit from \vn{BaseEleParams}:
 To see which element types contain a given group, use the \vn{info(::EleParams)}
 method. Example:
 \begin{example}
-  julia> info(BodyShiftParams)
+  julia> info(ApertureParams)
   ApertureParams: Vacuum chamber aperture.
+    x_limit::Vector{Number}         Min/Max horizontal aperture limits. (m)
+    y_limit::Vector{Number}         Min/Max vertical aperture limits. (m)
   ...
   Found in:
     ACKicker
-    Bend
-    Kicker
+    BeamBeam
+    BeginningEle
     ...
 \end{example}
 

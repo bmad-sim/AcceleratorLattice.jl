@@ -186,7 +186,9 @@ element with some finite voltage. In this case, the reference energy calculation
 where the reference energy of an element is inherited from the previous element, assigns differing
 reference energies to \vn{A!mp1} and \vn{A!mp2}. In such a situation, what should be the assigned
 reference energy for the multipass lord element \vn{A}? \accellat calculates the lord reference energy
-in one of two ways. If, in the lattice file, \vn{e_tot_ref} or \vn{pc_ref} is set for the multipass lord
-element, that setting will be used. If the reference energy (or reference momentum) is not set in the lattice
-file, the reference energy of the lord is set equal to the reference energy of the first pass slave
-element.
+in one of two ways. If, in the lattice file, \vn{static_energy_ref} is set \vn{true}, 
+\vn{e_tot_ref} or \vn{pc_ref} the value set for the multipass lord element by the User will be used.
+If \vn{static_energy_ref} is \vn{false} (the default), 
+the reference energy (or reference momentum) the reference energy of the lord is set equal to the 
+reference energy of the first pass slave element. 
+The setting of \vn{static_energy_ref} for multipass slaves is always \vn{false}.

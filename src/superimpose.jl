@@ -229,6 +229,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
       lord1 = push!(sbranch, super_ele)
       lord1.lord_status = Lord.SUPER
       lord1.pdict[:slaves] = Ele[]
+      lord1.pdict[:changed][AllParams] = true
       push!(lord_list, lord1)
       push!(super_list, lord1)
 
@@ -247,6 +248,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
         elseif ele.slave_status != Slave.SUPER
           lord2 = push!(sbranch, ele)
           lord2.lord_status = Lord.SUPER
+          lord2.pdict[:changed][AllParams] = true
           push!(lord_list, lord2)
 
           slave = set!(branch, ix_ele, UnionEle(name = "", L = ele.L, super_lords = Vector{Ele}([lord1])))

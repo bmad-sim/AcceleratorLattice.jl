@@ -660,34 +660,6 @@ These strings have no affect on tracking.
 end
 
 #---------------------------------------------------------------------------------------------------
-# DownstreamReferenceParams
-
-"""
-    mutable struct DownstreamReferenceParams <: EleParams
-
-Downstream end of element reference energy and species. This struct is useful for
-elements where the reference energy or species is not constant.
-Elements where this is true include `LCavity`, `Foil`, and `Converter`.
-
-To simplify the lattice bookkeeping, all elements that have a `ReferenceParams` also have
-a `DownstreamReferenceParams`. 
-
-## Fields
-• `species_ref_downstream::Species`  - Reference species exit end. \\
-• `pc_ref_downstream::Number`        - Reference `momentum*c` downstream end. \\
-• `E_tot_ref_downstream::Number`     - Reference total energy downstream end. \\
-
-## Associated output parameters:
-• `β_ref_downstream::Number`         - Reference `v/c` upstream end. \\
-• `γ_ref_downstream::Number`         - Reference gamma factor downstream end. \\
-"""
-@kwdef mutable struct DownstreamReferenceParams <: EleParams
-  species_ref_downstream::Species = Species()
-  pc_ref_downstream::Number = NaN
-  E_tot_ref_downstream::Number = NaN
-end
-
-#---------------------------------------------------------------------------------------------------
 # EMultipoleParams
 
 """
@@ -852,7 +824,7 @@ Used with `Fiducial`, `FloorShift`, and `Girder` elements.
 The `OriginEleParams` is used to set the coordinate reference frame from which 
 the orientation set by the `BodyShiftParams` is measured. 
 
-## Fields
+## Fieldsc
 • `origin_ele::Ele`           - Origin reference element. Default is NULL_ELE. \\
 • `origin_ele_ref_pt::Loc.T`  - Origin reference point. Default is `Loc.CENTER`. \\
 """ OriginEleParams
@@ -871,10 +843,6 @@ end
 `Patch` element parameters. Other `Patch` parameters are in PositionParams
 
 ## Fields
-• `t_offset::Number`          - Time offset. \\
-• `E_tot_offset::Number`      - Total energy offset. Default is `NaN` (not used). \\
-• `E_tot_exit::Number`        - Fix total energy at exit end. Default is `NaN` (not used). \\
-• `pc_exit::Number`           - Reference momentum*c at exit end. Default is `NaN` (not used). \\
 • `flexible::Bool`            - Flexible patch? Default is `false`. \\
 • `L_user::Number`            - User set Length? Default is `NaN` (length calculated by bookkeeping code). \\
 • `ref_coords::BodyLoc.T`     - Reference coordinate system used inside the patch. Default is `BodyLoc.EXIT_END`. \\
@@ -882,7 +850,6 @@ end
 
 @kwdef mutable struct PatchParams <: EleParams
   t_offset::Number = 0.0                      # Time offset
-  E_tot_offset::Number = NaN
   E_tot_exit::Number = NaN                    # Reference energy at exit end
   pc_exit::Number = NaN                       # Reference momentum at exit end
   flexible::Bool = false
@@ -922,18 +889,21 @@ end
     mutable struct ReferenceParams <: EleParams
 
 Reference energy, time, species, etc at upstream end of an element.
-See also `DownstreamReferenceParams 
 
 ## Fields
 • `species_ref::Species`          - Reference species entering end. \\
 • `pc_ref::Number`                - Reference `momentum*c` upstream end. \\
 • `E_tot_ref::Number`             - Reference total energy upstream end. \\
 • `time_ref::Number`              - Reference time upstream end. \\
-• `time_ref_downstream::Number`   - Reference time downstream end. \\
 • `extra_dtime_ref::Number`       - User set additional time change. \\
-• `dE_ref`::Number                - Sets the change in the reference energy. \\
+• `dE_ref::Number`                - Sets the change in the reference energy. \\
+• `static_energy_ref::Bool`       - Is the reference energy set by the User or inherited 
+  - from the previous element's value? Default is `false` (inherit from previous). \\
 
 ## Associated output parameters are
+• `pc_ref_downstream::Number`     - Reference `momentum*c` downstream end. \\
+• `E_tot_ref_downstream::Number`  - Reference total energy downstream end. \\
+• `time_ref_downstream::Number`   - Reference time downstream end. \\
 • `β_ref::Number`                 - Reference `v/c` upstream end. \\
 • `γ_ref::Number`                 - Reference gamma factor upstream end. \\
 """
@@ -942,9 +912,9 @@ See also `DownstreamReferenceParams
   pc_ref::Number = NaN
   E_tot_ref::Number = NaN
   time_ref::Number = 0.0
-  time_ref_downstream::Number = 0.0
   extra_dtime_ref::Number = 0.0
   dE_ref::Number = 0.0
+  static_energy_ref::Bool = false
 end
 
 #---------------------------------------------------------------------------------------------------
