@@ -257,7 +257,7 @@ ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
 ele_param_value_str(species::Species; default::AbstractString = "???") = "Species($(str_quote(species.name)))"
 ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T <: Ele = "[$(join([ele_name(ele) for ele in vec_ele], ", "))]"
 ele_param_value_str(vec::Vector; default::AbstractString = "???") = "[" * join([string(v) for v in vec], ", ") * "]"
-ele_param_value_str(branch::Branch; default::AbstractString = "???") = f"Branch {branch.pdict[:ix_branch]}: {str_quote(branch.name)}"
+ele_param_value_str(branch::Branch; default::AbstractString = "???") = "Branch $(branch.pdict[:ix_branch]): $(str_quote(branch.name))"
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
 ele_param_value_str(who; default::AbstractString = "???") = string(who)
 
@@ -273,7 +273,7 @@ To simply print the element name use the `ele_name(ele)` function.
 
 function show_ele(io::IO, ele::Ele, docstring = false)
   eletype = typeof(ele)
-  println(io, f"Ele: {ele_name(ele)}   {eletype}")
+  println(io, "Ele: $(ele_name(ele))   $eletype")
   nn = 18
 
   pdict = ele.pdict
@@ -288,9 +288,9 @@ function show_ele(io::IO, ele::Ele, docstring = false)
       param_name = rpad(string(key), nn2)
       value_str = ele_param_value_str(pdict, key)
       if docstring
-        ele_print_line(io, f"  {param_name} {value_str} {param_units(key)}", description(key))
+        ele_print_line(io, "  $param_name) $value_str $(param_units(key))", description(key))
       else
-        println(io, f"  {param_name} {value_str} {param_units(key)}")
+        println(io, "  $param_name $value_str $(param_units(key))")
       end
     end
 
@@ -310,9 +310,9 @@ function show_ele(io::IO, ele::Ele, docstring = false)
         param_name = rpad(repr(key), nn2)
         value_str = ele_param_value_str(changed, key)
         if docstring
-          ele_print_line(io, f"    {param_name} {value_str} {param_units(key, eletype)}", description(key, eletype))
+          ele_print_line(io, "    $param_name $value_str $(param_units(key, eletype))", description(key, eletype))
         else
-          println(io, f"    {param_name} {value_str} {param_units(key, eletype)}")
+          println(io, "    $param_name $value_str $(param_units(key, eletype))")
         end
       end
     end
@@ -398,12 +398,12 @@ Single column printing of an element group with a docstring printed for each par
 function show_elegroup_with_doc(io::IO, group::EleParams; ele::Ele, indent = 0)
   gtype = typeof(group)
   nn = max(18, maximum(length.(fieldnames(gtype))))
-  println(io, f"  {gtype}:")
+  println(io, "  $gtype:")
 
   for field in associated_names(group, show_names = true)
     param_name = rpad(full_parameter_name(field, gtype), nn)
     value_str = ele_param_value_str(ele, field)
-    ele_print_line(io, f"    {param_name} {value_str} {param_units(field)}", description(field))
+    ele_print_line(io, "    $param_name $value_str $(param_units(field))", description(field))
   end
 end
 
@@ -520,7 +520,7 @@ end
 
 function ele_print_line(io::IO, str::String, descrip::String; ix_descrip::Int = 50)
   if length(str) < ix_descrip - 1
-    println(io, f"{rpad(str, ix_descrip)}{descrip}")
+    println(io, "$(rpad(str, ix_descrip))$descrip")
   else
     println(io, str)
     println(io, " "^ix_descrip * descrip)
@@ -531,7 +531,7 @@ end
 # Show Vector{Ele}
 
 function Base.show(io::IO, eles::Vector{T}) where T <: Ele
-  println(io, f"{length(eles)}-element {typeof(eles)}:")
+  println(io, "$(length(eles))-element $(typeof(eles)):")
   for ele in eles
     println(io, " " * ele_name(ele))
   end
@@ -557,8 +557,8 @@ Base.show(io::IO, ::MIME"text/plain", lat::Lattice) = Base.show(stdout, lat)
 
 function Base.show(io::IO, branch::Branch)
   length(branch.ele) == 0 ? n = 0 : n = maximum([18, maximum([length(e.name) for e in branch.ele])]) + 2
-  g_str = f"Branch {branch.ix_branch}: {str_quote(branch.name)}"
-  if haskey(branch.pdict, :geometry); g_str = g_str * f", geometry => {branch.pdict[:geometry]}"; end
+  g_str = "Branch $(branch.ix_branch): $(str_quote(branch.name))"
+  if haskey(branch.pdict, :geometry); g_str = g_str * ", geometry => $(branch.pdict[:geometry])"; end
 
   if n > 0
     g_str = rpad(g_str, 54) * "L"
@@ -574,7 +574,7 @@ function Base.show(io::IO, branch::Branch)
       end_str = ""
       if branch.type == MultipassBranch
         end_str = f"{ele.L:11.6f}"
-        if haskey(ele.pdict, :slaves); end_str = end_str * " "^28 * f"  {ele_param_value_str(ele.pdict, :slaves, default = \"\")}"; end
+        if haskey(ele.pdict, :slaves); end_str = end_str * " "^28 * "  $(ele_param_value_str(ele.pdict, :slaves, default = ""))"; end
       elseif haskey(ele.pdict, :LengthParams)
         s_str = ele_param_value_str(ele, :s, default = "    "*"-"^7, format = "12.6f")
         s_down_str = ele_param_value_str(ele, :s_downstream, default = "    "*"-"^7, format = "12.6f")
@@ -605,7 +605,7 @@ function Base.show(io::IO, branches::Vector{Branch})
     if length(branch.ele) > 0 && haskey(branch.pdict, :geometry)
       g_str = f", length = {branch.ele[end].s_downstream:16.9f}, geometry => {branch.pdict[:geometry]}"
     end
-    println(io, f"Branch {branch.ix_branch}: {rpad(str_quote(branch.name), n)} {lpad(length(branch.ele), 5)} Ele{g_str}")
+    println(io, "Branch $(branch.ix_branch): $(rpad(str_quote(branch.name), n)) $(lpad(length(branch.ele), 5)) Ele$g_str")
   end
 end
 
@@ -619,7 +619,7 @@ function Base.show(io::IO, bl::BeamLine)
   for (key, value) in bl.pdict
     typeof(value) == String ? str = str * "$key => $(str_quote(value)), " : str = str * "$key => $value, "
   end
-  println(io, f"BeamLine: [{str[1:end-2]}]")
+  println(io, "BeamLine: [$(str[1:end-2])]")
   n = 6
   for item in bl.line
     if item isa BeamLineEle
@@ -634,9 +634,9 @@ function Base.show(io::IO, bl::BeamLine)
     if item.pdict[:orientation] == -1; orient = "orientation = -1"; end
 
     if item isa BeamLineEle
-      out = f"{ix:5i}  {rpad(str_quote(item.ele.name), n+2)}  {rpad(typeof(item.ele), 20)}  {orient}"
+      out = "$(rpad(ix,5))  $(rpad(str_quote(item.ele.name), n+2))  $(rpad(typeof(item.ele), 20))  $orient"
     else  # BeamLine
-      out = f"{ix:5i}  {rpad(str_quote(item.name), n+2)}  {rpad(typeof(item), 20)}  {orient}"
+      out = "$(rpad(ix,5))  $(rpad(str_quote(item.name), n+2))  $(rpad(typeof(item), 20))  $orient"
     end
     println(io, out)
   end
@@ -706,7 +706,7 @@ function info(sym::Symbol)
     return
   end
 
-  println(f"No information found on: {sym}")
+  println("No information found on: $sym")
 end
 
 #-----
@@ -717,7 +717,7 @@ info(str::AbstractString) = info(Symbol(str))
 
 function info(ele_type::Type{T}; output_str::Bool = false) where T <: Ele
   if ele_type ∉ keys(PARAM_GROUPS_LIST)
-    println("No information on $(ele_type)")
+    println("No information on $ele_type")
     return
   end
 
@@ -744,7 +744,7 @@ end
 
 function info(group::Type{T}) where T <: EleParams
   if group in keys(ELE_PARAM_GROUP_INFO)
-    println("$(group): $(ELE_PARAM_GROUP_INFO[group].description)")
+    println("$group: $(ELE_PARAM_GROUP_INFO[group].description)")
   else
     println("$group")
   end

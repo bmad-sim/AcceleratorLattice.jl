@@ -1,7 +1,7 @@
 name = "AcceleratorLattice"
 uuid = "118f53b2-f4ec-480a-a460-1a04f660b17d"
 authors = ["David Sagan"]
-version = "0.6.3"
+version = "0.6.4"
 
 [deps]
 AcceleratorSimUtils = "8b14b3b2-39c5-4be4-bdc0-0b322e577224"
