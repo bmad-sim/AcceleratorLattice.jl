@@ -150,6 +150,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :to_line            => ParamInfo(ForkParams,      Union{BeamLine, Nothing}, "Beamline forked to."),
   :to_ele             => ParamInfo(ForkParams,      Union{String,Ele},        "Lattice element forked to."),
   :direction          => ParamInfo(ForkParams,      Int,            "Direction (forwards or backwards) of injection."),
+  :propagate_reference => ParamInfo(ForkParams,     Bool,           "Propagate reference species and energy?"),
 
   :supported          => ParamInfo(GirderParams,    Vector{Ele},    "Array of elements supported by a Girder."),
 
@@ -614,9 +615,9 @@ end
 
 Table of what element parameter groups are associated with what element types.
 Order is important. Bookkeeping routines rely on: 
- - `LengthParams` being first (except for a `Bend` where BendParams is `first`).
- - `BendParams` after `ReferenceParams` and `MasterParams` (in case the reference energy is changing).
- - `BMultipoleParams` and `EMultipoleParams` after `MasterParams` (in case the reference energy is changing).
+ - `ReferenceParams` before anything that depends upon the reference energy like `BMultipoleParams`.
+ - `BendParams` before `LengthParams` in case the length is modified by the User setting, say, `angle` and `g`.
+ - `LengthPrams` before anything that depends upon the length like `BMultipoleParams`.
  - `RFCommonParams` comes last (triggers autoscale/autophase and `ReferenceParams` correction).
 """ PARAM_GROUPS_LIST
 
@@ -684,7 +685,7 @@ ELE_PARAM_GROUP_INFO = Dict(
   EMultipoleParams       => EleParamsInfo("Electric multipoles.", false),
   EMultipole             => EleParamsInfo("Electric multipole of given order. Substructure contained in `EMultipoleParams`.", false),
   FloorParams            => EleParamsInfo("Global floor position and orientation.", true),
-  ForkParams             => EleParamsInfo("Fork element parameters", false),
+  ForkParams             => EleParamsInfo("Fork element parameters", true),
   GirderParams           => EleParamsInfo("Girder parameters.", false),
   InitParticleParams     => EleParamsInfo("Initial particle position and spin.", false),
   LengthParams           => EleParamsInfo("Length and s-position parameters.", true),
