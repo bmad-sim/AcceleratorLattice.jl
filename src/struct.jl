@@ -291,7 +291,7 @@ abstract type EleParams <: BaseEleParams end
 abstract type EleParameterSubParams <: BaseEleParams end
 
 #---------------------------------------------------------------------------------------------------
-# BMultipole subgroup
+# BMultipole subparams
 
 """
     mutable struct BMultipole <: EleParameterSubParams
@@ -321,7 +321,7 @@ Used by `BMultipoleParams`.
 end
 
 #---------------------------------------------------------------------------------------------------
-# Dispersion subgroup
+# Dispersion subparams
 
 """
 Dispersion parameters for a single axis.
@@ -335,7 +335,7 @@ Dispersion parameters for a single axis.
 end
 
 #---------------------------------------------------------------------------------------------------
-# EMultipole subgroup
+# EMultipole subparams
 
 """
     mutable struct EMultipole <: EleParameterSubParams
@@ -362,7 +362,7 @@ Used by `EMultipoleParams`.
 end
 
 #---------------------------------------------------------------------------------------------------
-# Twiss subgroup.
+# Twiss subparams.
 
 """
     mutable struct Twiss <: EleParameterSubParams
@@ -378,7 +378,7 @@ Twiss parameters for used for BeamBeam element to describe the strong beam.
 end
 
 #---------------------------------------------------------------------------------------------------
-# Twiss1 subgroup
+# Twiss1 subparams
 
 """
     mutable struct Twiss1 <: EleParameterSubParams
@@ -398,35 +398,56 @@ Twiss parameters for a single mode.
 end
 
 #---------------------------------------------------------------------------------------------------
-# Vertex1 subgroup
+# VertexSubParams
 
 """
-  struct Vertex1 <: EleParameterSubParams
+  abstract type VertexSubParams <: EleParameterSubParams
 
-Single vertex. An array of vertices can be used to construct an aperture.
-If `radius_x`, and `radius_y` )and possibly `tilt`) are set, this specifies the shape of the elliptical arc
-of the chamber wall from the vertex point to the next vertex point. 
-If not set, the chamber wall from the vertex to the next vertex is a straight line.
+Abstract type that Vertex1 and VertexEllipse inherit from.
+"""
+
+abstract type VertexSubParams <: EleParameterSubParams end
+
+#---------------------------------------------------------------------------------------------------
+# Vertex1 subparams
+
+"""
+  struct Vertex1 <: VertexSubParams <: EleParameterSubParams
+
+Single vertex point. An array of vertices can be used to construct an aperture.
+Also see `VertexEllipse`.
 
 ## Fields
-• `r0::Vector{Number}`     - (x, y) coordinate of vertex point. \\
-• `radius_x::Number`      - Horizontal ellipse radius. \\
-• `radius_y::Number`      - Vertical ellipse radius. \\
-• `tilt::Number`          - Tilt of ellipse. \\
+• `r0::Vector{Number}`       - (x, y) coordinate of vertex point. \\
 """ Vertex1
 
 @kwdef mutable struct Vertex1 <: EleParameterSubParams
-  r0::Vector{Number} = [NaN, NaN]
-  radius_x::Number = NaN
-  radius_y::Number = NaN
-  tilt::Number = NaN
+  point::Vector{Number} = [NaN, NaN]
 end
 
-Vertex1(r0::Vector{Number}, rx::Number = NaN, ry::Number = NaN) = 
-                                 Vertex1(r0 = r0, radius_x = rx, radius_y = ry, NaN)
 
 #---------------------------------------------------------------------------------------------------
-# Wall2D subgroup
+# VertexEllipse
+
+"""
+  struct VertexEllipse  <: VertexSubParams <: EleParameterSubParams
+
+Placed in between two `Vertex1` vertices in the `vertex` array of the `Wall2d` struct to indicate 
+that the aperture outline follows an ellipse between the vertices.
+
+## Fields
+
+• `radius::Vector{Number}`   - Ellipse (rx, ry) ellipse radiuses. \\
+• `tilt::Number`             - Tilt of ellipse. \\
+""" VertexEllipse
+
+@kwdef mutable struct VertexEllipse <: EleParameterSubParams
+  radius::Vector{Number} = [0.0]
+  tilt::Number = 0.0
+end
+
+#---------------------------------------------------------------------------------------------------
+# Wall2D subparams
 
 """
     mutable struct Wall2D <: EleParameterSubParams
@@ -434,16 +455,16 @@ Vertex1(r0::Vector{Number}, rx::Number = NaN, ry::Number = NaN) =
 Vacuum chamber wall cross-section.
 
 ## Fields
-• `vertex::Vector{Vertex1}` - Array of vertices. \\
+
+• `vertex::Vector{VertexSubParams}` - Array of vertices. \\
 • `r0::Vector{Number}`      - Origin point. \\
 """ Wall2D
 
 @kwdef mutable struct Wall2D <: EleParameterSubParams
-  vertex::Vector{Vertex1} = Vector{Vertex1}()
   r0::Vector{Number} = [0.0, 0.0]
+  absolute_vertices::Bool = false
+  vertex::Vector{VertexSubParams} = Vector{VertexSubParams}()
 end
-
-Wall2D(v::Vector{Vertex1}) = Wall2D(v, [0.0, 0.0])
 
 #---------------------------------------------------------------------------------------------------
 #---------------------------------------------------------------------------------------------------
@@ -480,7 +501,7 @@ Vacuum chamber aperture struct.
 • `wall::Wall2D`                        - Aperture defined by an array of vertices. \\
 • `aperture_shape::ApertureShape.T`     - Aperture shape. Default is `ApertureShape.ELLIPTICAL`. \\
 • `aperture_at::BodyLoc.T`              - Where aperture is. Default is `BodyLoc.ENTRANCE_END`. \\
-• `aperture_shifts_with_body:Bool` - Do element alignments shifts move the aperture? Default is `false`. \\
+• `aperture_shifts_with_body:Bool`      - Do element alignments shifts move the aperture? Default is `false`. \\
 • `custom_aperture::Dict`               - Custom aperture information. \\
 """ ApertureParams
 
@@ -714,12 +735,16 @@ Fork element parameters.
 • `to_line::Union{BeamLine,Nothing}`  - Beam line to fork to. \\
 • `to_ele::Union{String,Ele}`         - On input: Element ID or element itself. \\
 • `direction::Int`                    - Longitudinal Direction of injected beam. \\
+• `propagate_reference::Bool`         - Propagate reference species and energy? \\
+
+
 """ ForkParams
 
 @kwdef mutable struct ForkParams <: EleParams
   to_line::Union{BeamLine,Nothing} = nothing
   to_ele::Union{String,Ele} = ""
   direction::Int = +1
+  propagate_reference::Bool = true
 end
 
 #---------------------------------------------------------------------------------------------------

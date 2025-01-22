@@ -131,3 +131,5 @@ Getting the offset right can be tricky!
 * End element in a branch must be a marker.
 
 * Document Ele.pdict[:private] used in keeping track of split drifts.
+
+* Fork elements BodyShiftParams do not affect the forked to branch.

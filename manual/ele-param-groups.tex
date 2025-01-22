@@ -782,11 +782,14 @@ The components of this group are:
   to_line::Union{BeamLine,Branch}   - Beam line to fork to
   to_ele::Union{String,Ele}         - Element forked to.
   direction::Int                    - Longitudinal Direction of injected beam.
+  propagate_reference::Bool         - Propagate reference species and energy?
 \end{example}
 
 This group is used with a \vn{Fork} element and specifies how the fork element attaches to
 another branch. 
 
+Propagate will be done initially, even with \vn{propagate_reference} set to false, if the
+reference species or reference energy is not set in beginning element of the forked to branch.
 
 %---------------------------------------------------------------------------------------------------
 \section{GirderParams}

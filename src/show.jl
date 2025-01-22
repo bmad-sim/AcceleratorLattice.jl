@@ -66,6 +66,10 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
     :eta              => :etap,
   ),
 
+  ForkParams => Dict{Symbol,Symbol}(
+    :direction        => :propagate_reference
+  ),
+
   GirderParams => Dict{Symbol,Symbol}(
     :origin_ele       => :origin_ele_ref_pt,
     :dr               => :dq,

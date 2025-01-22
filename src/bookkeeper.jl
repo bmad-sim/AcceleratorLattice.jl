@@ -520,6 +520,13 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{BendParams}, changed::
       bg.angle = L * bg.g
     end
 
+    if L != ele.L
+      ele.L = L
+      changed.this_ele_length = true
+      changed.s_position = true
+      changed.floor_position = true
+    end
+
     bg.bend_field_ref = bg.g * ele.pc_ref / (C_LIGHT * charge(ele.species_ref))
 
     if haskey(cdict, :L_chord)
@@ -582,17 +589,28 @@ end
 
 function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams}, 
                                               changed::ChangedLedger, previous_ele::Ele)
-
   fg = ele.ForkParams
+  rg = ele.ReferenceParams
 
+  to_ele = fg.to_ele
+  to_ele.ix_ele != 1 && return
 
-
-  if to_ele.species_ref == Species("Null"); to_ele.species_ref = fork.species_ref; end
-  if to_ele.pc_ref == NaN && to_ele.E_tot_ref == NaN
-    to_ele.pc_ref = fork.pc_ref
-    to_ele.E_tot_ref = fork.pc_ref
+  if !fg.propagate_reference && !is_null(to_ele.species_ref) && (!isnan(to_ele.E_tot_ref) || !isnan(to_ele.pc_ref))
+    return
   end
 
+  if rg.species_ref == to_ele.species_ref && (rg.E_tot_ref == to_ele.E_tot_ref || rg.pc_ref == to_ele.pc_ref)
+    return
+  end
+
+  to_ele.pdict[:changed][:pc_ref] = to_ele.pc_ref
+  to_ele.species_ref = rg.species_ref
+  to_ele.pc_ref      = rg.pc_ref
+
+  set_branch_min_max_changed!(to_ele.branch, 1)
+  clear_changed!(ele, ForkParams)
+
+  return
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -671,7 +689,8 @@ end
 `ReferenceParams` bookkeeping.
 """
 
-function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, changed::ChangedLedger, previous_ele::Ele)
+function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, 
+                                                          changed::ChangedLedger, previous_ele::Ele)
   rg = ele.ReferenceParams
   cdict = ele.changed
 
@@ -690,20 +709,14 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, chan
     if !changed.reference; return; end
     if rg.species_ref == Species(); error("Species not set for first element in branch: $(ele_name(ele))"); end
 
-    if count([haskey(cdict, :pc_ref), haskey(cdict, :E_tot_ref), haskey(cdict, :β_ref), haskey(cdict, :γ_ref)]) > 1
-      error("Beginning element has more than one of pc_ref, E_tot_ref, β_ref, and γ_ref set in $(ele_name(ele))")
+    if haskey(cdict, :pc_ref) && haskey(cdict, :E_tot_ref)
+      error("Beginning element has both pc_ref and E_tot_ref set in $(ele_name(ele))")
     elseif haskey(cdict, :E_tot_ref)
       rg.pc_ref = calc_pc(rg.species_ref, E_tot = rg.E_tot_ref)
     elseif haskey(cdict, :pc_ref)
       rg.E_tot_ref = calc_E_tot(rg.species_ref, pc = rg.pc_ref)
-    elseif haskey(cdict, :β_ref)
-      rg.pc_ref = calc_pc(rg.species_ref, β = rg.γ_ref)
-      rg.E_tot_ref = calc_E_tot(rg.species_ref, pc = rg.pc_ref)
-    elseif haskey(cdict, :γ_ref)
-      rg.pc_ref = calc_pc(rg.species_ref, β = rg.γ_ref)
-      rg.E_tot_ref = calc_E_tot(rg.species_ref, pc = rg.pc_ref)
     else
-      error("Neither pc_ref E_tot_ref, β_ref, nor γ_ref set for: $(ele_name(ele))")
+      error("Neither pc_ref nor E_tot_ref set for: $(ele_name(ele))")
     end
 
     clear_changed!(ele, ReferenceParams)
@@ -718,7 +731,8 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, chan
   rg.species_ref      = previous_ele.species_ref
 
   if ele.static_energy_ref
-    if isnan(rg.pc_ref) && isnan(rg.E_tot_ref); error("With static_energy_ref set true, either pc_ref or E_tot_ref must be set in $(ele_name(ele))"); end
+    isnan(rg.pc_ref) && isnan(rg.E_tot_ref) &&
+        error("With static_energy_ref set true, either pc_ref or E_tot_ref must be set in $(ele_name(ele))")
     if haskey(cdict, :E_tot_ref) || isnan(rg.pc_ref)
       rg.pc_ref = calc_pc(rg.species_ref, E_tot = rg.E_tot_ref)
     else
@@ -728,12 +742,14 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ReferenceParams}, chan
   elseif previous_ele.dE_ref == 0
     rg.pc_ref      = previous_ele.pc_ref
     rg.E_tot_ref   = previous_ele.E_tot_ref
-    rg.time_ref    = previous_ele.time_ref + previous_ele.extra_dtime_ref + previous_ele.L * previous_ele.E_tot_ref / (C_LIGHT * previous_ele.pc_ref)
+    rg.time_ref    = previous_ele.time_ref + previous_ele.extra_dtime_ref + 
+                           previous_ele.L * previous_ele.E_tot_ref / (C_LIGHT * previous_ele.pc_ref)
 
   else
-    rg.pc_ref, rg.E_tot_ref = calc_changed_energy(previous_ele.species_ref, previous_ele.pc_ref, previous_ele.dE_ref)
+    rg.pc_ref, rg.E_tot_ref = calc_changed_energy(previous_ele.species_ref, 
+                                                            previous_ele.pc_ref, previous_ele.dE_ref)
     rg.time_ref = previous_ele.time_ref + previous_ele.extra_dtime_ref + previous_ele.L *
-                              (previous_ele.E_tot_ref + rg.E_tot_ref) / (C_LIGHT * (previous_ele.pc_ref + rg.pc_ref))
+                  (previous_ele.E_tot_ref + rg.E_tot_ref) / (C_LIGHT * (previous_ele.pc_ref + rg.pc_ref))
   end
 
   # End stuff
