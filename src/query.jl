@@ -96,17 +96,19 @@ function ele_geometry(ele::Ele)
 end
 
 #---------------------------------------------------------------------------------------------------
-# is_null(ele), is_null(branch)
+# is_null(ele), is_null(branch), is_null(species
 
 """
     is_null(ele::Ele)
     is_null(branch::Branch
+    is_null(species::Species)
 
-Test if argument is either of the `NULL_ELE` or `NULL_BRANCH` constants.
+Test if argument is either of the `NULL_ELE`, `NULL_BRANCH`, or null species. constants.
 """ is_null
 
-is_null(ele::Ele) = return (ele.name == "NULL_ELE")
-is_null(branch::Branch) = return (branch.name == "NULL_BRANCH")
+is_null(ele::Ele) = (ele.name == "NULL_ELE")
+is_null(branch::Branch) = (branch.name == "NULL_BRANCH")
+is_null(species::Species) = (species == Species())
 
 #---------------------------------------------------------------------------------------------------
 # s_inbounds

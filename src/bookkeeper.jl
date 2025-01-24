@@ -591,6 +591,7 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams},
                                               changed::ChangedLedger, previous_ele::Ele)
   fg = ele.ForkParams
   rg = ele.ReferenceParams
+  clear_changed!(ele, ForkParams)
 
   to_ele = fg.to_ele
   to_ele.ix_ele != 1 && return
@@ -608,8 +609,6 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams},
   to_ele.pc_ref      = rg.pc_ref
 
   set_branch_min_max_changed!(to_ele.branch, 1)
-  clear_changed!(ele, ForkParams)
-
   return
 end
 
@@ -955,35 +954,50 @@ Adds the `Branch` that is forked to to the lattice.
 """ fork_bookkeeper
 
 function fork_bookkeeper(fork::Ele)
-  # No to_line means fork to existing element.
-  if isnothing(fork.to_line)
-    if typeof(fork.to_ele) != Ele; error("Since to_line is not specified for fork $(fork.name),\n" *
-                                         "to_ele must be an actual element in a lattice."); end
-    lat = lattice(ele)
-    if isnothing(lat); error("Since to_line is not specified for fork $(fork.name),\n" *
-                             "to_ele must be in a lattice and not external."); end
+  isnothing(fork.to_ele) && isnothing(fork.to_line) && 
+                                error("Neither to_ele nor to_line set for Fork element $(fork.name)")
+  isnothing(fork.to_ele) && typeof(fork.to_line) == Lattice && 
+                                error("to_ele not set for fork element $(fork.name)")
 
-  # Fork to new branch
-  else
-    lat = fork.branch.lat
+  lat = fork.branch.lat
+
+  # If to_line is a BeamLine then forking to a new branch
+  if typeof(fork.to_line) == BeamLine 
+    typeof(fork.to_ele) == Ele && !isnothing(lattice(fork.to_ele)) && error(
+        "Confusion: to_line is a BeamLine and to_ele is associated with a Lattice for fork element $(fork.name).")
+
     to_branch = new_tracking_branch!(lat, fork.to_line)
-    if typeof(fork.to_ele) == Ele; error(
-      "Since to_line is specified, to_ele must be something (String, Regex) that can be used with \n" *
-      "the `find` function to locate the element in the new branch and cannot be an existing element."); end
 
-    if fork.to_ele == ""
+    if isnothing(fork.to_ele)
       fork.to_ele = to_branch[1]
     else
-      to_ele = eles_search(lat, fork.to_ele)
-      if length(to_ele) == 0; error("to_ele ($(fork.to_ele)) not found in new branch for fork $(fork.name)."); end
-      if length(to_ele) > 1; error("Multiple elements matched to to_ele ($(fork.to_ele)) for fork $(fork.name)."); end
-      fork.to_ele = to_ele[1]
+      if typeof(fork.to_ele) == Ele
+        name = fork.to_ele.name
+      else  # String
+        name = fork.to_ele
+      end
+
+      to_eles = eles_search(to_branch, name)
+      if length(to_eles) == 0; error("to_ele $name not found in new branch for fork $(fork.name)."); end
+      if length(to_eles) > 1; error("Multiple elements matched to to_ele $name) for fork $(fork.name)."); end
+      fork.to_ele = to_eles[1]
     end
 
-    to_ele = fork.to_ele
-    if to_ele.ix_ele == 1
-      to_ele.from_forks = [fork]
-    end
+  # to_line is nothing means fork to existing element.
+  elseif typeof(fork.to_ele) == String
+    to_eles = eles_search(lat, fork.to_ele)
+    if length(to_eles) == 0; error("to_ele $name not found in new branch for fork $(fork.name)."); end
+    if length(to_eles) > 1; error("Multiple elements matched to to_ele $name) for fork $(fork.name)."); end
+    fork.to_ele = to_eles[1]
+  end
+
+  # 
+
+  to_ele = fork.to_ele
+  if haskey(to_ele.pdict, :from_forks)
+    push!(to_ele.pdict[:from_forks], fork)
+  else
+    to_ele.pdict[:from_forks] = Vector{Ele}([fork])
   end
 
   return

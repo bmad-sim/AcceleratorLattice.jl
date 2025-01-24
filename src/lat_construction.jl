@@ -242,14 +242,17 @@ function new_tracking_branch!(lat::Lattice, bline::BeamLine)
   for outer ib in reverse(1:length(lat.branch))
     if lat.branch[ib].type == TrackingBranch; break; end
   end
+  ib += 1
 
-  insert!(lat.branch, ib+1, Branch(name = bline.pdict[:name], lat = lat, 
+  insert!(lat.branch, ib, Branch(name = bline.pdict[:name], lat = lat, 
                               pdict = Dict{Symbol,Any}(:geometry => bline.pdict[:geometry])))
-  branch = lat.branch[ib+1]
+  for ix in ib:length(lat.branch)
+    lat.branch[ix].pdict[:ix_branch] = ix
+  end
 
-  branch.pdict[:ix_branch] = length(lat.branch)
+  branch = lat.branch[ib]
   branch.pdict[:type] = TrackingBranch
-  if branch.name == ""; branch.name = "B" * string(length(lat.branch)); end
+  if branch.name == ""; branch.name = "B" * string(ib); end
   info = LatticeConstructionInfo([], bline.pdict[:orientation], 0)
 
   if haskey(bline.pdict, :species_ref); branch.ele[1].species_ref = bline.pdict[:species_ref]; end
@@ -262,7 +265,7 @@ function new_tracking_branch!(lat::Lattice, bline::BeamLine)
     add_beamline_ele_to_branch!(branch, BeamLineItem(bline.pdict[:end_ele]))
   else
     @ele end_ele = Marker()
-    end_ele.pdict[:name] = "end$(length(lat.branch))"
+    end_ele.pdict[:name] = "end$(ib)"
     add_beamline_ele_to_branch!(branch, BeamLineItem(end_ele))
   end
 
