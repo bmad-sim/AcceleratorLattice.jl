@@ -7,11 +7,8 @@
 
 """
     lat_sanity_check(lat::Lattice)
-    Internal: lat_sanity_check(lat::Lattice, base_ele::Ele, pointed_ele::Ele, err_string::String)
 
 Does some self consistency checks on a lattice and throws an error if there is a problem.
-
-The internal version of `lat_sanity_check` is called by the public version and is not usable otherwise.
 """ lat_sanity_check
 
 function lat_sanity_check(lat::Lattice)
@@ -40,43 +37,43 @@ function lat_sanity_check(lat::Lattice)
       end
       
       if haskey(pdict, :girder)
-        lat_sanity_check(lat, ele, pdict[:girder], "girder")
+        check_pointed(lat, ele, pdict[:girder], "girder")
       end
       
       if haskey(pdict, :multipass_lord)
-        lat_sanity_check(lat, ele, pdict[:multipass_lord], "multipass lord")
+        check_pointed(lat, ele, pdict[:multipass_lord], "multipass lord")
       end
 
       if haskey(pdict, :ForkParams)
-        lat_sanity_check(lat, ele, pdict[:ForkParams].to_ele, "a forked-to element")
+        check_pointed(lat, ele, pdict[:ForkParams].to_ele, "a forked-to element")
         if ele.L != 0; error("A Fork element may not have a non-zero length: $(ele_name(ele))"); end
       end
 
       if haskey(pdict, :OriginEleParams)
-        lat_sanity_check(lat, ele, pdict[:OriginEleParams].origin_ele, "the element's origin element")
+        check_pointed(lat, ele, pdict[:OriginEleParams].origin_ele, "the element's origin element")
       end
 
       if haskey(pdict, :super_lords)
         for lord in pdict[:super_lords]
-          lat_sanity_check(lat, ele, lord, "super lord")
+          check_pointed(lat, ele, lord, "super lord")
         end
       end
 
       if haskey(pdict, :slaves)
         for slave in pdict[:slaves]
-          lat_sanity_check(lat, ele, slave, "slave")
+          check_pointed(lat, ele, slave, "slave")
         end
       end
 
       if haskey(pdict, :from_forks)
         for fork in pdict[:from_forks]
-          lat_sanity_check(lat, ele, fork, "a fork that is forking to this element")
+          check_pointed(lat, ele, fork, "a fork that is forking to this element")
         end
       end
 
       if haskey(pdict, :GirderParams)
         for slave in pdict[:GirderParams].supported
-          lat_sanity_check(lat, ele, slave, "supported element")
+          check_pointed(lat, ele, slave, "supported element")
         end
       end
 
@@ -85,12 +82,15 @@ function lat_sanity_check(lat::Lattice)
 end
 
 #-------------------
-# Internal lat_sanity_check method
+# Internal check_pointed method
 
-function lat_sanity_check(lat::Lattice, base_ele::Ele, pointed_ele::Ele, err_string::String)
+"""
+    Internal: check_pointed(lat::Lattice, base_ele::Ele, pointed_ele::Ele, err_string::String)
+"""
+function check_pointed(lat::Lattice, base_ele::Ele, pointed_ele::Ele, err_string::String)
   pele = lat.branch[pointed_ele.branch.ix_branch].ele[pointed_ele.ix_ele]
   if !(pointed_ele === pele)
-    error("Element $(ele_name(ele)) has a $err_string pointer to $(ele_name(pele)) but this\n" *
+    error("Element $(ele_name(base_ele)) has a $err_string pointer to $(ele_name(pele)) but this\n" *
           " pointed to element is in a different lattice!!!")
   end
 end

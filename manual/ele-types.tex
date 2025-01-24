@@ -361,7 +361,7 @@ someplace in a ring. An example is shown in \fig{f:fork.cbeta}.
 Element parameter groups associated with this element type are:
 \TOPrule
 \begin{example}
-  FloorParams -> Floor floor position and orientation. \sref{s:orientation.g} 
+  FloorParams         -> Floor floor position and orientation. \sref{s:orientation.g} 
   LengthParams        -> Length and s-position parameters. \sref{s:length.g} 
   DescriptionParams   -> Element descriptive strings. \sref{s:descrip.g} 
   TrackingParams      -> Default tracking settings. \sref{s:tracking.g} 
@@ -381,12 +381,13 @@ by using the \vn{superimpose!} or \vn{insert!} functions.
 
 The components of this group are:
 \begin{example}
-  to_line::Union{BeamLine,Branch}   - Beam line to fork to
-  to_ele::Union{String,Ele}         - Element forked to.
+  to_line::Union{BeamLine,Nothing}  - Beam line to fork to. Default: nothing.
+  to_ele::Union{String,Ele,Nothing} - Element forked to. Default: nothing.
   direction::Int                    - Longitudinal Direction of injected beam.
 \end{example}
 
-
+If \vn{to_line} is set to a \vn{BeamLine} -> New branch
+Otherwise the fork is to an existing lattice element.
 
 
 

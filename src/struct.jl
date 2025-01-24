@@ -732,17 +732,17 @@ end
 Fork element parameters.
 
 ## Fields
-• `to_line::Union{BeamLine,Nothing}`  - Beam line to fork to. \\
-• `to_ele::Union{String,Ele}`         - On input: Element ID or element itself. \\
-• `direction::Int`                    - Longitudinal Direction of injected beam. \\
-• `propagate_reference::Bool`         - Propagate reference species and energy? \\
+• `to_line::Union{BeamLine,Nothing}`    - Beam line to fork to. \\
+• `to_ele::Union{String,Ele,Nothing}`   - On input: Element ID or element itself. \\
+• `direction::Int`                      - Longitudinal Direction of injected beam. \\
+• `propagate_reference::Bool`           - Propagate reference species and energy? \\
 
 
 """ ForkParams
 
 @kwdef mutable struct ForkParams <: EleParams
   to_line::Union{BeamLine,Nothing} = nothing
-  to_ele::Union{String,Ele} = ""
+  to_ele::Union{String,Ele,Nothing} = nothing
   direction::Int = +1
   propagate_reference::Bool = true
 end
