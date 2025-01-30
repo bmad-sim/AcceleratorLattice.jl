@@ -7,10 +7,10 @@ using AcceleratorLattice, Test
 @ele d2 = Drift(L = -1.5);
 @ele d3 = Drift(L = 2);
 @ele b1 = Bend(L = 1.2);
-@ele s1 = Sextupole(type = "abc");
+@ele s1 = Sextupole(subtype = "abc");
 @ele z1 = Bend(L = 0.02);
-@ele z2 = Sextupole(L = 2.2, type = "abc");
-@ele m1 = Marker(type = "qf");
+@ele z2 = Sextupole(L = 2.2, subtype = "abc");
+@ele m1 = Marker(subtype = "qf");
 
 bl = BeamLine
 ln3 = bl([beginning, d, b1, m1, d3], name = "ln3")
