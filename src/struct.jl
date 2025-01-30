@@ -675,7 +675,7 @@ These strings have no affect on tracking.
 """ DescriptionParams
 
 @kwdef mutable struct DescriptionParams <: EleParams
-  type::String = ""
+  subtype::String = ""
   ID::String = ""
   class::String = ""
 end

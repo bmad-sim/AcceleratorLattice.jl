@@ -110,6 +110,7 @@ ELE_PARAM_INFO_DICT = Dict(
   :wall               => ParamInfo(ApertureParams,  Wall2D,         "Wall defined by array of aperture vertices."),
   :custom_aperture    => ParamInfo(ApertureParams,  Dict,           "Custom aperture info."),
 
+  :inherit_s_from_fork => ParamInfo(BeginningParams, Bool,          "Use the s-position at Fork for start of branch?"),
   :beta_a             => ParamInfo(BeginningParams,  Number,        "A-mode beta Twiss parameter.", "m", nothing, :beta, :a),
   :alpha_a            => ParamInfo(BeginningParams,  Number,        "A-mode alpha Twiss parameter.", "", nothing, :alpha, :a),
   :gamma_a            => ParamInfo(BeginningParams,  Number,        "A-mode gamma Twiss parameter.", "1/m", nothing, :gamma, :a),
@@ -146,6 +147,10 @@ ELE_PARAM_INFO_DICT = Dict(
   :L_sagitta          => ParamInfo(BendParams,   Number,            "Bend sagitta length.", "m", OutputParams),
   :norm_bend_field    => ParamInfo(BendParams,   Number,            "Actual bend strength in the plane of the bend", "1/m", OutputParams),
   :bend_field         => ParamInfo(BendParams,   Number,            "Actual bend field in the plane of the bend field", "T", OutputParams),
+
+  :subtype            => ParamInfo(DescriptionParams,   String,     "Type of element."),
+  :ID                 => ParamInfo(DescriptionParams,   String,     "Identification name."),
+  :class              => ParamInfo(DescriptionParams,   String,     "Classification of element."),
 
   :to_line            => ParamInfo(ForkParams,      Union{BeamLine, Nothing}, "Beamline forked to."),
   :to_ele             => ParamInfo(ForkParams,      Union{String,Ele},        "Lattice element forked to."),
@@ -222,10 +227,6 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :spin               => ParamInfo(InitParticleParams, Vector{Number}, "Initial particle spin"),
   :orbit              => ParamInfo(InitParticleParams, Vector{Number}, "Initial particle position."),
-
-  :type               => ParamInfo(DescriptionParams,   String,     "Type of element."),
-  :ID                 => ParamInfo(DescriptionParams,   String,     "Identification name."),
-  :class              => ParamInfo(DescriptionParams,   String,     "Classification of element."),
 
   :beta               => ParamInfo(Twiss1,      Number,            "Beta Twiss parameter.", "m"),
   :alpha              => ParamInfo(Twiss1,      Number,            "Alpha Twiss parameter.", ""),

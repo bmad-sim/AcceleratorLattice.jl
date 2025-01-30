@@ -59,7 +59,7 @@ show_column2 = Dict{Type{T} where T <: BaseEleParams, Dict{Symbol,Symbol}}(
   ),
 
   DescriptionParams => Dict{Symbol,Symbol}(
-    :type             => :ID,
+    :subtype          => :ID,
   ),
 
   Dispersion1 => Dict{Symbol,Symbol}(
