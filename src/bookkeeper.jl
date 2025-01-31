@@ -591,10 +591,24 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams},
                                               changed::ChangedLedger, previous_ele::Ele)
   fg = ele.ForkParams
   rg = ele.ReferenceParams
-  clear_changed!(ele, ForkParams)
 
   to_ele = fg.to_ele
-  to_ele.ix_ele != 1 && return
+  if to_ele.ix_ele != 1
+    clear_changed!(ele, ForkParams)
+    return
+  end
+
+  # Transfer FloorPrams
+
+  if has_changed(ele, FloorParams)
+    to_ele.FloorParams = copy(ele.FloorPrams)
+    to_ele.pdict[:changed][FloorParams] = true
+    set_branch_min_max_changed!(to_ele.branch, 1)
+  end
+
+  # Transfer ReferenceParams
+
+  clear_changed!(ele, ForkParams)
 
   if !fg.propagate_reference && !is_null(to_ele.species_ref) && (!isnan(to_ele.E_tot_ref) || !isnan(to_ele.pc_ref))
     return
