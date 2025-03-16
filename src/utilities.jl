@@ -100,7 +100,7 @@ end
 
 """
     Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParams, T2 <: EleParams} -> Bool
-    Base.isless(x::Type{T}, y::Type{U}) where {T <: Ele, U <: Ele} = isless(string(x), string(y)) -> Bool
+    Base.isless(x::Ele, y::Ele) = isless(string(x.class), string(y.class)) -> Bool
 
 Used to sort output alphabetically by name.
 """ Base.isless
@@ -109,13 +109,13 @@ function Base.isless(a::Type{T1}, b::Type{T2}) where {T1 <: EleParams, T2 <: Ele
   return Symbol(a) < Symbol(b)
 end
 
-Base.isless(x::Type{T}, y::Type{U}) where {T <: Ele, U <: Ele} = isless(string(x), string(y))
+Base.isless(x::Ele, y::Ele) = isless(string(x.class), string(y.class))
 
 #---------------------------------------------------------------------------------------------------
 # eles_sort!
 
 """
-  eles_sort!(vec_ele::Vector{T}; order::Order.T = Order.BY_S) where T <: Ele -> Vector{T}
+  eles_sort!(vec_ele::Vector{Ele}; order::Order.T = Order.BY_S) -> Vector{T}
 
 Sort vector of elements.
 
@@ -129,7 +129,7 @@ are associated with. If a multipass lord is associated with multiple branches, i
 among the elements of the branch of its first slave.
 """ eles_sort(vec_ele::Vector{T}) where T <: Ele
 
-function eles_sort!(vec_ele::Vector{T}; order::Order.T = Order.BY_S) where T <: Ele
+function eles_sort!(vec_ele::Vector{Ele}; order::Order.T = Order.BY_S)
   if length(vec_ele) == 0 || order == Order.NONE; return vec_ele; end
 
   lat = lattice(vec_ele[1])
@@ -192,7 +192,7 @@ end
 # eles_substitute_lords!
 
 """
-    eles_substitute_lords!(vec_ele::Vector{T}; remove_slaves = true) where T <: Ele -> Vector{T}
+    eles_substitute_lords!(vec_ele::Vector{Ele}; remove_slaves = true) -> Vector{T}
 
 Add super and multipass lords to `vec_ele` for all slave elements in `vec_ele`.
 An element that is both a super lord and a multipass slave is not added to the list
@@ -204,7 +204,7 @@ Note: lord elements are pushed to just after the corresponding slave.
 
 """ eles_substitute_lords!
 
-function eles_substitute_lords!(vec_ele::Vector{T}; remove_slaves = true) where T <: Ele
+function eles_substitute_lords!(vec_ele::Vector{Ele}; remove_slaves = true)
   # Search lord branches
   ie = 0
   while ie < length(vec_ele)

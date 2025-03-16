@@ -157,8 +157,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
         if wrap
           s1 = s1 + branch_len
         else
-          @ele drift = Drift(L = branch.ele[1].s - s1)
-          insert!(branch, 2, drift)
+          insert!(branch, 2, Drift("drift", L = branch.ele[1].s - s1))
         end
       end
 
@@ -166,8 +165,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
         if wrap
           s2 = s2 - branch_len
         else
-          @ele drift = Drift(L = s2 - branch.ele[end].s_downstream)
-          insert!(branch.ele, length(branch.ele), drift)
+          insert!(branch.ele, length(branch.ele), Drift("drift", L = s2 - branch.ele[end].s_downstream))
         end
       end
 
@@ -207,7 +205,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
       n_ele = 0
       for ele in Region(ele1, ele2, false)
         n_ele += 1
-        if typeof(ele) != Drift; all_drift = false; end
+        if ele.class != Drift; all_drift = false; end
       end
 
       #
@@ -217,8 +215,8 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
         super_ele = set!(branch, ix_super, super_ele)
         push!(super_list, super_ele)
         if n_ele > 1; deleatat!(branch.ele, ix_super+1:ix_super+n_ele-1); end
-        if typeof(branch.ele[ix_super-1]) == Drift; set_drift_slice_names(branch.ele[ix_super-1]); end
-        if typeof(branch.ele[ix_super+1]) == Drift; set_drift_slice_names(branch.ele[ix_super+1]); end
+        if branch.ele[ix_super-1].class == Drift; set_drift_slice_names(branch.ele[ix_super-1]); end
+        if branch.ele[ix_super+1].class == Drift; set_drift_slice_names(branch.ele[ix_super+1]); end
         continue 
       end
 
@@ -237,7 +235,7 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
         if ele.L == 0; continue; end
         ix_ele = ele.ix_ele
 
-        if typeof(ele) == Drift
+        if ele.class == Drift
           ele2 = set!(branch, ix_ele, super_ele)
           ele2.slave_status = Slave.SUPER
           ele2.L = ele.L
@@ -251,14 +249,14 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
           lord2.pdict[:changed][AllParams] = true
           push!(lord_list, lord2)
 
-          slave = set!(branch, ix_ele, UnionEle(name = "", L = ele.L, super_lords = Vector{Ele}([lord1])))
+          slave = set!(branch, ix_ele, UnionEle("", L = ele.L, super_lords = Vector{Ele}([lord1])))
           slave.slave_status = Slave.SUPER
           lord2.pdict[:slaves] = Vector{Ele}([slave])
           push!(slave.pdict[:super_lords], lord2)
           push!(lord1.pdict[:slaves], slave)
 
         else  # Is super_slave and not Drift
-          if typeof(ele) != UnionEle   # That is, has a single super_lord
+          if ele.class != UnionEle   # That is, has a single super_lord
             set!(branch, ix_ele, UnionEle(name = "", L = ele.L, super_lords = ele.super_lords))
             old_lord = ele.super_lords[1]
             for (ix, slave) in enumerate(old_lord.slaves)
@@ -279,11 +277,11 @@ function superimpose!(super_ele::Ele, ref::T; ele_origin::BodyLoc.T = BodyLoc.CE
       end
     end   # for this_ref in collect(ref)
 
-  catch this_err
+  catch
     for lat in lat_list
       pop_bookkeeping_state!(lat)
     end
-    rethrow(this_err)
+    rethrow()
   end
 
   # End stuff
@@ -343,7 +341,7 @@ end
 """
 """
 
-function set_drift_slice_names(drift::Drift)
+function set_drift_slice_names(drift::Ele)
   # Drift slice case
 
   if haskey(drift.pdict, :drift_master)

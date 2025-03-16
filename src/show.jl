@@ -259,7 +259,7 @@ ele_param_value_str(wall2d::Wall2D; default::AbstractString = "???") = "Wall2D(.
 ele_param_value_str(who::Nothing; default::AbstractString = "???") = default
 ele_param_value_str(ele::Ele; default::AbstractString = "???") = ele_name(ele)
 ele_param_value_str(species::Species; default::AbstractString = "???") = "Species($(str_quote(species.name)))"
-ele_param_value_str(vec_ele::Vector{T}; default::AbstractString = "???") where T <: Ele = "[$(join([ele_name(ele) for ele in vec_ele], ", "))]"
+ele_param_value_str(vec_ele::Vector{Ele}; default::AbstractString = "???") = "[$(join([ele_name(ele) for ele in vec_ele], ", "))]"
 ele_param_value_str(vec::Vector; default::AbstractString = "???") = "[" * join([string(v) for v in vec], ", ") * "]"
 ele_param_value_str(branch::Branch; default::AbstractString = "???") = "Branch $(branch.pdict[:ix_branch]): $(str_quote(branch.name))"
 ele_param_value_str(str::String; default::AbstractString = "???") = str_quote(str)
@@ -276,8 +276,8 @@ To simply print the element name use the `ele_name(ele)` function.
 """ show_ele 
 
 function show_ele(io::IO, ele::Ele, docstring = false)
-  eletype = typeof(ele)
-  println(io, "Ele: $(ele_name(ele))   $eletype")
+  ele_class = ele.class
+  println(io, "Ele: $(ele_name(ele))   $ele_class")
   nn = 18
 
   pdict = ele.pdict
@@ -314,9 +314,9 @@ function show_ele(io::IO, ele::Ele, docstring = false)
         param_name = rpad(repr(key), nn2)
         value_str = ele_param_value_str(changed, key)
         if docstring
-          ele_print_line(io, "    $param_name $value_str $(param_units(key, eletype))", description(key, eletype))
+          ele_print_line(io, "    $param_name $value_str $(param_units(key))", description(key, ele_class))
         else
-          println(io, "    $param_name $value_str $(param_units(key, eletype))")
+          println(io, "    $param_name $value_str $(param_units(key))")
         end
       end
     end
@@ -400,7 +400,7 @@ Single column printing of an element group with a docstring printed for each par
 """ show_elegroup_with_doc
 
 function show_elegroup_with_doc(io::IO, group::EleParams; ele::Ele, indent = 0)
-  gtype = typeof(group)
+  gtype = root_type(typeof(group))
   nn = max(18, maximum(length.(fieldnames(gtype))))
   println(io, "  $gtype:")
 
@@ -424,7 +424,7 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0
   # If output field for column 1 or column 2 is wider than this, print the fields on two lines.
   col_width_cut = 60
 
-  gtype = typeof(group)
+  gtype = root_type(typeof(group))
   if gtype ∉ keys(show_column2)
     if group_show_name == :NONE
       println(io, " "^indent * "Show for field of type $gtype not yet implemented.")
@@ -446,7 +446,7 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0
   end
 
   if group_show_name == :NONE
-    println(io, " "^indent * "$(gtype):")
+    println(io, " "^indent * "$(typeof(group)):")
   else
     println(io, " "^indent * ".$group_show_name:")
   end
@@ -456,6 +456,7 @@ function show_elegroup_wo_doc(io::IO, group::BaseEleParams, ele::Ele; indent = 0
 
     if field_sym in keys(col2)
       field_name = rpad(full_parameter_name(field_sym, gtype), n1)
+
       vstr = ele_param_value_str(ele, field_sym)
       str = "  $field_name $vstr $(param_units(field_sym))"   # First column entry
 
@@ -534,14 +535,14 @@ end
 #---------------------------------------------------------------------------------------------------
 # Show Vector{Ele}
 
-function Base.show(io::IO, eles::Vector{T}) where T <: Ele
+function Base.show(io::IO, eles::Vector{Ele})
   println(io, "$(length(eles))-element $(typeof(eles)):")
   for ele in eles
     println(io, " " * ele_name(ele))
   end
 end
 
-Base.show(io::IO, ::MIME"text/plain", eles::Vector{T}) where T <: Ele = Base.show(io::IO, eles)
+Base.show(io::IO, ::MIME"text/plain", eles::Vector{Ele}) = Base.show(io::IO, eles)
 
 #---------------------------------------------------------------------------------------------------
 # Show Lattice
@@ -590,7 +591,7 @@ function Base.show(io::IO, branch::Branch)
         if haskey(ele.pdict, :from_forks);     end_str *= "  From fork: $(ele_param_value_str(ele.from_forks, default = "???"))"; end
         if ele.orientation == -1; end_str *= "  orientation = -1"; end
       end
-      println(io, "  $(lpad(ele.pdict[:ix_ele], 5))  $(rpad(str_quote(ele.name), n)) $(rpad(typeof(ele), 16))" * end_str)                    
+      println(io, "  $(lpad(ele.pdict[:ix_ele], 5))  $(rpad(str_quote(ele.name), n)) $(rpad(ele.class, 16))" * end_str)                    
     end
   end
   return nothing
@@ -653,11 +654,11 @@ Base.show(io::IO, ::MIME"text/plain", bl::BeamLine) = Base.show(io, bl)
 #---------------------------------------------------------------------------------------------------
 # Show Dict{String, Vector{Ele}}
 
-function Base.show(io::IO, eled::Dict{String, Vector{T}}) where T <: Ele
-  println(io, f"Dict{{AbstractString, Vector{{T}}}} with {length(eled)} entries.")
+function Base.show(io::IO, eled::Dict{String, Vector{Ele}})
+  println(io, f"Dict{{AbstractString, Vector{{Ele}}}} with {length(eled)} entries.")
 end
 
-Base.show(io::IO, ::MIME"text/plain", eled::Dict{String, Vector{T}}) where T <: Ele = Base.show(stdout, eled)
+Base.show(io::IO, ::MIME"text/plain", eled::Dict{String, Vector{Ele}})= Base.show(stdout, eled)
 
 #---------------------------------------------------------------------------------------------------
 # list_abstract
@@ -678,13 +679,13 @@ end
 """
     info(sym::Symbol) -> nothing            # Info on element parameter symbol. EG: :angle, :Kn1, etc.
     info(str::AbstractString) -> nothing    # Info on element parameter string. EG: "angle", "Kn1", etc.
-    info(ele_type::Type{T}) where T <: Ele  # Info on a given element type.
-    info(ele::Ele)                          # Info on typeof(ele) element type.
+    info(ele_class::EleClass)               # Info on a given element type.
+    info(ele::Ele)                          # Info on ele.class element type.
     info(group::Type{T}) where T <: EleParams  # Info on element parameter group.
 
 Prints information about:
   + The element parameter represented by `sym` or `str`.
-  + A particular element type given by `ele_type` or the type of `ele`.
+  + A particular element type given by `ele_class` or the type of `ele`.
   + A particular element parameter group given by `group`.
 
 ## Examples
@@ -719,22 +720,22 @@ info(str::AbstractString) = info(Symbol(str))
 
 #-----
 
-function info(ele_type::Type{T}; output_str::Bool = false) where T <: Ele
-  if ele_type ∉ keys(PARAM_GROUPS_LIST)
-    println("No information on $ele_type")
+function info(ele_class::EleClass; output_str::Bool = false)
+  if ele_class ∉ keys(PARAM_GROUPS_LIST)
+    println("No information on $ele_class")
     return
   end
 
   if output_str
     lst = ""
-    for group in sort(PARAM_GROUPS_LIST[ele_type])
+    for group in sort(PARAM_GROUPS_LIST[ele_class])
       name = "`$(strip_AL(group))`"
       lst *= "•  $(rpad(name, 20)) -> $(ELE_PARAM_GROUP_INFO[group].description)\\\n"
     end
     return lst
 
   else
-    for group in sort(PARAM_GROUPS_LIST[ele_type])
+    for group in sort(PARAM_GROUPS_LIST[ele_class])
       println("  $(rpad(string(group), 20)) -> $(ELE_PARAM_GROUP_INFO[group].description)")
     end
   end
@@ -742,7 +743,7 @@ end
 
 #----
 
-#info(ele::Ele; output_str::Bool = false) = info(typeof(ele), output_str)
+#info(ele::Ele; output_str::Bool = false) = info(ele.class, output_str)
 
 #----
 
@@ -766,8 +767,8 @@ function info(group::Type{T}) where T <: EleParams
   end
 
   println("\nFound in:")
-  for (ele_type, glist) in sort!(OrderedDict(PARAM_GROUPS_LIST))
-    if group in glist; println("    " * string(ele_type)); end
+  for (ele_class, glist) in sort!(OrderedDict(PARAM_GROUPS_LIST))
+    if group in glist; println("    " * string(ele_class)); end
   end
 
 end
@@ -792,24 +793,6 @@ function info1(info::ParamInfo)
   if info.units != ""; println("  Units:           $(info.units)"); end
   println("  Description:     $(info.description)")
   return nothing
-end
-
-#---------------------------------------------------------------------------------------------------
-# Construct documentation for element types
-
-for etype in subtypes(Ele)
-  # Need to make ele_docstring global so the eval_str below will work (using $ele_docstring did not work).
-  global ele_docstring = 
-"""
-      mutable struct $(strip_AL(etype)) <: Ele
-
-Type of lattice element. $(ELE_TYPE_INFO[etype])
-
-## Associated parameter groups
-$(info(etype, output_str = true))
-"""
-
-  eval_str("@doc ele_docstring $etype")
 end
 
 #---------------------------------------------------------------------------------------------------

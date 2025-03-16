@@ -81,14 +81,14 @@ end
 # eles_atomic
 
 """
-    Internal: eles_atomic(where_search, who, branch_id, ele_type, param_id, 
+    Internal: eles_atomic(where_search, who, branch_id, ele_class, param_id, 
                                                   match_str, wrap)  -> ele_vector::Ele[]
 
 Internal function. Find all elements that match an "atomic" construct.
 Called by the `eles_search_a_block` function which in turn is called by `eles_search`.
 """ eles_atomic
 
-function eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str, wrap)
+function eles_atomic(where_search, who, branch_id, ele_class, param_id, match_str, wrap)
 
   # Parse out offset
 
@@ -128,7 +128,7 @@ function eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str
       push!(ele_list, ele_at_offset(branch.ele[ix_ele], offset, wrap))
     else
       for ele in branch.ele
-        if !isnothing(ele_type) && Symbol(typeof(ele)) != ele_type; continue; end
+        if !isnothing(ele_class) && Symbol(ele.class) != ele_class; continue; end
         if !str_match(match_str, getproperty(ele, param_id)); continue; end
         push!(ele_list, ele_at_offset(ele, offset, wrap))
       end
@@ -157,7 +157,7 @@ function eles_search_a_block(where_search::Union{Lattice,Branch}, who::Union{Abs
   if typeof(who) == Regex; return eles_search_a_block(where_search, who); end
 
   # Not Julia regex
-  ele_type = nothing
+  ele_class = nothing
   branch_id = ""       # Branch ID used with "branch_id>>ele_id" construct
   param_id = :name
   match_str = ""
@@ -168,7 +168,7 @@ function eles_search_a_block(where_search::Union{Lattice,Branch}, who::Union{Abs
   chunks = str_split(this_who, [">>", "::", ":", "=", "`", " "])
 
   if length(chunks) > 2 && chunks[2] == "::"
-    ele_type = chunks[1]
+    ele_class = chunks[1]
     chunks = chunks[3:end]
   end
 
@@ -178,13 +178,14 @@ function eles_search_a_block(where_search::Union{Lattice,Branch}, who::Union{Abs
   end
 
   if length(chunks) > 2 && chunks[2] == "::"   # Need this test for "branch>>type::name" construct
-    ele_type = chunks[1]
+    ele_class = chunks[1]
     chunks = chunks[3:end]
   end
 
-  if !isnothing(ele_type)
-    ele_type = Symbol(ele_type)
-    if ele_type ∉ Symbol.(subtypes(Ele)); error("Element type not recognized: $ele_type"); end
+  if !isnothing(ele_class)
+    ele_class = Symbol(ele_class)
+    if !(eval(ele_class) <: EleClass); error("Element type not recognized: $ele_class"); end
+
   end
 
   if length(chunks) > 4 && chunks[2] == "="
@@ -200,11 +201,11 @@ function eles_search_a_block(where_search::Union{Lattice,Branch}, who::Union{Abs
   # Non-range construct
 
   if length(chunks) == 0
-    return eles_atomic(where_search, who, branch_id, ele_type, param_id, match_str, wrap) 
+    return eles_atomic(where_search, who, branch_id, ele_class, param_id, match_str, wrap) 
   end
 
   # Range construct
-  # Note: ele_type not used in search for range end points.
+  # Note: ele_class not used in search for range end points.
 
   ele_vec = eles_atomic(where_search, who, branch_id, nothing, param_id, match_str, wrap) 
 
@@ -248,10 +249,10 @@ function eles_search_a_block(where_search::Union{Lattice,Branch}, who::Union{Abs
     return Ele[]
   end
 
-  if isnothing(ele_type)
+  if isnothing(ele_class)
     return ele_vec
   else
-    return ele_vec[Symbol.(typeof.(ele_vec)) .== ele_type] 
+    return ele_vec[[ele.class == ele_class for ele in ele_vec]] 
   end
 end
 
@@ -301,11 +302,11 @@ Curly brackets `{...}` denote optional fields.
 
 A `ele_id` is of the form:
 ```
-  {ele_type::}atom           # or
-  {ele_type::}atom1:atom2    # range construct
+  {ele_class::}atom           # or
+  {ele_class::}atom1:atom2    # range construct
 
 ```
-where `ele_type` is an optional element type (EG: `Quadrupole`, `Drift`, etc.) and `atom`
+where `ele_class` is an optional element type (EG: `Quadrupole`, `Drift`, etc.) and `atom`
 is an element name (which can contain wild card characters), index, or
 `parameter='match_str'` construct. Here `parameter` is the name of any string component of
 an element. Standard string components are
@@ -322,9 +323,9 @@ same branch.
   If `atom2` is a super lord element,
   the last slave of the super lord will be used for the boundary element of the range.
 - To exclude the boundary elements from the returned list, use the appropriate `offset`.
-- In a range construct the `ele_type` is used to remove elements from the returned list but
+- In a range construct the `ele_class` is used to remove elements from the returned list but
   do not affect matching to the elements at the ends of the range. That is, the elements
-  at the range ends do not have to be of type `ele_type`.
+  at the range ends do not have to be of type `ele_class`.
 
 Params expressions may be combined using the operators `","` (union), `"~"` (negation) or `"&"` (intersection):
 If there are more than two block expressions involved, evaluation is left to right. For example:
@@ -455,8 +456,8 @@ function lat_branch(lat::Lattice, who::Type{T}) where T <: BranchType
 end
 
 function lat_branch(ele::Ele)
-  if haskey(ele.pdict, :branch); return ele.pdict[:branch]; end
-  return
+  !haskey(ele.pdict, :branch) && return nothing
+  return ele.pdict[:branch]::Union{Branch,Nothing}
 end
 
 #---------------------------------------------------------------------------------------------------

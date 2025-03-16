@@ -48,7 +48,7 @@ Custom
 """ Base.copy(ele::Ele)
 
 function Base.copy(ele::Ele)
-  ele_copy = typeof(ele)(copy(ele.pdict))
+  ele_copy = Ele(ele.name, ele.class, copy(ele.pdict))
   for key in keys(ele.pdict)
     if it_isimmutable(ele.pdict[key]); continue; end
     if key == :branch; continue; end              # Branch pointer
@@ -94,7 +94,7 @@ function Base.insert!(branch::Branch, ix_ele::Int, ele::Ele; adjust_orientation 
 
   set_branch_min_max_changed!(branch, ix_ele)
   ele.pdict[:changed][AllParams] = true
-  if typeof(ele) == Fork; fork_bookkeeper(ele); end
+  if ele.class == Fork; fork_bookkeeper(ele); end
   if !isnothing(branch.lat) && branch.lat.autobookkeeping; bookkeeper!(branch.lat); end
   return ele
 end
@@ -300,7 +300,7 @@ function split!(branch::Branch, s_split::Real; select::Select.T = Select.UPSTREA
   # Split case 1: Element is a drift. No super lord issues. Need to create a "master drift"
   # representing the original drift in `branch.drift_masters` so that the names of drift slices can 
   # be properly formed using a `!N` suffix where N is an integer.
-  if typeof(slave1) == Drift
+  if slave1.class == Drift
     slave2 = insert!(branch, slave1.ix_ele+1, slave1)  # Just after slave1
 
     if haskey(slave1.pdict, :drift_master) 

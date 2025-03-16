@@ -264,9 +264,7 @@ function new_tracking_branch!(lat::Lattice, bline::BeamLine)
   if haskey(bline.pdict, :end_ele)
     add_beamline_ele_to_branch!(branch, BeamLineItem(bline.pdict[:end_ele]))
   else
-    @ele end_ele = Marker()
-    end_ele.pdict[:name] = "end$(ib)"
-    add_beamline_ele_to_branch!(branch, BeamLineItem(end_ele))
+    add_beamline_ele_to_branch!(branch, BeamLineItem(Marker("end$ib")))
   end
 
   # Beginning and end elements inherit orientation from neighbor elements.
@@ -279,7 +277,7 @@ function new_tracking_branch!(lat::Lattice, bline::BeamLine)
 
   # Add fork lines
   for ele in branch.ele
-    if typeof(ele) == Fork; fork_bookkeeper(ele); end
+    if ele.class == Fork; fork_bookkeeper(ele); end
   end
 
   return branch

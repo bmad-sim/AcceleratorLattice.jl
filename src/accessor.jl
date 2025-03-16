@@ -74,6 +74,8 @@ Also see: `get_elegroup_param`
 """ Base.getproperty(ele::Ele, sym::Symbol)
 
 function Base.getproperty(ele::Ele, sym::Symbol)
+  if sym == :name; return getfield(ele, :name); end
+  if sym == :class; return getfield(ele, :class); end
   if sym == :pdict; return getfield(ele, :pdict); end
   pdict::Dict{Symbol,Any} = getfield(ele, :pdict)
   branch = lat_branch(ele)
@@ -147,6 +149,9 @@ end
 #-----------------
 
 function Base.setproperty!(ele::Ele, sym::Symbol, value, check_settable = true)
+  if sym == :name;  setfield!(ele, :name, value); return nothing; end
+  if sym == :class; setfield!(ele, :class, value); return nothing; end
+
   pdict::Dict{Symbol,Any} = ele.pdict
   if haskey(pdict, sym); pdict[sym] = value; return pdict[sym]; end
   pinfo = ele_param_info(sym, ele)
@@ -379,16 +384,16 @@ end
 
 function set_elegroup_param!(ele::Ele, group::EleParams, pinfo::ParamInfo, value)
   if !isnothing(pinfo.sub_struct)    # Example see: ParamInfo(:a_beta)  
-    return setfield!(pinfo.sub_struct(group), pinfo.struct_sym, value)
+    return setproperty!(pinfo.sub_struct(group), pinfo.struct_sym, value)
   else
-    return setfield!(base_field(group, pinfo), pinfo.struct_sym, value)
+    return setproperty!(base_field(group, pinfo), pinfo.struct_sym, value)
   end
 end
 
 function set_elegroup_param!(ele::Ele, group::BMultipoleParams, pinfo::ParamInfo, value)
   (mtype, order, group_type) = multipole_type(pinfo.user_sym)
   mul = multipole!(group, order, insert = true)
-  if mtype == "tilt" || mtype == "integrated"; return setfield!(mul, pinfo.struct_sym, value); end
+  if mtype == "tilt" || mtype == "integrated"; return setproperty!(mul, pinfo.struct_sym, value); end
 
   if isnothing(mul.integrated)
     mul.integrated = (mtype[end] == 'L')
@@ -398,13 +403,13 @@ function set_elegroup_param!(ele::Ele, group::BMultipoleParams, pinfo::ParamInfo
           "Use toggle_integrated! to change the integrated status.")
   end
  
-  return setfield!(mul, pinfo.struct_sym, value)
+  return setproperty!(mul, pinfo.struct_sym, value)
 end
 
 function set_elegroup_param!(ele::Ele, group::EMultipoleParams, pinfo::ParamInfo, value)
   (mtype, order, group_type) = multipole_type(pinfo.user_sym)
   mul = multipole!(group, order, insert = true)
-  if mtype == "Etilt" || mtype == "Eintegrated"; return setfield!(mul, pinfo.struct_sym, value); end
+  if mtype == "Etilt" || mtype == "Eintegrated"; return setproperty!(mul, pinfo.struct_sym, value); end
 
   if isnothing(mul.Eintegrated)
     mul.Eintegrated = (mtype[end] == 'L')
@@ -414,7 +419,7 @@ function set_elegroup_param!(ele::Ele, group::EMultipoleParams, pinfo::ParamInfo
           "Use toggle_integrated! to change the integrated status.")
   end
 
-  return setfield!(mul, pinfo.struct_sym, value)
+  return setproperty!(mul, pinfo.struct_sym, value)
 end
 
 #---------------------------------------------------------------------------------------------------
