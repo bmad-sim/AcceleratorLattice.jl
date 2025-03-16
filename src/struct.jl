@@ -21,17 +21,34 @@ abstract type BeamLineItem end
 # Ele
 
 """
-    abstract type Ele <: BeamLineItem end
+    mutable struct Ele <: BeamLineItem
 
-Abstract type from which all concrete lattice element types inherit.
-All concreate lattice element types are constructed using the `@construct_ele_type` macro.
+Lattice element structure.
+Note: `Ele()` will construct a NullELE
 
-All concreate lattice element types have a single field:
-
-    pdict :: Dict{Symbol, Any}
+## Fields
+• `name::String`                        - Name of element.
+• `class::Type{T} where T <: EleClass`  - Type of element (Drift, etc.).
+• `pdict::Dict{Symbol, Any}`            - Element parameters.
 """ Ele
  
-abstract type Ele <: BeamLineItem end
+mutable struct Ele <: BeamLineItem
+  name::String
+  class::Type{T} where T <: EleClass
+  pdict::Dict{Symbol,Any}
+end
+
+Ele() = Ele("NULL_ELE", NullEle, Dict{Symbol,Any}())
+
+#---------------------------------------------------------------------------------------------------
+# NullEle
+
+"""
+
+`NULL_ELE` is a const NullEle element to be used with bookkeeping code.
+""" NULL_ELE
+
+const NULL_ELE = Ele()
 
 #---------------------------------------------------------------------------------------------------
 # Eles
@@ -45,31 +62,7 @@ Single element or vector of elemements."
 Eles = Union{Ele, Vector{Ele}, Tuple{Ele}}
 
 
-Base.collect(x::T) where T <: Ele = [x]
-
-#---------------------------------------------------------------------------------------------------
-# construct_ele_type
-
-"""
-    macro construct_ele_type(type_name, doc::String) -> nothing
-    ELE_TYPE_INFO = Dict{DataType,String}()
-
-Constructor for element types and a Dict for storing a descriptive string. Example:
-```
-    @construct_ele_type Drift  "Field free region."
-```
-Result: `Drift` struct is defined and `ELE_TYPE_INFO[Drift]` holds the `doc` string.
-""" construct_ele_type, ELE_TYPE_INFO
-
-ELE_TYPE_INFO = Dict{DataType,String}()
-
-macro construct_ele_type(type_name, doc::String)
-  eval( Meta.parse("mutable struct $type_name <: Ele; pdict::Dict{Symbol,Any}; end") )
-  str_type = String("$type_name")
-  eval( Meta.parse("export $str_type") )
-  eval( Meta.parse("ELE_TYPE_INFO[$type_name] = \"$doc\""))
-  return nothing
-end
+Base.collect(x::Ele) = [x]
 
 #---------------------------------------------------------------------------------------------------
 # @ele macro
@@ -79,7 +72,8 @@ end
 
 Element constructor Example:
     @ele q1 = Quadrupole(L = 0.2, Ks1 = 0.67, ...)
-Result: The variable `q1` is a `Quadrupole` with the argument values put the the appropriate place.
+Result: The variable `q1` is an `Ele` with `EleClass` set to `Quadrupole` and with the 
+argument values put the the appropriate place.
 
 Note: All element parameter structs associated with the element type will be constructed. Thus, in the
 above example,`q1` above will have `q1.LengthParams` (equivalent to `q1.pdict[:LengthParams]`) created.
@@ -88,7 +82,7 @@ macro ele(expr)
   expr.head == :(=) || error("Missing equals sign '=' after element name. " * 
                                "Expecting something like: \"q1 = Quadrupole(...)\"")
   name = expr.args[1]
-  insert!(expr.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
+  insert!(expr.args[2].args, 2, "$name")
   return esc(expr)   # This will call the lattice element constructor below
 end
 
@@ -115,89 +109,66 @@ macro eles(block)
   block.head == :block || error("@eles must be followed by a block!")
   eles = filter(x -> !(x isa LineNumberNode), block.args)
   for ele in eles
-    name = ele.args[1]
-    insert!(ele.args[2].args, 2, :($(Expr(:kw, :name, "$name"))))
+    ele.head == :(=) || error("Missing equals sign '=' after element name in @eles block.\n" * 
+                              "Error evaluating: $(string(ele))")
+    try
+      name = ele.args[1]
+      insert!(ele.args[2].args, 2, "$name")
+    catch
+      println("Error in @eles block evaluating: $(string(ele))")
+      rethrow()
+    end
   end
+
   return esc(block)
 end
 
 #---------------------------------------------------------------------------------------------------
-# Element construction function. Called by `ele` macro.
+# Element class to Ele construction function 
 
 """
-    function (::Type{T})(; kwargs...) where T <: Ele
+    function (ele_class::Type{T})(name::AbstractString; kwargs...) where T <: EleClass -> Ele
 
 
-Lattice element constructor.
-The constructor initializes `Ele.pdict[:branch]` since it is assumed by the
+Lattice element constructor. Takes something like 
+```
+  Drift("my_drift", L = ...)
+```
+and returns 
+```
+  Ele("my_drift", Drift, pdict = Dict{Symbol,Any}(:L => ...))
+```
+
+Note: The constructor initializes `Ele.pdict[:branch]` since it is assumed by the
 bookkeeping code to always exist.
 """
-function (::Type{T})(; kwargs...) where T <: Ele
-  ele = T(Dict{Symbol,Any}(:branch => nothing))
+function (::Type{T})(name::AbstractString; kwargs...) where T <: EleClass
+  ele = Ele(name, T, Dict{Symbol,Any}(:branch => nothing))
   pdict = ele.pdict
-  pdict[:changed] = Dict{Union{Symbol,DataType},Any}()
+  pdict[:changed] = Dict{Union{Symbol,DataType,UnionAll},Any}()
 
-  # Setup parameter structs.
-  for param_struct in PARAM_GROUPS_LIST[typeof(ele)]
-    pdict[Symbol(param_struct)] = param_struct()
-  end
+  try
+    # Setup parameter structs.
+    for param_struct in PARAM_GROUPS_LIST[T]
+      if typeof(param_struct) == UnionAll
+        pdict[Symbol(param_struct)] = param_struct{Float64}()
+      else
+        pdict[Symbol(param_struct)] = param_struct()
+      end
+    end
 
-  # Put name in first in case there are errors and the ele name needs to be printed.
-  if haskey(kwargs, :name)
-    pdict[:name] = kwargs[:name]
-  else
-    pdict[:name] = "Not Set!"
-  end
+    # Put parameters in parameter structs and changed area
+    for (sym, val) in kwargs
+      Base.setproperty!(ele, sym, val)
+    end
 
-  # Put parameters in parameter structs and changed area
-  for (sym, val) in kwargs
-    if sym == :name; continue; end
-    Base.setproperty!(ele, sym, val)
+  catch
+    println("Error evaluating: $T($(str_quote(name)), ...)")
+    rethrow()
   end
 
   return ele
 end
-
-#---------------------------------------------------------------------------------------------------
-# Construct ele types
-
-@construct_ele_type ACKicker            "Time varying kicker."
-@construct_ele_type BeamBeam            "Colliding beam element."
-@construct_ele_type BeginningEle        "Initial element at start of a branch."
-@construct_ele_type Bend                "Dipole bend."
-@construct_ele_type Collimator          "Collimation element."
-@construct_ele_type Converter           "Target to produce new species. EG: Positron converter."
-@construct_ele_type CrabCavity          "RF crab cavity." 
-@construct_ele_type Drift               "Field free region."
-@construct_ele_type EGun                "Electron gun."
-@construct_ele_type Fiducial            "Floor coordinate system fiducial point."
-@construct_ele_type FloorShift          "Floor coordinates shift."
-@construct_ele_type Foil                "Strips electrons from an atom."
-@construct_ele_type Fork                "Connect lattice branches together."
-@construct_ele_type Girder              "Support element."
-@construct_ele_type Instrument          "Measurement element."
-@construct_ele_type Kicker              "Particle kicker element."
-@construct_ele_type LCavity             "Linac accelerating RF cavity."
-@construct_ele_type Marker              "Zero length element to mark a particular position."
-@construct_ele_type Match               "Orbit, Twiss, and dispersion matching element."
-@construct_ele_type Multipole           "Zero length multipole."
-@construct_ele_type NullEle             "Placeholder element used for bookkeeping."
-@construct_ele_type Octupole            "Octupole element."
-@construct_ele_type Patch               "Reference orbit shift."
-@construct_ele_type Quadrupole          "Quadrupole element."
-@construct_ele_type RFCavity            "RF cavity element."
-@construct_ele_type Sextupole           "Sextupole element."
-@construct_ele_type Solenoid            "Solenoid."
-@construct_ele_type Taylor              "General Taylor map element."
-@construct_ele_type Undulator           "Undulator."
-@construct_ele_type UnionEle            "Container element for overlapping elements." 
-@construct_ele_type Wiggler             "Wiggler."
-
-"""
-NullEle lattice element type used to indicate the absence of any valid element.
-`NULL_ELE` is a const NullEle element with `name` set to "null" that can be used for coding.
-"""
-const NULL_ELE = NullEle(Dict{Symbol,Any}(:name => "NULL_ELE"))
 
 #---------------------------------------------------------------------------------------------------
 # BeamLineEle
@@ -294,29 +265,29 @@ abstract type EleParameterSubParams <: BaseEleParams end
 # BMultipole subparams
 
 """
-    mutable struct BMultipole <: EleParameterSubParams
+    mutable struct BMultipole{T<:Number} <: EleParameterSubParams
 
 Single magnetic multipole of a given order.
 Used by `BMultipoleParams`.
 
 ## Fields
 
-• `Kn::Number`                 - Normal normalized component. EG: `"Kn2"`, `"Kn2L"`. \\
-• `Ks::Number`                 - Skew multipole component. EG: `"Ks2"`, `"Ks2L"`.  \\
-• `Bn::Number`                 - Normal field component. \\ 
-• `Bs::Number`                 - Skew field component. \\
-• `tilt::Number`               - Rotation of multipole around `z`-axis. \\
-• `order::Int`                 - Multipole order. \\
+• `Kn::T`                 - Normal normalized component. EG: `"Kn2"`, `"Kn2L"`. \\
+• `Ks::T`                 - Skew multipole component. EG: `"Ks2"`, `"Ks2L"`.  \\
+• `Bn::T`                 - Normal field component. \\ 
+• `Bs::T`                 - Skew field component. \\
+• `tilt::T`               - Rotation of multipole around `z`-axis. \\
+• `order::Int`            - Multipole order. \\
 • `integrated::Union{Bool,Nothing}` - Integrated or not? \\
   Also determines what stays constant with length changes. \\
 """
-@kwdef mutable struct BMultipole <: EleParameterSubParams  # A single multipole
-  Kn::Number = 0.0                 # EG: "Kn2", "Kn2L" 
-  Ks::Number = 0.0                 # EG: "Ks2", "Ks2L"
-  Bn::Number = 0.0
-  Bs::Number = 0.0  
-  tilt::Number = 0.0
-  order::Int   = -1                # Multipole order
+@kwdef mutable struct BMultipole{T<:Number} <: EleParameterSubParams  # A single multipole
+  Kn::T = 0.0                 # EG: "Kn2", "Kn2L" 
+  Ks::T = 0.0                 # EG: "Ks2", "Ks2L"
+  Bn::T = 0.0
+  Bs::T = 0.0  
+  tilt::T = 0.0
+  order::Int   = -1           # Multipole order
   integrated::Union{Bool,Nothing} = nothing  # Also determines what stays constant with length changes.
 end
 
@@ -328,35 +299,35 @@ Dispersion parameters for a single axis.
 
 """ Dispersion1
 
-@kwdef mutable struct Dispersion1 <: EleParameterSubParams
-  eta::Number = NaN           # Position dispersion.
-  etap::Number = NaN          # Momentum dispersion.
-  deta_ds::Number = NaN       # Dispersion derivative.
+@kwdef mutable struct Dispersion1{T<:Number} <: EleParameterSubParams
+  eta::T = NaN           # Position dispersion.
+  etap::T = NaN          # Momentum dispersion.
+  deta_ds::T = NaN       # Dispersion derivative.
 end
 
 #---------------------------------------------------------------------------------------------------
 # EMultipole subparams
 
 """
-    mutable struct EMultipole <: EleParameterSubParams
+    mutable struct EMultipole{T<:Number} <: EleParameterSubParams
 
 Single electric multipole of a given order.
 Used by `EMultipoleParams`.
 
 ## Fields
 
-• `En::Number`                  - Normal field component. EG: "En2", "En2L" \\
-• `Es::Number`                  - Skew fieldEG component. EG: "Es2", "Es2L" \\
-• `Etilt::Number`               - Rotation of multipole around `z`-axis. \\
-• `order::Int`                  - Multipole order. \\
-• `Eintegrated::Bool`           - Integrated field or not?. \\
+• `En::T`                  - Normal field component. EG: "En2", "En2L" \\
+• `Es::T`                  - Skew fieldEG component. EG: "Es2", "Es2L" \\
+• `Etilt::T`               - Rotation of multipole around `z`-axis. \\
+• `order::Int`             - Multipole order. \\
+• `Eintegrated::Bool`      - Integrated field or not?. \\
   Also determines what stays constant with length changes. \\
 """ EMultipole
 
-@kwdef mutable struct EMultipole <: EleParameterSubParams
-  En::Number = 0.0                    # EG: "En2", "En2L"
-  Es::Number = 0.0                    # EG: "Es2", "Es2L"
-  Etilt::Number = 0.0
+@kwdef mutable struct EMultipole{T<:Number} <: EleParameterSubParams
+  En::T = 0.0                    # EG: "En2", "En2L"
+  Es::T = 0.0                    # EG: "Es2", "Es2L"
+  Etilt::T = 0.0
   order::Int = -1 
   Eintegrated::Union{Bool,Nothing} = nothing
 end
@@ -365,36 +336,36 @@ end
 # Twiss subparams.
 
 """
-    mutable struct Twiss <: EleParameterSubParams
+    mutable struct Twiss{T<:Number} <: EleParameterSubParams
 
 Twiss parameters for used for BeamBeam element to describe the strong beam.
 """ Twiss
 
-@kwdef mutable struct Twiss <: EleParameterSubParams
-  beta_a::Number = NaN
-  alpha_a::Number = NaN
-  beta_b::Number = NaN
-  alpha_b::Number = NaN
+@kwdef mutable struct Twiss{T<:Number} <: EleParameterSubParams
+  beta_a::T = NaN
+  alpha_a::T = NaN
+  beta_b::T = NaN
+  alpha_b::T = NaN
 end
 
 #---------------------------------------------------------------------------------------------------
 # Twiss1 subparams
 
 """
-    mutable struct Twiss1 <: EleParameterSubParams
+    mutable struct Twiss1{T<:Number} <: EleParameterSubParams
 
 Twiss parameters for a single mode.
 
 """ Twiss1
 
-@kwdef mutable struct Twiss1 <: EleParameterSubParams
-  beta::Number = NaN          # Beta Twiss
-  alpha::Number = NaN         # Alpha Twiss
-  gamma::Number = NaN         # Gamma Twiss
-  phi::Number = NaN           # Phase
-  eta::Number = NaN           # Position dispersion.
-  etap::Number = NaN          # Momentum dispersion.
-  deta_ds::Number = NaN       # Dispersion derivative.
+@kwdef mutable struct Twiss1{T<:Number} <: EleParameterSubParams
+  beta::T = NaN          # Beta Twiss
+  alpha::T = NaN         # Alpha Twiss
+  gamma::T = NaN         # Gamma Twiss
+  phi::T = NaN           # Phase
+  eta::T = NaN           # Position dispersion.
+  etap::T = NaN          # Momentum dispersion.
+  deta_ds::T = NaN       # Dispersion derivative.
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -478,7 +449,7 @@ ACKicker parameters.
 ## Fields
 • `amp_function::Function`    - Amplitude function. Signature:
 ```
-  amp_function(time::Number) -> amplitude::Number
+  amp_function(time::T) -> amplitude::T
 ```
 
 """ ACKickerParams
@@ -521,63 +492,63 @@ end
 #### This is incomplete ####
 
 """
-    mutable struct BeamBeamParams <: EleParams
+    mutable struct BeamBeamParams{T<:Number} <: EleParams
 
 ## Fields
-• `n_slice::Number`          - Number of slices the Strong beam is divided into. \\
-• `n_particle::Number`       - Number of particle in the strong beam. \\
-• `species::Species`         - Strong beam species. Default is weak particle species. \\
-• `z0_crossing::Number`      - Weak particle phase space z when strong beam center.  \\
-                             -   passes the BeamBeam element. \\
-• `repetition_freq::Number`  - Strong beam repetition rate. \\
-• `twiss::Twiss`             - Strong beam Twiss at IP. \\
-• `sig_x::Number`            - Strong beam horizontal sigma at IP. \\
-• `sig_y::Number`            - Strong beam vertical sigma at IP. \\
-• `sig_z::Number`            - Strong beam longitudinal sigma. \\
-• `bbi_constant::Number`     - BBI constant. Set by Bmad. See manual. \\
+• `n_slice::Int`        - Number of slices the Strong beam is divided into. \\
+• `n_particle::T`       - Number of particle in the strong beam. \\
+• `species::Species`    - Strong beam species. Default is weak particle species. \\
+• `z0_crossing::T`      - Weak particle phase space z when strong beam center.  \\
+                        -   passes the BeamBeam element. \\
+• `repetition_freq::T`  - Strong beam repetition rate. \\
+• `twiss::Twiss{T}`     - Strong beam Twiss at IP. \\
+• `sig_x::T`            - Strong beam horizontal sigma at IP. \\
+• `sig_y::T`            - Strong beam vertical sigma at IP. \\
+• `sig_z::T`            - Strong beam longitudinal sigma. \\
+• `bbi_constant::T`     - BBI constant. Set by Bmad. See manual. \\
 """ BeamBeamParams
 
-@kwdef mutable struct BeamBeamParams <: EleParams
-  n_slice::Number = 1
-  n_particle::Number = 0
+@kwdef mutable struct BeamBeamParams{T<:Number} <: EleParams
+  n_slice::T = 1
+  n_particle::T = 0
   species::Species = Species()
-  z0_crossing::Number = 0       # Weak particle phase space z when strong beam Loc.CENTER passes
+  z0_crossing::T = 0       # Weak particle phase space z when strong beam Loc.CENTER passes
                                 #   the BeamBeam element.
-  repetition_freq::Number = 0  # Strong beam repetition rate.
+  repetition_freq::T = 0  # Strong beam repetition rate.
   twiss::Twiss = Twiss()        # Strong beam Twiss at IP.
-  sig_x::Number = 0
-  sig_y::Number = 0
-  sig_z::Number = 0
-  bbi_constant::Number = 0      # Will be set by Bmad. See manual.
+  sig_x::T = 0
+  sig_y::T = 0
+  sig_z::T = 0
+  bbi_constant::T = 0      # Will be set by Bmad. See manual.
 end
 
 #---------------------------------------------------------------------------------------------------
 # BendParams
 
 """
-    mutable struct BendParams <: EleParams
+    mutable struct BendParams{T<:Number} <: EleParams
 
 ## Fields
 • `bend_type::BendType.T`     - Is e or e_rect fixed? 
   Also is len or len_chord fixed? Default is `BendType.SECTOR`. \\
-• `angle::Number`             - Reference bend angle. \\
-• `g::Number`                 - Reference coordinates bend curvature. \\
-• `bend_field_ref::Number`    - Reference bend field. \\
-• `L_chord::Number`           - Chord length. \\
-• `tilt_ref::Number`          - Tilt angle of reference (machine) coordinate system. \\
-• `e1::Number`                - Pole face rotation at the entrance end with respect to a sector geometry. \\
-• `e2::Number`                - Pole face rotation at the exit end with respect to a sector geometry. \\
-• `e1_rect::Number`           - Pole face rotation with respect to a rectangular geometry. \\
-• `e2_rect::Number`           - Pole face rotation with respect to a rectangular geometry. \\
-• `edge_int1::Number`         - Field integral at entrance end. \\
-• `edge_int2::Number`         - Field integral at exit end. \\
+• `angle::T`             - Reference bend angle. \\
+• `g::T`                 - Reference coordinates bend curvature. \\
+• `bend_field_ref::T`    - Reference bend field. \\
+• `L_chord::T`           - Chord length. \\
+• `tilt_ref::T`          - Tilt angle of reference (machine) coordinate system. \\
+• `e1::T`                - Pole face rotation at the entrance end with respect to a sector geometry. \\
+• `e2::T`                - Pole face rotation at the exit end with respect to a sector geometry. \\
+• `e1_rect::T`           - Pole face rotation with respect to a rectangular geometry. \\
+• `e2_rect::T`           - Pole face rotation with respect to a rectangular geometry. \\
+• `edge_int1::T`         - Field integral at entrance end. \\
+• `edge_int2::T`         - Field integral at exit end. \\
 • `exact_multipoles::ExactMultipoles.T` - Field multipoles treatment. Default is `ExactMultipoles.OFF`. \\
 
 ## Output Parameters
-• `rho::Number`               - Reference bend radius. \\ 
-• `L_sagitta::Number`         - Sagitta length of bend semi circle. \\
-• `bend_field::Number`        - Actual bend field in the plane of the bend. \\
-• `norm_bend_field::Number`   - Actual bend strength in the plane of the bend. \\
+• `rho::T`               - Reference bend radius. \\ 
+• `L_sagitta::T`         - Sagitta length of bend semi circle. \\
+• `bend_field::T`        - Actual bend field in the plane of the bend. \\
+• `norm_bend_field::T`   - Actual bend strength in the plane of the bend. \\
 
 ## Notes
 For tracking there is no distinction made between sector like (`BendType.SECTOR`) bends and
@@ -588,19 +559,19 @@ Whether `bend_field_ref` or `g` is held constant when the reference energy is va
 determined by the `field_master` setting in the MasterParams struct.
 """ BendParams
 
-@kwdef mutable struct BendParams <: EleParams
+@kwdef mutable struct BendParams{T<:Number} <: EleParams
   bend_type::BendType.T = BendType.SECTOR 
-  angle::Number = 0.0
-  g::Number = 0.0           
-  bend_field_ref::Number = 0.0
-  L_chord::Number = 0.0
-  tilt_ref::Number = 0.0
-  e1::Number = 0.0
-  e2::Number = 0.0
-  e1_rect::Number = 0.0
-  e2_rect::Number = 0.0
-  edge_int1::Number = 0.5
-  edge_int2::Number = 0.5
+  angle::T = 0.0
+  g::T = 0.0           
+  bend_field_ref::T = 0.0
+  L_chord::T = 0.0
+  tilt_ref::T = 0.0
+  e1::T = 0.0
+  e2::T = 0.0
+  e1_rect::T = 0.0
+  e2_rect::T = 0.0
+  edge_int1::T = 0.5
+  edge_int2::T = 0.5
   exact_multipoles::ExactMultipoles.T = ExactMultipoles.OFF
 end
 
@@ -608,23 +579,23 @@ end
 # BMultipoleParams
 
 """
-    mutable struct BMultipoleParams <: EleParams
+    mutable struct BMultipoleParams{T<:Number} <: EleParams
 
 Vector of magnetic multipoles.
 
 ## Field
-• `pole::Vector{BMultipole}` - Vector of multipoles. \\
+• `pole::Vector{BMultipole{T}}` - Vector of multipoles. \\
 
 """
-@kwdef mutable struct BMultipoleParams <: EleParams
-  pole::Vector{BMultipole} = Vector{BMultipole}(undef,0)         # Vector of multipoles.
+@kwdef mutable struct BMultipoleParams{T<:Number} <: EleParams
+  pole::Vector{BMultipole{T}} = Vector{BMultipole{T}}(undef,0)         # Vector of multipoles.
 end
 
 #---------------------------------------------------------------------------------------------------
 # BodyShiftParams
 
 """
-    mutable struct BodyShiftParams <: EleParams
+    mutable struct BodyShiftParams{T<:Number} <: EleParams
 
 Defines the position and orientation of the body coordinates of an element with respect to 
 the supporting girder if it exists or with respect to the machine coordinates. 
@@ -633,9 +604,9 @@ See the manual for details about how the three rotations are combined.
 
 ## Fields
 • `offset::Vector`     - [x, y, z] offset. User symbol: `offset_body`. \\
-• `x_rot::Number`      - Rotation around the x-axis. User symbol: `x_rot_body`. \\
-• `y_rot::Number`      - Rotation around the y-axis. User symbol: `y_rot_body`. \\
-• `z_rot::Number`      - Rotation around the z-axis. User symbol: `z_rot_body`. \\
+• `x_rot::T`      - Rotation around the x-axis. User symbol: `x_rot_body`. \\
+• `y_rot::T`      - Rotation around the y-axis. User symbol: `y_rot_body`. \\
+• `z_rot::T`      - Rotation around the z-axis. User symbol: `z_rot_body`. \\
 
 ## Associated Output Parameters
 
@@ -643,19 +614,19 @@ The `_body_tot` parameters are the body coordinates with respect to the branch c
 These parameters are calculated by `AcceleratorLattice` and will be equal to the corresponding
 non-tot fields if there is no `Girder`.
 
-• `q_body::Quaternion`       - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
-• `q_body_tot:: Quaternion`  - `Quaternion` representation of orienttion with Girder shifts. \\
-• `offset_body_tot::Vector`  - `[x, y, z]` offsets including Girder alignment shifts. \\
-• `x_rot_body_tot::Number`   - Rotation around the x-axis including Girder alignment shifts. \\
-• `y_rot_body_tot::Number`   - Rotation around the y-axis including Girder alignment shifts. \\
-• `z_rot_body_tot::Number`   - Rotation around the z-axis including Girder alignment shifts. \\
+• `q_body::Quaternion{T}`       - `Quaternion` representation of `x_rot`, `y_rot`, `tilt` orientation. \\
+• `q_body_tot:: Quaternion{T}`  - `Quaternion` representation of orienttion with Girder shifts. \\
+• `offset_body_tot::Vector`     - `[x, y, z]` offsets including Girder alignment shifts. \\
+• `x_rot_body_tot::T`           - Rotation around the x-axis including Girder alignment shifts. \\
+• `y_rot_body_tot::T`           - Rotation around the y-axis including Girder alignment shifts. \\
+• `z_rot_body_tot::T`           - Rotation around the z-axis including Girder alignment shifts. \\
 """
 
-@kwdef mutable struct BodyShiftParams <: EleParams
+@kwdef mutable struct BodyShiftParams{T<:Number} <: EleParams
   offset::Vector = [0.0, 0.0, 0.0] 
-  x_rot::Number = 0
-  y_rot::Number = 0
-  z_rot::Number = 0
+  x_rot::T = 0
+  y_rot::T = 0
+  z_rot::T = 0
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -669,37 +640,39 @@ These strings have no affect on tracking.
 
 # Fields
 
-• `type::String` \\
+• `subtype::String` \\
 • `ID::String` \\
-• `class::String` \\
+• `label::String` \\
+• `description::Dict{Any,Any}
 """ DescriptionParams
 
 @kwdef mutable struct DescriptionParams <: EleParams
   subtype::String = ""
   ID::String = ""
-  class::String = ""
+  label::String = ""
+  description::Dict{Any,Any} = Dict{Any,Any}()
 end
 
 #---------------------------------------------------------------------------------------------------
 # EMultipoleParams
 
 """
-    mutable struct EMultipoleParams <: EleParams
+    mutable struct EMultipoleParams{T<:Number} <: EleParams
 
 Vector of Electric multipoles.
 
 ## Field
-• `pole::Vector{EMultipole}`  - Vector of multipoles. \\
+• `pole::Vector{EMultipole{T}}`  - Vector of multipoles. \\
 """
-@kwdef mutable struct EMultipoleParams <: EleParams
-  pole::Vector{EMultipole} = Vector{EMultipole}([])         # Vector of multipoles. 
+@kwdef mutable struct EMultipoleParams{T<:Number} <: EleParams
+  pole::Vector{EMultipole{T}} = Vector{EMultipole{T}}([])         # Vector of multipoles. 
 end
 
 #---------------------------------------------------------------------------------------------------
 # FloorParams
 
 """
-    mutable struct FloorParams <: EleParams
+    mutable struct FloorParams{T<:Number} <: EleParams
 
 Position and angular orientation.
 In a lattice element, this struct gives the Floor coordinates at the upstream end of the element
@@ -707,27 +680,27 @@ ignoring alignment shifts.
 
 ## Fields
 • `r::Vector`              - `[x,y,z]` position. User symbol: `r_floor`. \\
-• `q::Quaternion{Number}`  - Quaternion orientation. User symbol: `q_floor`. \\
+• `q::Quaternion{T}`  - Quaternion orientation. User symbol: `q_floor`. \\
 
 ## Associated output parameters:
-• `x_rot_floor::Number`   - X-axis rotation associated with quaternion `q`. \\
-• `y_rot_floor::Number`   - Y-axis rotation associated with quaternion `q`. \\
-• `z_rot_floor::Number`   - Z-axis rotation associated with quaternion `q`. \\
+• `x_rot_floor::T`   - X-axis rotation associated with quaternion `q`. \\
+• `y_rot_floor::T`   - Y-axis rotation associated with quaternion `q`. \\
+• `z_rot_floor::T`   - Z-axis rotation associated with quaternion `q`. \\
 
 Note: To get the three rotations as a vector use `rot_angles(Ele.q_floor)` where `Ele` is
 the lattice element.
 """ FloorParams
 
-@kwdef mutable struct FloorParams <: EleParams
+@kwdef mutable struct FloorParams{T<:Number} <: EleParams
   r::Vector = [0.0, 0.0, 0.0]
-  q::Quaternion{Number} = Quaternion(1.0, 0.0, 0.0, 0.0)
+  q::Quaternion{T} = Quaternion{T}(1.0, 0.0, 0.0, 0.0)
 end
 
 #---------------------------------------------------------------------------------------------------
 # ForkParams
 
 """
-    mutable struct ForkParams <: EleParams
+    mutable struct ForkParams{T<:Number} <: EleParams
 
 Fork element parameters.
 
@@ -740,7 +713,7 @@ Fork element parameters.
 
 """ ForkParams
 
-@kwdef mutable struct ForkParams <: EleParams
+@kwdef mutable struct ForkParams{T<:Number} <: EleParams
   to_line::Union{BeamLine,Nothing} = nothing
   to_ele::Union{String,Ele,Nothing} = nothing
   direction::Int = +1
@@ -767,7 +740,7 @@ end
 # InitParticleParams
 
 """
-    mutable struct InitParticleParams <: EleParams
+    mutable struct InitParticleParams{T<:Number} <: EleParams
 
 Initial particle position.
 
@@ -775,7 +748,7 @@ Initial particle position.
 • `orbit::Vector{Number}`     - Phase space 6-vector. \\
 • `spin::Vector{Number}`      - Spin 3-vector. \\
 """
-@kwdef mutable struct InitParticleParams <: EleParams
+@kwdef mutable struct InitParticleParams{T<:Number} <: EleParams
   orbit::Vector{Number} = Vector{Number}([0,0,0,0,0,0])     # Phase space vector
   spin::Vector{Number} = Vector{Number}([0,0,0])            # Spin vector
 end
@@ -784,22 +757,22 @@ end
 # LengthParams
 
 """
-    mutable struct LengthParams <: EleParams
+    mutable struct LengthParams{T<:Number} <: EleParams
 
 Element length and s-positions.
 
 # Fields
 
-• `L::Number`               - Length of element. \\
-• `s::Number`               - Starting s-position. \\
-• `s_downstream::Number`    - Ending s-position. \\
+• `L::T`               - Length of element. \\
+• `s::T`               - Starting s-position. \\
+• `s_downstream::T`    - Ending s-position. \\
 • `orientation::Int`        - Longitudinal orientation. +1 or -1. \\
 """ LengthParams
 
-@kwdef mutable struct LengthParams <: EleParams
-  L::Number = 0.0               # Length of element
-  s::Number = 0.0               # Starting s-position
-  s_downstream::Number = 0.0    # Ending s-position
+@kwdef mutable struct LengthParams{T<:Number} <: EleParams
+  L::T = 0.0               # Length of element
+  s::T = 0.0               # Starting s-position
+  s_downstream::T = 0.0    # Ending s-position
   orientation::Int = 1          # Longitudinal orientation
 end
 
@@ -863,22 +836,22 @@ end
 # PatchParams
 
 """
-    mutable struct PatchParams <: EleParams
+    mutable struct PatchParams{T<:Number} <: EleParams
 
 `Patch` element parameters. Other `Patch` parameters are in PositionParams
 
 ## Fields
 • `flexible::Bool`            - Flexible patch? Default is `false`. \\
-• `L_user::Number`            - User set Length? Default is `NaN` (length calculated by bookkeeping code). \\
+• `L_user::T`            - User set Length? Default is `NaN` (length calculated by bookkeeping code). \\
 • `ref_coords::BodyLoc.T`     - Reference coordinate system used inside the patch. Default is `BodyLoc.EXIT_END`. \\
 """ PatchParams
 
-@kwdef mutable struct PatchParams <: EleParams
-  t_offset::Number = 0.0                      # Time offset
-  E_tot_exit::Number = NaN                    # Reference energy at exit end
-  pc_exit::Number = NaN                       # Reference momentum at exit end
+@kwdef mutable struct PatchParams{T<:Number} <: EleParams
+  t_offset::T = 0.0                      # Time offset
+  E_tot_exit::T = NaN                    # Reference energy at exit end
+  pc_exit::T = NaN                       # Reference momentum at exit end
   flexible::Bool = false
-  L_user::Number = NaN
+  L_user::T = NaN
   ref_coords::BodyLoc.T = BodyLoc.EXIT_END
 end
 
@@ -886,7 +859,7 @@ end
 # PositionParams
 
 """
-    mutable struct PositionParams <: EleParams
+    mutable struct PositionParams{T<:Number} <: EleParams
 
 - For `Patch` elements this is the position and orientation of the exit face with respect to the entrance face.
 - For `FloorShift` and `Fiducial` elements this is the position and orientation of the element with respect
@@ -894,51 +867,51 @@ end
 
 ## Fields
 • `offset::Vector`     - [x, y, z] offset. User symbol: `offset_body`. \\
-• `x_rot::Number`      - Rotation around the x-axis. User symbol: `x_rot_body`. \\
-• `y_rot::Number`      - Rotation around the y-axis. User symbol: `y_rot_body`. \\
-• `z_rot::Number`      - Rotation around the z-axis. User symbol: `z_rot_body`. \\
+• `x_rot::T`      - Rotation around the x-axis. User symbol: `x_rot_body`. \\
+• `y_rot::T`      - Rotation around the y-axis. User symbol: `y_rot_body`. \\
+• `z_rot::T`      - Rotation around the z-axis. User symbol: `z_rot_body`. \\
 
 """ PositionParams
 
-@kwdef mutable struct PositionParams <: EleParams
+@kwdef mutable struct PositionParams{T<:Number} <: EleParams
   offset::Vector = [0.0, 0.0, 0.0] 
-  x_rot::Number = 0
-  y_rot::Number = 0
-  z_rot::Number = 0
+  x_rot::T = 0
+  y_rot::T = 0
+  z_rot::T = 0
 end
 
 #---------------------------------------------------------------------------------------------------
 # ReferenceParams
 
 """
-    mutable struct ReferenceParams <: EleParams
+    mutable struct ReferenceParams{T<:Number} <: EleParams
 
 Reference energy, time, species, etc at upstream end of an element.
 
 ## Fields
 • `species_ref::Species`          - Reference species entering end. \\
-• `pc_ref::Number`                - Reference `momentum*c` upstream end. \\
-• `E_tot_ref::Number`             - Reference total energy upstream end. \\
-• `time_ref::Number`              - Reference time upstream end. \\
-• `extra_dtime_ref::Number`       - User set additional time change. \\
-• `dE_ref::Number`                - Sets the change in the reference energy. \\
+• `pc_ref::T`                - Reference `momentum*c` upstream end. \\
+• `E_tot_ref::T`             - Reference total energy upstream end. \\
+• `time_ref::T`              - Reference time upstream end. \\
+• `extra_dtime_ref::T`       - User set additional time change. \\
+• `dE_ref::T`                - Sets the change in the reference energy. \\
 • `static_energy_ref::Bool`       - Is the reference energy set by the User or inherited 
   - from the previous element's value? Default is `false` (inherit from previous). \\
 
 ## Associated output parameters are
-• `pc_ref_downstream::Number`     - Reference `momentum*c` downstream end. \\
-• `E_tot_ref_downstream::Number`  - Reference total energy downstream end. \\
-• `time_ref_downstream::Number`   - Reference time downstream end. \\
-• `β_ref::Number`                 - Reference `v/c` upstream end. \\
-• `γ_ref::Number`                 - Reference gamma factor upstream end. \\
+• `pc_ref_downstream::T`     - Reference `momentum*c` downstream end. \\
+• `E_tot_ref_downstream::T`  - Reference total energy downstream end. \\
+• `time_ref_downstream::T`   - Reference time downstream end. \\
+• `β_ref::T`                 - Reference `v/c` upstream end. \\
+• `γ_ref::T`                 - Reference gamma factor upstream end. \\
 """
-@kwdef mutable struct ReferenceParams <: EleParams
+@kwdef mutable struct ReferenceParams{T<:Number} <: EleParams
   species_ref::Species = Species()
-  pc_ref::Number = NaN
-  E_tot_ref::Number = NaN
-  time_ref::Number = 0.0
-  extra_dtime_ref::Number = 0.0
-  dE_ref::Number = 0.0
+  pc_ref::T = NaN
+  E_tot_ref::T = NaN
+  time_ref::T = 0.0
+  extra_dtime_ref::T = 0.0
+  dE_ref::T = 0.0
   static_energy_ref::Bool = false
 end
 
@@ -946,29 +919,29 @@ end
 # RFParams
 
 """
-    mutable struct RFParams <: EleParams
+    mutable struct RFParams{T<:Number} <: EleParams
 
 RF voltage parameters. Also see `RFAutoParams`.
 
 ## Fields
 
-• `frequency::Number`       - RF frequency. \\
-• `harmon::Number`          - RF frequency harmonic number. \\
-• `voltage::Number`         - RF voltage. \\
-• `gradient::Number`        - RF gradient. \\
-• `phase::Number`           - RF phase. \\
-• `multipass_phase::Number` - RF Phase added to multipass elements. \\
+• `frequency::T`       - RF frequency. \\
+• `harmon::T`          - RF frequency harmonic number. \\
+• `voltage::T`         - RF voltage. \\
+• `gradient::T`        - RF gradient. \\
+• `phase::T`           - RF phase. \\
+• `multipass_phase::T` - RF Phase added to multipass elements. \\
 • `cavity_type::Cavity.T`   - Cavity type. Default is `Cavity.STANDING_WAVE`. \\
 • `n_cell::Int`             - Number of cavity cells. Default is `1`. \\
 """ RFParams
 
-@kwdef mutable struct RFParams <: EleParams
-  frequency::Number = 0.0
-  harmon::Number = 0.0
-  voltage::Number = 0.0
-  gradient::Number = 0.0
-  phase::Number = 0.0
-  multipass_phase::Number = 0.0
+@kwdef mutable struct RFParams{T<:Number} <: EleParams
+  frequency::T = 0.0
+  harmon::T = 0.0
+  voltage::T = 0.0
+  gradient::T = 0.0
+  phase::T = 0.0
+  multipass_phase::T = 0.0
   cavity_type::Cavity.T = Cavity.STANDING_WAVE
   n_cell::Int = 1
 end
@@ -977,7 +950,7 @@ end
 # RFAutoParams
 
 """
-    mutable struct RFAutoParams <: EleParams
+    mutable struct RFAutoParams{T<:Number} <: EleParams
 
 RF autoscale parameters. Also see `RFParams`.
 
@@ -985,66 +958,66 @@ RF autoscale parameters. Also see `RFParams`.
 
 • `do_auto_amp::Bool`           - Will autoscaling set `auto_amp`? Default is `true`. \\
 • `do_auto_phase::Bool`         - Will autoscaling set `auto_phase`? Default is `true`. \\
-• `auto_amp::Number`            - Auto RF field amplitude scale value. \\
-• `auto_phase::Number`          - Auto RF phase value. \\
+• `auto_amp::T`            - Auto RF field amplitude scale value. \\
+• `auto_phase::T`          - Auto RF phase value. \\
 """ RFAutoParams
 
-@kwdef mutable struct RFAutoParams <: EleParams
+@kwdef mutable struct RFAutoParams{T<:Number} <: EleParams
   do_auto_amp::Bool = true    
   do_auto_phase::Bool = true
-  auto_amp::Number = 1.0    
-  auto_phase::Number = 0.0
+  auto_amp::T = 1.0    
+  auto_phase::T = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
 # SolenoidParams
 
 """
-  mutable struct SolenoidParams <: EleParams
+  mutable struct SolenoidParams{T<:Number} <: EleParams
 
 Solenoid parameters.
 
 ## Fields
 
-• `Ksol::Number`        - Normalized solenoid strength. \\      
-• `Bsol::Number`        - Solenoid field. \\
+• `Ksol::T`        - Normalized solenoid strength. \\      
+• `Bsol::T`        - Solenoid field. \\
 """ SolenoidParams
 
-@kwdef mutable struct SolenoidParams <: EleParams
-  Ksol::Number = 0.0              
-  Bsol::Number = 0.0
+@kwdef mutable struct SolenoidParams{T<:Number} <: EleParams
+  Ksol::T = 0.0              
+  Bsol::T = 0.0
 end
 
 #---------------------------------------------------------------------------------------------------
 # TrackingParams
 
 """
-    mutable struct TrackingParams <: EleParams
+    mutable struct TrackingParams{T<:Number} <: EleParams
 
 Sets the nominal values for tracking prameters.
 
 # Fields
 • `num_steps::Int`    - Number of steps. \\
-• `ds_step::Number`   - Step length. \\
+• `ds_step::T`   - Step length. \\
 
 """ TrackingParams
 
-@kwdef mutable struct TrackingParams <: EleParams
+@kwdef mutable struct TrackingParams{T<:Number} <: EleParams
   num_steps::Int   = -1
-  ds_step::Number = NaN
+  ds_step::T = NaN
 end
 
 #---------------------------------------------------------------------------------------------------
 # BeginningParams
 
 """
-    mutable struct BeginningParams <: EleParams
+    mutable struct BeginningParams{T<:Number} <: EleParams
 
 Lattice element parameter struct storing Twiss, dispersion and coupling parameters
 for an element.
 """ BeginningParams
 
-@kwdef mutable struct BeginningParams <: EleParams
+@kwdef mutable struct BeginningParams{T<:Number} <: EleParams
   a::Twiss1 = Twiss1()                # a-mode
   b::Twiss1 = Twiss1()                # b-mode
   x::Dispersion1 = Dispersion1()      # x-axis

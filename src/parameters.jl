@@ -19,7 +19,12 @@ Values of the `ELE_PARAM_INFO_DICT` `Dict` are `ParamInfo` structs.
 • `user_sym::Symbol                      # Symbol used in by a user. Generally this is the
                                          #   the same as struct_sym. An exception is r_floor• `
 
- keys of the dict 
+If `parent_group` is `Ele`, the parameter is a component of `Ele` itself`. 
+Example: The parameter `name` is in `ele.name` and so has `parent_group` of `Ele`. \\
+If `parent_group` is `Nothing`, the parameter is at the top level of `ele.pdict`.
+Example: The parameter `ix_ele` is in `ele.pdict[:ix_ele]` and so has `parent_group` of `Nothing`. \\
+For anything else, `parent_group` given the parent group of the parameter.
+Example: The parameter `e1` is in `BendParams` and so has parent group `BendParams`.
 
 Possible `kind` values: String, Int, Number, Vector{Number}, Bool, Pointer, etc.
 
@@ -37,7 +42,7 @@ to `Twiss.a.beta` which is 2 levels down from parent struct Twiss.
 abstract type Pointer end
 
 @kwdef mutable struct ParamInfo
-  parent_group::T where T <: DataType
+  parent_group::T where T <: Union{DataType, UnionAll}
   paramkind::Union{T, Union, UnionAll} where T <: DataType
   description::String = ""
   units::String = ""
@@ -78,7 +83,9 @@ with the `ReferenceParams`, etc. See the documentation on `ParamInfo` for more d
 """ ELE_PARAM_INFO_DICT
 
 ELE_PARAM_INFO_DICT = Dict(
-  :name               => ParamInfo(Nothing,        String,         "Name of the element."),
+  :class              => ParamInfo(Ele,        EleClass,       "Type of element."),
+  :name               => ParamInfo(Ele,        String,         "Name of the element."),
+
   :ix_ele             => ParamInfo(Nothing,        Int,            "Index of element in containing branch.ele[] array."),
   :branch             => ParamInfo(Nothing,        Branch,         "Pointer to branch element is in."),
   :multipass_lord     => ParamInfo(Nothing,        Ele,            "Element's multipass_lord. Will not be present if no lord exists."),
@@ -150,7 +157,8 @@ ELE_PARAM_INFO_DICT = Dict(
 
   :subtype            => ParamInfo(DescriptionParams,   String,     "Type of element."),
   :ID                 => ParamInfo(DescriptionParams,   String,     "Identification name."),
-  :class              => ParamInfo(DescriptionParams,   String,     "Classification of element."),
+  :label              => ParamInfo(DescriptionParams,   String,     "Element label."),
+  :description        => ParamInfo(DescriptionParams,   Dict,       "Dictionary for storing any information."),
 
   :to_line            => ParamInfo(ForkParams,      Union{BeamLine, Nothing}, "Beamline forked to."),
   :to_ele             => ParamInfo(ForkParams,      Union{String,Ele},        "Lattice element forked to."),
@@ -260,7 +268,7 @@ the `pc_ref_downstream` and `E_tot_ref_downstream` are included.
 """ associated_names
 
 function associated_names(group::EleParams; show_names::Bool = true)
-  group_type = typeof(group)
+  group_type = root_type(typeof(group))
   names = [field for field in fieldnames(group_type)]
 
   for (key, pinfo) in ELE_PARAM_INFO_DICT
@@ -330,7 +338,7 @@ end
 
 """
     param_units(param::Union{Symbol,DataType}) -> units::String
-    param_units(param::Union{Symbol,DataType}, eletype::Type{T}) where T <: Ele -> units::String
+    param_units(param::Union{Symbol,DataType}, ele_class::EleClass) -> units::String
 
 Returns the units associated with symbol. EG: `m` (meters) for `param` = `:L`.
 `param` may be an element parameter group type (EG: `LengthParams`) in which
@@ -349,12 +357,6 @@ function param_units(param::Union{Symbol,DataType})
 
   if isnothing(info); (return "?units?"); end
   return info.units
-end
-
-#-
-
-function param_units(param::Union{Symbol,DataType}, eletype::Type{T}) where T <: Ele
-  return param_units(param)
 end
 
 #---------------------------------------------------------------------------------------------------
@@ -498,7 +500,7 @@ multipole_param_info(str::AbstractString) = multipole_param_info(Symbol(str))
 # ele_param_info
 
 """
-    ele_param_info(who::Union{Symbol,DataType}; throw_error = true) -> Union{ParamInfo, Nothing}
+    ele_param_info(who::Union{Symbol,DataType,UnionAll}; throw_error = true) -> Union{ParamInfo, Nothing}
     ele_param_info(who::Symbol, ele::Ele; throw_error = true) -> Union{ParamInfo, Nothing}
 
 Returns information on `who` which is either a `Symbol` representing an element parameter
@@ -508,7 +510,7 @@ Returned is a `ParamInfo` struct. If `who` is a DataType or no information on `w
 an error is thrown or `nothing` is returned depending upon the setting of `throw_error`.
 """ ele_param_info
 
-function ele_param_info(who::Union{Symbol,DataType}; throw_error = true)
+function ele_param_info(who::Union{Symbol,DataType,UnionAll}; throw_error = true)
   if typeof(who) == Symbol
     if haskey(ELE_PARAM_INFO_DICT, who); (return ELE_PARAM_INFO_DICT[who]); end
     # Is a multipole? Otherwise unrecognized.
@@ -517,32 +519,32 @@ function ele_param_info(who::Union{Symbol,DataType}; throw_error = true)
     return info
   end
 
-  # A DataType means `who` is not an element parameter.
+  # A DataType or UnionAll means `who` is not an element parameter.
   if throw_error; error("Unrecognized element parameter: $who"); end
   return nothing
 end
 
 #
 
-function ele_param_info(who::Union{Symbol,DataType}, ele::Ele; throw_error = true)
+function ele_param_info(who::Union{Symbol,DataType,UnionAll}, ele::Ele; throw_error = true)
   if typeof(who) == Symbol
     param_info = ele_param_info(who, throw_error = throw_error)
     if isnothing(param_info); return nothing; end
 
     if typeof(param_info.parent_group) <: Vector
       for parent in param_info.parent_group
-        if parent in PARAM_GROUPS_LIST[typeof(ele)]
+        if parent in PARAM_GROUPS_LIST[ele.class]
           param_info.parent_group = parent
           return param_info
         end
       end
     
-      error("Symbol $who not in element $(ele_name(ele)) which is of type $(typeof(ele))")
+      error("Symbol $who not in element $(ele_name(ele)) which is of type $(ele.class)")
 
     else
-      if param_info.parent_group in PARAM_GROUPS_LIST[typeof(ele)] || 
+      if param_info.parent_group in PARAM_GROUPS_LIST[ele.class] || 
                                         param_info.parent_group == Nothing; return param_info; end
-      error("Symbol $who not in element $(ele_name(ele)) which is of type $(typeof(ele))")   
+      error("Symbol $who not in element $(ele_name(ele)) which is of type $(ele.class)")   
     end
   end
 

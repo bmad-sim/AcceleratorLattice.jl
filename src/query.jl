@@ -90,7 +90,7 @@ end
 function ele_geometry(ele::Ele)
   if ele isa Bend; return CIRCULAR; end
   if ele isa Patch; return PATCH_GEOMETRY; end
-  if typeof(ele) in [BeginningEle, Fiducial, Fork, 
+  if ele.class in [BeginningEle, Fiducial, Fork, 
                             Marker, Match, NullEle, Taylor]; return ZERO_LENGTH; end
   return STRAIGHT
 end
@@ -170,7 +170,7 @@ so in this case the lord does not have to be present in the argument list.
 
 function slave_index(slave::Ele, lord::Ele = NULL_ELE) 
   if slave.slave_status == Slave.SUPER
-    if typeof(slave) == UnionEle && length(slave.super_lords) > 1
+    if slave.class == UnionEle && length(slave.super_lords) > 1
       lord === NULL_ELE && error("Need to specify lord element for UnionEle slave $(ele_name(slave))")
       for ix in 1:length(lord.slaves)
         if lord.slaves[ix].ix_ele == slave.ix_ele; return ix; end

@@ -57,12 +57,12 @@ include("find.jl")
 
 # Note! Element types, enums, and Holy traits are exported automatically when constructed.
 
-export memloc, beamline, @ele, @eles, @construct_ele_type, enum, enum_add
+export memloc, beamline, @ele, @eles, enum, enum_add, Ele, EleClass
 export ele_name, show_name, show_ele, msng, E_kinetic, pc, β, β1, γ
 export show_lat, show_branch, show_beamline, bookkeeper!, set_param!
 export Branch, Lattice, BeamLineEle, superimpose!, multipole_type
 export BeamLineItem, BeamLine, Ele, propagate_ele_geometry, coord_transform
-export split!, construct_ele_type, ele_at_s, toggle_integrated!
+export split!, ele_at_s, toggle_integrated!
 export eles_search, eles_substitute_lords!, eles_sort!
 export next_ele, ele_at_offset, ele_param_value_str, strip_AL, ele_param_group_symbols
 export branch, matches_branch, create_ele_vars, eval_str, Vertex1, LatticeGlobal
@@ -78,7 +78,7 @@ export ele_param_struct_field_to_user_sym, multipole!, index, integer, rot_angle
 export machine_location, body_location, EleRegion, holy_traits, output_parameter
 export BranchType, LordBranch, TrackingBranch, MultipassBranch, SuperBranch, transform
 export str_split, str_match, str_unquote, str_quote, str_to_int, associated_names
-export DO_NOT_SHOW_PARAMS_LIST, ELE_PARAM_GROUP_INFO, ELE_TYPE_INFO, PARAM_GROUPS_LIST, OPEN, CLOSED
+export DO_NOT_SHOW_PARAMS_LIST, ELE_PARAM_GROUP_INFO, PARAM_GROUPS_LIST, OPEN, CLOSED
 export rotX, rotY, rotZ, rot, rot!, bend_quaternion, lat_ele_dict
 
 # From LinearAlgebra

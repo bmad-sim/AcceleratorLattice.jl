@@ -2,7 +2,7 @@ using AcceleratorLattice, Test
 
 @ele beginning = BeginningEle(s = 0.3, pc_ref = 1e7, species_ref = Species("electron"));
 @ele qf = Quadrupole(L = 0.6, ID = "z1");
-@ele qd = Quadrupole(L = 0.6, class = "z2");
+@ele qd = Quadrupole(L = 0.6, label = "z2");
 @ele d = Drift(L = 0.4);
 @ele d2 = Drift(L = -1.5);
 @ele d3 = Drift(L = 2);
@@ -58,7 +58,7 @@ end
                 eles_search(lat, "fodo>>7, fodo>>9, fodo>>15, fodo>>21, fodo>>22, multipass>>1, multipass>>3")
   @test eles_search(lat, "2>>2:4  ~Quadrupole::*") == [lat.branch[2].ele[3]]
   @test eles_search(lat, "2>>2:4") == lat.branch[2].ele[2:4]
-  @test_throws ErrorException eles_search(lat, "quadrupole::*")   # quadrupole should be capitalized.
+  @test_throws UndefVarError eles_search(lat, "quadrupole::*")   # quadrupole should be capitalized.
 end
 
 # !!! Test ele_at_offset with, EG multipass

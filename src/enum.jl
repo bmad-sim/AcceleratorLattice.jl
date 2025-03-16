@@ -108,7 +108,7 @@ end
 """
     holy_traits(atype::AbstractString, values::Vector, descrip::AbstractString = "")
 
-Makes an abstract type from `atype` and makes concrete types (called "values" or "traits") 
+Makes an abstract type from `atype` and makes abstract types (called "values" or "traits") 
 from the `values`. 
 The values inherit from `atype`. This group can be used like an `enum` group. 
 The difference is that `holy_traits` values can be used with function dispatching.
@@ -152,3 +152,69 @@ holy_traits("EleGeometry", ["STRAIGHT", "CIRCULAR", "ZERO_LENGTH",
                    "Element geometry.")
 
 holy_traits("FieldType", ["ELECTRIC", "MAGNETIC"], "Type of field.")
+
+#---------------------------------------------------------------------------------------------------
+# EleClass
+
+"""
+    abstract type EleClass
+
+Abstract class that all Ele class types like `Quadrupole`, `Patch`, etc., inherit from.
+""" EleClass
+
+abstract type EleClass end
+
+#---------------------------------------------------------------------------------------------------
+# Ele classes
+
+"""
+    add_ele_class(ele_class::AbstractString, description::AbstractString)
+
+Creates an element class (which is an abstract type) with name given by `ele_class`
+and adds documentation for this using `description`.
+"""
+function add_ele_class(ele_class::AbstractString, description::AbstractString)
+  eval_str("abstract type $ele_class <: EleClass end")
+  eval_str("export $ele_class")
+
+  global doc_str = """
+    abstract type $ele_class <: EleClass
+Element class instance used for simulating: $description
+"""
+
+  eval_str("@doc doc_str $ele_class")
+end
+
+
+add_ele_class("ACKicker",      "Time varying kicker.")
+add_ele_class("BeamBeam",      "Colliding beams.")
+add_ele_class("BeginningEle",  "Initial element at start of a branch.")
+add_ele_class("Bend",          "Dipole bend.")
+add_ele_class("Collimator",    "Collimation element.")
+add_ele_class("Converter",     "Target to produce new species. EG: Positron converter.")
+add_ele_class("CrabCavity",    "RF crab cavity.") 
+add_ele_class("Drift",         "Field free region.")
+add_ele_class("EGun",          "Electron gun.")
+add_ele_class("Fiducial",      "Floor coordinate system fiducial point.")
+add_ele_class("FloorShift",    "Floor coordinates shift.")
+add_ele_class("Foil",          "Strips electrons from an atom.")
+add_ele_class("Fork",          "Connect lattice branches together.")
+add_ele_class("Girder",        "Support element.")
+add_ele_class("Instrument",    "Measurement element.")
+add_ele_class("Kicker",        "Particle kicker element.")
+add_ele_class("LCavity",       "Linac accelerating RF cavity.")
+add_ele_class("Marker",        "Zero length element to mark a particular position.")
+add_ele_class("Match",         "Orbit, Twiss, and dispersion matching element.")
+add_ele_class("Multipole",     "Zero length multipole.")
+add_ele_class("NullEle",       "Placeholder element type used for bookkeeping. Indicates the absence of any valid element.")
+add_ele_class("Octupole",      "Octupole element.")
+add_ele_class("Patch",         "Reference orbit shift.")
+add_ele_class("Quadrupole",    "Quadrupole element.")
+add_ele_class("RFCavity",      "RF cavity element.")
+add_ele_class("Sextupole",     "Sextupole element.")
+add_ele_class("Solenoid",      "Solenoid.")
+add_ele_class("Taylor",        "General Taylor map element.")
+add_ele_class("Undulator",     "Undulator.")
+add_ele_class("UnionEle",      "Container element for overlapping elements.") 
+add_ele_class("Wiggler",       "Wiggler.")
+

@@ -224,7 +224,8 @@ function integer(str::AbstractString, default)
     return parse(Int, str)
   catch
     if isnothing(default)
-      error("ParseError: Bad integer: $str")
+      println("Function integer: Bad integer: $str")
+      rethrow
     else
       return default
     end

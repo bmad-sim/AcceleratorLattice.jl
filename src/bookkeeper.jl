@@ -33,9 +33,9 @@ function bookkeeper!(lat::Lattice; init::Bool = false)
       end
     end
 
-#  catch this_err
+#  catch
 #    pop_bookkeeping_state!(lat)
-#    rethrow(this_err)
+#    rethrow()
 #  end
 
   pop_bookkeeping_state!(lat)
@@ -46,7 +46,7 @@ end
 # check_if_settable
 
 """
-    Internal: check_is_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothing})
+    Internal: check_if_settable(ele::Ele, sym::Symbol, pinfo::Union{ParamInfo, Nothing})
 
 Check that it is valid to have varied element parameters.
 For example, parameters of a super slave element cannot be directly changed.
@@ -103,7 +103,7 @@ function bookkeeper_tracking_branch!(branch::Branch; init::Bool = false)
 
   for ele in branch.ele[ix_min:end]
     # A UnionEle may not be a super slave.
-    if typeof(ele) == UnionEle && ele.slave_status == Slave.SUPER
+    if ele.class == UnionEle && ele.slave_status == Slave.SUPER
       bookkeeper_unionele_superslave!(ele, changed, previous_ele)
     elseif ele.slave_status == Slave.SUPER
       bookkeeper_superslave!(ele, changed, previous_ele)
@@ -139,14 +139,14 @@ These low level routines (there are several with this signature) are called via 
 """ bookkeeper_ele!(ele::Ele)
 
 function bookkeeper_ele!(ele::Ele, changed::ChangedLedger, previous_ele::Ele)
-  for group in PARAM_GROUPS_LIST[typeof(ele)]
+  for group in PARAM_GROUPS_LIST[ele.class]
     if !haskey(ELE_PARAM_GROUP_INFO, group) || !ELE_PARAM_GROUP_INFO[group].bookkeeping_needed; continue; end
 
     try
       ele_paramgroup_bookkeeper!(ele, group, changed, previous_ele)
-    catch this_err
+    catch
       reinstate_changed!(ele, group)    # Try to undo the dammage.
-      rethrow(this_err)
+      rethrow()
     end
   end
 
@@ -212,13 +212,13 @@ function bookkeeper_superslave!(slave::Ele, changed::ChangedLedger, previous_ele
   end
 
   # Transfer info from lord to slave
-  for group in PARAM_GROUPS_LIST[typeof(lord)]
+  for group in PARAM_GROUPS_LIST[lord.class]
     if group == LengthParams; continue; end     # Do not modify length of slave
     if group == FloorParams; continue; end
     if group == LordSlaveStatusParams; continue; end
 
     group_changed = has_changed(lord, group)
-    if group_changed && group != AlginmentParams
+    if group_changed && group != BodyShiftParams
       slave.pdict[Symbol(group)] = copy(lord.pdict[Symbol(group)])
       slave.pdict[:changed][group] = "changed"
     end
@@ -386,7 +386,7 @@ function param_conflict_check(ele::Ele, syms...)
     if haskey(ele.changed, sym); push!(sym_in, sym); end
   end
   if length(sym_in) > 1; error("Conflict: $(s[1]) and $(s[2]) cannot both " * 
-                                    "be specified for a $(typeof(ele)) element: $(ele.name)"); end
+                                    "be specified for a $(ele.class) element: $(ele.name)"); end
   return sym_in
 
   return
@@ -598,10 +598,10 @@ function ele_paramgroup_bookkeeper!(ele::Ele, group::Type{ForkParams},
     return
   end
 
-  # Transfer FloorPrams
+  # Transfer FloorParams
 
   if has_changed(ele, FloorParams)
-    to_ele.FloorParams = copy(ele.FloorPrams)
+    to_ele.FloorParams = copy(ele.FloorParams)
     to_ele.pdict[:changed][FloorParams] = true
     set_branch_min_max_changed!(to_ele.branch, 1)
   end
