@@ -161,7 +161,8 @@ Element parameter groups associated with this element type are:
 
 
 \begin{figure}[ht]
-  \centering \includegraphics{bend.pdf} 
+  \centering 
+  \includegraphics{bend.pdf} 
 \caption[Bend geometry]{
 Bend geometry. Red dots are the entry and exit points that define the origin for the
 coordinate systems at the entry end $(s_1, x_1)$ and exit ends $(s_2, x_2)$ respectively. 
@@ -635,8 +636,9 @@ centers so the $s$ positions of the reference frames is
 \end{example}
 Using a small angle approximation to simplify the calculation, the \vn{x_pitch} of \vn{g4} produces
 an offset at the center of \vn{q2} of $0.01 = 0.002 * 5$. This, added to the offsets of \vn{g4} and
-\vn{q2}, give the total \vn{x_offset}, denoted \vn{x_offset_tot} of \vn{q2} is $0.06 = 0.01 + 0.03 +
-0.02$. The total \vn{x_pitch}, denoted \vn{x_pitch_tot}, of \vn{q2} is $0.022 = 0.02 + 0.001$.
+\vn{q2}, give the total \vn{x_offset}, denoted \vn{x_offset_tot} of \vn{q2} is 
+$0.06 = 0.01 + 0.03 + 0.02$. 
+The total \vn{x_pitch}, denoted \vn{x_pitch_tot}, of \vn{q2} is $0.022 = 0.02 + 0.001$.
 
 A \vn{Girder} that has its \vn{is_on} attribute set to False is considered to be unsifted with
 respect to it's reference frame.
@@ -737,11 +739,6 @@ to edge. However, when there are fields or apertures an internal
 coordinate system is needed so that the fields or apertures can be unambiguously positioned.
 
 
-
-%----
-There 
-
-
 Generally, if a particle is reasonably near the branch reference curve, there is a one-to-one mapping
 between the particle's position and branch $(x, y, s)$ coordinates. 
 
@@ -756,8 +753,8 @@ coordinates defining the longitudinal direction. The ``beginning'' point of the 
 reference curve a distance \vn{L} from point $\gamma$ is labeled $\beta$ in the figure.
 
 In the branch $(x, y, s)$ coordinate system a particle at $\alpha$ will have some value $s = s_0$. A
-particle at point $\beta$ will have the same value $s = s_0$ and a particle at $\gamma$ will have $s
-= s_1 = s_0 + L$. A particle at point $r_a$ in \fig{f:patch.prob} illustrates the problem of
+particle at point $\beta$ will have the same value $s = s_0$ and a particle at $\gamma$ will have 
+$s = s_1 = s_0 + L$. A particle at point $r_a$ in \fig{f:patch.prob} illustrates the problem of
 assigning $(x, y, s)$ coordinates to a given position. If the particle is considered to be within
 the region of \vn{ele_a}, the particle's $s$ position will be $s_{a2}$ which is greater than the
 value $s_0$ at the exit end of the element. This contradicts the expectation that particles within
