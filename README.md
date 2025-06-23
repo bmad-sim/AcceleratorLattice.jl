@@ -6,7 +6,8 @@ This is a long term project currently under development.
 ## State of the Software
 Can construct simple lattices so the tracking code being developed can use `AcceleratorLattice`. 
 
-2024/10: Currently Working on documentation, bug testing, regression test creation.
+2025/6: Work on AcceleratorLattice is paused to focus on BeamTracking.jl and Beamlines.jl development. The plan is that when the lattice 
+bookkeeping has been sorted out, Beamlines will be merged with AcceleratorLattice. Projected is that this will start happening the end of 2025.
 
 ## Installing
 
@@ -75,6 +76,6 @@ Ele: "qf" (b1>>2)   Quadrupole
 ... etc...
 ```
 
-# SciBmad manual
+# AcceleratorLattice manual
 
-[SciBmad manual](https://github.com/bmad-sim/AcceleratorLattice.jl/blob/main/manual/AcceleratorLattice.pdf)
+[AcceleratorLattice manual](https://github.com/bmad-sim/AcceleratorLattice.jl/blob/main/manual/AcceleratorLattice.pdf)
