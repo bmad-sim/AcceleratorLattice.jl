@@ -1,7 +1,7 @@
 name = "AcceleratorLattice"
 uuid = "118f53b2-f4ec-480a-a460-1a04f660b17d"
 authors = ["David Sagan"]
-version = "0.6.4"
+version = "0.6.5"
 
 [deps]
 AcceleratorSimUtils = "8b14b3b2-39c5-4be4-bdc0-0b322e577224"
@@ -20,7 +20,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 AcceleratorSimUtils = "0.4"
 Accessors = "0.1"
-AtomicAndPhysicalConstants = "0.5"
+AtomicAndPhysicalConstants = "0.6"
 EnumX = "1"
 InteractiveUtils = "1.10"
 LinearAlgebra = "1.10"
